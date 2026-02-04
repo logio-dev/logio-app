@@ -1,0 +1,2615 @@
+import React, { useState, useEffect, useRef, Fragment } from 'react';
+import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+console.log('✅ LOGIO: Module loaded successfully');
+
+// ========== window.storage フォールバック（存在しない環境対策） ==========
+if (typeof window !== 'undefined' && !window.storage) {
+  console.warn('⚠️ window.storage が利用できません。メモリストレージを使用します。');
+  const memoryStorage = new Map();
+  window.storage = {
+    async get(key) {
+      const value = memoryStorage.get(key);
+      return value ? { key, value, shared: false } : null;
+    },
+    async set(key, value) {
+      memoryStorage.set(key, value);
+      return { key, value, shared: false };
+    },
+    async delete(key) {
+      const deleted = memoryStorage.delete(key);
+      return { key, deleted, shared: false };
+    },
+    async list(prefix) {
+      const keys = Array.from(memoryStorage.keys()).filter(k => !prefix || k.startsWith(prefix));
+      return { keys, prefix, shared: false };
+    }
+  };
+}
+
+// ========== LOGIOロゴ（流線的な象のシルエット・シネマティック） ==========
+function LOGIOLogo({ className = "", size = "md", animated = false }) {
+  const sizeStyles = {
+    xs: "text-lg",      // ヘッダー用 (18px)
+    sm: "text-xl",      // サイドバー用 (20px)
+    md: "text-4xl",     // 現場選択用 (36px)
+    lg: "text-5xl",     // 現場選択用 (48px)
+    xl: "text-6xl"      // スプラッシュ用 (60px)
+  };
+  
+  const elephantSizes = {
+    xs: 40,
+    sm: 50,
+    md: 90,
+    lg: 120,
+    xl: 150
+  };
+  
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
+        
+        .logio-char {
+          display: inline-block;
+          opacity: ${animated ? 0 : 1};
+        }
+        
+        ${animated ? `
+        .logio-char-animated {
+          animation: charFloatUpCinematic 1.8s ease-in-out forwards;
+        }
+        
+        .logio-char-0 { animation-delay: 0s; }
+        .logio-char-1 { animation-delay: 0.25s; }
+        .logio-char-2 { animation-delay: 0.5s; }
+        .logio-char-3 { animation-delay: 0.75s; }
+        .logio-char-4 { animation-delay: 1.0s; }
+        
+        @keyframes charFloatUpCinematic {
+          0% {
+            opacity: 0;
+            transform: translateY(40px) scale(0.95);
+          }
+          50% {
+            opacity: 0.5;
+          }
+          70% {
+            opacity: 1;
+            transform: translateY(-8px) scale(1.02);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        
+        .elephant-silhouette {
+          opacity: 0;
+          animation: elephantCinematicEntry 2.5s ease-in-out 1.2s forwards;
+        }
+        
+        @keyframes elephantCinematicEntry {
+          0% {
+            opacity: 0;
+            transform: scale(0.7) translateY(20px);
+          }
+          40% {
+            opacity: 0.06;
+          }
+          100% {
+            opacity: 0.12;
+            transform: scale(1) translateY(0);
+          }
+        }
+        ` : ''}
+        
+        .elephant-static {
+          opacity: 0.12;
+        }
+      `}</style>
+      <div className={`relative inline-flex items-center justify-center ${className}`}>
+        {/* 象のシルエット（背景・シャープ・常に表示） */}
+        <div className={`absolute inset-0 flex items-center justify-center ${animated ? 'elephant-silhouette' : 'elephant-static'}`}>
+          <svg width={elephantSizes[size]} height={elephantSizes[size]} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            {/* シンプルな象のシルエット（頭・耳・鼻） */}
+            <path 
+              d="
+                M 80,50
+                
+                C 100,45 120,50 135,65
+                C 145,75 150,90 148,105
+                C 146,115 140,123 132,127
+                
+                C 140,130 145,138 143,148
+                C 140,160 128,168 115,165
+                
+                C 108,170 100,173 92,173
+                C 85,173 80,170 78,165
+                
+                C 72,163 68,158 68,152
+                C 68,148 70,145 73,143
+                
+                C 68,140 63,135 60,128
+                C 55,115 55,100 60,88
+                
+                C 50,92 38,98 30,108
+                C 22,118 18,132 20,145
+                C 22,158 30,168 42,172
+                C 48,174 54,173 58,170
+                
+                C 58,175 56,180 52,184
+                C 46,190 38,192 30,190
+                C 18,186 10,176 8,163
+                C 6,150 10,135 20,123
+                C 30,111 45,103 60,100
+                
+                C 62,85 68,72 78,63
+                Z
+              "
+              fill="#ffffff"
+              opacity="0.12"
+            />
+          </svg>
+        </div>
+        
+        <span 
+          className={`text-white ${sizeStyles[size]} relative z-10`}
+          style={{ 
+            fontFamily: 'Montserrat, -apple-system, BlinkMacSystemFont, sans-serif',
+            fontWeight: 600,
+            letterSpacing: '0.15em'
+          }}
+        >
+          <span className={`logio-char ${animated ? 'logio-char-animated logio-char-0' : ''}`}>L</span>
+          <span className={`logio-char ${animated ? 'logio-char-animated logio-char-1' : ''}`}>O</span>
+          <span className={`logio-char ${animated ? 'logio-char-animated logio-char-2' : ''}`}>G</span>
+          <span className={`logio-char ${animated ? 'logio-char-animated logio-char-3' : ''}`}>I</span>
+          <span className={`logio-char ${animated ? 'logio-char-animated logio-char-4' : ''}`}>O</span>
+        </span>
+      </div>
+    </>
+  );
+}
+
+// ========== 数字の縁取りスタイル ==========
+const amountStrokeStyle = {
+  textShadow: '0 0 3px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.7), 1px 1px 3px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,1)'
+};
+
+// ========== マスタデータ ==========
+const MASTER_DATA = {
+  projectNames: ['内装解体', 'スケルトン解体', '建物解体', '外装解体', '外構解体', 'アスベスト除去', '設備解体', '躯体解体'],
+  salesPersons: ['間野', '八ツ田', '木嶋', '西', '鈴木', '原'],
+  employees: ['山田太郎', '佐藤次郎', '田中花子', '鈴木一郎', '高橋美咲'],
+  inHouseWorkers: ['八ツ田 淳', '五十嵐 悠哉', '折田 優作', '稲葉 正輝', '井ケ田 浩寿', '大野 勝也', '石森 達也', '一村 琢磨', '間野 昂平'],
+  weather: ['晴', '曇', '雨', '雪'],
+  workCategories: ['解体', '撤去', '清掃', '養生', '搬出', 'その他'],
+  vehicles: ['2tD', '3tD', '4tD', 'アームロール', 'ユニック', '軽バン'],
+  vehicleNumbers: ['100', '181', '200', '201', '226', '300', '312', '381', '451', '480', '500', '858', '909', '1000', '1100', '1810', '2000', '3000', '3214', '3381', '3648', '4000', '4514', '4803', '5000', '5888', '6000', '6994', '7000', '7567', '8000', '8025', '8580', '8736', '9272'],
+  heavyMachinery: ['PC78US', 'バックホー', 'ブレーカー', 'フォーク'],
+  // 作業時間オプション（10分単位、0:00〜24:00）
+  workingHoursOptions: (() => {
+    const options = [];
+    for (let hours = 0; hours <= 24; hours++) {
+      for (let minutes = 0; minutes < 60; minutes += 10) {
+        if (hours === 24 && minutes > 0) break;
+        const h = String(hours).padStart(2, '0');
+        const m = String(minutes).padStart(2, '0');
+        options.push(`${h}:${m}`);
+      }
+    }
+    return options;
+  })(),
+  // 労務費を削除し、外注費に「人工」を追加、経費に「駐車代」「道具代」を追加
+  costCategories: {
+    '材料費': ['養生材', '仮設材', '消耗品', '燃料費'],
+    '外注費': ['人工', '重機リース', '車両リース', '専門工事'],
+    '経費': ['駐車代', '交通費', '通信費', '事務用品', '道具代', 'その他']
+  },
+  wasteTypes: ['木くず', '廃プラ', 'がら陶', 'コンクリート', '金属くず', '石膏ボード', 'ガラス'],
+  disposalSites: ['木村建材', '二光産業', 'ギプロ', 'ウムヴェルト', '日栄興産', '戸部組', 'リバー', 'ワイエムエコフューチャー', '東和アークス', 'ヤマゼン', '入間緑化', '石坂産業', 'その他（直接入力）'],
+  scrapTypes: ['鉄くず', '銅線', 'アルミ', 'ステンレス', '真鍮'],
+  buyers: ['小林金属', '高橋金属', 'ナンセイスチール', '服部金属', 'サンビーム', '光田産業'],
+  statuses: ['進行中', '完了', '中断']
+};
+
+// ========== 共通コンポーネント ==========
+
+function Header({ title, showMenuButton = false, onMenuClick, showBackButton = false, onBack }) {
+  return (
+    <header className="bg-black px-6 py-5 flex items-center sticky top-0 z-40 border-b border-gray-900">
+      {showMenuButton && (
+        <button onClick={onMenuClick} className="mr-4 text-white hover:text-gray-300 md:hidden">
+          <Menu className="w-6 h-6" />
+        </button>
+      )}
+      {showBackButton && (
+        <button onClick={onBack} className="mr-4 text-white hover:text-gray-300">
+          <X className="w-6 h-6" />
+        </button>
+      )}
+      <LOGIOLogo size="xs" />
+      {title && <span className="ml-4 text-gray-400 text-sm font-medium">{title}</span>}
+    </header>
+  );
+}
+
+function Select({ label, labelEn, options, value, onChange, placeholder = "選択してください", required = false }) {
+  return (
+    <div className="mb-6">
+      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label} / {labelEn} {required && <span className="text-red-500">*</span>}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 text-white text-base font-medium rounded-md focus:outline-none focus:border-blue-500 transition-colors"
+        required={required}
+      >
+        <option value="" className="bg-gray-900">{placeholder}</option>
+        {options.map((opt) => <option key={opt} value={opt} className="bg-gray-900">{opt}</option>)}
+      </select>
+    </div>
+  );
+}
+
+// カスタムセレクト（2行表示対応）
+function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "選択してください" }) {
+  console.log('🎯 DarkSelect: Rendering', { label, optionsCount: options?.length, value });
+  
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  
+  // 選択中のオプションを取得
+  const selectedOption = options.find(opt => opt.value === value);
+  
+  // 外側クリックでドロップダウンを閉じる
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+  
+  const handleSelect = (optionValue) => {
+    onChange(optionValue);
+    setIsOpen(false);
+  };
+  
+  return (
+    <div className="mb-6 relative" ref={dropdownRef}>
+      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label} / {labelEn}
+      </label>
+      
+      {/* 選択ボタン */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-md text-left focus:outline-none focus:border-blue-500 transition-colors relative"
+      >
+        {selectedOption ? (
+          <div>
+            <div className="text-white text-base font-medium">{selectedOption.title}</div>
+            {selectedOption.subtitle && (
+              <div className="text-gray-500 text-xs mt-1">{selectedOption.subtitle}</div>
+            )}
+          </div>
+        ) : (
+          <div className="text-gray-500 text-base">{placeholder}</div>
+        )}
+        <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {/* ドロップダウン */}
+      {isOpen && (
+        <div className="absolute left-0 right-0 z-50 mt-1 bg-gray-900 border border-gray-700 rounded-md shadow-xl max-h-80 overflow-y-auto">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleSelect(option.value)}
+              className="w-full px-4 py-3 text-left hover:bg-gray-800 transition-colors border-b border-gray-800 last:border-b-0 relative"
+            >
+              <div className="pr-8">
+                <div className="text-white text-base font-medium">{option.title}</div>
+                {option.subtitle && (
+                  <div className="text-gray-500 text-xs mt-1">{option.subtitle}</div>
+                )}
+              </div>
+              {value === option.value && (
+                <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// チップ式マルチセレクト（車両・重機用）
+// プルダウン式複数選択（スマホ最適化）
+function MultiSelectDropdown({ label, labelEn, options, selected = [], onChange, placeholder = "選択してください" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const toggleOption = (option) => {
+    if (selected.includes(option)) {
+      onChange(selected.filter(item => item !== option));
+    } else {
+      onChange([...selected, option]);
+    }
+  };
+  
+  return (
+    <div className="mb-6">
+      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label} / {labelEn}
+      </label>
+      
+      {/* 選択ボタン */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 text-white rounded-md focus:outline-none focus:border-blue-500 text-left flex justify-between items-center"
+      >
+        <span className="text-base">
+          {selected.length > 0 ? `${selected.length}件選択` : placeholder}
+        </span>
+        <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {/* 選択済みアイテム表示 */}
+      {selected.length > 0 && (
+        <div className="mt-2 text-xs text-gray-400">
+          {selected.join('、')}
+        </div>
+      )}
+      
+      {/* ドロップダウンメニュー */}
+      {isOpen && (
+        <div className="mt-2 bg-gray-900 border border-gray-700 rounded-md max-h-60 overflow-y-auto">
+          {options.map((option) => {
+            const isSelected = selected.includes(option);
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => toggleOption(option)}
+                className={`w-full px-4 py-3 text-left text-sm transition-colors flex items-center justify-between ${
+                  isSelected
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-800'
+                }`}
+              >
+                <span>{option}</span>
+                {isSelected && <Check className="w-4 h-4" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "text", required = false }) {
+  return (
+    <div className="mb-4">
+      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label} / {labelEn} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-md focus:outline-none focus:border-blue-500"
+        required={required}
+      />
+    </div>
+  );
+}
+
+// 数値入力用（手動入力、スマホキーボード対応）※統一版
+function NumericInput({ label, labelEn, value, onChange, placeholder = "0", unit = "", min = 0 }) {
+  const toNumberString = (v) => String(v ?? '').replace(/[^\d.]/g, ''); // 数字と小数点以外除去
+  const handleChange = (raw) => {
+    const cleaned = toNumberString(raw);
+    // 画面表示は文字列のまま持つ（今の実装と互換）
+    if (cleaned === '') return onChange('');
+    // マイナスを許さない（min=0 デフォ）
+    const num = Math.max(min, parseFloat(cleaned) || 0);
+    // 余計な桁を戻さないため、入力中は cleaned を優先でもOK
+    onChange(String(num));
+  };
+  return (
+    <div className="mb-4">
+      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label} / {labelEn}
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={value}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-4 py-4 pr-12 bg-gray-800 border border-gray-700 text-white text-2xl font-semibold text-right rounded-md focus:outline-none focus:border-blue-500 tabular-nums"
+          style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif' }}
+        />
+        {unit && (
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">
+            {unit}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TextArea({ label, labelEn, value, onChange, placeholder = "", rows = 3 }) {
+  return (
+    <div className="mb-4">
+      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label} / {labelEn}
+      </label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-md focus:outline-none focus:border-blue-500 resize-none"
+      />
+    </div>
+  );
+}
+
+// 大きいステッパーUI（作業員数用）
+function BigStepper({ label, labelEn, value, onChange, min = 0, max = 99 }) {
+  return (
+    <div className="mb-4">
+      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label} / {labelEn}
+      </label>
+      <div className="flex items-center gap-4 bg-gray-900/50 rounded-md p-4">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(min, value - 1))}
+          className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center text-3xl font-bold transition-colors"
+        >
+          −
+        </button>
+        <div className="flex-1 text-center">
+          <div className="text-5xl font-bold text-white tabular-nums">{value}</div>
+          <div className="text-xs text-gray-500 mt-1">人</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange(Math.min(max, value + 1))}
+          className="w-14 h-14 bg-gray-800 hover:bg-gray-700 text-white rounded-lg flex items-center justify-center text-3xl font-bold transition-colors"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 金額入力用（手動入力、スマホキーボード対応）
+function AmountInput({ label, labelEn, value, onChange, placeholder = "0" }) {
+  return (
+    <div className="mb-4">
+      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label} / {labelEn}
+      </label>
+      <div className="relative">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-xl font-semibold">¥</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full pl-10 pr-4 py-4 bg-gray-800 border border-gray-700 text-white text-2xl font-semibold text-right rounded-md focus:outline-none focus:border-blue-500 tabular-nums"
+          style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function Button({ children, onClick, variant = 'primary', className = '', icon: Icon, disabled = false }) {
+  const baseClass = "w-full px-6 py-4 font-bold text-lg transition-all flex items-center justify-center gap-2";
+  const variants = {
+    primary: disabled ? "bg-gray-400 text-gray-200 cursor-not-allowed" : "bg-blue-900 text-white hover:bg-blue-800",
+    secondary: "bg-white text-black border-2 border-gray-300 hover:bg-gray-100",
+    danger: "bg-red-600 text-white hover:bg-red-500"
+  };
+  
+  return (
+    <button onClick={onClick} className={`${baseClass} ${variants[variant]} ${className}`} disabled={disabled}>
+      {Icon && <Icon className="w-5 h-5" />}
+      {children}
+    </button>
+  );
+}
+
+// 株価アプリ風のメトリックカード
+function MetricCard({ label, value, unit = "", type = "neutral", rawValue = 0, subValue = null, subLabel = null }) {
+  const styles = {
+    neutral: "bg-gray-900/50",
+    revenue: "bg-gray-900/50",
+    cost: "bg-gray-900/50",
+    profit: "bg-gray-900/50",
+    rate: "bg-gray-900/50",
+    scrap: "bg-gray-900/50"
+  };
+
+  // 数字のみに色を付ける（ラベルはすべて同色）
+  const textStyles = {
+    neutral: "text-white",
+    revenue: "text-white",                                           // 売上: ホワイト
+    cost: "text-red-400/80",                                         // 原価: 薄い赤
+    profit: rawValue > 0 ? "text-blue-400/90" : "text-red-400/80",  // 粗利: プラス→控えめな青 / マイナス→薄い赤
+    rate: "text-white",                                              // 粗利率: ホワイト
+    scrap: "text-white"                                              // スクラップ: ホワイト
+  };
+
+  return (
+    <div className={`${styles[type]} rounded-md p-4 flex flex-col gap-2`}>
+      {/* ラベル: すべて同色（text-gray-500） */}
+      <p className="text-gray-500 text-[10px] font-medium uppercase tracking-wider">{label}</p>
+      <div>
+        {/* 数字: タイプごとに色分け、text-xlに縮小 */}
+        <p className={`text-xl font-semibold ${textStyles[type]} tabular-nums`} style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif' }}>
+          {unit}{value}
+        </p>
+        {subValue && (
+          <p className="text-gray-500 text-xs mt-1 tabular-nums">
+            {subLabel && <span className="mr-1">{subLabel}</span>}
+            {subValue}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+function SectionHeader({ title }) {
+  return (
+    <div className="mb-4 mt-8">
+      <h2 className="text-sm font-semibold text-white uppercase tracking-wider">{title}</h2>
+    </div>
+  );
+}
+
+// ステップインジケーター
+function StepIndicator({ currentStep, totalSteps }) {
+  return (
+    <div className="mb-6 bg-gray-100 p-4">
+      <div className="flex items-center justify-between mb-2">
+        {[...Array(totalSteps)].map((_, i) => (
+          <Fragment key={i}>
+            <div className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${
+              i + 1 <= currentStep ? 'bg-gray-900 text-white' : 'bg-gray-300 text-gray-600'
+            }`}>
+              {i + 1 < currentStep ? <Check className="w-6 h-6" /> : i + 1}
+            </div>
+            {i < totalSteps - 1 && (
+              <div className={`flex-1 h-1 mx-2 ${i + 1 < currentStep ? 'bg-gray-900' : 'bg-gray-300'}`} />
+            )}
+          </Fragment>
+        ))}
+      </div>
+      <div className="text-center text-sm font-medium text-gray-700">
+        ステップ {currentStep} / {totalSteps}
+      </div>
+    </div>
+  );
+}
+
+// ========== ユーティリティ関数 ==========
+const generateId = (prefix) => {
+  if (crypto?.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const formatCurrency = (num) => new Intl.NumberFormat('ja-JP').format(num);
+
+const getDayOfWeek = (dateStr) => {
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  const date = new Date(dateStr);
+  return days[date.getDay()];
+};
+
+// ========== サイドバーコンポーネント ==========
+function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen }) {
+  const navItems = [
+    { id: 'home', label: 'ホーム', icon: Home },
+    { id: 'input', label: '日報入力', icon: Plus },
+    { id: 'list', label: '日報一覧', icon: FileText },
+    { id: 'analysis', label: '原価分析', icon: BarChart3 },
+    { id: 'settings', label: '設定・編集', icon: Settings }
+  ];
+
+  const handleNavigate = (page) => {
+    onNavigate(page);
+    setSidebarOpen(false);
+  };
+
+  return (
+    <>
+      {/* デスクトップサイドバー */}
+      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-black text-white z-50 border-r border-gray-900">
+        <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+          <div className="flex items-center flex-shrink-0 px-4 mb-8">
+            <LOGIOLogo size="sm" />
+          </div>
+          
+          <nav className="flex-1 px-2 space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavigate(item.id)}
+                  className={`w-full group flex items-center px-3 py-3 text-sm font-medium transition-colors min-h-[48px] ${
+                    currentPage === item.id
+                      ? 'bg-white text-black'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* モバイルサイドバー */}
+      {sidebarOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-black bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+          
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-black">
+            <div className="absolute top-0 right-0 -mr-12 pt-2">
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none"
+              >
+                <X className="h-6 w-6 text-white" />
+              </button>
+            </div>
+            
+            <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
+              <div className="flex items-center flex-shrink-0 px-4 mb-8">
+                <LOGIOLogo size="sm" />
+              </div>
+              
+              <nav className="px-2 space-y-1">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavigate(item.id)}
+                      className={`w-full group flex items-center px-3 py-3 text-sm font-medium transition-colors min-h-[48px] ${
+                        currentPage === item.id
+                          ? 'bg-white text-black'
+                          : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      }`}
+                    >
+                      <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ========== 画面コンポーネント ==========
+
+// スプラッシュ画面（起動時のみ）
+function SplashScreen() {
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <LOGIOLogo size="xl" animated={true} />
+    </div>
+  );
+}
+
+// 現場選択専用画面
+function SiteSelectionPage({ sites, onSelectSite, onRequestAddSite }) {
+  console.log('🏗️ SiteSelectionPage: Rendering', { sitesCount: sites.length });
+  
+  // 現場が存在しない場合
+  if (sites.length === 0) {
+    console.log('📝 SiteSelectionPage: No sites - showing add site form');
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <div className="max-w-md w-full">
+          {/* ロゴ */}
+          <div className="flex flex-col items-center justify-center mb-10">
+            <LOGIOLogo size="lg" />
+          </div>
+          
+          {/* 現場未登録メッセージ */}
+          <div className="text-center mb-8">
+            <p className="text-gray-600 text-sm mb-6">現場が登録されていません</p>
+            
+            {/* 新規現場登録ボタン */}
+            <button
+              onClick={() => {
+                console.log('🔘 SiteSelectionPage: 新規現場登録ボタンがクリックされました');
+                onRequestAddSite();
+              }}
+              className="w-full px-6 py-4 bg-gray-900/30 border border-gray-700 rounded-md text-gray-400 hover:bg-gray-900/50 hover:border-gray-600 hover:text-gray-300 transition-colors flex items-center justify-center gap-3"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-base font-medium">新規現場を登録</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // 現場が存在する場合（従来のUI）
+  const siteOptions = sites.map(site => ({
+    value: site.name,
+    title: site.name,
+    subtitle: site.projectNumber ? `PROJECT NO.: ${site.projectNumber}` : 'PROJECT NO.: -'
+  }));
+  
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div className="max-w-md w-full">
+        {/* ロゴ */}
+        <div className="flex flex-col items-center justify-center mb-10">
+          <LOGIOLogo size="lg" />
+        </div>
+        
+        {/* 現場選択 */}
+        <DarkSelect
+          label="現場"
+          labelEn="PROJECT"
+          options={siteOptions}
+          value=""
+          onChange={onSelectSite}
+          placeholder="現場を選択してください"
+        />
+      </div>
+    </div>
+  );
+}
+
+function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo }) {
+  // DarkSelect用のoptions配列を作成
+  const siteOptions = sites.map(site => ({
+    value: site.name,
+    title: site.name,
+    subtitle: site.projectNumber ? `PROJECT NO.: ${site.projectNumber}` : 'PROJECT NO.: -'
+  }));
+  
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
+      {/* 現場選択 */}
+      <DarkSelect
+        label="現場"
+        labelEn="PROJECT"
+        options={siteOptions}
+        value={selectedSite}
+        onChange={onSelectSite}
+        placeholder="現場を選択してください"
+      />
+
+      {selectedSite && (
+        <>
+          {/* メインKPI: 2×2グリッド（株価アプリ風） */}
+          <div className="mb-3">
+            <div className="grid grid-cols-2 gap-3">
+              <MetricCard label="売上 / Revenue" value={formatCurrency(totals.totalRevenue)} unit="¥" type="revenue" rawValue={totals.totalRevenue} />
+              <MetricCard label="原価 / Cost" value={formatCurrency(totals.accumulatedCost)} unit="¥" type="cost" rawValue={totals.accumulatedCost} />
+              <MetricCard label="粗利 / Profit" value={formatCurrency(totals.grossProfit)} unit="¥" type="profit" rawValue={totals.grossProfit} />
+              <MetricCard 
+                label="粗利率 / Margin" 
+                value={`${totals.grossProfitRateContract}%`} 
+                unit="" 
+                type="rate" 
+                rawValue={parseFloat(totals.grossProfitRateContract)}
+                subValue={`(込み: ${totals.grossProfitRateWithScrap}%)`}
+              />
+            </div>
+          </div>
+
+          {/* スクラップ売上 - MetricCardで統一 */}
+          {totals.accumulatedScrap > 0 && (
+            <div className="mb-8">
+              <MetricCard 
+                label="スクラップ / Scrap" 
+                value={formatCurrency(totals.accumulatedScrap)} 
+                unit="¥" 
+                type="scrap" 
+                rawValue={totals.accumulatedScrap} 
+              />
+            </div>
+          )}
+
+          {/* タブ風ナビゲーション */}
+          <div className="mt-8 mb-6">
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => onNavigate('input')}
+                className="flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="font-medium">日報入力</span>
+              </button>
+              <button 
+                onClick={() => onNavigate('list')}
+                className="flex items-center justify-center gap-2 py-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="font-medium">日報一覧</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <button 
+              onClick={() => onNavigate('analysis')}
+              className="flex items-center justify-center gap-2 py-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span className="font-medium">原価分析</span>
+            </button>
+            <button 
+              onClick={() => onNavigate('settings')}
+              className="flex items-center justify-center gap-2 py-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="font-medium">設定</span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate }) {
+  const [showAddSite, setShowAddSite] = useState(false);
+  const [newSiteName, setNewSiteName] = useState('');
+
+  const handleAddSite = () => {
+    if (!newSiteName.trim()) return alert('現場名を入力してください');
+    onAddSite(newSiteName);
+    setNewSiteName('');
+    setShowAddSite(false);
+  };
+
+  const handleDeleteSite = (siteName) => {
+    if (!confirm(`現場「${siteName}」を削除しますか？\n関連するプロジェクト情報と日報もすべて削除されます。`)) return;
+    onDeleteSite(siteName);
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      {/* 戻るボタン */}
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+      
+      <SectionHeader title="現場管理 / Site Management" />
+      
+      {!showAddSite ? (
+        <button
+          onClick={() => setShowAddSite(true)}
+          className="w-full mb-6 px-4 py-3 bg-blue-900 text-white text-base font-bold hover:bg-blue-800 transition-colors flex items-center justify-center gap-2"
+        >
+          <Plus className="w-5 h-5" />
+          新規現場を追加
+        </button>
+      ) : (
+        <div className="mb-6 p-4 bg-gray-50 border-2 border-gray-300">
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            新規現場名 / New Site Name
+          </label>
+          <input
+            type="text"
+            value={newSiteName}
+            onChange={(e) => setNewSiteName(e.target.value)}
+            placeholder="例: 渋谷〇〇ビル解体工事"
+            className="w-full px-4 py-3 bg-white border-2 border-gray-300 text-black text-base font-medium focus:outline-none focus:border-blue-900 mb-3"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={handleAddSite}
+              className="px-4 py-3 bg-blue-900 text-white font-bold hover:bg-blue-800 transition-colors"
+            >
+              追加
+            </button>
+            <button
+              onClick={() => { setShowAddSite(false); setNewSiteName(''); }}
+              className="px-4 py-3 bg-white border-2 border-gray-300 text-black font-bold hover:bg-gray-100 transition-colors"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
+      {sites.length > 0 && (
+        <div className="mb-8">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            登録済み現場 / Registered Sites ({sites.length})
+          </p>
+          <div className="space-y-2">
+            {sites.map((site, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-300">
+                <span className="text-base font-medium">{site.name}</span>
+                <button
+                  onClick={() => handleDeleteSite(site.name)}
+                  className="px-3 py-1 bg-red-600 text-white text-sm font-bold hover:bg-red-500 transition-colors"
+                >
+                  削除
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedSite && (
+        <>
+          <SectionHeader title={`プロジェクト情報編集 / Project Settings (${selectedSite})`} />
+          
+          {/* PROJECT NO. - 表示のみ（編集不可） */}
+          <div className="mb-6">
+            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+              工事番号 / PROJECT NO.
+            </label>
+            <div className="px-4 py-4 bg-gray-900/30 border border-gray-800 rounded-md">
+              <div className="text-white text-base font-semibold tabular-nums">
+                {projectInfo.projectNumber || '未設定'}
+              </div>
+              <p className="text-xs text-gray-600 mt-1">※ 自動採番されます（編集不可）</p>
+            </div>
+          </div>
+          
+          <Select label="工事名" labelEn="Project Name" options={MASTER_DATA.projectNames} value={projectInfo.projectName} onChange={(val) => setProjectInfo({...projectInfo, projectName: val})} />
+          <TextInput label="発注者" labelEn="Client" value={projectInfo.client} onChange={(val) => setProjectInfo({...projectInfo, client: val})} placeholder="○○建設株式会社" />
+          <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation} onChange={(val) => setProjectInfo({...projectInfo, workLocation: val})} placeholder="東京都渋谷区..." />
+          <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson} onChange={(val) => setProjectInfo({...projectInfo, salesPerson: val})} />
+          <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager} onChange={(val) => setProjectInfo({...projectInfo, siteManager: val})} />
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">工期開始 / Start</label>
+              <input type="date" value={projectInfo.startDate} onChange={(e) => setProjectInfo({...projectInfo, startDate: e.target.value})} className="w-full px-4 py-3 bg-white border-2 border-gray-300 text-black text-base font-medium focus:outline-none focus:border-blue-900" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">工期終了 / End</label>
+              <input type="date" value={projectInfo.endDate} onChange={(e) => setProjectInfo({...projectInfo, endDate: e.target.value})} className="w-full px-4 py-3 bg-white border-2 border-gray-300 text-black text-base font-medium focus:outline-none focus:border-blue-900" />
+            </div>
+          </div>
+
+          <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount} onChange={(val) => setProjectInfo({...projectInfo, contractAmount: val})} placeholder="5000000" />
+          <TextInput label="追加金額（税抜）" labelEn="Additional Amount" type="number" value={projectInfo.additionalAmount} onChange={(val) => setProjectInfo({...projectInfo, additionalAmount: val})} placeholder="0" />
+          <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status} onChange={(val) => setProjectInfo({...projectInfo, status: val})} />
+
+          <Button onClick={onSave} icon={Save}>プロジェクト情報を保存</Button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ========== 3ステップ日報入力 ==========
+function ReportInputPage({ onSave, onNavigate }) {
+  const [currentStep, setCurrentStep] = useState(1);
+  
+  // Step1: 基本情報
+  const [report, setReport] = useState({
+    date: new Date().toISOString().split('T')[0],
+    weather: '',
+    workCategory: '',
+    recorder: ''
+  });
+
+  // Step2: 作業内容・人員・稼働
+  const [workDetails, setWorkDetails] = useState({
+    workContent: '',
+    workingMinutes: 0,  // 作業時間（分）
+    inHouseWorkers: 0,
+    inHouseWorkerNames: [],
+    vehicleType: '',    // 車種
+    vehicleNumber: '',  // 車番
+    heavyMachinery: []
+  });
+  
+  // 作業員名選択時に人数を自動反映
+  const handleWorkerNamesChange = (names) => {
+    setWorkDetails({
+      ...workDetails,
+      inHouseWorkerNames: names,
+      inHouseWorkers: names.length
+    });
+  };
+  
+  // 作業時間（時:分）を分に変換
+  const timeToMinutes = (timeStr) => {
+    if (!timeStr) return 0;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return (hours * 60) + minutes;
+  };
+  
+  // 分を時:分に変換
+  const minutesToTime = (minutes) => {
+    if (!minutes) return '00:00';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  };
+
+  // Step3: 原価・廃棄物・スクラップ
+  const [costLines, setCostLines] = useState([]);
+  const [currentCost, setCurrentCost] = useState({ costCategory: '', costItem: '', quantity: '', unitPrice: '' });
+  const [wasteLines, setWasteLines] = useState([]);
+  const [currentWaste, setCurrentWaste] = useState({ wasteType: '', disposalSite: '', manifestNumber: '', quantity: '', unitDisposalCost: '' });
+  const [customDisposalSite, setCustomDisposalSite] = useState('');
+  const [scrapLines, setScrapLines] = useState([]);
+  const [currentScrap, setCurrentScrap] = useState({ scrapType: '', buyer: '', quantity: '', unitPrice: '' });
+
+  // ステップ変更時に画面を最上部にスクロール
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
+  // 下書き保存・読み込み
+  useEffect(() => {
+    loadDraft();
+  }, []);
+
+  const loadDraft = async () => {
+    try {
+      const draft = await window.storage.get('logio-draft-report');
+      if (draft?.value) {
+        const data = JSON.parse(draft.value);
+        setReport(data.report || report);
+        setWorkDetails({
+          workContent: data.workDetails?.workContent || '',
+          workingMinutes: data.workDetails?.workingMinutes || 0,
+          inHouseWorkers: data.workDetails?.inHouseWorkers || 0,
+          inHouseWorkerNames: data.workDetails?.inHouseWorkerNames || [],
+          vehicleType: data.workDetails?.vehicleType || '',
+          vehicleNumber: data.workDetails?.vehicleNumber || '',
+          heavyMachinery: data.workDetails?.heavyMachinery || []
+        });
+        setCostLines(data.costLines || []);
+        setWasteLines(data.wasteLines || []);
+        setScrapLines(data.scrapLines || []);
+        setCurrentStep(data.currentStep || 1);
+      }
+    } catch (error) {
+      console.log('下書きなし');
+    }
+  };
+
+  const saveDraft = async () => {
+    try {
+      const draftData = {
+        report,
+        workDetails,
+        costLines,
+        wasteLines,
+        scrapLines,
+        currentStep
+      };
+      await window.storage.set('logio-draft-report', JSON.stringify(draftData));
+      alert('✅ 下書きを保存しました');
+    } catch (error) {
+      alert('❌ 下書き保存に失敗しました');
+    }
+  };
+
+  // キャンセル処理
+  const handleCancel = () => {
+    if (confirm('入力内容を破棄してホーム画面に戻りますか？')) {
+      onNavigate('home');
+    }
+  };
+
+  // Step1の必須チェック
+  const isStep1Valid = () => {
+    return report.date && report.weather && report.workCategory && report.recorder;
+  };
+
+  // 原価明細追加
+  const addCostLine = () => {
+    if (!currentCost.costCategory || !currentCost.costItem) return alert('原価区分と費目を選択してください');
+    
+    let quantity, unitPrice, amount;
+    
+    if (currentCost.costCategory === '外注費' && currentCost.costItem === '人工') {
+      // 外注費の人工のみ：数量×単価で自動計算
+      quantity = parseFloat(currentCost.quantity) || 0;
+      unitPrice = parseFloat(currentCost.unitPrice) || 0;
+      
+      if (quantity === 0) return alert('数量を入力してください');
+      if (unitPrice === 0) return alert('単価を入力してください');
+      
+      amount = quantity * unitPrice;
+    } else {
+      // その他：金額を直接入力
+      amount = parseFloat(currentCost.unitPrice) || 0;
+      if (amount === 0) return alert('金額を入力してください');
+      
+      quantity = 0;
+      unitPrice = 0;
+    }
+    
+    const newCost = {
+      id: Date.now(),
+      costCategory: currentCost.costCategory,
+      costItem: currentCost.costItem,
+      quantity: quantity,
+      unitPrice: unitPrice,
+      amount: amount
+    };
+    
+    setCostLines([...costLines, newCost]);
+    setCurrentCost({ costCategory: '', costItem: '', quantity: '', unitPrice: '' });
+  };
+
+  // 廃棄物明細追加
+  const addWasteLine = () => {
+    if (!currentWaste.wasteType) return alert('廃棄物種類を選択してください');
+    
+    const finalDisposalSite = currentWaste.disposalSite === 'その他（直接入力）' 
+      ? customDisposalSite 
+      : currentWaste.disposalSite;
+    
+    if (!finalDisposalSite) return alert('処分先を入力してください');
+    
+    const quantity = parseFloat(currentWaste.quantity) || 0;
+    const unitPrice = parseFloat(currentWaste.unitDisposalCost) || 0;
+    
+    if (quantity === 0) return alert('数量を入力してください');
+    if (unitPrice === 0) return alert('単価を入力してください');
+    
+    const amount = quantity * unitPrice;
+    
+    const newWaste = { 
+      id: Date.now(), 
+      wasteType: currentWaste.wasteType,
+      disposalSite: finalDisposalSite,
+      manifestNumber: currentWaste.manifestNumber,
+      quantity: quantity,
+      unitDisposalCost: unitPrice,
+      disposalCost: amount
+    };
+    setWasteLines([...wasteLines, newWaste]);
+    setCurrentWaste({ wasteType: '', disposalSite: '', manifestNumber: '', quantity: '', unitDisposalCost: '' });
+    setCustomDisposalSite('');
+  };
+
+  // スクラップ明細追加
+  const addScrapLine = () => {
+    if (!currentScrap.scrapType) return alert('スクラップ種類を選択してください');
+    if (!currentScrap.buyer) return alert('買取業者を選択してください');
+    
+    const quantity = parseFloat(currentScrap.quantity) || 0;
+    const unitPrice = parseFloat(currentScrap.unitPrice) || 0;
+    
+    if (quantity === 0) return alert('数量を入力してください');
+    if (unitPrice === 0) return alert('単価を入力してください');
+    
+    const amount = quantity * unitPrice;
+    
+    const newScrap = { 
+      id: Date.now(), 
+      scrapType: currentScrap.scrapType,
+      buyer: currentScrap.buyer,
+      quantity: quantity,
+      unitPrice: unitPrice,
+      salesAmount: amount
+    };
+    setScrapLines([...scrapLines, newScrap]);
+    setCurrentScrap({ scrapType: '', buyer: '', quantity: '', unitPrice: '' });
+  };
+
+  // 最終保存
+  const handleSave = async () => {
+    const finalReport = {
+      ...report,
+      ...workDetails,
+      costLines,
+      wasteLines,
+      scrapLines
+    };
+    
+    // 下書きを削除
+    try {
+      await window.storage.delete('logio-draft-report');
+    } catch (error) {
+      console.log('下書き削除失敗');
+    }
+    
+    onSave(finalReport);
+  };
+
+  const costTotal = costLines.reduce((sum, c) => sum + (c.amount || 0), 0);
+  const wasteTotal = wasteLines.reduce((sum, w) => sum + (w.disposalCost || 0), 0);
+  const scrapTotal = scrapLines.reduce((sum, s) => sum + (s.salesAmount || 0), 0);
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
+      <StepIndicator currentStep={currentStep} totalSteps={3} />
+
+      {/* Step1: 基本情報 */}
+      {currentStep === 1 && (
+        <div>
+          <SectionHeader title="基本情報 / Basic Info" />
+          
+          <div className="mb-4">
+            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+              作業日 / Date <span className="text-red-500">*</span>
+            </label>
+            <input 
+              type="date" 
+              value={report.date} 
+              onChange={(e) => setReport({...report, date: e.target.value})} 
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-md focus:outline-none focus:border-blue-500" 
+            />
+          </div>
+
+          <Select 
+            label="天候" 
+            labelEn="Weather" 
+            options={MASTER_DATA.weather} 
+            value={report.weather} 
+            onChange={(val) => setReport({...report, weather: val})} 
+            required 
+          />
+          
+          <Select 
+            label="作業区分" 
+            labelEn="Work Category" 
+            options={MASTER_DATA.workCategories} 
+            value={report.workCategory} 
+            onChange={(val) => setReport({...report, workCategory: val})} 
+            required 
+          />
+          
+          <Select 
+            label="記入者" 
+            labelEn="Recorder" 
+            options={MASTER_DATA.employees} 
+            value={report.recorder} 
+            onChange={(val) => setReport({...report, recorder: val})} 
+            required 
+          />
+
+          {/* 下部固定バー */}
+          <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 px-4 py-3 pb-safe md:left-64">
+            <div className="max-w-2xl mx-auto grid grid-cols-2 gap-3">
+              <button
+                onClick={handleCancel}
+                className="py-3 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
+              >
+                キャンセル
+              </button>
+              <button 
+                onClick={() => setCurrentStep(2)} 
+                disabled={!isStep1Valid()}
+                className="py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors font-medium text-sm"
+              >
+                次へ
+              </button>
+            </div>
+          </div>
+          {/* 下部バー分のスペース確保 */}
+          <div className="h-20"></div>
+        </div>
+      )}
+
+      {/* Step2: 作業内容・人員・稼働 */}
+      {currentStep === 2 && (
+        <div>
+          <SectionHeader title="作業内容・人員・稼働 / Work Details" />
+          
+          <TextArea 
+            label="作業内容" 
+            labelEn="Work Details" 
+            value={workDetails.workContent} 
+            onChange={(val) => setWorkDetails({...workDetails, workContent: val})} 
+            placeholder="本日の作業内容を入力..."
+            rows={4}
+          />
+          
+          {/* 作業時間（10分単位セレクト） */}
+          <div className="mb-6">
+            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+              作業時間 / Working Hours
+            </label>
+            <select
+              value={minutesToTime(workDetails.workingMinutes)}
+              onChange={(e) => setWorkDetails({...workDetails, workingMinutes: timeToMinutes(e.target.value)})}
+              className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 text-white text-base font-medium rounded-md focus:outline-none focus:border-blue-500"
+            >
+              <option value="">選択してください</option>
+              {MASTER_DATA.workingHoursOptions.map((time) => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* 自社作業員名選択 */}
+          <MultiSelectDropdown 
+            label="自社作業員" 
+            labelEn="In-House Workers" 
+            options={MASTER_DATA.inHouseWorkers} 
+            selected={workDetails.inHouseWorkerNames} 
+            onChange={handleWorkerNamesChange} 
+          />
+          
+          {/* 車種選択 */}
+          <Select 
+            label="車種" 
+            labelEn="Vehicle Type" 
+            options={MASTER_DATA.vehicles} 
+            value={workDetails.vehicleType} 
+            onChange={(val) => setWorkDetails({...workDetails, vehicleType: val, vehicleNumber: ''})} 
+            placeholder="選択してください"
+          />
+          
+          {/* 車番選択（車種選択後のみ表示） */}
+          {workDetails.vehicleType && (
+            <Select 
+              label="車番" 
+              labelEn="Vehicle No." 
+              options={MASTER_DATA.vehicleNumbers} 
+              value={workDetails.vehicleNumber} 
+              onChange={(val) => setWorkDetails({...workDetails, vehicleNumber: val})} 
+              placeholder="選択してください"
+            />
+          )}
+          
+          {/* 使用重機 */}
+          <MultiSelectDropdown 
+            label="使用重機" 
+            labelEn="Heavy Machinery" 
+            options={MASTER_DATA.heavyMachinery} 
+            selected={workDetails.heavyMachinery} 
+            onChange={(val) => setWorkDetails({...workDetails, heavyMachinery: val})} 
+          />
+
+          {/* 下部固定バー */}
+          <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 px-4 py-3 pb-safe md:left-64">
+            <div className="max-w-2xl mx-auto">
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                <button
+                  onClick={() => setCurrentStep(1)}
+                  className="py-3 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
+                >
+                  ← 戻る
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="py-3 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={() => setCurrentStep(3)}
+                  className="py-3 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                >
+                  次へ →
+                </button>
+              </div>
+              <button
+                onClick={saveDraft}
+                className="w-full py-2 px-4 text-gray-400 hover:text-gray-300 text-xs font-medium transition-colors"
+              >
+                下書き保存
+              </button>
+            </div>
+          </div>
+          {/* 下部バー分のスペース確保 */}
+          <div className="h-28"></div>
+        </div>
+      )}
+
+      {/* Step3: 原価・廃棄物・スクラップ */}
+      {currentStep === 3 && (
+        <div>
+          <SectionHeader title="原価・廃棄物・スクラップ / Cost Details" />
+          
+          <p className="text-xs text-gray-400 mb-6">※ 原価・廃棄物・スクラップがない場合はそのまま保存できます</p>
+
+          {/* 原価明細 */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">原価明細 / Cost Lines</h3>
+            
+            <div className="bg-gray-900/50 rounded-md p-4 mb-4">
+              <Select 
+                label="原価区分" 
+                labelEn="Category" 
+                options={Object.keys(MASTER_DATA.costCategories)} 
+                value={currentCost.costCategory} 
+                onChange={(val) => setCurrentCost({...currentCost, costCategory: val, costItem: '', quantity: '', unitPrice: ''})} 
+              />
+              {currentCost.costCategory && (
+                <Select 
+                  label="費目" 
+                  labelEn="Item" 
+                  options={MASTER_DATA.costCategories[currentCost.costCategory]} 
+                  value={currentCost.costItem} 
+                  onChange={(val) => setCurrentCost({...currentCost, costItem: val, quantity: '', unitPrice: ''})} 
+                />
+              )}
+              
+              {currentCost.costItem && (
+                <>
+                  {/* 外注費の「人工」のみ数量×単価で自動計算 */}
+                  {currentCost.costCategory === '外注費' && currentCost.costItem === '人工' ? (
+                    <>
+                      <NumericInput
+                        label="数量"
+                        labelEn="Quantity"
+                        value={currentCost.quantity}
+                        onChange={(val) => setCurrentCost({...currentCost, quantity: val})}
+                        unit="人工"
+                      />
+                      
+                      <AmountInput
+                        label="単価"
+                        labelEn="Unit Price"
+                        value={currentCost.unitPrice}
+                        onChange={(val) => setCurrentCost({...currentCost, unitPrice: val})}
+                      />
+                      
+                      <div className="bg-gray-800/50 rounded-md p-4 mb-4">
+                        <p className="text-gray-400 text-xs mb-1">金額 / Amount（自動計算）</p>
+                        <p className="text-white text-3xl font-semibold tabular-nums" style={amountStrokeStyle}>
+                          ¥{formatCurrency((parseFloat(currentCost.quantity) || 0) * (parseFloat(currentCost.unitPrice) || 0))}
+                        </p>
+                        {currentCost.quantity && currentCost.unitPrice && (
+                          <p className="text-gray-500 text-xs mt-1">
+                            {currentCost.quantity}人工 × ¥{formatCurrency(parseFloat(currentCost.unitPrice))}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    /* その他の原価：金額のみ入力 */
+                    <AmountInput
+                      label="金額"
+                      labelEn="Amount"
+                      value={currentCost.unitPrice}
+                      onChange={(val) => setCurrentCost({...currentCost, unitPrice: val})}
+                    />
+                  )}
+                </>
+              )}
+              
+              {currentCost.costItem && (
+                <button
+                  onClick={addCostLine}
+                  className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                >
+                  ＋ 原価を追加
+                </button>
+              )}
+            </div>
+            
+            {/* 登録済み原価明細（行リスト表示） */}
+            {costLines.length > 0 && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-medium text-gray-400">登録済み: {costLines.length}件</p>
+                  <p className="text-sm font-semibold text-white tabular-nums" style={amountStrokeStyle}>合計: ¥{formatCurrency(costTotal)}</p>
+                </div>
+                <div className="space-y-1">
+                  {costLines.map(cost => (
+                    <div key={cost.id} className="flex items-center gap-3 bg-gray-900/50 rounded-md p-3 hover:bg-gray-900/70 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{cost.costCategory} - {cost.costItem}</p>
+                        {cost.costCategory === '外注費' && cost.costItem === '人工' && cost.quantity > 0 && (
+                          <p className="text-gray-500 text-xs">
+                            {cost.quantity}人工 × ¥{formatCurrency(cost.unitPrice)}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-white text-lg font-semibold tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(cost.amount)}</p>
+                      <button
+                        onClick={() => setCostLines(costLines.filter(c => c.id !== cost.id))}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 廃棄物明細 */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">廃棄物明細 / Waste Lines</h3>
+            
+            <div className="bg-gray-900/50 rounded-md p-4 mb-4">
+              <Select 
+                label="廃棄物種類" 
+                labelEn="Type" 
+                options={MASTER_DATA.wasteTypes} 
+                value={currentWaste.wasteType} 
+                onChange={(val) => setCurrentWaste({...currentWaste, wasteType: val})} 
+              />
+              <Select 
+                label="処分先" 
+                labelEn="Disposal Site" 
+                options={MASTER_DATA.disposalSites} 
+                value={currentWaste.disposalSite} 
+                onChange={(val) => setCurrentWaste({...currentWaste, disposalSite: val})} 
+              />
+
+              {currentWaste.disposalSite === 'その他（直接入力）' && (
+                <TextInput
+                  label="処分先名を入力"
+                  labelEn="Custom Site"
+                  value={customDisposalSite}
+                  onChange={setCustomDisposalSite}
+                  placeholder="処分先名"
+                />
+              )}
+
+              <TextInput 
+                label="マニフェスト伝票番号（推奨）" 
+                labelEn="Manifest No." 
+                value={currentWaste.manifestNumber} 
+                onChange={(val) => setCurrentWaste({...currentWaste, manifestNumber: val})} 
+                placeholder="11-0012345" 
+              />
+              
+              <NumericInput
+                label="数量"
+                labelEn="Quantity"
+                value={currentWaste.quantity}
+                onChange={(val) => setCurrentWaste({...currentWaste, quantity: val})}
+                unit="㎥"
+              />
+              
+              <AmountInput
+                label="単価"
+                labelEn="Unit Price"
+                value={currentWaste.unitDisposalCost}
+                onChange={(val) => setCurrentWaste({...currentWaste, unitDisposalCost: val})}
+              />
+              
+              <div className="bg-gray-800/50 rounded-md p-4 mb-4">
+                <p className="text-gray-400 text-xs mb-1">処分費 / Disposal Cost（自動計算）</p>
+                <p className="text-white text-3xl font-semibold tabular-nums" style={amountStrokeStyle}>
+                  ¥{formatCurrency((parseFloat(currentWaste.quantity) || 0) * (parseFloat(currentWaste.unitDisposalCost) || 0))}
+                </p>
+                {currentWaste.quantity && currentWaste.unitDisposalCost && (
+                  <p className="text-gray-500 text-xs mt-1">
+                    {currentWaste.quantity}㎥ × ¥{formatCurrency(parseFloat(currentWaste.unitDisposalCost))}
+                  </p>
+                )}
+              </div>
+              
+              <button
+                onClick={addWasteLine}
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
+                ＋ 廃棄物を追加
+              </button>
+            </div>
+            
+            {/* 登録済み廃棄物明細（行リスト表示） */}
+            {wasteLines.length > 0 && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-medium text-gray-400">登録済み: {wasteLines.length}件</p>
+                  <p className="text-sm font-semibold text-white tabular-nums" style={amountStrokeStyle}>合計: ¥{formatCurrency(wasteTotal)}</p>
+                </div>
+                <div className="space-y-1">
+                  {wasteLines.map(waste => (
+                    <div key={waste.id} className="flex items-center gap-3 bg-gray-900/50 rounded-md p-3 hover:bg-gray-900/70 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{waste.wasteType} - {waste.disposalSite}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          {waste.quantity > 0 && waste.unitDisposalCost > 0 && (
+                            <span>{waste.quantity}㎥ × ¥{formatCurrency(waste.unitDisposalCost)}</span>
+                          )}
+                          {waste.manifestNumber && <span className="text-gray-600">• 伝票: {waste.manifestNumber}</span>}
+                        </div>
+                      </div>
+                      <p className="text-white text-lg font-semibold tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(waste.disposalCost)}</p>
+                      <button
+                        onClick={() => setWasteLines(wasteLines.filter(w => w.id !== waste.id))}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* スクラップ明細 */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">スクラップ明細 / Scrap Lines</h3>
+            
+            <div className="bg-gray-900/50 rounded-md p-4 mb-4">
+              <Select 
+                label="スクラップ種類" 
+                labelEn="Type" 
+                options={MASTER_DATA.scrapTypes} 
+                value={currentScrap.scrapType} 
+                onChange={(val) => setCurrentScrap({...currentScrap, scrapType: val})} 
+              />
+              <Select 
+                label="買取業者" 
+                labelEn="Buyer" 
+                options={MASTER_DATA.buyers} 
+                value={currentScrap.buyer} 
+                onChange={(val) => setCurrentScrap({...currentScrap, buyer: val})} 
+              />
+              
+              <NumericInput
+                label="数量"
+                labelEn="Quantity"
+                value={currentScrap.quantity}
+                onChange={(val) => setCurrentScrap({...currentScrap, quantity: val})}
+                unit="kg"
+              />
+              
+              <AmountInput
+                label="単価"
+                labelEn="Unit Price"
+                value={currentScrap.unitPrice}
+                onChange={(val) => setCurrentScrap({...currentScrap, unitPrice: val})}
+              />
+              
+              <div className="bg-gray-800/50 rounded-md p-4 mb-4">
+                <p className="text-gray-400 text-xs mb-1">売却額 / Sales Amount（自動計算）</p>
+                <p className="text-white text-3xl font-semibold tabular-nums" style={amountStrokeStyle}>
+                  ¥{formatCurrency((parseFloat(currentScrap.quantity) || 0) * (parseFloat(currentScrap.unitPrice) || 0))}
+                </p>
+                {currentScrap.quantity && currentScrap.unitPrice && (
+                  <p className="text-gray-500 text-xs mt-1">
+                    {currentScrap.quantity}kg × ¥{formatCurrency(parseFloat(currentScrap.unitPrice))}
+                  </p>
+                )}
+              </div>
+              
+              <button
+                onClick={addScrapLine}
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
+                ＋ スクラップを追加
+              </button>
+            </div>
+            
+            {/* 登録済みスクラップ明細（行リスト表示） */}
+            {scrapLines.length > 0 && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-medium text-gray-400">登録済み: {scrapLines.length}件</p>
+                  <p className="text-sm font-semibold text-white tabular-nums" style={amountStrokeStyle}>合計: ¥{formatCurrency(scrapTotal)}</p>
+                </div>
+                <div className="space-y-1">
+                  {scrapLines.map(scrap => (
+                    <div key={scrap.id} className="flex items-center gap-3 bg-gray-900/50 rounded-md p-3 hover:bg-gray-900/70 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{scrap.scrapType} - {scrap.buyer}</p>
+                        {scrap.quantity > 0 && scrap.unitPrice > 0 && (
+                          <p className="text-gray-500 text-xs">
+                            {scrap.quantity}kg × ¥{formatCurrency(scrap.unitPrice)}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-white text-lg font-semibold tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(scrap.salesAmount)}</p>
+                      <button
+                        onClick={() => setScrapLines(scrapLines.filter(s => s.id !== scrap.id))}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 下部固定バー */}
+          <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 px-4 py-3 pb-safe md:left-64">
+            <div className="max-w-2xl mx-auto">
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                <button
+                  onClick={() => setCurrentStep(2)}
+                  className="py-3 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
+                >
+                  ← 戻る
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="py-3 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="py-3 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                >
+                  保存
+                </button>
+              </div>
+              <button
+                onClick={saveDraft}
+                className="w-full py-2 px-4 text-gray-400 hover:text-gray-300 text-xs font-medium transition-colors"
+              >
+                下書き保存
+              </button>
+            </div>
+          </div>
+          
+          {/* 下部バー分のスペース確保 */}
+          <div className="h-28"></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReportListPage({ reports, onDelete, onNavigate }) {
+  const [filterMonth, setFilterMonth] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
+  const filteredReports = reports.filter(r => {
+    if (filterMonth && !r.date.startsWith(filterMonth)) return false;
+    if (filterCategory && r.workCategory !== filterCategory) return false;
+    return true;
+  });
+
+  const months = [...new Set(reports.map(r => r.date.substring(0, 7)))].sort().reverse();
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      {/* 戻るボタン */}
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <Select label="月" labelEn="Month" options={months} value={filterMonth} onChange={setFilterMonth} placeholder="全期間" />
+        <Select label="作業区分" labelEn="Category" options={MASTER_DATA.workCategories} value={filterCategory} onChange={setFilterCategory} placeholder="全作業" />
+      </div>
+
+      <p className="text-sm text-gray-600 mb-4">全 {filteredReports.length}件</p>
+
+      {filteredReports.sort((a, b) => new Date(b.date) - new Date(a.date)).map(report => (
+        <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} />
+      ))}
+
+      {filteredReports.length === 0 && <p className="text-center text-gray-400 py-12">該当する日報がありません</p>}
+    </div>
+  );
+}
+
+function ReportAccordion({ report, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // 分を時:分に変換
+  const minutesToTimeDisplay = (minutes) => {
+    if (!minutes) return null;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}時間${m > 0 ? m + '分' : ''}`;
+  };
+
+  return (
+    <div className="border-b-2 border-gray-200">
+      <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+        <div className="text-left flex-1">
+          <p className="font-bold text-base">{report.date} ({getDayOfWeek(report.date)}) {report.weather}</p>
+          <p className="text-sm text-gray-600">
+            {report.workCategory}
+            {report.workingMinutes > 0 && <span> / {minutesToTimeDisplay(report.workingMinutes)}</span>}
+            {report.inHouseWorkers > 0 && <span> / 作業員{report.inHouseWorkers}名</span>}
+          </p>
+        </div>
+        <span className="text-2xl text-gray-400 ml-4">{isOpen ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}</span>
+      </button>
+
+      {isOpen && (
+        <div className="px-4 py-6 bg-gray-50 border-t border-gray-200">
+          {/* 作業時間・作業員 */}
+          {(report.workingMinutes > 0 || report.inHouseWorkerNames?.length > 0) && (
+            <div className="mb-4">
+              {report.workingMinutes > 0 && (
+                <div className="mb-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">作業時間:</p>
+                  <p className="text-sm">{minutesToTimeDisplay(report.workingMinutes)}</p>
+                </div>
+              )}
+              {report.inHouseWorkerNames && report.inHouseWorkerNames.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">自社作業員 ({report.inHouseWorkerNames.length}名):</p>
+                  <p className="text-sm">{report.inHouseWorkerNames.join('、')}</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">作業内容:</p>
+            <p className="text-sm">{report.workContent || 'なし'}</p>
+          </div>
+
+          {report.costLines && report.costLines.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">原価: {report.costLines.length}件 / ¥{formatCurrency(report.costLines.reduce((s, c) => s + c.amount, 0))}</p>
+              {report.costLines.map((cost, idx) => (
+                <p key={idx} className="text-sm ml-2">・{cost.costCategory} - {cost.costItem} ¥{formatCurrency(cost.amount)}</p>
+              ))}
+            </div>
+          )}
+
+          {report.wasteLines && report.wasteLines.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">廃棄物: {report.wasteLines.length}件 / ¥{formatCurrency(report.wasteLines.reduce((s, w) => s + w.disposalCost, 0))}</p>
+              {report.wasteLines.map((waste, idx) => (
+                <div key={idx} className="text-sm ml-2">
+                  <p>・{waste.wasteType} {waste.quantity}㎥ - {waste.disposalSite}</p>
+                  {waste.manifestNumber && <p className="text-xs text-gray-500 ml-4">伝票: {waste.manifestNumber}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {report.scrapLines && report.scrapLines.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">スクラップ: {report.scrapLines.length}件 / ¥{formatCurrency(report.scrapLines.reduce((s, sc) => s + sc.salesAmount, 0))}</p>
+              {report.scrapLines.map((scrap, idx) => (
+                <p key={idx} className="text-sm ml-2">・{scrap.scrapType} {scrap.quantity}kg - {scrap.buyer}</p>
+              ))}
+            </div>
+          )}
+
+          <div className="text-sm text-gray-600">
+            {report.vehicleType && <p>使用車両: {report.vehicleType}{report.vehicleNumber && ` (${report.vehicleNumber})`}</p>}
+            <p>使用重機: {report.heavyMachinery?.join(', ') || 'なし'}</p>
+            <p>記入者: {report.recorder}</p>
+          </div>
+
+          <div className="mt-4">
+            <Button variant="danger" onClick={onDelete} icon={Trash2}>削除</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
+  // 労務費を除外し、既存の労務費データは経費に集約
+  const costByCategory = { '材料費': 0, '外注費': 0, '経費': 0 };
+
+  reports.forEach(r => {
+    r.costLines?.forEach(c => {
+      // 労務費は経費として集計
+      const category = c.costCategory === '労務費' ? '経費' : c.costCategory;
+      if (costByCategory[category] !== undefined) {
+        costByCategory[category] = (costByCategory[category] || 0) + c.amount;
+      } else {
+        // 未定義カテゴリは経費扱い
+        costByCategory['経費'] += c.amount;
+      }
+    });
+    r.wasteLines?.forEach(w => {
+      costByCategory['経費'] += w.disposalCost;
+    });
+  });
+
+  const pieData = Object.keys(costByCategory).map(key => ({
+    name: key,
+    value: costByCategory[key]
+  })).filter(d => d.value > 0);
+
+  const COLORS = ['#1E3A8A', '#3B82F6', '#60A5FA'];
+
+  const monthlyData = {};
+  reports.forEach(r => {
+    const month = r.date.substring(0, 7);
+    if (!monthlyData[month]) monthlyData[month] = 0;
+    r.costLines?.forEach(c => monthlyData[month] += c.amount);
+    r.wasteLines?.forEach(w => monthlyData[month] += w.disposalCost);
+  });
+
+  const barData = Object.keys(monthlyData).sort().map(month => ({
+    month: month.substring(5),
+    cost: Math.round(monthlyData[month] / 10000)
+  }));
+
+  // 原価率計算
+  const costRatio = totals.totalRevenue > 0 ? ((totals.accumulatedCost / totals.totalRevenue) * 100).toFixed(1) : '0.0';
+  const costRatioNum = parseFloat(costRatio);
+  let costRatioStatus = '余裕あり';
+  let costRatioColor = 'text-blue-400';
+  if (costRatioNum >= 85) {
+    costRatioStatus = '要警戒';
+    costRatioColor = 'text-red-400';
+  } else if (costRatioNum >= 70) {
+    costRatioStatus = '注意';
+    costRatioColor = 'text-gray-400';
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
+      {/* 戻るボタン */}
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+      
+      {/* 現場情報カード */}
+      {projectInfo?.projectName && (
+        <div className="mb-6 px-4 py-4 bg-gray-900/50 border border-gray-800 rounded-md">
+          <div className="text-white text-lg font-bold leading-relaxed mb-2">
+            {projectInfo.projectName}
+          </div>
+          {projectInfo.projectNumber && (
+            <div className="text-gray-500 text-xs font-medium tracking-wide">
+              PROJECT NO.: {projectInfo.projectNumber}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* メインKPIサマリー */}
+      <div className="mb-6">
+        <SectionHeader title="財務サマリー / Financial Summary" />
+        <div className="bg-gray-900/50 rounded-md p-5 space-y-3">
+          <div className="flex justify-between items-center py-2 border-b border-gray-800">
+            <span className="text-xs font-medium text-gray-400">売上 / Revenue</span>
+            <span className="text-lg font-semibold text-white tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(totals.totalRevenue)}</span>
+          </div>
+          <div className="flex justify-between items-center py-2 border-b border-gray-800">
+            <span className="text-xs font-medium text-gray-400">原価 / Cost</span>
+            <span className="text-lg font-semibold text-red-400/50 tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(totals.accumulatedCost)}</span>
+          </div>
+          {totals.accumulatedScrap > 0 && (
+            <div className="flex justify-between items-center py-2 border-b border-gray-800">
+              <span className="text-xs font-medium text-gray-400">スクラップ / Scrap</span>
+              <span className="text-lg font-semibold text-white tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(totals.accumulatedScrap)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center py-2 border-b-2 border-gray-700">
+            <span className="text-xs font-medium text-gray-400">粗利 / Profit</span>
+            <span className={`text-lg font-semibold tabular-nums ${totals.grossProfit >= 0 ? 'text-blue-400/60' : 'text-red-400/50'}`} style={amountStrokeStyle}>
+              ¥{formatCurrency(totals.grossProfit)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center py-2">
+            <span className="text-xs font-medium text-gray-400">粗利率 / Margin</span>
+            <div className="text-right">
+              <span className="text-lg font-semibold text-white tabular-nums" style={amountStrokeStyle}>{totals.grossProfitRateContract}%</span>
+              <span className="text-xs text-gray-500 ml-2">(込み: {totals.grossProfitRateWithScrap}%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 原価率指標 */}
+      <div className="mb-6 bg-gray-900/50 rounded-md p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1">原価率 / Cost Ratio</p>
+            <p className={`text-4xl font-semibold ${costRatioColor} tabular-nums`} style={amountStrokeStyle}>{costRatio}%</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-gray-500 mb-2">目安</p>
+            <p className={`text-lg font-semibold ${costRatioColor}`}>{costRatioStatus}</p>
+          </div>
+        </div>
+      </div>
+
+      <SectionHeader title="原価構成比 / Cost Structure" />
+      
+      {pieData.length > 0 ? (
+        <div className="bg-gray-900/50 rounded-md p-5 mb-6">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `¥${formatCurrency(value)}`} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div className="mt-4 space-y-2 pt-4 border-t border-gray-800">
+            {pieData.map((item, idx) => {
+              const total = pieData.reduce((s, d) => s + d.value, 0);
+              const percent = ((item.value / total) * 100).toFixed(1);
+              return (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-400">{item.name}</span>
+                  <div className="text-right">
+                    <span className="text-sm font-semibold text-white tabular-nums">¥{formatCurrency(item.value)}</span>
+                    <span className="text-xs text-gray-500 ml-2">({percent}%)</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-900/50 rounded-md p-8">
+          <p className="text-center text-gray-500 text-sm">データがありません</p>
+        </div>
+      )}
+
+      <div className="mt-8">
+        <SectionHeader title="月別原価推移 / Monthly Trend" />
+        
+        {barData.length > 0 ? (
+          <div className="bg-gray-900/50 rounded-md p-5">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="month" stroke="#9CA3AF" />
+                <YAxis label={{ value: '(万円)', angle: -90, position: 'insideLeft' }} stroke="#9CA3AF" />
+                <Tooltip formatter={(value) => `${value}万円`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                <Bar dataKey="cost" fill="#3B82F6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="bg-gray-900/50 rounded-md p-8">
+            <p className="text-center text-gray-500 text-sm">データがありません</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ========== メインアプリ ==========
+export default function LOGIOApp() {
+  console.log('🚀 LOGIOApp: Component starting...');
+  
+  const [showSplash, setShowSplash] = useState(false); // スプラッシュを無効化
+  const [currentPage, setCurrentPage] = useState('home');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordSuccessCallback, setPasswordSuccessCallback] = useState(null);
+  
+  const [sites, setSites] = useState([]);
+  const [selectedSite, setSelectedSite] = useState('');
+  
+  console.log('📊 LOGIOApp: State initialized', { 
+    showSplash, 
+    currentPage, 
+    sitesCount: sites.length, 
+    selectedSite 
+  });
+  const [projectInfo, setProjectInfo] = useState({
+    projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
+    salesPerson: '', siteManager: '', startDate: '', endDate: '',
+    contractAmount: '', additionalAmount: '', status: '進行中'
+  });
+  const [reports, setReports] = useState([]);
+
+  // スプラッシュ画面タイマー（シネマティックアニメーション: 3.7s + 余白: 0.3s）
+  useEffect(() => {
+    // showSplash=false固定なので、無駄なsetStateを回避
+    if (!showSplash) return;
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [showSplash]);
+
+  useEffect(() => { loadSites(); }, []);
+
+  const loadSites = async () => {
+    try {
+      const stored = await window.storage.get('logio-sites');
+      if (stored?.value) {
+        const loadedSites = JSON.parse(stored.value);
+        
+        // 各サイトのprojectNumberを取得
+        const sitesWithNumbers = await Promise.all(
+          loadedSites.map(async (site) => {
+            try {
+              const projectStored = await window.storage.get(`logio-project-${site.name}`);
+              if (projectStored?.value) {
+                const projectData = JSON.parse(projectStored.value);
+                return { ...site, projectNumber: projectData.projectNumber || '' };
+              }
+            } catch (error) {
+              return { ...site, projectNumber: '' };
+            }
+            return { ...site, projectNumber: '' };
+          })
+        );
+        
+        setSites(sitesWithNumbers);
+      }
+    } catch (error) { console.log('初回起動'); }
+  };
+
+  // PROJECT NO. 自動採番関数
+  const generateProjectNumber = async () => {
+    const currentYear = new Date().getFullYear();
+    const yearPrefix = currentYear.toString();
+    
+    // 全サイトのprojectNumberを収集
+    const allProjectNumbers = [];
+    for (const site of sites) {
+      try {
+        const stored = await window.storage.get(`logio-project-${site.name}`);
+        if (stored?.value) {
+          const projectData = JSON.parse(stored.value);
+          if (projectData.projectNumber) {
+            allProjectNumbers.push(projectData.projectNumber);
+          }
+        }
+      } catch (error) {
+        console.log(`Failed to load project info for ${site.name}`);
+      }
+    }
+    
+    // 当年のprojectNumberのみ抽出
+    const currentYearNumbers = allProjectNumbers
+      .filter(num => num.startsWith(yearPrefix + '-'))
+      .map(num => {
+        const parts = num.split('-');
+        return parts.length === 2 ? parseInt(parts[1], 10) : 0;
+      })
+      .filter(num => !isNaN(num));
+    
+    // 最大連番を取得
+    const maxNumber = currentYearNumbers.length > 0 ? Math.max(...currentYearNumbers) : 0;
+    
+    // 新規番号を採番（3桁ゼロ埋め）
+    const newNumber = (maxNumber + 1).toString().padStart(3, '0');
+    
+    return `${yearPrefix}-${newNumber}`;
+  };
+
+  const handleAddSite = async (siteName) => {
+    try {
+      // PROJECT NO.を自動採番
+      const projectNumber = await generateProjectNumber();
+      
+      // 新規サイト作成（projectNumberを含む）
+      const newSite = {
+        name: siteName,
+        createdAt: new Date().toISOString(),
+        status: '進行中',
+        projectNumber: projectNumber
+      };
+      const updatedSites = [...sites, newSite];
+      setSites(updatedSites);
+      await window.storage.set('logio-sites', JSON.stringify(updatedSites));
+      
+      // projectInfoを初期化して保存
+      const initialProjectInfo = {
+        projectId: '',
+        projectNumber: projectNumber,
+        projectName: siteName,
+        client: '',
+        workLocation: '',
+        salesPerson: '',
+        siteManager: '',
+        startDate: '',
+        endDate: '',
+        contractAmount: '',
+        additionalAmount: '',
+        status: '進行中'
+      };
+      
+      await window.storage.set(`logio-project-${siteName}`, JSON.stringify(initialProjectInfo));
+      
+      setSelectedSite(siteName);
+      setProjectInfo(initialProjectInfo);
+      
+      alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
+    } catch (error) {
+      alert('❌ 現場の追加に失敗しました');
+      console.error(error);
+    }
+  };
+
+  const handleDeleteSite = async (siteName) => {
+    try {
+      const updatedSites = sites.filter(s => s.name !== siteName);
+      setSites(updatedSites);
+      await window.storage.set('logio-sites', JSON.stringify(updatedSites));
+      await window.storage.delete(`logio-project-${siteName}`);
+      await window.storage.delete(`logio-reports-${siteName}`);
+      
+      // 削除された現場が選択中の場合、現場選択画面に戻る
+      if (selectedSite === siteName) {
+        setSelectedSite('');
+      }
+      
+      alert(`✅ 現場「${siteName}」を削除しました`);
+    } catch (error) {
+      alert('❌ 現場の削除に失敗しました');
+    }
+  };
+
+  const handleSelectSite = async (siteName) => {
+    setSelectedSite(siteName);
+    await loadProjectInfo(siteName);
+    await loadReports(siteName);
+  };
+
+  const loadProjectInfo = async (siteName) => {
+    try {
+      const stored = await window.storage.get(`logio-project-${siteName}`);
+      if (stored?.value) setProjectInfo(JSON.parse(stored.value));
+      else setProjectInfo({
+        projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
+        salesPerson: '', siteManager: '', startDate: '', endDate: '',
+        contractAmount: '', additionalAmount: '', status: '進行中'
+      });
+    } catch (error) { console.log('プロジェクト情報なし'); }
+  };
+
+  const loadReports = async (siteName) => {
+    try {
+      const stored = await window.storage.get(`logio-reports-${siteName}`);
+      setReports(stored?.value ? JSON.parse(stored.value) : []);
+    } catch (error) { setReports([]); }
+  };
+
+  const handleSaveProject = async () => {
+    if (!selectedSite) return alert('現場を選択してください');
+    try {
+      const updatedInfo = { ...projectInfo, projectId: projectInfo.projectId || generateId('P'), updatedAt: new Date().toISOString() };
+      await window.storage.set(`logio-project-${selectedSite}`, JSON.stringify(updatedInfo));
+      setProjectInfo(updatedInfo);
+      alert('✅ プロジェクト情報を保存しました');
+      setCurrentPage('home');
+    } catch (error) { alert('❌ 保存に失敗しました'); }
+  };
+
+  const handleSaveReport = async (reportData) => {
+    if (!selectedSite) return alert('現場を選択してください');
+    try {
+      const newReport = {
+        id: Date.now(),
+        reportId: generateId('R'),
+        projectId: projectInfo.projectId || generateId('P'),
+        ...reportData,
+        createdAt: new Date().toISOString()
+      };
+      
+      const updatedReports = [...reports, newReport];
+      setReports(updatedReports);
+      await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
+      
+      alert('✅ 日報を保存しました');
+      setCurrentPage('home');
+    } catch (error) { alert('❌ 保存に失敗しました'); }
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    if (!confirm('この日報を削除しますか？')) return;
+    try {
+      const updatedReports = reports.filter(r => r.id !== reportId);
+      setReports(updatedReports);
+      await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
+      alert('✅ 日報を削除しました');
+    } catch (error) { alert('❌ 削除に失敗しました'); }
+  };
+
+  const calculateTotals = () => {
+    const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
+    let accumulatedCost = 0;
+    let accumulatedScrap = 0;
+    
+    reports.forEach(report => {
+      report.costLines?.forEach(cost => accumulatedCost += cost.amount || 0);
+      report.wasteLines?.forEach(waste => accumulatedCost += waste.disposalCost || 0);
+      report.scrapLines?.forEach(scrap => accumulatedScrap += scrap.salesAmount || 0);
+    });
+    
+    // 粗利（スクラップ込み）
+    const grossProfit = totalRevenue - accumulatedCost + accumulatedScrap;
+    
+    // 粗利率（契約ベース）= 粗利 ÷ 売上 × 100
+    const grossProfitRateContract = totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0';
+    
+    // 粗利率（スクラップ込み）= 粗利 ÷ (売上 + スクラップ) × 100
+    const totalRevenueWithScrap = totalRevenue + accumulatedScrap;
+    const grossProfitRateWithScrap = totalRevenueWithScrap > 0 ? (grossProfit / totalRevenueWithScrap * 100).toFixed(1) : '0.0';
+    
+    return { 
+      totalRevenue, 
+      accumulatedCost, 
+      accumulatedScrap, 
+      grossProfit,                    // 粗利（スクラップ込み）
+      grossProfitRateContract,        // 粗利率（契約ベース）
+      grossProfitRateWithScrap        // 粗利率（スクラップ込み）
+    };
+  };
+
+  const handleNavigate = (page) => {
+    if (page === 'settings') {
+      setPasswordSuccessCallback(() => () => setCurrentPage('settings'));
+      setShowPasswordModal(true);
+      setPassword('');
+    } else {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleRequestAddSite = () => {
+    console.log('🔑 handleRequestAddSite: パスワードモーダルを表示します');
+    setPasswordSuccessCallback(() => () => setCurrentPage('settings'));
+    setShowPasswordModal(true);
+    console.log('🔑 handleRequestAddSite: showPasswordModal =', true);
+    setPassword('');
+  };
+
+  const handlePasswordSubmit = () => {
+    if (password === 'face1991') {
+      setShowPasswordModal(false);
+      setPassword('');
+      
+      // コールバックがあれば実行、なければ設定画面に遷移
+      if (passwordSuccessCallback) {
+        passwordSuccessCallback();
+        setPasswordSuccessCallback(null);
+      } else {
+        setCurrentPage('settings');
+      }
+    } else {
+      alert('❌ パスワードが正しくありません');
+      setPassword('');
+    }
+  };
+
+  const totals = calculateTotals();
+
+  console.log('🎨 LOGIOApp: Render decision', {
+    showSplash,
+    selectedSite,
+    sitesCount: sites.length,
+    showPasswordModal
+  });
+
+  // スプラッシュ画面を表示
+  if (showSplash) {
+    console.log('💫 LOGIOApp: Rendering SplashScreen');
+    return <SplashScreen />;
+  }
+
+  // ---- 現場が選択されていない場合 ----
+  if (!selectedSite) {
+    // 設定ページだけは表示許可（現場追加のため）
+    if (currentPage === 'settings') {
+      return (
+        <>
+          <ProjectSettingsPage
+            sites={sites}
+            selectedSite={selectedSite}
+            projectInfo={projectInfo}
+            setProjectInfo={setProjectInfo}
+            onSave={handleSaveProject}
+            onAddSite={handleAddSite}
+            onDeleteSite={handleDeleteSite}
+            onNavigate={setCurrentPage}
+          />
+
+          {showPasswordModal && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
+              <div className="bg-gray-900 p-6 max-w-md w-full rounded-lg border border-gray-700">
+                <h2 className="text-xl font-bold text-white mb-4">管理者認証</h2>
+                <p className="text-sm text-gray-400 mb-4">設定・編集には管理者パスワードが必要です</p>
+
+                <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+                  パスワード / Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                  placeholder="パスワードを入力"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-base font-medium rounded-md focus:outline-none focus:border-blue-500 mb-4"
+                  autoFocus
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handlePasswordSubmit}
+                    className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    認証
+                  </button>
+                  <button
+                    onClick={() => { setShowPasswordModal(false); setPassword(''); }}
+                    className="px-4 py-3 bg-gray-800 border border-gray-700 text-gray-300 font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // 通常は現場選択画面（ただしモーダルも同階層で描画する）
+    console.log('🏗️ LOGIOApp: Rendering SiteSelectionPage');
+    return (
+      <>
+        <SiteSelectionPage
+          sites={sites}
+          onSelectSite={handleSelectSite}
+          onRequestAddSite={handleRequestAddSite}
+        />
+
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
+            <div className="bg-gray-900 p-6 max-w-md w-full rounded-lg border border-gray-700">
+              <h2 className="text-xl font-bold text-white mb-4">管理者認証</h2>
+              <p className="text-sm text-gray-400 mb-4">設定・編集には管理者パスワードが必要です</p>
+
+              <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+                パスワード / Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                placeholder="パスワードを入力"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-base font-medium rounded-md focus:outline-none focus:border-blue-500 mb-4"
+                autoFocus
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handlePasswordSubmit}
+                  className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  認証
+                </button>
+                <button
+                  onClick={() => { setShowPasswordModal(false); setPassword(''); }}
+                  className="px-4 py-3 bg-gray-800 border border-gray-700 text-gray-300 font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  console.log('🏠 LOGIOApp: Rendering main app');
+
+  return (
+    <div className="min-h-screen bg-black flex">
+      <Sidebar 
+        currentPage={currentPage} 
+        onNavigate={handleNavigate} 
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
+
+      <div className="md:pl-64 flex flex-col flex-1 bg-black">
+        <div className="md:hidden">
+          <Header showMenuButton onMenuClick={() => setSidebarOpen(true)} />
+        </div>
+
+        <div className="hidden md:block">
+          <Header />
+        </div>
+
+        <main className="flex-1">
+          {currentPage === 'home' && <HomePage sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite} onNavigate={handleNavigate} totals={totals} projectInfo={projectInfo} />}
+          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} />}
+          {currentPage === 'input' && <ReportInputPage onSave={handleSaveReport} onNavigate={setCurrentPage} />}
+          {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} />}
+          {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
+        </main>
+      </div>
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
+          <div className="bg-gray-900 p-6 max-w-md w-full rounded-lg border border-gray-700">
+            <h2 className="text-xl font-bold text-white mb-4">管理者認証</h2>
+            <p className="text-sm text-gray-400 mb-4">設定・編集には管理者パスワードが必要です</p>
+            
+            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+              パスワード / Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              placeholder="パスワードを入力"
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-base font-medium rounded-md focus:outline-none focus:border-blue-500 mb-4"
+              autoFocus
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handlePasswordSubmit}
+                className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                認証
+              </button>
+              <button
+                onClick={() => { setShowPasswordModal(false); setPassword(''); }}
+                className="px-4 py-3 bg-gray-800 border border-gray-700 text-gray-300 font-medium rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

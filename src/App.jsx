@@ -1314,6 +1314,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 }
 
 // ========== 3ステップ日報入力 ==========
+// ⚠️ ここから先がPart2に続きます ⚠️
+// ========== Part2: 日報入力画面（スマホ最適化版）+ 残りの画面 ==========
+
 function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   const [currentStep, setCurrentStep] = useState(1);
   
@@ -1323,33 +1326,31 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     weather: '',
     workCategory: '',
     recorder: '',
-    customRecorder: ''  // フリー入力用
+    customRecorder: ''
   });
 
   // Step2: 作業内容・人員・稼働
   const [workDetails, setWorkDetails] = useState({
-    workCategory: '',      // 区分（解体、撤去など）
-    workContent: '',       // 施工内容の詳細
-    startTime: '',         // 開始時刻
-    endTime: '',           // 終了時刻
-    workingMinutes: 0,     // 作業時間（分）
-    inHouseWorkers: [],    // 自社作業員 [{name, startTime, endTime, shiftType, amount}]
-    outsourcingLabor: [],  // 外注人工 [{company, workers, shiftType, amount}]
-    vehicles: [],          // 車両 [{type, number, amount}]
-    machinery: [],         // 重機 [{name, unitPrice}]
-    costItems: []          // その他原価 [{category, item, amount}]
+    workCategory: '',
+    workContent: '',
+    startTime: '',
+    endTime: '',
+    workingMinutes: 0,
+    inHouseWorkers: [],
+    outsourcingLabor: [],
+    vehicles: [],
+    machinery: [],
+    costItems: []
   });
   
   // 単価設定（初期値）
   const [unitPrices] = useState({
-    inHouseDaytime: 25000,       // 自社（日勤）
-    inHouseNighttime: 35000,     // 自社（夜間）
-    inHouseNightLoading: 25000,  // 自社（夜間積込）
-    outsourcingDaytime: 25000,   // 外注（日勤）
-    outsourcingNighttime: 30000  // 外注（夜間）
+    inHouseDaytime: 25000,
+    inHouseNighttime: 35000,
+    inHouseNightLoading: 25000,
+    outsourcingDaytime: 25000,
+    outsourcingNighttime: 30000
   });
-  
-  // 作業員名選択時に人数を自動反映（削除または更新）
   
   // 作業時間（時:分）を分に変換
   const timeToMinutes = (timeStr) => {
@@ -1366,15 +1367,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   };
 
-  // Step3: 原価・廃棄物・スクラップ
-  // 新しい原価構造
-  const [machineryItems, setMachineryItems] = useState([]); // 自社重機・回送費
-  const [outsourcingLabor, setOutsourcingLabor] = useState([]); // 外注費（人工）
-  const [outsourcingTransport, setOutsourcingTransport] = useState([]); // 外注費（回送費）
-  const [materialItems, setMaterialItems] = useState([]); // 材料費
-  const [expenseItems, setExpenseItems] = useState([]); // 経費
-  const [wasteItems, setWasteItems] = useState([]); // 廃棄物処分費
-  const [scrapItems, setScrapItems] = useState([]); // スクラップ売上
+  // Step3: 廃棄物・スクラップ
+  const [wasteItems, setWasteItems] = useState([]);
+  const [scrapItems, setScrapItems] = useState([]);
   
   // 旧構造（後で削除）
   const [costLines, setCostLines] = useState([]);
@@ -1450,100 +1445,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     return report.date && report.recorder;
   };
 
-  // 原価明細追加
-  const addCostLine = () => {
-    if (!currentCost.costCategory || !currentCost.costItem) return alert('原価区分と費目を選択してください');
-    
-    let quantity, unitPrice, amount;
-    
-    if (currentCost.costCategory === '外注費' && currentCost.costItem === '人工') {
-      // 外注費の人工のみ：数量×単価で自動計算
-      quantity = parseFloat(currentCost.quantity) || 0;
-      unitPrice = parseFloat(currentCost.unitPrice) || 0;
-      
-      if (quantity === 0) return alert('数量を入力してください');
-      if (unitPrice === 0) return alert('単価を入力してください');
-      
-      amount = quantity * unitPrice;
-    } else {
-      // その他：金額を直接入力
-      amount = parseFloat(currentCost.unitPrice) || 0;
-      if (amount === 0) return alert('金額を入力してください');
-      
-      quantity = 0;
-      unitPrice = 0;
-    }
-    
-    const newCost = {
-      id: Date.now(),
-      costCategory: currentCost.costCategory,
-      costItem: currentCost.costItem,
-      quantity: quantity,
-      unitPrice: unitPrice,
-      amount: amount
-    };
-    
-    setCostLines([...costLines, newCost]);
-    setCurrentCost({ costCategory: '', costItem: '', quantity: '', unitPrice: '' });
-  };
-
-  // 廃棄物明細追加
-  const addWasteLine = () => {
-    if (!currentWaste.wasteType) return alert('廃棄物種類を選択してください');
-    
-    const finalDisposalSite = currentWaste.disposalSite === 'その他（直接入力）' 
-      ? customDisposalSite 
-      : currentWaste.disposalSite;
-    
-    if (!finalDisposalSite) return alert('処分先を入力してください');
-    
-    const quantity = parseFloat(currentWaste.quantity) || 0;
-    const unitPrice = parseFloat(currentWaste.unitDisposalCost) || 0;
-    
-    if (quantity === 0) return alert('数量を入力してください');
-    if (unitPrice === 0) return alert('単価を入力してください');
-    
-    const amount = quantity * unitPrice;
-    
-    const newWaste = { 
-      id: Date.now(), 
-      wasteType: currentWaste.wasteType,
-      disposalSite: finalDisposalSite,
-      manifestNumber: currentWaste.manifestNumber,
-      quantity: quantity,
-      unitDisposalCost: unitPrice,
-      disposalCost: amount
-    };
-    setWasteLines([...wasteLines, newWaste]);
-    setCurrentWaste({ wasteType: '', disposalSite: '', manifestNumber: '', quantity: '', unitDisposalCost: '' });
-    setCustomDisposalSite('');
-  };
-
-  // スクラップ明細追加
-  const addScrapLine = () => {
-    if (!currentScrap.scrapType) return alert('スクラップ種類を選択してください');
-    if (!currentScrap.buyer) return alert('買取業者を選択してください');
-    
-    const quantity = parseFloat(currentScrap.quantity) || 0;
-    const unitPrice = parseFloat(currentScrap.unitPrice) || 0;
-    
-    if (quantity === 0) return alert('数量を入力してください');
-    if (unitPrice === 0) return alert('単価を入力してください');
-    
-    const amount = quantity * unitPrice;
-    
-    const newScrap = { 
-      id: Date.now(), 
-      scrapType: currentScrap.scrapType,
-      buyer: currentScrap.buyer,
-      quantity: quantity,
-      unitPrice: unitPrice,
-      salesAmount: amount
-    };
-    setScrapLines([...scrapLines, newScrap]);
-    setCurrentScrap({ scrapType: '', buyer: '', quantity: '', unitPrice: '' });
-  };
-
   // 最終保存
   const handleSave = async () => {
     const finalReport = {
@@ -1579,194 +1480,196 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
       <div className="mb-4">
         <button
           onClick={() => onNavigate('home')}
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+          className="px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base flex items-center gap-2 min-h-[48px]"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
           閉じる
         </button>
       </div>
       
       <StepIndicator currentStep={currentStep} totalSteps={3} />
 
-      {/* Step1: 基本情報 */}
+      {/* Step1: 基本情報（スマホ最適化版 - 縦並び） */}
       {currentStep === 1 && (
         <div>
           <SectionHeader title="基本情報 / Basic Info" />
           
-          {/* 一行形式 */}
-          <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+          {/* 縦並びレイアウト */}
+          <div className="space-y-4">
+            {/* 作業日 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-3">
+                作業日 <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="date" 
+                value={report.date} 
+                onChange={(e) => setReport({...report, date: e.target.value})} 
+                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" 
+              />
+            </div>
+            
+            {/* 天候 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-3">
+                天候 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={report.weather}
+                onChange={(e) => setReport({...report, weather: e.target.value})}
+                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+              >
+                <option value="">選択してください</option>
+                {MASTER_DATA.weather.map((w) => (
+                  <option key={w} value={w}>{w}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* 記入者 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-3">
+                記入者 <span className="text-red-500">*</span>
+              </label>
+              <input
+                list="recorders-list"
+                value={report.recorder || ''}
+                onChange={(e) => setReport({...report, recorder: e.target.value})}
+                placeholder="選択または入力"
+                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+              />
+              <datalist id="recorders-list">
+                {MASTER_DATA.employees.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+            </div>
+          </div>
+
+          {/* ボタン */}
+          <div className="mt-8 grid grid-cols-2 gap-4">
+            <button
+              onClick={handleCancel}
+              className="py-4 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base min-h-[56px]"
+            >
+              キャンセル
+            </button>
+            <button 
+              onClick={() => setCurrentStep(2)} 
+              disabled={!isStep1Valid()}
+              className="py-4 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
+            >
+              次へ
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step2: 原価明細（スマホ最適化版） */}
+      {currentStep === 2 && (
+        <div>
+          <SectionHeader title="原価明細 / Cost Details" />
+          
+          {/* 施工内容（縦並び） */}
+          <div className="mb-8 bg-gray-900/50 rounded-lg p-4 border border-gray-700">
+            <h3 className="text-base font-semibold text-white mb-4">施工内容</h3>
+            
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  作業日 <span className="text-red-500">*</span>
-                </label>
-                <input 
-                  type="date" 
-                  value={report.date} 
-                  onChange={(e) => setReport({...report, date: e.target.value})} 
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500" 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  天候 <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm text-gray-400 mb-2">区分</label>
                 <select
-                  value={report.weather}
-                  onChange={(e) => setReport({...report, weather: e.target.value})}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                  value={workDetails.workCategory}
+                  onChange={(e) => setWorkDetails({...workDetails, workCategory: e.target.value})}
+                  className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                 >
-                  <option value="">選択</option>
-                  {MASTER_DATA.weather.map((w) => (
-                    <option key={w} value={w}>{w}</option>
+                  <option value="">選択してください</option>
+                  {MASTER_DATA.workCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
               </div>
               
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  記入者 <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm text-gray-400 mb-2">内容</label>
                 <input
-                  list="recorders-list"
-                  value={report.recorder || ''}
-                  onChange={(e) => setReport({...report, recorder: e.target.value})}
-                  placeholder="選択または入力"
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                  type="text"
+                  placeholder="施工内容を入力してください"
+                  value={workDetails.workContent}
+                  onChange={(e) => setWorkDetails({...workDetails, workContent: e.target.value})}
+                  className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                 />
-                <datalist id="recorders-list">
-                  {MASTER_DATA.employees.map((name) => (
-                    <option key={name} value={name} />
-                  ))}
-                </datalist>
-              </div>
-            </div>
-          </div>
-
-          {/* ボタン */}
-          <div className="max-w-2xl mx-auto px-4 mt-6 mb-6">
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleCancel}
-                className="py-3 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
-              >
-                キャンセル
-              </button>
-              <button 
-                onClick={() => setCurrentStep(2)} 
-                disabled={!isStep1Valid()}
-                className="py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors font-medium text-sm"
-              >
-                次へ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Step2: 原価明細 */}
-      {currentStep === 2 && (
-        <div>
-          <SectionHeader title="原価明細 / Cost Details" />
-          
-          {/* 施工内容（一行形式） */}
-          <div className="mb-6">
-            <h3 className="text-base font-semibold text-white mb-4 uppercase tracking-wider">施工内容 / Work Details</h3>
-            
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">区分</label>
-                  <select
-                    value={workDetails.workCategory}
-                    onChange={(e) => setWorkDetails({...workDetails, workCategory: e.target.value})}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="">選択</option>
-                    {MASTER_DATA.workCategories.map((category) => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">内容</label>
-                  <input
-                    type="text"
-                    placeholder="施工内容を入力してください"
-                    value={workDetails.workContent}
-                    onChange={(e) => setWorkDetails({...workDetails, workContent: e.target.value})}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                  />
-                </div>
               </div>
             </div>
           </div>
           
           <div className="my-8 border-t border-gray-700"></div>
           
-          {/* 自社人工（インライン形式） */}
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              自社人工 / In-House Workers
+          {/* 自社人工（縦並び最適化） */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              自社人工
             </label>
             
-            {/* インライン入力フォーム */}
+            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-xs text-gray-400 mb-1">作業員</label>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">作業員</label>
                   <select
                     id="worker-name-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
-                    <option value="">選択</option>
+                    <option value="">選択してください</option>
                     {MASTER_DATA.inHouseWorkers.map((name) => (
                       <option key={name} value={name}>{name}</option>
                     ))}
-                    <option value="__custom__">その他</option>
+                    <option value="__custom__">その他（手入力）</option>
                   </select>
                 </div>
-                <div className="w-24">
-                  <label className="block text-xs text-gray-400 mb-1">開始</label>
-                  <select
-                    id="worker-start-input"
-                    className="w-full px-2 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                    defaultValue=""
-                  >
-                    <option value="">--:--</option>
-                    {MASTER_DATA.workingHoursOptions.map((time) => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </select>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">開始</label>
+                    <select
+                      id="worker-start-input"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                      defaultValue=""
+                    >
+                      <option value="">--:--</option>
+                      {MASTER_DATA.workingHoursOptions.map((time) => (
+                        <option key={time} value={time}>{time}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">終了</label>
+                    <select
+                      id="worker-end-input"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                      defaultValue=""
+                    >
+                      <option value="">--:--</option>
+                      {MASTER_DATA.workingHoursOptions.map((time) => (
+                        <option key={time} value={time}>{time}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="w-24">
-                  <label className="block text-xs text-gray-400 mb-1">終了</label>
-                  <select
-                    id="worker-end-input"
-                    className="w-full px-2 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                    defaultValue=""
-                  >
-                    <option value="">--:--</option>
-                    {MASTER_DATA.workingHoursOptions.map((time) => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="w-32">
-                  <label className="block text-xs text-gray-400 mb-1">区分</label>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">区分</label>
                   <select
                     id="worker-shift-input"
-                    className="w-full px-2 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue="daytime"
                   >
-                    <option value="daytime">日勤</option>
-                    <option value="nighttime">夜間</option>
-                    <option value="nightLoading">夜間積込</option>
+                    <option value="daytime">日勤 (¥{formatCurrency(unitPrices.inHouseDaytime)})</option>
+                    <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.inHouseNighttime)})</option>
+                    <option value="nightLoading">夜間積込 (¥{formatCurrency(unitPrices.inHouseNightLoading)})</option>
                   </select>
                 </div>
+                
                 <button
                   onClick={() => {
                     const nameSelect = document.getElementById('worker-name-input');
@@ -1804,7 +1707,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     document.getElementById('worker-end-input').value = '';
                     document.getElementById('worker-shift-input').value = 'daytime';
                   }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
                 >
                   登録
                 </button>
@@ -1813,26 +1716,26 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             
             {/* 登録済みリスト */}
             {workDetails.inHouseWorkers.length > 0 && (
-              <div className="space-y-2 mb-3">
-                <p className="text-xs text-gray-400">登録済み:</p>
+              <div className="space-y-3 mb-4">
+                <p className="text-sm text-gray-400">登録済み: {workDetails.inHouseWorkers.length}名</p>
                 {workDetails.inHouseWorkers.map((worker, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-3">
-                    <div className="flex items-start justify-between mb-2">
+                  <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <p className="text-white text-sm font-medium">{worker.name}</p>
-                        <p className="text-xs text-gray-400">{worker.startTime} - {worker.endTime}</p>
+                        <p className="text-white text-base font-medium mb-1">{worker.name}</p>
+                        <p className="text-sm text-gray-400">{worker.startTime} - {worker.endTime}</p>
                       </div>
                       <button
                         onClick={() => {
                           const newWorkers = workDetails.inHouseWorkers.filter((_, i) => i !== index);
                           setWorkDetails({...workDetails, inHouseWorkers: newWorkers});
                         }}
-                        className="p-1 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="space-y-3">
                       <select
                         value={worker.shiftType}
                         onChange={(e) => {
@@ -1844,13 +1747,15 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                           newWorkers[index] = { ...newWorkers[index], shiftType: newType, amount: newAmount };
                           setWorkDetails({...workDetails, inHouseWorkers: newWorkers});
                         }}
-                        className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                       >
                         <option value="daytime">日勤 (¥{formatCurrency(unitPrices.inHouseDaytime)})</option>
                         <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.inHouseNighttime)})</option>
                         <option value="nightLoading">夜間積込 (¥{formatCurrency(unitPrices.inHouseNightLoading)})</option>
                       </select>
-                      <span className="text-white font-semibold text-sm">¥{formatCurrency(worker.amount)}</span>
+                      <div className="text-right">
+                        <span className="text-white font-semibold text-lg">¥{formatCurrency(worker.amount)}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1858,58 +1763,62 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
             
             {workDetails.inHouseWorkers.length > 0 && (
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-lg font-semibold">
+              <div className="p-4 bg-gray-800/50 rounded-lg">
+                <p className="text-white text-xl font-semibold">
                   小計: ¥{formatCurrency(workDetails.inHouseWorkers.reduce((sum, w) => sum + w.amount, 0))}
                 </p>
               </div>
             )}
           </div>
           
-          {/* 外注人工（インライン形式） */}
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              外注人工 / Outsourcing Labor
+          {/* 外注人工（縦並び最適化） */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              外注人工
             </label>
             
-            {/* インライン入力フォーム */}
+            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-xs text-gray-400 mb-1">会社名</label>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">会社名</label>
                   <select
                     id="outsourcing-company-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
-                    <option value="">選択</option>
+                    <option value="">選択してください</option>
                     {MASTER_DATA.outsourcingCompanies.map((company) => (
                       <option key={company} value={company}>{company}</option>
                     ))}
-                    <option value="__custom__">その他</option>
+                    <option value="__custom__">その他（手入力）</option>
                   </select>
                 </div>
-                <div className="w-24">
-                  <label className="block text-xs text-gray-400 mb-1">人数</label>
-                  <input
-                    id="outsourcing-workers-input"
-                    type="number"
-                    placeholder="3"
-                    min="1"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                  />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">人数</label>
+                    <input
+                      id="outsourcing-workers-input"
+                      type="number"
+                      placeholder="3"
+                      min="1"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">区分</label>
+                    <select
+                      id="outsourcing-shift-input"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                      defaultValue="daytime"
+                    >
+                      <option value="daytime">日勤</option>
+                      <option value="nighttime">夜間</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="w-32">
-                  <label className="block text-xs text-gray-400 mb-1">区分</label>
-                  <select
-                    id="outsourcing-shift-input"
-                    className="w-full px-2 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                    defaultValue="daytime"
-                  >
-                    <option value="daytime">日勤</option>
-                    <option value="nighttime">夜間</option>
-                  </select>
-                </div>
+                
                 <button
                   onClick={() => {
                     const companySelect = document.getElementById('outsourcing-company-input');
@@ -1944,7 +1853,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     workersInput.value = '';
                     document.getElementById('outsourcing-shift-input').value = 'daytime';
                   }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
                 >
                   登録
                 </button>
@@ -1953,26 +1862,26 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             
             {/* 登録済みリスト */}
             {workDetails.outsourcingLabor.length > 0 && (
-              <div className="space-y-2 mb-3">
-                <p className="text-xs text-gray-400">登録済み:</p>
+              <div className="space-y-3 mb-4">
+                <p className="text-sm text-gray-400">登録済み: {workDetails.outsourcingLabor.length}件</p>
                 {workDetails.outsourcingLabor.map((item, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-3">
-                    <div className="flex items-start justify-between mb-2">
+                  <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <p className="text-white text-sm font-medium">{item.company}</p>
-                        <p className="text-xs text-gray-400">{item.workers}人</p>
+                        <p className="text-white text-base font-medium mb-1">{item.company}</p>
+                        <p className="text-sm text-gray-400">{item.workers}人</p>
                       </div>
                       <button
                         onClick={() => {
                           const newLabor = workDetails.outsourcingLabor.filter((_, i) => i !== index);
                           setWorkDetails({...workDetails, outsourcingLabor: newLabor});
                         }}
-                        className="p-1 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="space-y-3">
                       <select
                         value={item.shiftType}
                         onChange={(e) => {
@@ -1982,12 +1891,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                           newLabor[index] = { ...newLabor[index], shiftType: newType, amount: newAmount };
                           setWorkDetails({...workDetails, outsourcingLabor: newLabor});
                         }}
-                        className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                       >
                         <option value="daytime">日勤 (¥{formatCurrency(unitPrices.outsourcingDaytime)}/人)</option>
                         <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.outsourcingNighttime)}/人)</option>
                       </select>
-                      <span className="text-white font-semibold text-sm">¥{formatCurrency(item.amount)}</span>
+                      <div className="text-right">
+                        <span className="text-white font-semibold text-lg">¥{formatCurrency(item.amount)}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1995,25 +1906,25 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
             
             {workDetails.outsourcingLabor.length > 0 && (
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-lg font-semibold">
+              <div className="p-4 bg-gray-800/50 rounded-lg">
+                <p className="text-white text-xl font-semibold">
                   小計: ¥{formatCurrency(workDetails.outsourcingLabor.reduce((sum, item) => sum + item.amount, 0))}
                 </p>
               </div>
             )}
           </div>
           
-          {/* 車両（一行形式） */}
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              車両 / Vehicles
+          {/* 車両（縦並び最適化） */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              車両
             </label>
             
-            {/* インライン入力フォーム */}
+            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-[120px]">
-                  <label className="block text-xs text-gray-400 mb-1">車種</label>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">車種</label>
                   <select
                     id="vehicle-type-input"
                     onChange={(e) => {
@@ -2028,7 +1939,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                         numberSelect.appendChild(option);
                       });
                     }}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
                     <option value="">選択</option>
@@ -2039,11 +1950,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     ))}
                   </select>
                 </div>
-                <div className="w-32">
-                  <label className="block text-xs text-gray-400 mb-1">車番</label>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">車番</label>
                   <select
                     id="vehicle-number-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                   >
                     <option value="">選択</option>
                   </select>
@@ -2069,7 +1980,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     document.getElementById('vehicle-type-input').value = '';
                     document.getElementById('vehicle-number-input').innerHTML = '<option value="">選択</option>';
                   }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
                 >
                   登録
                 </button>
@@ -2078,22 +1989,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             
             {/* 登録済みリスト */}
             {workDetails.vehicles.length > 0 && (
-              <div className="space-y-2 mb-3">
-                <p className="text-xs text-gray-400">登録済み:</p>
+              <div className="space-y-3 mb-4">
+                <p className="text-sm text-gray-400">登録済み: {workDetails.vehicles.length}台</p>
                 {workDetails.vehicles.map((vehicle, index) => (
                   <div key={index} className="bg-gray-900/50 rounded-lg p-3 flex items-center gap-3">
                     <div className="flex-1">
-                      <p className="text-white text-sm font-medium">{vehicle.type} ({vehicle.number})</p>
-                      <p className="text-xs text-gray-400">¥{formatCurrency(vehicle.amount)}</p>
+                      <p className="text-white text-base font-medium">{vehicle.type} ({vehicle.number})</p>
+                      <p className="text-sm text-gray-400">¥{formatCurrency(vehicle.amount)}</p>
                     </div>
                     <button
                       onClick={() => {
                         const newVehicles = workDetails.vehicles.filter((_, i) => i !== index);
                         setWorkDetails({...workDetails, vehicles: newVehicles});
                       }}
-                      className="p-1 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 ))}
@@ -2101,25 +2012,25 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
             
             {workDetails.vehicles.length > 0 && (
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-lg font-semibold">
+              <div className="p-4 bg-gray-800/50 rounded-lg">
+                <p className="text-white text-xl font-semibold">
                   小計: ¥{formatCurrency(workDetails.vehicles.reduce((sum, v) => sum + v.amount, 0))}
                 </p>
               </div>
             )}
           </div>
           
-          {/* その他原価（一行形式） */}
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              その他原価 / Other Costs
+          {/* その他原価（縦並び最適化） */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              その他原価
             </label>
             
-            {/* インライン入力フォーム */}
+            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="w-32">
-                  <label className="block text-xs text-gray-400 mb-1">原価区分</label>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">原価区分</label>
                   <select
                     id="cost-category-input"
                     onChange={(e) => {
@@ -2145,7 +2056,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                         usageDaysInput.style.display = 'block';
                       }
                     }}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
                     <option value="">選択</option>
@@ -2158,11 +2069,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 
                 {/* 重機名（自社重機のみ） */}
-                <div id="machinery-name-select" className="w-32" style={{display: 'none'}}>
-                  <label className="block text-xs text-gray-400 mb-1">重機名</label>
+                <div id="machinery-name-select" style={{display: 'none'}}>
+                  <label className="block text-sm text-gray-400 mb-2">重機名</label>
                   <select
                     id="machinery-name-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
                     <option value="">選択</option>
@@ -2173,35 +2084,35 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 
                 {/* 使用日（自社重機・回送費） */}
-                <div id="usage-date-inline" className="w-36" style={{display: 'none'}}>
-                  <label className="block text-xs text-gray-400 mb-1">使用日</label>
+                <div id="usage-date-inline" style={{display: 'none'}}>
+                  <label className="block text-sm text-gray-400 mb-2">使用日</label>
                   <input
                     id="usage-date-input"
                     type="date"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 
                 {/* 使用日数（自社重機・回送費・リース費） */}
-                <div id="usage-days-inline" className="w-20" style={{display: 'none'}}>
-                  <label className="block text-xs text-gray-400 mb-1">日数</label>
+                <div id="usage-days-inline" style={{display: 'none'}}>
+                  <label className="block text-sm text-gray-400 mb-2">日数</label>
                   <input
                     id="usage-days-input"
                     type="number"
                     placeholder="3"
                     min="1"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 
                 {/* 金額（全て） */}
-                <div className="w-32">
-                  <label className="block text-xs text-gray-400 mb-1">金額</label>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">金額</label>
                   <input
                     id="cost-amount-input"
                     type="number"
                     placeholder="50000"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 
@@ -2266,7 +2177,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     document.getElementById('usage-date-inline').style.display = 'none';
                     document.getElementById('usage-days-inline').style.display = 'none';
                   }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
                 >
                   登録
                 </button>
@@ -2275,16 +2186,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             
             {/* 登録済みリスト */}
             {workDetails.costItems.length > 0 && (
-              <div className="space-y-2 mb-3">
-                <p className="text-xs text-gray-400">登録済み:</p>
+              <div className="space-y-3 mb-4">
+                <p className="text-sm text-gray-400">登録済み: {workDetails.costItems.length}件</p>
                 {workDetails.costItems.map((item, index) => (
                   <div key={index} className="bg-gray-900/50 rounded-lg p-3 flex items-center gap-3">
                     <div className="flex-1">
-                      <p className="text-white text-sm font-medium">
+                      <p className="text-white text-base font-medium">
                         {item.category}
                         {item.machineryName && ` - ${item.machineryName}`}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-sm text-gray-400">
                         {item.usageDate && `使用日: ${item.usageDate} `}
                         {item.usageDays && `${item.usageDays}日 `}
                         ¥{formatCurrency(item.amount)}
@@ -2295,9 +2206,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                         const newItems = workDetails.costItems.filter((_, i) => i !== index);
                         setWorkDetails({...workDetails, costItems: newItems});
                       }}
-                      className="p-1 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 ))}
@@ -2305,60 +2216,59 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
             
             {workDetails.costItems.length > 0 && (
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-lg font-semibold">
+              <div className="p-4 bg-gray-800/50 rounded-lg">
+                <p className="text-white text-xl font-semibold">
                   小計: ¥{formatCurrency(workDetails.costItems.reduce((sum, c) => sum + c.amount, 0))}
                 </p>
               </div>
             )}
           </div>
+          
           {/* ボタン */}
-          <div className="max-w-2xl mx-auto px-4 mt-6 mb-6">
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="py-3 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
-              >
-                ← 戻る
-              </button>
-              <button
-                onClick={handleCancel}
-                className="py-3 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={() => setCurrentStep(3)}
-                className="py-3 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
-              >
-                次へ →
-              </button>
-            </div>
+          <div className="mt-8 grid grid-cols-3 gap-3">
+            <button
+              onClick={() => setCurrentStep(1)}
+              className="py-4 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base min-h-[56px]"
+            >
+              ← 戻る
+            </button>
+            <button
+              onClick={handleCancel}
+              className="py-4 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base min-h-[56px]"
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={() => setCurrentStep(3)}
+              className="py-4 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
+            >
+              次へ →
+            </button>
           </div>
         </div>
       )}
 
-      {/* Step3: 廃棄物・スクラップ */}
+      {/* Step3: 廃棄物・スクラップ（スマホ最適化版） */}
       {currentStep === 3 && (
         <div>
           <SectionHeader title="廃棄物・スクラップ / Waste & Scrap" />
           
-          <p className="text-xs text-gray-400 mb-6">※ 廃棄物・スクラップがない場合はそのまま保存できます</p>
+          <p className="text-sm text-gray-400 mb-6">※ 廃棄物・スクラップがない場合はそのまま保存できます</p>
 
-          {/* 廃棄物処分費（一行形式） */}
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              廃棄物処分費 / Waste Disposal
+          {/* 廃棄物処分費（縦並び最適化） */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              廃棄物処分費
             </label>
             
-            {/* インライン入力フォーム */}
+            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-[120px]">
-                  <label className="block text-xs text-gray-400 mb-1">発生材</label>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">発生材</label>
                   <select
                     id="waste-material-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
                     <option value="">選択</option>
@@ -2368,11 +2278,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     <option value="__custom__">その他</option>
                   </select>
                 </div>
-                <div className="flex-1 min-w-[120px]">
-                  <label className="block text-xs text-gray-400 mb-1">処分先</label>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">処分先</label>
                   <select
                     id="waste-disposal-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
                     <option value="">選択</option>
@@ -2385,49 +2295,55 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     )}
                   </select>
                   {(!projectInfo?.contractedDisposalSites || projectInfo.contractedDisposalSites.length === 0) && (
-                    <p className="text-xs text-red-400 mt-1">※ プロジェクト設定で契約処分先を登録してください</p>
+                    <p className="text-xs text-red-400 mt-2">※ プロジェクト設定で契約処分先を登録してください</p>
                   )}
                 </div>
-                <div className="w-20">
-                  <label className="block text-xs text-gray-400 mb-1">数量</label>
-                  <input
-                    id="waste-quantity-input"
-                    type="number"
-                    step="0.1"
-                    placeholder="10"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                  />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">数量</label>
+                    <input
+                      id="waste-quantity-input"
+                      type="number"
+                      step="0.1"
+                      placeholder="10"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">単位</label>
+                    <select
+                      id="waste-unit-input"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                      defaultValue="㎥"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="㎥">㎥</option>
+                      <option value="t">t</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="w-20">
-                  <label className="block text-xs text-gray-400 mb-1">単位</label>
-                  <select
-                    id="waste-unit-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                    defaultValue="㎥"
-                  >
-                    <option value="kg">kg</option>
-                    <option value="㎥">㎥</option>
-                    <option value="t">t</option>
-                  </select>
-                </div>
-                <div className="w-28">
-                  <label className="block text-xs text-gray-400 mb-1">単価</label>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">単価</label>
                   <input
                     id="waste-unitprice-input"
                     type="number"
                     placeholder="11000"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                   />
                 </div>
-                <div className="w-28">
-                  <label className="block text-xs text-gray-400 mb-1">マニフェスト</label>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">マニフェスト番号</label>
                   <input
                     id="waste-manifest-input"
                     type="text"
                     placeholder="ABC123"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                   />
                 </div>
+                
                 <button
                   onClick={() => {
                     const materialSelect = document.getElementById('waste-material-input');
@@ -2479,7 +2395,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     document.getElementById('waste-unitprice-input').value = '';
                     document.getElementById('waste-manifest-input').value = '';
                   }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
                 >
                   登録
                 </button>
@@ -2488,14 +2404,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             
             {/* 登録済みリスト */}
             {wasteItems.length > 0 && (
-              <div className="space-y-2 mb-3">
-                <p className="text-xs text-gray-400">登録済み:</p>
+              <div className="space-y-3 mb-4">
+                <p className="text-sm text-gray-400">登録済み: {wasteItems.length}件</p>
                 {wasteItems.map((item, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-3">
+                  <div key={index} className="bg-gray-900/50 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <p className="text-white text-sm font-medium">{item.material} | {item.disposalSite}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-white text-base font-medium">{item.material} | {item.disposalSite}</p>
+                        <p className="text-sm text-gray-400">
                           {item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(item.amount)}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">マニフェスト: {item.manifestNumber}</p>
@@ -2505,9 +2421,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                           const newItems = wasteItems.filter((_, i) => i !== index);
                           setWasteItems(newItems);
                         }}
-                        className="p-1 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -2516,28 +2432,28 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
             
             {wasteItems.length > 0 && (
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-lg font-semibold">
+              <div className="p-4 bg-gray-800/50 rounded-lg">
+                <p className="text-white text-xl font-semibold">
                   小計: ¥{formatCurrency(wasteItems.reduce((sum, item) => sum + item.amount, 0))}
                 </p>
               </div>
             )}
           </div>
 
-          {/* スクラップ売上（一行形式） */}
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              スクラップ売上 / Scrap Sales
+          {/* スクラップ売上（縦並び最適化） */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              スクラップ売上
             </label>
             
-            {/* インライン入力フォーム */}
+            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-[120px]">
-                  <label className="block text-xs text-gray-400 mb-1">種類</label>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">種類</label>
                   <select
                     id="scrap-type-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
                     <option value="">選択</option>
@@ -2547,11 +2463,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     <option value="__custom__">その他</option>
                   </select>
                 </div>
-                <div className="flex-1 min-w-[120px]">
-                  <label className="block text-xs text-gray-400 mb-1">買取業者</label>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">買取業者</label>
                   <select
                     id="scrap-buyer-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                     defaultValue=""
                   >
                     <option value="">選択</option>
@@ -2561,37 +2477,42 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     <option value="__custom__">その他</option>
                   </select>
                 </div>
-                <div className="w-20">
-                  <label className="block text-xs text-gray-400 mb-1">数量</label>
-                  <input
-                    id="scrap-quantity-input"
-                    type="number"
-                    step="0.1"
-                    placeholder="120"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                  />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">数量</label>
+                    <input
+                      id="scrap-quantity-input"
+                      type="number"
+                      step="0.1"
+                      placeholder="120"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">単位</label>
+                    <select
+                      id="scrap-unit-input"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                      defaultValue="kg"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="㎥">㎥</option>
+                      <option value="t">t</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="w-20">
-                  <label className="block text-xs text-gray-400 mb-1">単位</label>
-                  <select
-                    id="scrap-unit-input"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
-                    defaultValue="kg"
-                  >
-                    <option value="kg">kg</option>
-                    <option value="㎥">㎥</option>
-                    <option value="t">t</option>
-                  </select>
-                </div>
-                <div className="w-24">
-                  <label className="block text-xs text-gray-400 mb-1">単価</label>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">単価</label>
                   <input
                     id="scrap-unitprice-input"
                     type="number"
                     placeholder="85"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
                   />
                 </div>
+                
                 <button
                   onClick={() => {
                     const typeSelect = document.getElementById('scrap-type-input');
@@ -2643,7 +2564,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     document.getElementById('scrap-unit-input').value = 'kg';
                     document.getElementById('scrap-unitprice-input').value = '';
                   }}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
                 >
                   登録
                 </button>
@@ -2652,14 +2573,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             
             {/* 登録済みリスト */}
             {scrapItems.length > 0 && (
-              <div className="space-y-2 mb-3">
-                <p className="text-xs text-gray-400">登録済み:</p>
+              <div className="space-y-3 mb-4">
+                <p className="text-sm text-gray-400">登録済み: {scrapItems.length}件</p>
                 {scrapItems.map((item, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-3">
+                  <div key={index} className="bg-gray-900/50 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <p className="text-white text-sm font-medium">{item.type} | {item.buyer}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-white text-base font-medium">{item.type} | {item.buyer}</p>
+                        <p className="text-sm text-gray-400">
                           {item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(Math.abs(item.amount))}
                         </p>
                       </div>
@@ -2668,9 +2589,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                           const newItems = scrapItems.filter((_, i) => i !== index);
                           setScrapItems(newItems);
                         }}
-                        className="p-1 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -2679,8 +2600,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
             
             {scrapItems.length > 0 && (
-              <div className="p-3 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-lg font-semibold">
+              <div className="p-4 bg-gray-800/50 rounded-lg">
+                <p className="text-white text-xl font-semibold">
                   小計: ¥{formatCurrency(Math.abs(scrapItems.reduce((sum, item) => sum + item.amount, 0)))}
                 </p>
               </div>
@@ -2688,33 +2609,32 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           </div>
 
           {/* ボタン */}
-          <div className="max-w-2xl mx-auto px-4 mt-6 mb-6">
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => setCurrentStep(2)}
-                className="py-3 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
-              >
-                ← 戻る
-              </button>
-              <button
-                onClick={handleCancel}
-                className="py-3 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleSave}
-                className="py-3 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm"
-              >
-                保存
-              </button>
-            </div>
+          <div className="mt-8 grid grid-cols-3 gap-3">
+            <button
+              onClick={() => setCurrentStep(2)}
+              className="py-4 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base min-h-[56px]"
+            >
+              ← 戻る
+            </button>
+            <button
+              onClick={handleCancel}
+              className="py-4 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base min-h-[56px]"
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={handleSave}
+              className="py-4 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
+            >
+              保存
+            </button>
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
 function ReportListPage({ reports, onDelete, onNavigate }) {
   const [filterMonth, setFilterMonth] = useState('');

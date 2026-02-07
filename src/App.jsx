@@ -45,14 +45,15 @@ if (typeof window !== 'undefined') {
     }
   };
 }
+
 // ========== LOGIOロゴ（インダストリアル・力強い） ==========
 function LOGIOLogo({ className = "", size = "md", animated = false }) {
   const sizeStyles = {
-    xs: "text-lg",      // ヘッダー用 (18px)
-    sm: "text-xl",      // サイドバー用 (20px)
-    md: "text-4xl",     // 現場選択用 (36px)
-    lg: "text-5xl",     // 現場選択用 (48px)
-    xl: "text-6xl"      // スプラッシュ用 (60px)
+    xs: "text-lg",
+    sm: "text-xl",
+    md: "text-4xl",
+    lg: "text-5xl",
+    xl: "text-6xl"
   };
   
   const elephantSizes = {
@@ -125,49 +126,46 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
         .elephant-static {
           opacity: 0.12;
         }
+        
+        select option {
+          background-color: #1F2937 !important;
+          color: white !important;
+        }
+        
+        select option:hover,
+        select option:focus,
+        select option:checked {
+          background-color: #F97316 !important;
+          color: white !important;
+        }
       `}</style>
       <div className={`relative inline-flex items-center justify-center ${className}`}>
-        {/* 象のシルエット（背景・可愛いデザイン） */}
         <div className={`absolute inset-0 flex items-center justify-center ${animated ? 'elephant-silhouette' : 'elephant-static'}`}>
           <svg width={elephantSizes[size]} height={elephantSizes[size]} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            {/* 可愛い象のシルエット */}
             <g>
-              {/* 体 */}
               <rect x="70" y="80" width="80" height="60" rx="30" fill="#ffffff" opacity="0.12"/>
-              
-              {/* 頭 */}
               <circle cx="90" cy="70" r="35" fill="#ffffff" opacity="0.12"/>
-              
-              {/* 耳（左） */}
               <ellipse cx="65" cy="60" rx="20" ry="30" fill="#ffffff" opacity="0.12"/>
-              
-              {/* 耳（右） */}
               <ellipse cx="115" cy="60" rx="20" ry="30" fill="#ffffff" opacity="0.12"/>
-              
-              {/* 鼻 */}
               <path 
                 d="M 90,95 Q 85,110 75,125 Q 70,135 65,145 Q 60,155 55,165"
                 stroke="#ffffff" 
-                stroke-width="12" 
+                strokeWidth="12" 
                 fill="none" 
                 opacity="0.12"
-                stroke-linecap="round"
+                strokeLinecap="round"
               />
-              
-              {/* 足（4本） */}
               <rect x="75" y="135" width="12" height="30" rx="6" fill="#ffffff" opacity="0.12"/>
               <rect x="95" y="135" width="12" height="30" rx="6" fill="#ffffff" opacity="0.12"/>
               <rect x="115" y="135" width="12" height="30" rx="6" fill="#ffffff" opacity="0.12"/>
               <rect x="135" y="135" width="12" height="30" rx="6" fill="#ffffff" opacity="0.12"/>
-              
-              {/* 尻尾 */}
               <path 
                 d="M 150,110 Q 155,115 158,125"
                 stroke="#ffffff" 
-                stroke-width="5" 
+                strokeWidth="5" 
                 fill="none" 
                 opacity="0.12"
-                stroke-linecap="round"
+                strokeLinecap="round"
               />
             </g>
           </svg>
@@ -193,22 +191,20 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
   );
 }
 
-// ========== 数字の縁取りスタイル ==========
 const amountStrokeStyle = {
   textShadow: '0 0 3px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.7), 1px 1px 3px rgba(0,0,0,1), -1px -1px 3px rgba(0,0,0,1)'
 };
 
-// ========== マスタデータ ==========
+// ========== マスタデータ（MM興業追加、撤去・養生削除） ==========
 const MASTER_DATA = {
   projectNames: ['内装解体', 'スケルトン解体', '建物解体', '外装解体', '外構解体', 'アスベスト除去', '設備解体', '躯体解体'],
   salesPersons: ['間野', '八ツ田', '木嶋', '西', '鈴木', '原'],
   employees: ['五十嵐悠哉', '折田優作', '稲葉正輝', '井ケ田浩寿', '大野勝也', '石森達也', '一村琢磨', '間野昂平'],
   inHouseWorkers: ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也'],
-  outsourcingCompanies: ['TCY興業', 'ALTEQ', '山田興業', '川田工業', 'マルカイ工業'],
+  outsourcingCompanies: ['TCY興業', 'ALTEQ', '山田興業', '川田工業', 'マルカイ工業', 'MM興業'],
   weather: ['晴', '曇', '雨', '雪'],
-  workCategories: ['解体', '撤去', '清掃', '積込', '養生', '搬出'],
+  workCategories: ['解体', '清掃', '積込', '搬出'],
   vehicles: ['軽バン', '2td', '3td', '4td', '4tc', '8tc', '増td', '10tc'],
-  // 車種ごとの車番マッピング
   vehicleNumbersByType: {
     '軽バン': ['た1'],
     '2td': ['77', '201'],
@@ -221,7 +217,6 @@ const MASTER_DATA = {
   },
   vehicleNumbers: ['100', '181', '200', '201', '226', '300', '312', '381', '451', '480', '500', '858', '909', '1000', '1100', '1810', '2000', '3000', '3214', '3381', '3648', '4000', '4514', '4803', '5000', '5888', '6000', '6994', '7000', '7567', '8000', '8025', '8580', '8736', '9272'],
   heavyMachinery: ['PC78US', 'PC138US', 'その他（フリー入力）'],
-  // 作業時間オプション（10分単位、0:00〜24:00）
   workingHoursOptions: (() => {
     const options = [];
     for (let hours = 0; hours <= 24; hours++) {
@@ -234,7 +229,6 @@ const MASTER_DATA = {
     }
     return options;
   })(),
-  // 労務費を削除し、外注費に「人工」を追加、経費に「駐車代」「道具代」を追加
   costCategories: {
     '材料費': ['養生材', '仮設材', '消耗品', '燃料費'],
     '外注費': ['人工', '重機リース', '車両リース', '専門工事'],
@@ -247,7 +241,6 @@ const MASTER_DATA = {
   statuses: ['進行中', '完了', '中断']
 };
 
-// 車両単価設定（グローバル）
 const VEHICLE_UNIT_PRICES = {
   '軽バン': 0,
   '2td': 10000,
@@ -264,7 +257,6 @@ const VEHICLE_UNIT_PRICES = {
 function Header({ title, showMenuButton = false, onMenuClick }) {
   return (
     <header className="bg-black px-6 py-5 flex items-center sticky top-0 z-40 border-b border-gray-900">
-      {/* ハンバーガーメニュー（不均等2本線） */}
       {showMenuButton && (
         <button onClick={onMenuClick} className="mr-4 text-white hover:text-gray-300 transition-colors">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -299,17 +291,12 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
   );
 }
 
-// カスタムセレクト（2行表示対応）
 function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "選択してください" }) {
-  console.log('🎯 DarkSelect: Rendering', { label, optionsCount: options?.length, value });
-  
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   
-  // 選択中のオプションを取得
   const selectedOption = options.find(opt => opt.value === value);
   
-  // 外側クリックでドロップダウンを閉じる
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -334,7 +321,6 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
         {label} / {labelEn}
       </label>
       
-      {/* 選択ボタン */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -353,7 +339,6 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
         <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
-      {/* ドロップダウン */}
       {isOpen && (
         <div className="absolute left-0 right-0 z-50 mt-1 bg-gray-900 border border-gray-700 rounded-md shadow-xl max-h-80 overflow-y-auto">
           {options.map((option) => (
@@ -361,7 +346,7 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
               key={option.value}
               type="button"
               onClick={() => handleSelect(option.value)}
-              className="w-full px-4 py-3 text-left hover:bg-gray-800 transition-colors border-b border-gray-800 last:border-b-0 relative"
+              className="w-full px-4 py-3 text-left hover:bg-[#F97316] transition-colors border-b border-gray-800 last:border-b-0 relative"
             >
               <div className="pr-8">
                 <div className="text-white text-base font-medium">{option.title}</div>
@@ -380,8 +365,6 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
   );
 }
 
-// チップ式マルチセレクト（車両・重機用）
-// プルダウン式複数選択（スマホ最適化）
 function MultiSelectDropdown({ label, labelEn, options, selected = [], onChange, placeholder = "選択してください" }) {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -399,7 +382,6 @@ function MultiSelectDropdown({ label, labelEn, options, selected = [], onChange,
         {label} / {labelEn}
       </label>
       
-      {/* 選択ボタン */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -411,14 +393,12 @@ function MultiSelectDropdown({ label, labelEn, options, selected = [], onChange,
         <ChevronDown className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
-      {/* 選択済みアイテム表示 */}
       {selected.length > 0 && (
         <div className="mt-2 text-xs text-gray-400">
           {selected.join('、')}
         </div>
       )}
       
-      {/* ドロップダウンメニュー */}
       {isOpen && (
         <div className="mt-2 bg-gray-900 border border-gray-700 rounded-md max-h-60 overflow-y-auto">
           {options.map((option) => {
@@ -430,7 +410,7 @@ function MultiSelectDropdown({ label, labelEn, options, selected = [], onChange,
                 onClick={() => toggleOption(option)}
                 className={`w-full px-4 py-3 text-left text-sm transition-colors flex items-center justify-between ${
                   isSelected
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-[#F97316] text-white'
                     : 'text-gray-300 hover:bg-gray-800'
                 }`}
               >
@@ -463,16 +443,12 @@ function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "
   );
 }
 
-// 数値入力用（手動入力、スマホキーボード対応）※統一版
 function NumericInput({ label, labelEn, value, onChange, placeholder = "0", unit = "", min = 0 }) {
-  const toNumberString = (v) => String(v ?? '').replace(/[^\d.]/g, ''); // 数字と小数点以外除去
+  const toNumberString = (v) => String(v ?? '').replace(/[^\d.]/g, '');
   const handleChange = (raw) => {
     const cleaned = toNumberString(raw);
-    // 画面表示は文字列のまま持つ（今の実装と互換）
     if (cleaned === '') return onChange('');
-    // マイナスを許さない（min=0 デフォ）
     const num = Math.max(min, parseFloat(cleaned) || 0);
-    // 余計な桁を戻さないため、入力中は cleaned を優先でもOK
     onChange(String(num));
   };
   return (
@@ -518,7 +494,6 @@ function TextArea({ label, labelEn, value, onChange, placeholder = "", rows = 3 
   );
 }
 
-// 大きいステッパーUI（作業員数用）
 function BigStepper({ label, labelEn, value, onChange, min = 0, max = 99 }) {
   return (
     <div className="mb-4">
@@ -549,7 +524,6 @@ function BigStepper({ label, labelEn, value, onChange, min = 0, max = 99 }) {
   );
 }
 
-// 金額入力用（手動入力、スマホキーボード対応）
 function AmountInput({ label, labelEn, value, onChange, placeholder = "0" }) {
   return (
     <div className="mb-4">
@@ -589,7 +563,6 @@ function Button({ children, onClick, variant = 'primary', className = '', icon: 
   );
 }
 
-// 株価アプリ風のメトリックカード
 function MetricCard({ label, value, unit = "", type = "neutral", rawValue = 0, subValue = null, subLabel = null }) {
   const styles = {
     neutral: "bg-gray-900/50",
@@ -600,22 +573,19 @@ function MetricCard({ label, value, unit = "", type = "neutral", rawValue = 0, s
     scrap: "bg-gray-900/50"
   };
 
-  // 数字のみに色を付ける（ラベルはすべて同色）
   const textStyles = {
     neutral: "text-white",
-    revenue: "text-white",                                           // 売上: ホワイト
-    cost: "text-red-400/80",                                         // 原価: 薄い赤
-    profit: rawValue > 0 ? "text-blue-400/90" : "text-red-400/80",  // 粗利: プラス→控えめな青 / マイナス→薄い赤
-    rate: "text-white",                                              // 粗利率: ホワイト
-    scrap: "text-white"                                              // スクラップ: ホワイト
+    revenue: "text-white",
+    cost: "text-red-400/80",
+    profit: rawValue > 0 ? "text-blue-400/90" : "text-red-400/80",
+    rate: "text-white",
+    scrap: "text-white"
   };
 
   return (
     <div className={`${styles[type]} rounded-md p-4 flex flex-col gap-2`}>
-      {/* ラベル: すべて同色（text-gray-500） */}
       <p className="text-gray-500 text-[10px] font-medium uppercase tracking-wider">{label}</p>
       <div>
-        {/* 数字: タイプごとに色分け、text-xlに縮小 */}
         <p className={`text-xl font-semibold ${textStyles[type]} tabular-nums`} style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif' }}>
           {unit}{value}
         </p>
@@ -630,7 +600,6 @@ function MetricCard({ label, value, unit = "", type = "neutral", rawValue = 0, s
   );
 }
 
-
 function SectionHeader({ title }) {
   return (
     <div className="mb-4 mt-8">
@@ -639,7 +608,6 @@ function SectionHeader({ title }) {
   );
 }
 
-// ステップインジケーター
 function StepIndicator({ currentStep, totalSteps }) {
   return (
     <div className="mb-6 bg-gray-100 p-4">
@@ -664,7 +632,6 @@ function StepIndicator({ currentStep, totalSteps }) {
   );
 }
 
-// ========== ユーティリティ関数 ==========
 const generateId = (prefix) => {
   if (crypto?.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -678,7 +645,6 @@ const getDayOfWeek = (dateStr) => {
   return days[date.getDay()];
 };
 
-// ========== サイドバーコンポーネント ==========
 function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen }) {
   const navItems = [
     { id: 'home', label: 'ホーム', icon: Home },
@@ -697,7 +663,6 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen }) {
 
   return (
     <>
-      {/* サイドバー（ハンバーガーメニューで開閉） */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black bg-opacity-75" onClick={() => setSidebarOpen(false)} />
@@ -744,9 +709,6 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen }) {
   );
 }
 
-// ========== 画面コンポーネント ==========
-
-// スプラッシュ画面（Apple風アニメーション）
 function SplashScreen() {
   return (
     <>
@@ -805,31 +767,124 @@ function SplashScreen() {
   );
 }
 
-// 現場選択専用画面
+// ========== ログイン画面 ==========
+function LoginPage({ onLogin }) {
+  const [userType, setUserType] = useState('company');
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = async () => {
+    setError('');
+    
+    // 自社ログイン
+    if (userType === 'company') {
+      if ((userId === 'face1991' && password === 'face1991') ||
+          (userId === 'ryokuka2005' && password === 'ryokuka2005')) {
+        onLogin({ type: 'company', userId });
+        return;
+      }
+    }
+    
+    // 協力会社ログイン
+    if (userType === 'partner') {
+      // 協力会社のID/PASSを検証（現場設定から取得）
+      // TODO: 実際には現場設定データから検証
+      const validPartnerIds = ['TCY001', 'ALT001', 'YMD001', 'KWD001', 'MRK001', 'MM001'];
+      if (validPartnerIds.includes(userId)) {
+        onLogin({ type: 'partner', userId });
+        return;
+      }
+    }
+    
+    setError('IDまたはパスワードが正しくありません');
+  };
+
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div className="max-w-md w-full">
+        <div className="flex flex-col items-center justify-center mb-10">
+          <LOGIOLogo size="lg" />
+        </div>
+        
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          <div className="mb-6">
+            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+              ログイン種別
+            </label>
+            <select
+              value={userType}
+              onChange={(e) => setUserType(e.target.value)}
+              className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+            >
+              <option value="company">自社</option>
+              <option value="partner">協力会社</option>
+            </select>
+          </div>
+          
+          <div className="mb-6">
+            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+              ID
+            </label>
+            <input
+              type="text"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              placeholder={userType === 'company' ? 'face1991 または ryokuka2005' : 'TCY001'}
+              className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          
+          <div className="mb-6">
+            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+              パスワード
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              placeholder="パスワードを入力"
+              className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          
+          {error && (
+            <div className="mb-6 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+          
+          <button
+            onClick={handleLogin}
+            className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-base transition-colors"
+          >
+            ログイン
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Part1はここまで
+// Part2に続く...
+// ========== Part2: 画面コンポーネント ==========
+
 function SiteSelectionPage({ sites, onSelectSite, onRequestAddSite }) {
-  console.log('🏗️ SiteSelectionPage: Rendering', { sitesCount: sites.length });
-  
-  // 現場が存在しない場合
   if (sites.length === 0) {
-    console.log('📝 SiteSelectionPage: No sites - showing add site form');
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-4">
         <div className="max-w-md w-full">
-          {/* ロゴ */}
           <div className="flex flex-col items-center justify-center mb-10">
             <LOGIOLogo size="lg" />
           </div>
           
-          {/* 現場未登録メッセージ */}
           <div className="text-center mb-8">
             <p className="text-gray-600 text-sm mb-6">現場が登録されていません</p>
             
-            {/* 新規現場登録ボタン */}
             <button
-              onClick={() => {
-                console.log('🔘 SiteSelectionPage: 新規現場登録ボタンがクリックされました');
-                onRequestAddSite();
-              }}
+              onClick={() => onRequestAddSite()}
               className="w-full px-6 py-4 bg-gray-900/30 border border-gray-700 rounded-md text-gray-400 hover:bg-gray-900/50 hover:border-gray-600 hover:text-gray-300 transition-colors flex items-center justify-center gap-3"
             >
               <Plus className="w-5 h-5" />
@@ -841,7 +896,6 @@ function SiteSelectionPage({ sites, onSelectSite, onRequestAddSite }) {
     );
   }
   
-  // 現場が存在する場合（従来のUI）
   const siteOptions = sites.map(site => ({
     value: site.name,
     title: site.name,
@@ -851,12 +905,10 @@ function SiteSelectionPage({ sites, onSelectSite, onRequestAddSite }) {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        {/* ロゴ */}
         <div className="flex flex-col items-center justify-center mb-10">
           <LOGIOLogo size="lg" />
         </div>
         
-        {/* 現場選択 */}
         <DarkSelect
           label="現場"
           labelEn="PROJECT"
@@ -871,7 +923,6 @@ function SiteSelectionPage({ sites, onSelectSite, onRequestAddSite }) {
 }
 
 function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo }) {
-  // DarkSelect用のoptions配列を作成
   const siteOptions = sites.map(site => ({
     value: site.name,
     title: site.name,
@@ -880,7 +931,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
-      {/* 現場選択 */}
       <DarkSelect
         label="現場"
         labelEn="PROJECT"
@@ -892,7 +942,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
       {selectedSite && (
         <>
-          {/* メインKPI: 2×2グリッド（株価アプリ風） */}
           <div className="mb-3">
             <div className="grid grid-cols-2 gap-3">
               <MetricCard label="売上 / Revenue" value={formatCurrency(totals.totalRevenue)} unit="¥" type="revenue" rawValue={totals.totalRevenue} />
@@ -909,7 +958,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             </div>
           </div>
 
-          {/* スクラップ売上 - MetricCardで統一 */}
           {totals.accumulatedScrap > 0 && (
             <div className="mb-8">
               <MetricCard 
@@ -922,7 +970,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             </div>
           )}
 
-          {/* タブ風ナビゲーション */}
           <div className="mt-8 mb-6">
             <div className="grid grid-cols-2 gap-3">
               <button 
@@ -964,12 +1011,10 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   );
 }
 
-// PROJECT画面（プロジェクト情報の表示専用）
 function ProjectPage({ projectInfo, onNavigate }) {
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-4xl mx-auto">
-        {/* 閉じるボタン */}
         <div className="mb-4">
           <button
             onClick={() => onNavigate('home')}
@@ -983,7 +1028,6 @@ function ProjectPage({ projectInfo, onNavigate }) {
         <h1 className="text-3xl font-bold mb-8">PROJECT情報</h1>
         
         <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 space-y-6">
-          {/* プロジェクト基本情報 */}
           <div>
             <h2 className="text-xl font-semibold mb-4 text-blue-400">基本情報</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1010,7 +1054,6 @@ function ProjectPage({ projectInfo, onNavigate }) {
             </div>
           </div>
 
-          {/* プロジェクト担当者 */}
           <div>
             <h2 className="text-xl font-semibold mb-4 text-blue-400">担当者</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1025,7 +1068,6 @@ function ProjectPage({ projectInfo, onNavigate }) {
             </div>
           </div>
 
-          {/* プロジェクト期間 */}
           <div>
             <h2 className="text-xl font-semibold mb-4 text-blue-400">期間</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1040,7 +1082,6 @@ function ProjectPage({ projectInfo, onNavigate }) {
             </div>
           </div>
 
-          {/* 金額情報 */}
           <div>
             <h2 className="text-xl font-semibold mb-4 text-blue-400">金額</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1059,7 +1100,6 @@ function ProjectPage({ projectInfo, onNavigate }) {
             </div>
           </div>
 
-          {/* ステータス */}
           <div>
             <h2 className="text-xl font-semibold mb-4 text-blue-400">ステータス</h2>
             <div>
@@ -1075,7 +1115,6 @@ function ProjectPage({ projectInfo, onNavigate }) {
           </div>
         </div>
 
-        {/* 編集ボタン */}
         <div className="mt-6">
           <button
             onClick={() => onNavigate('settings')}
@@ -1108,7 +1147,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
-      {/* 戻るボタン */}
       <div className="mb-4">
         <button
           onClick={() => onNavigate('home')}
@@ -1183,7 +1221,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         <>
           <SectionHeader title={`プロジェクト情報編集 / Project Settings (${selectedSite})`} />
           
-          {/* PROJECT NO. - 表示のみ（編集不可） */}
           <div className="mb-6">
             <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
               工事番号 / PROJECT NO.
@@ -1217,7 +1254,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           <TextInput label="追加金額（税抜）" labelEn="Additional Amount" type="number" value={projectInfo.additionalAmount} onChange={(val) => setProjectInfo({...projectInfo, additionalAmount: val})} placeholder="0" />
           <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status} onChange={(val) => setProjectInfo({...projectInfo, status: val})} />
 
-          {/* 排出事業者 */}
           <TextInput 
             label="排出事業者" 
             labelEn="Discharger" 
@@ -1227,13 +1263,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             required
           />
 
-          {/* 契約処分先 */}
           <div className="mb-6">
             <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
               契約処分先 / Contracted Disposal Sites <span className="text-red-500">*</span>
             </label>
             
-            {/* 追加フォーム */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
               <div className="flex gap-2">
                 <select
@@ -1280,7 +1314,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               </div>
             </div>
             
-            {/* 登録済みリスト */}
             {projectInfo.contractedDisposalSites && projectInfo.contractedDisposalSites.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs text-gray-400">登録済み: {projectInfo.contractedDisposalSites.length}件</p>
@@ -1313,14 +1346,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   );
 }
 
-// ========== 3ステップ日報入力 ==========
-// ⚠️ ここから先がPart2に続きます ⚠️
-// ========== Part2: 日報入力画面（スマホ最適化版）+ 残りの画面 ==========
-
+// Part2の続きは次のメッセージで...
+// ========== 日報入力画面（スマホ最適化 + 右下フローティングボタン + プルダウン+入力欄セット） ==========
 function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   const [currentStep, setCurrentStep] = useState(1);
   
-  // Step1: 基本情報
   const [report, setReport] = useState({
     date: new Date().toISOString().split('T')[0],
     weather: '',
@@ -1329,7 +1359,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     customRecorder: ''
   });
 
-  // Step2: 作業内容・人員・稼働
   const [workDetails, setWorkDetails] = useState({
     workCategory: '',
     workContent: '',
@@ -1343,7 +1372,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     costItems: []
   });
   
-  // 単価設定（初期値）
   const [unitPrices] = useState({
     inHouseDaytime: 25000,
     inHouseNighttime: 35000,
@@ -1351,41 +1379,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     outsourcingDaytime: 25000,
     outsourcingNighttime: 30000
   });
-  
-  // 作業時間（時:分）を分に変換
-  const timeToMinutes = (timeStr) => {
-    if (!timeStr) return 0;
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return (hours * 60) + minutes;
-  };
-  
-  // 分を時:分に変換
-  const minutesToTime = (minutes) => {
-    if (!minutes) return '00:00';
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  };
 
-  // Step3: 廃棄物・スクラップ
   const [wasteItems, setWasteItems] = useState([]);
   const [scrapItems, setScrapItems] = useState([]);
-  
-  // 旧構造（後で削除）
-  const [costLines, setCostLines] = useState([]);
-  const [currentCost, setCurrentCost] = useState({ costCategory: '', costItem: '', quantity: '', unitPrice: '' });
-  const [wasteLines, setWasteLines] = useState([]);
-  const [currentWaste, setCurrentWaste] = useState({ wasteType: '', disposalSite: '', manifestNumber: '', quantity: '', unitDisposalCost: '' });
-  const [customDisposalSite, setCustomDisposalSite] = useState('');
-  const [scrapLines, setScrapLines] = useState([]);
-  const [currentScrap, setCurrentScrap] = useState({ scrapType: '', buyer: '', quantity: '', unitPrice: '' });
 
-  // ステップ変更時に画面を最上部にスクロール
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
-  // 下書き保存・読み込み
   useEffect(() => {
     loadDraft();
   }, []);
@@ -1433,19 +1434,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     }
   };
 
-  // キャンセル処理
   const handleCancel = () => {
     if (confirm('入力内容を破棄してホーム画面に戻りますか？')) {
       onNavigate('home');
     }
   };
 
-  // Step1の必須チェック
   const isStep1Valid = () => {
     return report.date && report.recorder;
   };
 
-  // 最終保存
   const handleSave = async () => {
     const finalReport = {
       ...report,
@@ -1454,7 +1452,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
       scrapItems
     };
     
-    // 下書きを削除
     try {
       await window.storage.delete('logio-draft-report');
     } catch (error) {
@@ -1464,39 +1461,25 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     onSave(finalReport);
   };
 
-  // 合計計算（workDetailsから）
-  const costTotal = 
-    (workDetails.inHouseWorkers?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0) +
-    (workDetails.outsourcingLabor?.reduce((sum, o) => sum + (o.amount || 0), 0) || 0) +
-    (workDetails.vehicles?.reduce((sum, v) => sum + (v.amount || 0), 0) || 0) +
-    (workDetails.machinery?.reduce((sum, m) => sum + (m.unitPrice || 0), 0) || 0) +
-    (workDetails.costItems?.reduce((sum, c) => sum + (c.amount || 0), 0) || 0);
-  const wasteTotal = wasteItems?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
-  const scrapTotal = wasteItems?.reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
-
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
-      {/* 閉じるボタン */}
-      <div className="mb-4">
-        <button
-          onClick={() => onNavigate('home')}
-          className="px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base flex items-center gap-2 min-h-[48px]"
-        >
-          <X className="w-5 h-5" />
-          閉じる
-        </button>
-      </div>
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen relative pb-24">
+      {/* 右下フローティング閉じるボタン */}
+      <button
+        onClick={() => onNavigate('home')}
+        className="fixed right-6 bottom-6 z-50 w-14 h-14 bg-black/80 hover:bg-black border-2 border-white rounded-full flex items-center justify-center shadow-lg transition-all"
+        style={{ backdropFilter: 'blur(10px)' }}
+      >
+        <X className="w-6 h-6 text-white" />
+      </button>
       
       <StepIndicator currentStep={currentStep} totalSteps={3} />
 
-      {/* Step1: 基本情報（スマホ最適化版 - 縦並び） */}
+      {/* Step1: 基本情報 */}
       {currentStep === 1 && (
         <div>
           <SectionHeader title="基本情報 / Basic Info" />
           
-          {/* 縦並びレイアウト */}
           <div className="space-y-4">
-            {/* 作業日 */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-3">
                 作業日 <span className="text-red-500">*</span>
@@ -1509,7 +1492,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               />
             </div>
             
-            {/* 天候 */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-3">
                 天候 <span className="text-red-500">*</span>
@@ -1526,27 +1508,32 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </select>
             </div>
             
-            {/* 記入者 */}
+            {/* 記入者（プルダウン + 入力欄セット） */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-3">
                 記入者 <span className="text-red-500">*</span>
               </label>
+              <select
+                value={report.recorder}
+                onChange={(e) => setReport({...report, recorder: e.target.value, customRecorder: ''})}
+                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500 mb-3"
+              >
+                <option value="">選択してください</option>
+                {MASTER_DATA.employees.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mb-2">または直接入力：</p>
               <input
-                list="recorders-list"
-                value={report.recorder || ''}
-                onChange={(e) => setReport({...report, recorder: e.target.value})}
-                placeholder="選択または入力"
+                type="text"
+                value={report.customRecorder}
+                onChange={(e) => setReport({...report, customRecorder: e.target.value, recorder: ''})}
+                placeholder="記入者名を入力"
                 className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
               />
-              <datalist id="recorders-list">
-                {MASTER_DATA.employees.map((name) => (
-                  <option key={name} value={name} />
-                ))}
-              </datalist>
             </div>
           </div>
 
-          {/* ボタン */}
           <div className="mt-8 grid grid-cols-2 gap-4">
             <button
               onClick={handleCancel}
@@ -1556,7 +1543,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             </button>
             <button 
               onClick={() => setCurrentStep(2)} 
-              disabled={!isStep1Valid()}
+              disabled={!isStep1Valid() && !report.customRecorder}
               className="py-4 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
             >
               次へ
@@ -1565,12 +1552,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         </div>
       )}
 
-      {/* Step2: 原価明細（スマホ最適化版） */}
+      {/* Step2: 原価明細 */}
       {currentStep === 2 && (
         <div>
           <SectionHeader title="原価明細 / Cost Details" />
           
-          {/* 施工内容（縦並び） */}
+          {/* 施工内容 */}
           <div className="mb-8 bg-gray-900/50 rounded-lg p-4 border border-gray-700">
             <h3 className="text-base font-semibold text-white mb-4">施工内容</h3>
             
@@ -1604,28 +1591,33 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           
           <div className="my-8 border-t border-gray-700"></div>
           
-          {/* 自社人工（縦並び最適化） */}
+          {/* 自社人工（プルダウン + 入力欄セット） */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">
               自社人工
             </label>
             
-            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">作業員</label>
                   <select
-                    id="worker-name-input"
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    id="worker-name-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500 mb-3"
                     defaultValue=""
                   >
                     <option value="">選択してください</option>
                     {MASTER_DATA.inHouseWorkers.map((name) => (
                       <option key={name} value={name}>{name}</option>
                     ))}
-                    <option value="__custom__">その他（手入力）</option>
                   </select>
+                  <p className="text-xs text-gray-500 mb-2">または直接入力：</p>
+                  <input
+                    id="worker-name-custom"
+                    type="text"
+                    placeholder="作業員名を入力"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -1672,14 +1664,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 
                 <button
                   onClick={() => {
-                    const nameSelect = document.getElementById('worker-name-input');
-                    let name = nameSelect.value;
+                    const nameSelect = document.getElementById('worker-name-select');
+                    const nameCustom = document.getElementById('worker-name-custom');
+                    let name = nameSelect.value || nameCustom.value;
                     
-                    if (name === '__custom__') {
-                      name = prompt('作業員名を入力してください');
-                      if (!name) return;
-                    } else if (!name) {
-                      alert('作業員を選択してください');
+                    if (!name) {
+                      alert('作業員を選択または入力してください');
                       return;
                     }
                     
@@ -1701,8 +1691,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                       inHouseWorkers: [...workDetails.inHouseWorkers, { name, startTime, endTime, shiftType, amount }]
                     });
                     
-                    // リセット
                     nameSelect.value = '';
+                    nameCustom.value = '';
                     document.getElementById('worker-start-input').value = '';
                     document.getElementById('worker-end-input').value = '';
                     document.getElementById('worker-shift-input').value = 'daytime';
@@ -1714,85 +1704,89 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </div>
             </div>
             
-            {/* 登録済みリスト */}
             {workDetails.inHouseWorkers.length > 0 && (
-              <div className="space-y-3 mb-4">
-                <p className="text-sm text-gray-400">登録済み: {workDetails.inHouseWorkers.length}名</p>
-                {workDetails.inHouseWorkers.map((worker, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <p className="text-white text-base font-medium mb-1">{worker.name}</p>
-                        <p className="text-sm text-gray-400">{worker.startTime} - {worker.endTime}</p>
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.inHouseWorkers.length}名</p>
+                  {workDetails.inHouseWorkers.map((worker, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium mb-1">{worker.name}</p>
+                          <p className="text-sm text-gray-400">{worker.startTime} - {worker.endTime}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newWorkers = workDetails.inHouseWorkers.filter((_, i) => i !== index);
+                            setWorkDetails({...workDetails, inHouseWorkers: newWorkers});
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          const newWorkers = workDetails.inHouseWorkers.filter((_, i) => i !== index);
-                          setWorkDetails({...workDetails, inHouseWorkers: newWorkers});
-                        }}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      <select
-                        value={worker.shiftType}
-                        onChange={(e) => {
-                          const newType = e.target.value;
-                          let newAmount = unitPrices.inHouseDaytime;
-                          if (newType === 'nighttime') newAmount = unitPrices.inHouseNighttime;
-                          if (newType === 'nightLoading') newAmount = unitPrices.inHouseNightLoading;
-                          const newWorkers = [...workDetails.inHouseWorkers];
-                          newWorkers[index] = { ...newWorkers[index], shiftType: newType, amount: newAmount };
-                          setWorkDetails({...workDetails, inHouseWorkers: newWorkers});
-                        }}
-                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
-                      >
-                        <option value="daytime">日勤 (¥{formatCurrency(unitPrices.inHouseDaytime)})</option>
-                        <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.inHouseNighttime)})</option>
-                        <option value="nightLoading">夜間積込 (¥{formatCurrency(unitPrices.inHouseNightLoading)})</option>
-                      </select>
-                      <div className="text-right">
-                        <span className="text-white font-semibold text-lg">¥{formatCurrency(worker.amount)}</span>
+                      <div className="space-y-3">
+                        <select
+                          value={worker.shiftType}
+                          onChange={(e) => {
+                            const newType = e.target.value;
+                            let newAmount = unitPrices.inHouseDaytime;
+                            if (newType === 'nighttime') newAmount = unitPrices.inHouseNighttime;
+                            if (newType === 'nightLoading') newAmount = unitPrices.inHouseNightLoading;
+                            const newWorkers = [...workDetails.inHouseWorkers];
+                            newWorkers[index] = { ...newWorkers[index], shiftType: newType, amount: newAmount };
+                            setWorkDetails({...workDetails, inHouseWorkers: newWorkers});
+                          }}
+                          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="daytime">日勤 (¥{formatCurrency(unitPrices.inHouseDaytime)})</option>
+                          <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.inHouseNighttime)})</option>
+                          <option value="nightLoading">夜間積込 (¥{formatCurrency(unitPrices.inHouseNightLoading)})</option>
+                        </select>
+                        <div className="text-right">
+                          <span className="text-white font-semibold text-lg">¥{formatCurrency(worker.amount)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {workDetails.inHouseWorkers.length > 0 && (
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-xl font-semibold">
-                  小計: ¥{formatCurrency(workDetails.inHouseWorkers.reduce((sum, w) => sum + w.amount, 0))}
-                </p>
-              </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.inHouseWorkers.reduce((sum, w) => sum + w.amount, 0))}
+                  </p>
+                </div>
+              </>
             )}
           </div>
           
-          {/* 外注人工（縦並び最適化） */}
+          {/* 外注人工（プルダウン + 入力欄セット） */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">
               外注人工
             </label>
             
-            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">会社名</label>
                   <select
-                    id="outsourcing-company-input"
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    id="outsourcing-company-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500 mb-3"
                     defaultValue=""
                   >
                     <option value="">選択してください</option>
                     {MASTER_DATA.outsourcingCompanies.map((company) => (
                       <option key={company} value={company}>{company}</option>
                     ))}
-                    <option value="__custom__">その他（手入力）</option>
                   </select>
+                  <p className="text-xs text-gray-500 mb-2">または直接入力：</p>
+                  <input
+                    id="outsourcing-company-custom"
+                    type="text"
+                    placeholder="会社名を入力"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -1821,14 +1815,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 
                 <button
                   onClick={() => {
-                    const companySelect = document.getElementById('outsourcing-company-input');
-                    let company = companySelect.value;
+                    const companySelect = document.getElementById('outsourcing-company-select');
+                    const companyCustom = document.getElementById('outsourcing-company-custom');
+                    let company = companySelect.value || companyCustom.value;
                     
-                    if (company === '__custom__') {
-                      company = prompt('会社名を入力してください');
-                      if (!company) return;
-                    } else if (!company) {
-                      alert('会社名を選択してください');
+                    if (!company) {
+                      alert('会社名を選択または入力してください');
                       return;
                     }
                     
@@ -1848,8 +1840,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                       outsourcingLabor: [...workDetails.outsourcingLabor, { company, workers, shiftType, amount }]
                     });
                     
-                    // リセット
                     companySelect.value = '';
+                    companyCustom.value = '';
                     workersInput.value = '';
                     document.getElementById('outsourcing-shift-input').value = 'daytime';
                   }}
@@ -1860,67 +1852,65 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </div>
             </div>
             
-            {/* 登録済みリスト */}
             {workDetails.outsourcingLabor.length > 0 && (
-              <div className="space-y-3 mb-4">
-                <p className="text-sm text-gray-400">登録済み: {workDetails.outsourcingLabor.length}件</p>
-                {workDetails.outsourcingLabor.map((item, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <p className="text-white text-base font-medium mb-1">{item.company}</p>
-                        <p className="text-sm text-gray-400">{item.workers}人</p>
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.outsourcingLabor.length}件</p>
+                  {workDetails.outsourcingLabor.map((item, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium mb-1">{item.company}</p>
+                          <p className="text-sm text-gray-400">{item.workers}人</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newLabor = workDetails.outsourcingLabor.filter((_, i) => i !== index);
+                            setWorkDetails({...workDetails, outsourcingLabor: newLabor});
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          const newLabor = workDetails.outsourcingLabor.filter((_, i) => i !== index);
-                          setWorkDetails({...workDetails, outsourcingLabor: newLabor});
-                        }}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      <select
-                        value={item.shiftType}
-                        onChange={(e) => {
-                          const newType = e.target.value;
-                          const newAmount = item.workers * (newType === 'daytime' ? unitPrices.outsourcingDaytime : unitPrices.outsourcingNighttime);
-                          const newLabor = [...workDetails.outsourcingLabor];
-                          newLabor[index] = { ...newLabor[index], shiftType: newType, amount: newAmount };
-                          setWorkDetails({...workDetails, outsourcingLabor: newLabor});
-                        }}
-                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
-                      >
-                        <option value="daytime">日勤 (¥{formatCurrency(unitPrices.outsourcingDaytime)}/人)</option>
-                        <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.outsourcingNighttime)}/人)</option>
-                      </select>
-                      <div className="text-right">
-                        <span className="text-white font-semibold text-lg">¥{formatCurrency(item.amount)}</span>
+                      <div className="space-y-3">
+                        <select
+                          value={item.shiftType}
+                          onChange={(e) => {
+                            const newType = e.target.value;
+                            const newAmount = item.workers * (newType === 'daytime' ? unitPrices.outsourcingDaytime : unitPrices.outsourcingNighttime);
+                            const newLabor = [...workDetails.outsourcingLabor];
+                            newLabor[index] = { ...newLabor[index], shiftType: newType, amount: newAmount };
+                            setWorkDetails({...workDetails, outsourcingLabor: newLabor});
+                          }}
+                          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="daytime">日勤 (¥{formatCurrency(unitPrices.outsourcingDaytime)}/人)</option>
+                          <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.outsourcingNighttime)}/人)</option>
+                        </select>
+                        <div className="text-right">
+                          <span className="text-white font-semibold text-lg">¥{formatCurrency(item.amount)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {workDetails.outsourcingLabor.length > 0 && (
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-xl font-semibold">
-                  小計: ¥{formatCurrency(workDetails.outsourcingLabor.reduce((sum, item) => sum + item.amount, 0))}
-                </p>
-              </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.outsourcingLabor.reduce((sum, item) => sum + item.amount, 0))}
+                  </p>
+                </div>
+              </>
             )}
           </div>
           
-          {/* 車両（縦並び最適化） */}
+          {/* 車両 */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">
               車両
             </label>
             
-            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
               <div className="space-y-4">
                 <div>
@@ -1976,7 +1966,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                       vehicles: [...workDetails.vehicles, { type, number, amount }]
                     });
                     
-                    // リセット
                     document.getElementById('vehicle-type-input').value = '';
                     document.getElementById('vehicle-number-input').innerHTML = '<option value="">選択</option>';
                   }}
@@ -1987,46 +1976,44 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </div>
             </div>
             
-            {/* 登録済みリスト */}
             {workDetails.vehicles.length > 0 && (
-              <div className="space-y-3 mb-4">
-                <p className="text-sm text-gray-400">登録済み: {workDetails.vehicles.length}台</p>
-                {workDetails.vehicles.map((vehicle, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-3 flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="text-white text-base font-medium">{vehicle.type} ({vehicle.number})</p>
-                      <p className="text-sm text-gray-400">¥{formatCurrency(vehicle.amount)}</p>
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.vehicles.length}台</p>
+                  {workDetails.vehicles.map((vehicle, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-3 flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="text-white text-base font-medium">{vehicle.type} ({vehicle.number})</p>
+                        <p className="text-sm text-gray-400">¥{formatCurrency(vehicle.amount)}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newVehicles = workDetails.vehicles.filter((_, i) => i !== index);
+                          setWorkDetails({...workDetails, vehicles: newVehicles});
+                        }}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newVehicles = workDetails.vehicles.filter((_, i) => i !== index);
-                        setWorkDetails({...workDetails, vehicles: newVehicles});
-                      }}
-                      className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {workDetails.vehicles.length > 0 && (
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-xl font-semibold">
-                  小計: ¥{formatCurrency(workDetails.vehicles.reduce((sum, v) => sum + v.amount, 0))}
-                </p>
-              </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.vehicles.reduce((sum, v) => sum + v.amount, 0))}
+                  </p>
+                </div>
+              </>
             )}
           </div>
           
-          {/* その他原価（縦並び最適化） */}
+          {/* その他原価 */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">
               その他原価
             </label>
             
-            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
               <div className="space-y-4">
                 <div>
@@ -2039,12 +2026,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                       const usageDateInput = document.getElementById('usage-date-inline');
                       const usageDaysInput = document.getElementById('usage-days-inline');
                       
-                      // 全て非表示
                       machinerySelect.style.display = 'none';
                       usageDateInput.style.display = 'none';
                       usageDaysInput.style.display = 'none';
                       
-                      // 区分によって表示切替
                       if (category === '自社重機') {
                         machinerySelect.style.display = 'block';
                         usageDateInput.style.display = 'block';
@@ -2068,22 +2053,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                   </select>
                 </div>
                 
-                {/* 重機名（自社重機のみ） */}
                 <div id="machinery-name-select" style={{display: 'none'}}>
                   <label className="block text-sm text-gray-400 mb-2">重機名</label>
-                  <select
+                  <input
                     id="machinery-name-input"
+                    type="text"
+                    placeholder="重機名を入力"
                     className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
-                    defaultValue=""
-                  >
-                    <option value="">選択</option>
-                    <option value="PC78US">PC78US</option>
-                    <option value="PC138US">PC138US</option>
-                    <option value="__custom__">その他</option>
-                  </select>
+                  />
                 </div>
                 
-                {/* 使用日（自社重機・回送費） */}
                 <div id="usage-date-inline" style={{display: 'none'}}>
                   <label className="block text-sm text-gray-400 mb-2">使用日</label>
                   <input
@@ -2093,7 +2072,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                   />
                 </div>
                 
-                {/* 使用日数（自社重機・回送費・リース費） */}
                 <div id="usage-days-inline" style={{display: 'none'}}>
                   <label className="block text-sm text-gray-400 mb-2">日数</label>
                   <input
@@ -2105,7 +2083,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                   />
                 </div>
                 
-                {/* 金額（全て） */}
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">金額</label>
                   <input
@@ -2128,21 +2105,15 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     
                     const newItem = { category, amount };
                     
-                    // 重機名（自社重機のみ）
                     if (category === '自社重機') {
-                      const machinerySelect = document.getElementById('machinery-name-input');
-                      let machineryName = machinerySelect.value;
-                      if (machineryName === '__custom__') {
-                        machineryName = prompt('重機名を入力してください');
-                        if (!machineryName) return;
-                      } else if (!machineryName) {
-                        alert('重機名を選択してください');
+                      const machineryName = document.getElementById('machinery-name-input').value;
+                      if (!machineryName) {
+                        alert('重機名を入力してください');
                         return;
                       }
                       newItem.machineryName = machineryName;
                     }
                     
-                    // 使用日（自社重機・回送費）
                     if (category === '自社重機' || category === '回送費') {
                       const usageDate = document.getElementById('usage-date-input').value;
                       if (!usageDate) {
@@ -2152,7 +2123,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                       newItem.usageDate = usageDate;
                     }
                     
-                    // 使用日数（自社重機・回送費・リース費）
                     if (category === '自社重機' || category === '回送費' || category === 'リース費') {
                       const usageDays = parseInt(document.getElementById('usage-days-input').value);
                       if (!usageDays) {
@@ -2167,7 +2137,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                       costItems: [...workDetails.costItems, newItem]
                     });
                     
-                    // リセット
                     document.getElementById('cost-category-input').value = '';
                     document.getElementById('machinery-name-input').value = '';
                     document.getElementById('usage-date-input').value = '';
@@ -2184,47 +2153,45 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </div>
             </div>
             
-            {/* 登録済みリスト */}
             {workDetails.costItems.length > 0 && (
-              <div className="space-y-3 mb-4">
-                <p className="text-sm text-gray-400">登録済み: {workDetails.costItems.length}件</p>
-                {workDetails.costItems.map((item, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-3 flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="text-white text-base font-medium">
-                        {item.category}
-                        {item.machineryName && ` - ${item.machineryName}`}
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        {item.usageDate && `使用日: ${item.usageDate} `}
-                        {item.usageDays && `${item.usageDays}日 `}
-                        ¥{formatCurrency(item.amount)}
-                      </p>
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.costItems.length}件</p>
+                  {workDetails.costItems.map((item, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-3 flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="text-white text-base font-medium">
+                          {item.category}
+                          {item.machineryName && ` - ${item.machineryName}`}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {item.usageDate && `使用日: ${item.usageDate} `}
+                          {item.usageDays && `${item.usageDays}日 `}
+                          ¥{formatCurrency(item.amount)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newItems = workDetails.costItems.filter((_, i) => i !== index);
+                          setWorkDetails({...workDetails, costItems: newItems});
+                        }}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        const newItems = workDetails.costItems.filter((_, i) => i !== index);
-                        setWorkDetails({...workDetails, costItems: newItems});
-                      }}
-                      className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {workDetails.costItems.length > 0 && (
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-xl font-semibold">
-                  小計: ¥{formatCurrency(workDetails.costItems.reduce((sum, c) => sum + c.amount, 0))}
-                </p>
-              </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.costItems.reduce((sum, c) => sum + c.amount, 0))}
+                  </p>
+                </div>
+              </>
             )}
           </div>
           
-          {/* ボタン */}
           <div className="mt-8 grid grid-cols-3 gap-3">
             <button
               onClick={() => setCurrentStep(1)}
@@ -2248,35 +2215,41 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         </div>
       )}
 
-      {/* Step3: 廃棄物・スクラップ（スマホ最適化版） */}
+      {/* Step3は次のファイルに続く... */}
+      {/* Step3: 廃棄物・スクラップ */}
       {currentStep === 3 && (
         <div>
           <SectionHeader title="廃棄物・スクラップ / Waste & Scrap" />
           
           <p className="text-sm text-gray-400 mb-6">※ 廃棄物・スクラップがない場合はそのまま保存できます</p>
 
-          {/* 廃棄物処分費（縦並び最適化） */}
+          {/* 廃棄物処分費 */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">
               廃棄物処分費
             </label>
             
-            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">発生材</label>
                   <select
-                    id="waste-material-input"
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    id="waste-material-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500 mb-3"
                     defaultValue=""
                   >
                     <option value="">選択</option>
                     {MASTER_DATA.wasteTypes.map((type) => (
                       <option key={type} value={type}>{type}</option>
                     ))}
-                    <option value="__custom__">その他</option>
                   </select>
+                  <p className="text-xs text-gray-500 mb-2">または直接入力：</p>
+                  <input
+                    id="waste-material-custom"
+                    type="text"
+                    placeholder="発生材を入力"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">処分先</label>
@@ -2346,14 +2319,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 
                 <button
                   onClick={() => {
-                    const materialSelect = document.getElementById('waste-material-input');
-                    let material = materialSelect.value;
+                    const materialSelect = document.getElementById('waste-material-select');
+                    const materialCustom = document.getElementById('waste-material-custom');
+                    let material = materialSelect.value || materialCustom.value;
                     
-                    if (material === '__custom__') {
-                      material = prompt('発生材を入力してください');
-                      if (!material) return;
-                    } else if (!material) {
-                      alert('発生材を選択してください');
+                    if (!material) {
+                      alert('発生材を選択または入力してください');
                       return;
                     }
                     
@@ -2387,8 +2358,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                       manifestNumber
                     }]);
                     
-                    // リセット
                     materialSelect.value = '';
+                    materialCustom.value = '';
                     disposalSelect.value = '';
                     document.getElementById('waste-quantity-input').value = '';
                     document.getElementById('waste-unit-input').value = '㎥';
@@ -2402,80 +2373,90 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </div>
             </div>
             
-            {/* 登録済みリスト */}
             {wasteItems.length > 0 && (
-              <div className="space-y-3 mb-4">
-                <p className="text-sm text-gray-400">登録済み: {wasteItems.length}件</p>
-                {wasteItems.map((item, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <p className="text-white text-base font-medium">{item.material} | {item.disposalSite}</p>
-                        <p className="text-sm text-gray-400">
-                          {item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(item.amount)}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">マニフェスト: {item.manifestNumber}</p>
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {wasteItems.length}件</p>
+                  {wasteItems.map((item, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium">{item.material} | {item.disposalSite}</p>
+                          <p className="text-sm text-gray-400">
+                            {item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(item.amount)}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">マニフェスト: {item.manifestNumber}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newItems = wasteItems.filter((_, i) => i !== index);
+                            setWasteItems(newItems);
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          const newItems = wasteItems.filter((_, i) => i !== index);
-                          setWasteItems(newItems);
-                        }}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {wasteItems.length > 0 && (
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-xl font-semibold">
-                  小計: ¥{formatCurrency(wasteItems.reduce((sum, item) => sum + item.amount, 0))}
-                </p>
-              </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(wasteItems.reduce((sum, item) => sum + item.amount, 0))}
+                  </p>
+                </div>
+              </>
             )}
           </div>
 
-          {/* スクラップ売上（縦並び最適化） */}
+          {/* スクラップ売上（プルダウン + 入力欄セット） */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">
               スクラップ売上
             </label>
             
-            {/* 入力フォーム（縦並び） */}
             <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">種類</label>
                   <select
-                    id="scrap-type-input"
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    id="scrap-type-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500 mb-3"
                     defaultValue=""
                   >
                     <option value="">選択</option>
                     {MASTER_DATA.scrapTypes.map((type) => (
                       <option key={type} value={type}>{type}</option>
                     ))}
-                    <option value="__custom__">その他</option>
                   </select>
+                  <p className="text-xs text-gray-500 mb-2">または直接入力：</p>
+                  <input
+                    id="scrap-type-custom"
+                    type="text"
+                    placeholder="スクラップ種類を入力"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">買取業者</label>
                   <select
-                    id="scrap-buyer-input"
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    id="scrap-buyer-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500 mb-3"
                     defaultValue=""
                   >
                     <option value="">選択</option>
                     {MASTER_DATA.buyers.map((buyer) => (
                       <option key={buyer} value={buyer}>{buyer}</option>
                     ))}
-                    <option value="__custom__">その他</option>
                   </select>
+                  <p className="text-xs text-gray-500 mb-2">または直接入力：</p>
+                  <input
+                    id="scrap-buyer-custom"
+                    type="text"
+                    placeholder="買取業者を入力"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -2515,25 +2496,21 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 
                 <button
                   onClick={() => {
-                    const typeSelect = document.getElementById('scrap-type-input');
-                    let type = typeSelect.value;
+                    const typeSelect = document.getElementById('scrap-type-select');
+                    const typeCustom = document.getElementById('scrap-type-custom');
+                    let type = typeSelect.value || typeCustom.value;
                     
-                    if (type === '__custom__') {
-                      type = prompt('スクラップ種類を入力してください');
-                      if (!type) return;
-                    } else if (!type) {
-                      alert('種類を選択してください');
+                    if (!type) {
+                      alert('種類を選択または入力してください');
                       return;
                     }
                     
-                    const buyerSelect = document.getElementById('scrap-buyer-input');
-                    let buyer = buyerSelect.value;
+                    const buyerSelect = document.getElementById('scrap-buyer-select');
+                    const buyerCustom = document.getElementById('scrap-buyer-custom');
+                    let buyer = buyerSelect.value || buyerCustom.value;
                     
-                    if (buyer === '__custom__') {
-                      buyer = prompt('買取業者を入力してください');
-                      if (!buyer) return;
-                    } else if (!buyer) {
-                      alert('買取業者を選択してください');
+                    if (!buyer) {
+                      alert('買取業者を選択または入力してください');
                       return;
                     }
                     
@@ -2557,9 +2534,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                       amount
                     }]);
                     
-                    // リセット
                     typeSelect.value = '';
+                    typeCustom.value = '';
                     buyerSelect.value = '';
+                    buyerCustom.value = '';
                     document.getElementById('scrap-quantity-input').value = '';
                     document.getElementById('scrap-unit-input').value = 'kg';
                     document.getElementById('scrap-unitprice-input').value = '';
@@ -2571,44 +2549,42 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </div>
             </div>
             
-            {/* 登録済みリスト */}
             {scrapItems.length > 0 && (
-              <div className="space-y-3 mb-4">
-                <p className="text-sm text-gray-400">登録済み: {scrapItems.length}件</p>
-                {scrapItems.map((item, index) => (
-                  <div key={index} className="bg-gray-900/50 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <p className="text-white text-base font-medium">{item.type} | {item.buyer}</p>
-                        <p className="text-sm text-gray-400">
-                          {item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(Math.abs(item.amount))}
-                        </p>
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {scrapItems.length}件</p>
+                  {scrapItems.map((item, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium">{item.type} | {item.buyer}</p>
+                          <p className="text-sm text-gray-400">
+                            {item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(Math.abs(item.amount))}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newItems = scrapItems.filter((_, i) => i !== index);
+                            setScrapItems(newItems);
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          const newItems = scrapItems.filter((_, i) => i !== index);
-                          setScrapItems(newItems);
-                        }}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {scrapItems.length > 0 && (
-              <div className="p-4 bg-gray-800/50 rounded-lg">
-                <p className="text-white text-xl font-semibold">
-                  小計: ¥{formatCurrency(Math.abs(scrapItems.reduce((sum, item) => sum + item.amount, 0)))}
-                </p>
-              </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(Math.abs(scrapItems.reduce((sum, item) => sum + item.amount, 0)))}
+                  </p>
+                </div>
+              </>
             )}
           </div>
 
-          {/* ボタン */}
           <div className="mt-8 grid grid-cols-3 gap-3">
             <button
               onClick={() => setCurrentStep(2)}
@@ -2635,6 +2611,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   );
 }
 
+// 日報一覧、原価分析などの残りのコンポーネントは次のファイルで...
+// (Part2が長すぎるため、Part3に分割します)
+// ========== Part3: 日報一覧、原価分析、Export、メインApp ==========
 
 function ReportListPage({ reports, onDelete, onNavigate }) {
   const [filterMonth, setFilterMonth] = useState('');
@@ -2642,7 +2621,6 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
 
   const filteredReports = reports.filter(r => {
     if (filterMonth && !r.date.startsWith(filterMonth)) return false;
-    // 新旧データ構造に対応
     const category = r.workDetails?.workCategory || r.workCategory;
     if (filterCategory && category !== filterCategory) return false;
     return true;
@@ -2652,7 +2630,6 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
-      {/* 戻るボタン */}
       <div className="mb-4">
         <button
           onClick={() => onNavigate('home')}
@@ -2681,14 +2658,6 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
 
 function ReportAccordion({ report, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
-  
-  // 分を時:分に変換
-  const minutesToTimeDisplay = (minutes) => {
-    if (!minutes) return null;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h}時間${m > 0 ? m + '分' : ''}`;
-  };
 
   return (
     <div className="border border-gray-700 rounded-lg mb-3 overflow-hidden bg-gray-900/30">
@@ -2727,11 +2696,10 @@ function ReportAccordion({ report, onDelete }) {
 
       {isOpen && (
         <div className="px-4 py-4 bg-gray-800/30 border-t border-gray-700">
-          {/* 記入者と施工内容 */}
           <div className="mb-4 pb-4 border-b border-gray-700">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs text-gray-500">記入者:</span>
-              <span className="text-sm text-white">{report.recorder}</span>
+              <span className="text-sm text-white">{report.recorder || report.customRecorder}</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-xs text-gray-500 mt-0.5">施工内容:</span>
@@ -2739,7 +2707,6 @@ function ReportAccordion({ report, onDelete }) {
             </div>
           </div>
 
-          {/* 原価明細 */}
           {report.workDetails && (
             <div className="mb-4">
               <p className="text-xs font-semibold text-gray-400 uppercase mb-3">原価明細</p>
@@ -2777,17 +2744,6 @@ function ReportAccordion({ report, onDelete }) {
                 </div>
               )}
               
-              {report.workDetails.machinery?.length > 0 && (
-                <div className="mb-3 bg-gray-900/30 rounded p-2">
-                  <p className="text-xs font-semibold text-blue-400 mb-2">重機: {report.workDetails.machinery.length}台</p>
-                  {report.workDetails.machinery.map((m, idx) => (
-                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
-                      • {m.name} <span className="text-yellow-400">¥{formatCurrency(m.unitPrice)}</span>
-                    </p>
-                  ))}
-                </div>
-              )}
-              
               {report.workDetails.costItems?.length > 0 && (
                 <div className="mb-3 bg-gray-900/30 rounded p-2">
                   <p className="text-xs font-semibold text-blue-400 mb-2">その他原価: {report.workDetails.costItems.length}件</p>
@@ -2801,7 +2757,6 @@ function ReportAccordion({ report, onDelete }) {
             </div>
           )}
 
-          {/* 廃棄物 */}
           {report.wasteItems && report.wasteItems.length > 0 && (
             <div className="mb-4 bg-gray-900/30 rounded p-2">
               <p className="text-xs font-semibold text-red-400 mb-2">
@@ -2816,7 +2771,6 @@ function ReportAccordion({ report, onDelete }) {
             </div>
           )}
 
-          {/* スクラップ */}
           {report.scrapItems && report.scrapItems.length > 0 && (
             <div className="mb-4 bg-gray-900/30 rounded p-2">
               <p className="text-xs font-semibold text-green-400 mb-2">
@@ -2830,43 +2784,6 @@ function ReportAccordion({ report, onDelete }) {
             </div>
           )}
 
-          {/* 旧データ構造もサポート */}
-          {report.costLines && report.costLines.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">原価（旧）: {report.costLines.length}件 / ¥{formatCurrency(report.costLines.reduce((s, c) => s + c.amount, 0))}</p>
-              {report.costLines.map((cost, idx) => (
-                <p key={idx} className="text-sm ml-2">・{cost.costCategory} - {cost.costItem} ¥{formatCurrency(cost.amount)}</p>
-              ))}
-            </div>
-          )}
-
-          {report.wasteLines && report.wasteLines.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">廃棄物（旧）: {report.wasteLines.length}件 / ¥{formatCurrency(report.wasteLines.reduce((s, w) => s + w.disposalCost, 0))}</p>
-              {report.wasteLines.map((waste, idx) => (
-                <div key={idx} className="text-sm ml-2">
-                  <p>・{waste.wasteType} {waste.quantity}㎥ - {waste.disposalSite}</p>
-                  {waste.manifestNumber && <p className="text-xs text-gray-500 ml-4">伝票: {waste.manifestNumber}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {report.scrapLines && report.scrapLines.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">スクラップ（旧）: {report.scrapLines.length}件 / ¥{formatCurrency(report.scrapLines.reduce((s, sc) => s + sc.salesAmount, 0))}</p>
-              {report.scrapLines.map((scrap, idx) => (
-                <p key={idx} className="text-sm ml-2">・{scrap.scrapType} {scrap.quantity}kg - {scrap.buyer}</p>
-              ))}
-            </div>
-          )}
-
-          <div className="text-sm text-gray-600">
-            {report.vehicleType && <p>使用車両: {report.vehicleType}{report.vehicleNumber && ` (${report.vehicleNumber})`}</p>}
-            <p>使用重機: {report.heavyMachinery?.join(', ') || 'なし'}</p>
-            <p>記入者: {report.recorder}</p>
-          </div>
-
           <div className="mt-4">
             <Button variant="danger" onClick={onDelete} icon={Trash2}>削除</Button>
           </div>
@@ -2877,17 +2794,14 @@ function ReportAccordion({ report, onDelete }) {
 }
 
 function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
-  // 労務費を除外し、既存の労務費データは経費に集約
   const costByCategory = { '材料費': 0, '外注費': 0, '経費': 0 };
 
   reports.forEach(r => {
     r.costLines?.forEach(c => {
-      // 労務費は経費として集計
       const category = c.costCategory === '労務費' ? '経費' : c.costCategory;
       if (costByCategory[category] !== undefined) {
         costByCategory[category] = (costByCategory[category] || 0) + c.amount;
       } else {
-        // 未定義カテゴリは経費扱い
         costByCategory['経費'] += c.amount;
       }
     });
@@ -2916,7 +2830,6 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     cost: Math.round(monthlyData[month] / 10000)
   }));
 
-  // 原価率計算
   const costRatio = totals.totalRevenue > 0 ? ((totals.accumulatedCost / totals.totalRevenue) * 100).toFixed(1) : '0.0';
   const costRatioNum = parseFloat(costRatio);
   let costRatioStatus = '余裕あり';
@@ -2931,7 +2844,6 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
-      {/* 戻るボタン */}
       <div className="mb-4">
         <button
           onClick={() => onNavigate('home')}
@@ -2942,7 +2854,6 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         </button>
       </div>
       
-      {/* 現場情報カード */}
       {projectInfo?.projectName && (
         <div className="mb-6 px-4 py-4 bg-gray-900/50 border border-gray-800 rounded-md">
           <div className="text-white text-lg font-bold leading-relaxed mb-2">
@@ -2956,7 +2867,6 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         </div>
       )}
       
-      {/* メインKPIサマリー */}
       <div className="mb-6">
         <SectionHeader title="財務サマリー / Financial Summary" />
         <div className="bg-gray-900/50 rounded-md p-5 space-y-3">
@@ -2990,7 +2900,6 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         </div>
       </div>
 
-      {/* 原価率指標 */}
       <div className="mb-6 bg-gray-900/50 rounded-md p-5">
         <div className="flex items-center justify-between">
           <div>
@@ -3067,7 +2976,6 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   );
 }
 
-// EXPORTページ
 function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   const [spreadsheetId, setSpreadsheetId] = useState('');
   const [gasUrl, setGasUrl] = useState('');
@@ -3076,7 +2984,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
 
-  // 設定を読み込み
   useEffect(() => {
     const loadSettings = async () => {
       const idResult = await window.storage.get('logio-spreadsheet-id');
@@ -3092,7 +2999,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
     loadSettings();
   }, []);
 
-  // スプレッドシートIDとGAS URLを保存
   const handleSaveSpreadsheetId = async () => {
     await window.storage.set('logio-spreadsheet-id', spreadsheetId);
     if (gasUrl) {
@@ -3102,13 +3008,11 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
     setTimeout(() => setExportStatus(''), 3000);
   };
 
-  // 自動エクスポート設定を保存
   const handleToggleAutoExport = async (checked) => {
     setAutoExport(checked);
     await window.storage.set('logio-auto-export', checked.toString());
   };
 
-  // 手動エクスポート
   const handleManualExport = async () => {
     if (!gasUrl) {
       setExportStatus('❌ GAS URLを入力してください');
@@ -3119,7 +3023,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
     setExportStatus('📤 エクスポート中...');
 
     try {
-      // 現場データを準備
       const siteData = {
         siteName: sites.find(s => s.name === selectedSite)?.name || '',
         projectNumber: projectInfo.projectNumber || '',
@@ -3143,20 +3046,13 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         reportData: reports
       };
 
-      // デバッグ: 送信データをコンソールに出力
-      console.log('🚀 エクスポートデータ:', payload);
-      console.log('📍 GAS URL:', gasUrl);
-      console.log('📊 現場:', selectedSite);
-      console.log('📝 日報件数:', reports.length);
-
-      // GASにデータ送信
       const response = await fetch(gasUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-        mode: 'no-cors' // GASはno-corsが必要
+        mode: 'no-cors'
       });
 
       const now = new Date().toLocaleString('ja-JP');
@@ -3175,7 +3071,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 bg-black min-h-screen">
-      {/* 閉じるボタン */}
       <div className="mb-4">
         <button
           onClick={() => onNavigate('home')}
@@ -3189,7 +3084,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
       <p className="text-gray-400 text-sm mb-8">データをGoogle スプレッドシートにエクスポート</p>
 
-      {/* スプレッドシートID設定 */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         
@@ -3233,11 +3127,9 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
           <p className="ml-3 mb-1">Apps Script → デプロイ → 新しいデプロイ</p>
           <p className="ml-3 mb-1">種類: ウェブアプリ → 全員 → デプロイ</p>
           <p className="ml-3">ウェブアプリのURLをコピー</p>
-          <p className="mt-2 text-gray-600">例: https://docs.google.com/spreadsheets/d/<span className="text-blue-400">1RJdfmvU...</span>/edit</p>
         </div>
       </div>
 
-      {/* 自動エクスポート設定 */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
@@ -3256,7 +3148,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         </div>
       </div>
 
-      {/* 手動エクスポート */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-white mb-4">手動エクスポート</h2>
         
@@ -3286,7 +3177,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         )}
       </div>
 
-      {/* ステータス表示 */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
         <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
         
@@ -3311,11 +3201,11 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   );
 }
 
-// ========== メインアプリ ==========
+// ========== メインApp ==========
 export default function LOGIOApp() {
-  console.log('🚀 LOGIOApp: Component starting...');
-  
-  const [showSplash, setShowSplash] = useState(true); // スプラッシュを有効化
+  const [showSplash, setShowSplash] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -3325,22 +3215,15 @@ export default function LOGIOApp() {
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState('');
   
-  console.log('📊 LOGIOApp: State initialized', { 
-    showSplash, 
-    currentPage, 
-    sitesCount: sites.length, 
-    selectedSite 
-  });
   const [projectInfo, setProjectInfo] = useState({
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
     contractAmount: '', additionalAmount: '', status: '進行中',
-    discharger: '',           // 排出事業者
-    contractedDisposalSites: []  // 契約処分先（配列）
+    discharger: '',
+    contractedDisposalSites: []
   });
   const [reports, setReports] = useState([]);
 
-  // スプラッシュ画面タイマー（Apple風アニメーション: 3.3秒）
   useEffect(() => {
     if (!showSplash) return;
     const timer = setTimeout(() => {
@@ -3349,7 +3232,7 @@ export default function LOGIOApp() {
     return () => clearTimeout(timer);
   }, [showSplash]);
 
-  useEffect(() => { loadSites(); }, []);
+  useEffect(() => { if (isLoggedIn) loadSites(); }, [isLoggedIn]);
 
   const loadSites = async () => {
     try {
@@ -3357,7 +3240,6 @@ export default function LOGIOApp() {
       if (stored?.value) {
         const loadedSites = JSON.parse(stored.value);
         
-        // 各サイトのprojectNumberを取得
         const sitesWithNumbers = await Promise.all(
           loadedSites.map(async (site) => {
             try {
@@ -3378,12 +3260,10 @@ export default function LOGIOApp() {
     } catch (error) { console.log('初回起動'); }
   };
 
-  // PROJECT NO. 自動採番関数
   const generateProjectNumber = async () => {
     const currentYear = new Date().getFullYear();
     const yearPrefix = currentYear.toString();
     
-    // 全サイトのprojectNumberを収集
     const allProjectNumbers = [];
     for (const site of sites) {
       try {
@@ -3399,7 +3279,6 @@ export default function LOGIOApp() {
       }
     }
     
-    // 当年のprojectNumberのみ抽出
     const currentYearNumbers = allProjectNumbers
       .filter(num => num.startsWith(yearPrefix + '-'))
       .map(num => {
@@ -3408,21 +3287,21 @@ export default function LOGIOApp() {
       })
       .filter(num => !isNaN(num));
     
-    // 最大連番を取得
     const maxNumber = currentYearNumbers.length > 0 ? Math.max(...currentYearNumbers) : 0;
-    
-    // 新規番号を採番（3桁ゼロ埋め）
     const newNumber = (maxNumber + 1).toString().padStart(3, '0');
     
     return `${yearPrefix}-${newNumber}`;
   };
 
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+  };
+
   const handleAddSite = async (siteName) => {
     try {
-      // PROJECT NO.を自動採番
       const projectNumber = await generateProjectNumber();
       
-      // 新規サイト作成（projectNumberを含む）
       const newSite = {
         name: siteName,
         createdAt: new Date().toISOString(),
@@ -3433,7 +3312,6 @@ export default function LOGIOApp() {
       setSites(updatedSites);
       await window.storage.set('logio-sites', JSON.stringify(updatedSites));
       
-      // projectInfoを初期化して保存
       const initialProjectInfo = {
         projectId: '',
         projectNumber: projectNumber,
@@ -3469,7 +3347,6 @@ export default function LOGIOApp() {
       await window.storage.delete(`logio-project-${siteName}`);
       await window.storage.delete(`logio-reports-${siteName}`);
       
-      // 削除された現場が選択中の場合、現場選択画面に戻る
       if (selectedSite === siteName) {
         setSelectedSite('');
       }
@@ -3519,11 +3396,13 @@ export default function LOGIOApp() {
   const handleSaveReport = async (reportData) => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
+      const finalRecorder = reportData.recorder || reportData.customRecorder;
       const newReport = {
         id: Date.now(),
         reportId: generateId('R'),
         projectId: projectInfo.projectId || generateId('P'),
         ...reportData,
+        recorder: finalRecorder,
         createdAt: new Date().toISOString()
       };
       
@@ -3552,39 +3431,24 @@ export default function LOGIOApp() {
     let accumulatedScrap = 0;
     
     reports.forEach(report => {
-      // 新しいデータ構造: workDetails
       if (report.workDetails) {
-        // 自社人工
         report.workDetails.inHouseWorkers?.forEach(w => accumulatedCost += w.amount || 0);
-        // 外注人工
         report.workDetails.outsourcingLabor?.forEach(o => accumulatedCost += o.amount || 0);
-        // 車両
         report.workDetails.vehicles?.forEach(v => accumulatedCost += v.amount || 0);
-        // 重機
         report.workDetails.machinery?.forEach(m => accumulatedCost += m.unitPrice || 0);
-        // その他原価
         report.workDetails.costItems?.forEach(c => accumulatedCost += c.amount || 0);
       }
       
-      // 廃棄物
       report.wasteItems?.forEach(w => accumulatedCost += w.amount || 0);
-      
-      // スクラップ（マイナス値なので加算でOK）
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
       
-      // 旧データ構造も一応サポート
       report.costLines?.forEach(cost => accumulatedCost += cost.amount || 0);
       report.wasteLines?.forEach(waste => accumulatedCost += waste.disposalCost || 0);
       report.scrapLines?.forEach(scrap => accumulatedScrap += scrap.salesAmount || 0);
     });
     
-    // 粗利（スクラップ込み）
     const grossProfit = totalRevenue - accumulatedCost + accumulatedScrap;
-    
-    // 粗利率（契約ベース）= 粗利 ÷ 売上 × 100
     const grossProfitRateContract = totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0';
-    
-    // 粗利率（スクラップ込み）= 粗利 ÷ (売上 + スクラップ) × 100
     const totalRevenueWithScrap = totalRevenue + accumulatedScrap;
     const grossProfitRateWithScrap = totalRevenueWithScrap > 0 ? (grossProfit / totalRevenueWithScrap * 100).toFixed(1) : '0.0';
     
@@ -3592,9 +3456,9 @@ export default function LOGIOApp() {
       totalRevenue, 
       accumulatedCost, 
       accumulatedScrap, 
-      grossProfit,                    // 粗利（スクラップ込み）
-      grossProfitRateContract,        // 粗利率（契約ベース）
-      grossProfitRateWithScrap        // 粗利率（スクラップ込み）
+      grossProfit,
+      grossProfitRateContract,
+      grossProfitRateWithScrap
     };
   };
 
@@ -3609,10 +3473,8 @@ export default function LOGIOApp() {
   };
 
   const handleRequestAddSite = () => {
-    console.log('🔑 handleRequestAddSite: パスワードモーダルを表示します');
     setPasswordSuccessCallback(() => () => setCurrentPage('settings'));
     setShowPasswordModal(true);
-    console.log('🔑 handleRequestAddSite: showPasswordModal =', true);
     setPassword('');
   };
 
@@ -3621,7 +3483,6 @@ export default function LOGIOApp() {
       setShowPasswordModal(false);
       setPassword('');
       
-      // コールバックがあれば実行、なければ設定画面に遷移
       if (passwordSuccessCallback) {
         passwordSuccessCallback();
         setPasswordSuccessCallback(null);
@@ -3636,20 +3497,13 @@ export default function LOGIOApp() {
 
   const totals = calculateTotals();
 
-  console.log('🎨 LOGIOApp: Render decision', {
-    showSplash,
-    selectedSite,
-    sitesCount: sites.length,
-    showPasswordModal
-  });
-
-  // スプラッシュ画面を表示
   if (showSplash) {
-    console.log('💫 LOGIOApp: Rendering SplashScreen');
     return <SplashScreen />;
   }
 
-  console.log('🏠 LOGIOApp: Rendering main app');
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   return (
     <div className="min-h-screen bg-black flex">

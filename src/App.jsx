@@ -2473,3 +2473,526 @@ export default function LOGIOApp() {
 }
 
 // Part6ここまで - 完了！
+// ========== Part7: 原価分析、Export、ProjectPage ==========
+
+// プロジェクト詳細ページ
+function ProjectPage({ projectInfo, onNavigate }) {
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+
+      {projectInfo?.projectName && (
+        <div className="mb-6 px-4 py-4 bg-gray-900/50 border border-gray-800 rounded-md">
+          <div className="text-white text-lg font-bold leading-relaxed mb-2">
+            {projectInfo.projectName}
+          </div>
+          {projectInfo.projectNumber && (
+            <div className="text-gray-500 text-xs font-medium tracking-wide">
+              PROJECT NO.: {projectInfo.projectNumber}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-400">基本情報</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">発注者 / CLIENT</p>
+              <p className="text-lg font-medium">{projectInfo.client || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">現場住所 / LOCATION</p>
+              <p className="text-lg font-medium">{projectInfo.workLocation || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">営業担当 / SALES</p>
+              <p className="text-lg font-medium">{projectInfo.salesPerson || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">現場責任者 / MANAGER</p>
+              <p className="text-lg font-medium">{projectInfo.siteManager || '-'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-400">期間</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">開始日 / START DATE</p>
+              <p className="text-lg font-medium">{projectInfo.startDate || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">終了日 / END DATE</p>
+              <p className="text-lg font-medium">{projectInfo.endDate || '-'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-400">金額</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">契約金額 / CONTRACT AMOUNT</p>
+              <p className="text-2xl font-bold text-white">
+                ¥{projectInfo.contractAmount ? Number(projectInfo.contractAmount).toLocaleString() : '0'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">追加金額 / ADDITIONAL AMOUNT</p>
+              <p className="text-2xl font-bold text-blue-400">
+                ¥{projectInfo.additionalAmount ? Number(projectInfo.additionalAmount).toLocaleString() : '0'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-400">ステータス</h2>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">状態 / STATUS</p>
+            <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
+              projectInfo.status === '進行中' ? 'bg-green-900/30 text-green-400' :
+              projectInfo.status === '完了' ? 'bg-blue-900/30 text-blue-400' :
+              'bg-gray-800 text-gray-400'
+            }`}>
+              {projectInfo.status || '-'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <button
+          onClick={() => onNavigate('settings')}
+          className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <Settings className="w-5 h-5" />
+          編集する
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 原価分析ページ
+function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
+  const costByCategory = { '材料費': 0, '外注費': 0, '経費': 0 };
+
+  reports.forEach(r => {
+    r.costLines?.forEach(c => {
+      const category = c.costCategory === '労務費' ? '経費' : c.costCategory;
+      if (costByCategory[category] !== undefined) {
+        costByCategory[category] = (costByCategory[category] || 0) + c.amount;
+      } else {
+        costByCategory['経費'] += c.amount;
+      }
+    });
+    r.wasteLines?.forEach(w => {
+      costByCategory['経費'] += w.disposalCost;
+    });
+  });
+
+  const pieData = Object.keys(costByCategory).map(key => ({
+    name: key,
+    value: costByCategory[key]
+  })).filter(d => d.value > 0);
+
+  const COLORS = ['#1E3A8A', '#3B82F6', '#60A5FA'];
+
+  const monthlyData = {};
+  reports.forEach(r => {
+    const month = r.date.substring(0, 7);
+    if (!monthlyData[month]) monthlyData[month] = 0;
+    r.costLines?.forEach(c => monthlyData[month] += c.amount);
+    r.wasteLines?.forEach(w => monthlyData[month] += w.disposalCost);
+  });
+
+  const barData = Object.keys(monthlyData).sort().map(month => ({
+    month: month.substring(5),
+    cost: Math.round(monthlyData[month] / 10000)
+  }));
+
+  const costRatio = totals.totalRevenue > 0 ? ((totals.accumulatedCost / totals.totalRevenue) * 100).toFixed(1) : '0.0';
+  const costRatioNum = parseFloat(costRatio);
+  let costRatioStatus = '余裕あり';
+  let costRatioColor = 'text-blue-400';
+  if (costRatioNum >= 85) {
+    costRatioStatus = '要警戒';
+    costRatioColor = 'text-red-400';
+  } else if (costRatioNum >= 70) {
+    costRatioStatus = '注意';
+    costRatioColor = 'text-gray-400';
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+      
+      {projectInfo?.projectName && (
+        <div className="mb-6 px-4 py-4 bg-gray-900/50 border border-gray-800 rounded-md">
+          <div className="text-white text-lg font-bold leading-relaxed mb-2">
+            {projectInfo.projectName}
+          </div>
+          {projectInfo.projectNumber && (
+            <div className="text-gray-500 text-xs font-medium tracking-wide">
+              PROJECT NO.: {projectInfo.projectNumber}
+            </div>
+          )}
+        </div>
+      )}
+      
+      <div className="mb-6">
+        <SectionHeader title="財務サマリー / Financial Summary" />
+        <div className="bg-gray-900/50 rounded-md p-5 space-y-3">
+          <div className="flex justify-between items-center py-2 border-b border-gray-800">
+            <span className="text-xs font-medium text-gray-400">売上 / Revenue</span>
+            <span className="text-lg font-semibold text-white tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(totals.totalRevenue)}</span>
+          </div>
+          <div className="flex justify-between items-center py-2 border-b border-gray-800">
+            <span className="text-xs font-medium text-gray-400">原価 / Cost</span>
+            <span className="text-lg font-semibold text-red-400/50 tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(totals.accumulatedCost)}</span>
+          </div>
+          {totals.accumulatedScrap > 0 && (
+            <div className="flex justify-between items-center py-2 border-b border-gray-800">
+              <span className="text-xs font-medium text-gray-400">スクラップ / Scrap</span>
+              <span className="text-lg font-semibold text-white tabular-nums" style={amountStrokeStyle}>¥{formatCurrency(totals.accumulatedScrap)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center py-2 border-b-2 border-gray-700">
+            <span className="text-xs font-medium text-gray-400">粗利 / Profit</span>
+            <span className={`text-lg font-semibold tabular-nums ${totals.grossProfit >= 0 ? 'text-blue-400/60' : 'text-red-400/50'}`} style={amountStrokeStyle}>
+              ¥{formatCurrency(totals.grossProfit)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center py-2">
+            <span className="text-xs font-medium text-gray-400">粗利率 / Margin</span>
+            <div className="text-right">
+              <span className="text-lg font-semibold text-white tabular-nums" style={amountStrokeStyle}>{totals.grossProfitRateContract}%</span>
+              <span className="text-xs text-gray-500 ml-2">(込み: {totals.grossProfitRateWithScrap}%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6 bg-gray-900/50 rounded-md p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1">原価率 / Cost Ratio</p>
+            <p className={`text-4xl font-semibold ${costRatioColor} tabular-nums`} style={amountStrokeStyle}>{costRatio}%</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-gray-500 mb-2">目安</p>
+            <p className={`text-lg font-semibold ${costRatioColor}`}>{costRatioStatus}</p>
+          </div>
+        </div>
+      </div>
+
+      <SectionHeader title="原価構成比 / Cost Structure" />
+      
+      {pieData.length > 0 ? (
+        <div className="bg-gray-900/50 rounded-md p-5 mb-6">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `¥${formatCurrency(value)}`} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div className="mt-4 space-y-2 pt-4 border-t border-gray-800">
+            {pieData.map((item, idx) => {
+              const total = pieData.reduce((s, d) => s + d.value, 0);
+              const percent = ((item.value / total) * 100).toFixed(1);
+              return (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-400">{item.name}</span>
+                  <div className="text-right">
+                    <span className="text-sm font-semibold text-white tabular-nums">¥{formatCurrency(item.value)}</span>
+                    <span className="text-xs text-gray-500 ml-2">({percent}%)</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-900/50 rounded-md p-8">
+          <p className="text-center text-gray-500 text-sm">データがありません</p>
+        </div>
+      )}
+
+      <div className="mt-8">
+        <SectionHeader title="月別原価推移 / Monthly Trend" />
+        
+        {barData.length > 0 ? (
+          <div className="bg-gray-900/50 rounded-md p-5">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="month" stroke="#9CA3AF" />
+                <YAxis label={{ value: '(万円)', angle: -90, position: 'insideLeft' }} stroke="#9CA3AF" />
+                <Tooltip formatter={(value) => `${value}万円`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                <Bar dataKey="cost" fill="#3B82F6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="bg-gray-900/50 rounded-md p-8">
+            <p className="text-center text-gray-500 text-sm">データがありません</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Exportページ
+function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
+  const [spreadsheetId, setSpreadsheetId] = useState('');
+  const [gasUrl, setGasUrl] = useState('');
+  const [autoExport, setAutoExport] = useState(false);
+  const [lastExport, setLastExport] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState('');
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      const idResult = await window.storage.get('logio-spreadsheet-id');
+      const gasUrlResult = await window.storage.get('logio-gas-url');
+      const autoResult = await window.storage.get('logio-auto-export');
+      const lastResult = await window.storage.get('logio-last-export');
+      
+      if (idResult?.value) setSpreadsheetId(idResult.value);
+      if (gasUrlResult?.value) setGasUrl(gasUrlResult.value);
+      if (autoResult?.value) setAutoExport(autoResult.value === 'true');
+      if (lastResult?.value) setLastExport(lastResult.value);
+    };
+    loadSettings();
+  }, []);
+
+  const handleSaveSpreadsheetId = async () => {
+    await window.storage.set('logio-spreadsheet-id', spreadsheetId);
+    if (gasUrl) {
+      await window.storage.set('logio-gas-url', gasUrl);
+    }
+    setExportStatus('✅ 設定を保存しました');
+    setTimeout(() => setExportStatus(''), 3000);
+  };
+
+  const handleToggleAutoExport = async (checked) => {
+    setAutoExport(checked);
+    await window.storage.set('logio-auto-export', checked.toString());
+  };
+
+  const handleManualExport = async () => {
+    if (!gasUrl) {
+      setExportStatus('❌ GAS URLを入力してください');
+      return;
+    }
+
+    setExporting(true);
+    setExportStatus('📤 エクスポート中...');
+
+    try {
+      const siteData = {
+        siteName: sites.find(s => s.name === selectedSite)?.name || '',
+        projectNumber: projectInfo.projectNumber || '',
+        projectName: projectInfo.projectName || '',
+        client: projectInfo.client || '',
+        workLocation: projectInfo.workLocation || '',
+        salesPerson: projectInfo.salesPerson || '',
+        siteManager: projectInfo.siteManager || '',
+        startDate: projectInfo.startDate || '',
+        endDate: projectInfo.endDate || '',
+        contractAmount: projectInfo.contractAmount || 0,
+        additionalAmount: projectInfo.additionalAmount || 0,
+        status: projectInfo.status || '',
+        discharger: projectInfo.discharger || '',
+        contractedDisposalSites: projectInfo.contractedDisposalSites || []
+      };
+
+      const payload = {
+        action: 'exportAll',
+        siteData: siteData,
+        reportData: reports
+      };
+
+      await fetch(gasUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        mode: 'no-cors'
+      });
+
+      const now = new Date().toLocaleString('ja-JP');
+      setLastExport(now);
+      await window.storage.set('logio-last-export', now);
+      
+      setExportStatus(`✅ エクスポート完了！（${now}）\n現場データ: 1件、日報データ: ${reports.length}件`);
+    } catch (error) {
+      setExportStatus('❌ エクスポートに失敗しました: ' + error.message);
+      console.error('Export error:', error);
+    } finally {
+      setExporting(false);
+      setTimeout(() => setExportStatus(''), 8000);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8 bg-black min-h-screen">
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+
+      <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
+      <p className="text-gray-400 text-sm mb-8">データをGoogle スプレッドシートにエクスポート</p>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
+        
+        <div className="mb-4">
+          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+            スプレッドシートID
+          </label>
+          <input
+            type="text"
+            value={spreadsheetId}
+            onChange={(e) => setSpreadsheetId(e.target.value)}
+            placeholder="例: 1RJdfmvUbMI3S48K9cOGTcigKsu5yMo_c"
+            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-3"
+          />
+          
+          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2 mt-4">
+            GAS URL <span className="text-red-500">*必須</span>
+          </label>
+          <input
+            type="text"
+            value={gasUrl}
+            onChange={(e) => setGasUrl(e.target.value)}
+            placeholder="例: https://script.google.com/macros/s/..."
+            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-3"
+          />
+          
+          <button
+            onClick={handleSaveSpreadsheetId}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Save className="inline w-4 h-4 mr-2" />
+            保存
+          </button>
+        </div>
+
+        <div className="text-xs text-gray-500 bg-gray-800 p-3 rounded">
+          <p className="font-medium mb-2">💡 設定方法:</p>
+          <p className="mb-1"><strong>1. スプレッドシートIDの取得:</strong></p>
+          <p className="ml-3 mb-2">URLから「/d/」と「/edit」の間の文字列をコピー</p>
+          <p className="mb-1"><strong>2. GAS URLの取得:</strong></p>
+          <p className="ml-3 mb-1">Apps Script → デプロイ → 新しいデプロイ</p>
+          <p className="ml-3 mb-1">種類: ウェブアプリ → 全員 → デプロイ</p>
+          <p className="ml-3">ウェブアプリのURLをコピー</p>
+        </div>
+      </div>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-1">自動エクスポート</h3>
+            <p className="text-sm text-gray-400">データ保存時に自動的にエクスポート</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoExport}
+              onChange={(e) => handleToggleAutoExport(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+      </div>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-white mb-4">手動エクスポート</h2>
+        
+        <button
+          onClick={handleManualExport}
+          disabled={exporting || !gasUrl}
+          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors ${
+            exporting || !gasUrl
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          <ChevronUp className="inline w-5 h-5 mr-2" />
+          {exporting ? 'エクスポート中...' : 'エクスポート実行'}
+        </button>
+
+        {exportStatus && (
+          <div className={`mt-4 p-3 rounded-lg text-sm whitespace-pre-line ${
+            exportStatus.startsWith('✅') 
+              ? 'bg-green-900/30 text-green-400 border border-green-800'
+              : exportStatus.startsWith('❌')
+              ? 'bg-red-900/30 text-red-400 border border-red-800'
+              : 'bg-blue-900/30 text-blue-400 border border-blue-800'
+          }`}>
+            {exportStatus}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
+        
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between py-2 border-b border-gray-800">
+            <span className="text-gray-400">最終エクスポート</span>
+            <span className="text-white font-medium">
+              {lastExport || '未実行'}
+            </span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-800">
+            <span className="text-gray-400">現場データ</span>
+            <span className="text-white font-medium">{sites.length}件</span>
+          </div>
+          <div className="flex justify-between py-2">
+            <span className="text-gray-400">日報データ</span>
+            <span className="text-white font-medium">{reports.length}件</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Part7ここまで - 完了！

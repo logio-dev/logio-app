@@ -1462,6 +1462,236 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </>
             )}
           </div>
+// ========== Part4 追加パーツ: 車両・その他原価 ==========
+// このコードをApp_final_part4_ALL_IN_ONE.jxsの「外注人工」の後、「Step2ナビゲーションボタン」の前に挿入してください
+
+          {/* 外注人工ここまで */}
+          
+          <div className="my-8 border-t border-gray-700"></div>
+
+          {/* 車両 */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              車両
+            </label>
+            
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">種類</label>
+                  <select
+                    id="vehicle-type-input"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                    {MASTER_DATA.vehicles.map((vehicle) => (
+                      <option key={vehicle} value={vehicle}>{vehicle}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">車両番号</label>
+                  <input
+                    id="vehicle-number-input"
+                    type="text"
+                    placeholder="例: 品川500あ1234"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">金額</label>
+                  <input
+                    id="vehicle-amount-input"
+                    type="number"
+                    placeholder="30000"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const typeSelect = document.getElementById('vehicle-type-input');
+                    const type = typeSelect.value;
+                    const number = document.getElementById('vehicle-number-input').value;
+                    const amount = parseFloat(document.getElementById('vehicle-amount-input').value);
+                    
+                    if (!type) {
+                      alert('車両の種類を選択してください');
+                      return;
+                    }
+                    
+                    if (!number || !amount) {
+                      alert('車両番号と金額を入力してください');
+                      return;
+                    }
+                    
+                    setWorkDetails({
+                      ...workDetails,
+                      vehicles: [...workDetails.vehicles, { type, number, amount }]
+                    });
+                    
+                    typeSelect.value = '';
+                    document.getElementById('vehicle-number-input').value = '';
+                    document.getElementById('vehicle-amount-input').value = '';
+                  }}
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
+            
+            {/* 登録済み車両リスト */}
+            {workDetails.vehicles.length > 0 && (
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.vehicles.length}台</p>
+                  {workDetails.vehicles.map((vehicle, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium mb-1">{vehicle.type}</p>
+                          <p className="text-sm text-gray-400">{vehicle.number}</p>
+                          <p className="text-white font-semibold text-lg mt-2">¥{formatCurrency(vehicle.amount)}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newVehicles = workDetails.vehicles.filter((_, i) => i !== index);
+                            setWorkDetails({...workDetails, vehicles: newVehicles});
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.vehicles.reduce((sum, v) => sum + v.amount, 0))}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* その他原価 */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              その他原価
+            </label>
+            
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">区分</label>
+                  <select
+                    id="cost-category-input"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                    {MASTER_DATA.costCategories.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">内容</label>
+                  <input
+                    id="cost-description-input"
+                    type="text"
+                    placeholder="例: 重機レンタル、燃料費など"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">金額</label>
+                  <input
+                    id="cost-amount-input"
+                    type="number"
+                    placeholder="50000"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const categorySelect = document.getElementById('cost-category-input');
+                    const category = categorySelect.value;
+                    const description = document.getElementById('cost-description-input').value;
+                    const amount = parseFloat(document.getElementById('cost-amount-input').value);
+                    
+                    if (!category) {
+                      alert('区分を選択してください');
+                      return;
+                    }
+                    
+                    if (!description || !amount) {
+                      alert('内容と金額を入力してください');
+                      return;
+                    }
+                    
+                    setWorkDetails({
+                      ...workDetails,
+                      costItems: [...workDetails.costItems, { category, description, amount }]
+                    });
+                    
+                    categorySelect.value = '';
+                    document.getElementById('cost-description-input').value = '';
+                    document.getElementById('cost-amount-input').value = '';
+                  }}
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
+            
+            {/* 登録済みその他原価リスト */}
+            {workDetails.costItems.length > 0 && (
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.costItems.length}件</p>
+                  {workDetails.costItems.map((item, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium mb-1">{item.category}</p>
+                          <p className="text-sm text-gray-400">{item.description}</p>
+                          <p className="text-white font-semibold text-lg mt-2">¥{formatCurrency(item.amount)}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newItems = workDetails.costItems.filter((_, i) => i !== index);
+                            setWorkDetails({...workDetails, costItems: newItems});
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.costItems.reduce((sum, item) => sum + item.amount, 0))}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ↑ ここまでをStep2のナビゲーションボタンの前に挿入 */}
 
           {/* ナビゲーションボタン */}
           <div className="mt-8 grid grid-cols-3 gap-3">
@@ -1870,7 +2100,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 }
 
 // Part4 完全統合版ここまで
-
 // ========== Part7: 原価分析、Export、ProjectPage ==========
 
 // プロジェクト詳細ページ

@@ -946,3 +946,285 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 // ここでは省略し、Part4に記載
 
 // Part3ここまで
+
+// ========== Phase1用 簡易メインApp ==========
+
+export default function LOGIOApp() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentView, setCurrentView] = useState('login');
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  const [sites, setSites] = useState([]);
+  const [selectedSite, setSelectedSite] = useState(null);
+  const [projectInfo, setProjectInfo] = useState({
+    projectNumber: '',
+    projectName: '',
+    client: '',
+    workLocation: '',
+    salesPerson: '',
+    siteManager: '',
+    startDate: '',
+    endDate: '',
+    contractAmount: 0,
+    additionalAmount: 0,
+    status: '',
+    discharger: '',
+    contractedDisposalSites: []
+  });
+  
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const sitesResult = await window.storage.get('logio-sites');
+        if (sitesResult?.value) {
+          const parsedSites = JSON.parse(sitesResult.value);
+          setSites(parsedSites);
+        }
+
+        const selectedResult = await window.storage.get('logio-selected-site');
+        if (selectedResult?.value) {
+          setSelectedSite(selectedResult.value);
+          
+          const projectResult = await window.storage.get(`logio-project-${selectedResult.value}`);
+          if (projectResult?.value) {
+            setProjectInfo(JSON.parse(projectResult.value));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      }
+    };
+
+    if (isLoggedIn) {
+      loadData();
+    }
+  }, [isLoggedIn]);
+
+  const handleLogin = (userId) => {
+    setIsLoggedIn(true);
+    setCurrentUser(userId);
+    setCurrentView('home');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handleLogout = () => {
+    if (confirm('ログアウトしますか？')) {
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      setCurrentView('login');
+      setSelectedSite(null);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  };
+
+  const handleNavigate = (view) => {
+    if (view === 'settings') {
+      setShowPasswordModal(true);
+      return;
+    }
+    setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === 'face1991') {
+      setShowPasswordModal(false);
+      setPasswordInput('');
+      setCurrentView('settings');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+      alert('パスワードが正しくありません');
+      setPasswordInput('');
+    }
+  };
+
+  const handleAddSite = async (siteName) => {
+    const newSites = [...sites, { name: siteName, createdAt: new Date().toISOString() }];
+    setSites(newSites);
+    await window.storage.set('logio-sites', JSON.stringify(newSites));
+  };
+
+  const handleSelectSite = async (siteName) => {
+    setSelectedSite(siteName);
+    await window.storage.set('logio-selected-site', siteName);
+    
+    try {
+      const projectResult = await window.storage.get(`logio-project-${siteName}`);
+      if (projectResult?.value) {
+        setProjectInfo(JSON.parse(projectResult.value));
+      } else {
+        setProjectInfo({
+          projectNumber: '',
+          projectName: '',
+          client: '',
+          workLocation: '',
+          salesPerson: '',
+          siteManager: '',
+          startDate: '',
+          endDate: '',
+          contractAmount: 0,
+          additionalAmount: 0,
+          status: '',
+          discharger: '',
+          contractedDisposalSites: []
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load site data:', error);
+    }
+  };
+
+  const handleDeleteSite = async (siteName) => {
+    if (confirm(`現場「${siteName}」を削除しますか？\nこの操作は取り消せません。`)) {
+      const newSites = sites.filter(s => s.name !== siteName);
+      setSites(newSites);
+      await window.storage.set('logio-sites', JSON.stringify(newSites));
+      
+      try {
+        await window.storage.delete(`logio-project-${siteName}`);
+      } catch (error) {
+        console.error('Failed to delete site data:', error);
+      }
+      
+      if (selectedSite === siteName) {
+        setSelectedSite(null);
+        await window.storage.delete('logio-selected-site');
+        setProjectInfo({
+          projectNumber: '',
+          projectName: '',
+          client: '',
+          workLocation: '',
+          salesPerson: '',
+          siteManager: '',
+          startDate: '',
+          endDate: '',
+          contractAmount: 0,
+          additionalAmount: 0,
+          status: '',
+          discharger: '',
+          contractedDisposalSites: []
+        });
+      }
+    }
+  };
+
+  const handleSaveProject = async (data) => {
+    setProjectInfo(data);
+    if (selectedSite) {
+      await window.storage.set(`logio-project-${selectedSite}`, JSON.stringify(data));
+    }
+    handleNavigate('home');
+  };
+
+  if (showSplash) {
+    return <SplashScreen />;
+  }
+
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  return (
+    <div className="flex h-screen bg-black text-white overflow-hidden">
+      <Sidebar
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
+        selectedSite={selectedSite}
+      />
+
+      <div className="flex-1 overflow-y-auto">
+        {currentView === 'home' && (
+          <HomePage
+            selectedSite={selectedSite}
+            sites={sites}
+            onSelectSite={handleSelectSite}
+            onAddSite={handleAddSite}
+            onDeleteSite={handleDeleteSite}
+            onNavigate={handleNavigate}
+            projectInfo={projectInfo}
+            totals={{ totalRevenue: 0, accumulatedCost: 0, accumulatedScrap: 0, grossProfit: 0 }}
+            reportsCount={0}
+          />
+        )}
+
+        {currentView === 'settings' && (
+          <ProjectSettingsPage
+            projectInfo={projectInfo}
+            onSave={handleSaveProject}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'input' && (
+          <div className="p-8 text-center text-gray-400">
+            <p>日報入力機能は Phase2 で追加されます</p>
+          </div>
+        )}
+
+        {currentView === 'list' && (
+          <div className="p-8 text-center text-gray-400">
+            <p>日報一覧機能は Phase3 で追加されます</p>
+          </div>
+        )}
+
+        {currentView === 'analysis' && (
+          <div className="p-8 text-center text-gray-400">
+            <p>原価分析機能は Phase3 で追加されます</p>
+          </div>
+        )}
+
+        {currentView === 'export' && (
+          <div className="p-8 text-center text-gray-400">
+            <p>Export機能は Phase3 で追加されます</p>
+          </div>
+        )}
+      </div>
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-sm w-full mx-4">
+            <h2 className="text-xl font-bold mb-4 text-white">パスワード入力</h2>
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              placeholder="パスワードを入力"
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:border-blue-500 mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setPasswordInput('');
+                }}
+                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handlePasswordSubmit}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
+                確認
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Phase1 完了

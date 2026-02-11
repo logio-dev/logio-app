@@ -1322,9 +1322,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           </div>
 
 // Part4v2前半ここまで - 後半（App_FINAL_part4_v2_SECOND.jsx）に続く
-// ========== Part4完全版v2 中盤: 外注人工、車両（色統一: bg-gray-800）==========
-// この部分をPart4v2前半の後に続けて貼り付けてください
-
           {/* 外注人工（その他（手入力）対応） */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">
@@ -1604,9 +1601,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
       )}
 
 // Part4v2中盤ここまで - 後半（Step3）に続く
-// ========== Part4完全版v2 後半: Step3 廃棄物・スクラップ（色統一: bg-gray-800）==========
-// この部分をPart4v2中盤の後に続けて貼り付けてください
-
       {/* ================ Step3: 廃棄物・スクラップ ================ */}
       {currentStep === 3 && (
         <div>
@@ -1990,8 +1984,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 }
 
 // Part4v2後半ここまで - Part4完了！
-// ========== Part5: 日報一覧、ReportAccordion、原価分析、Export、ProjectPage ==========
-
 // 日報一覧ページ
 function ReportListPage({ reports, onDelete, onNavigate }) {
   const [filterMonth, setFilterMonth] = useState('');
@@ -2282,9 +2274,6 @@ function ProjectPage({ projectInfo, onNavigate }) {
 }
 
 // Part5ここまで - AnalysisPageとExportPageは次のメッセージで
-// ========== Part5追加: AnalysisPage、ExportPage ==========
-// この部分をPart5の後に追加してください
-
 // 原価分析ページ
 function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const costByCategory = { '材料費': 0, '外注費': 0, '経費': 0 };
@@ -2700,8 +2689,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 }
 
 // Part5追加ここまで
-// ========== Part6: メインApp完全版 ==========
-
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);

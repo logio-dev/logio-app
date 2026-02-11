@@ -1106,17 +1106,18 @@ export default function LOGIOApp() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* 2本線ハンバーガーメニュー */}
-      <div className="fixed top-4 left-4 z-50">
+      {/* ヘッダー：ハンバーガー + LOGIOロゴ */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black border-b border-gray-900 px-6 py-5 flex items-center gap-4">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-3 bg-gray-900 hover:bg-gray-800 rounded-lg border border-gray-700 transition-colors"
+          className="text-white hover:text-gray-300 transition-colors"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 8H21" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-            <path d="M6 16H18" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+            <path d="M3 8H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+            <path d="M6 16H18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
           </svg>
         </button>
+        <LOGIOLogo size="xs" />
       </div>
 
       <Sidebar
@@ -1127,7 +1128,7 @@ export default function LOGIOApp() {
         onLogout={handleLogout}
       />
 
-      <main>
+      <main className="pt-20">
         {currentPage === 'home' && (
           <HomePage
             selectedSite={selectedSite}

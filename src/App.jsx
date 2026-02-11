@@ -946,8 +946,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 // ここでは省略し、Part4に記載
 
 // Part3ここまで
-// ========== Part4 完全統合版: 日報入力画面（Step1〜Step3、その他（手入力）完全対応） ==========
-// このファイルで現在のPart4全体を置き換えてください
+// ========== Part4完全版v2 前半: 日報入力（色統一: bg-gray-800）==========
 
 function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -1048,7 +1047,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 type="date" 
                 value={report.date} 
                 onChange={(e) => setReport({...report, date: e.target.value})} 
-                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" 
+                className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" 
               />
             </div>
             
@@ -1059,7 +1058,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <select
                 value={report.weather}
                 onChange={(e) => setReport({...report, weather: e.target.value})}
-                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
               >
                 <option value="">選択してください</option>
                 {MASTER_DATA.weather.map((w) => (
@@ -1086,7 +1085,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     setReport({...report, recorder: val, customRecorder: ''});
                   }
                 }}
-                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
               >
                 <option value="">選択してください</option>
                 {MASTER_DATA.employees.map((name) => (
@@ -1322,6 +1321,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
           </div>
 
+// Part4v2前半ここまで - 後半（App_FINAL_part4_v2_SECOND.jsx）に続く
+// ========== Part4完全版v2 中盤: 外注人工、車両（色統一: bg-gray-800）==========
+// この部分をPart4v2前半の後に続けて貼り付けてください
+
           {/* 外注人工（その他（手入力）対応） */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">
@@ -1462,11 +1465,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </>
             )}
           </div>
-// ========== Part4 追加パーツ: 車両・その他原価 ==========
-// このコードをApp_final_part4_ALL_IN_ONE.jxsの「外注人工」の後、「Step2ナビゲーションボタン」の前に挿入してください
 
-          {/* 外注人工ここまで */}
-          
           <div className="my-8 border-t border-gray-700"></div>
 
           {/* 車両 */}
@@ -1580,119 +1579,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
           </div>
 
-          {/* その他原価 */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-400 mb-4">
-              その他原価
-            </label>
-            
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">区分</label>
-                  <select
-                    id="cost-category-input"
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
-                    defaultValue=""
-                  >
-                    <option value="">選択してください</option>
-                    {MASTER_DATA.costCategories.map((category) => (
-                      <option key={category} value={category}>{category}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">内容</label>
-                  <input
-                    id="cost-description-input"
-                    type="text"
-                    placeholder="例: 重機レンタル、燃料費など"
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">金額</label>
-                  <input
-                    id="cost-amount-input"
-                    type="number"
-                    placeholder="50000"
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                
-                <button
-                  onClick={() => {
-                    const categorySelect = document.getElementById('cost-category-input');
-                    const category = categorySelect.value;
-                    const description = document.getElementById('cost-description-input').value;
-                    const amount = parseFloat(document.getElementById('cost-amount-input').value);
-                    
-                    if (!category) {
-                      alert('区分を選択してください');
-                      return;
-                    }
-                    
-                    if (!description || !amount) {
-                      alert('内容と金額を入力してください');
-                      return;
-                    }
-                    
-                    setWorkDetails({
-                      ...workDetails,
-                      costItems: [...workDetails.costItems, { category, description, amount }]
-                    });
-                    
-                    categorySelect.value = '';
-                    document.getElementById('cost-description-input').value = '';
-                    document.getElementById('cost-amount-input').value = '';
-                  }}
-                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base min-h-[56px]"
-                >
-                  登録
-                </button>
-              </div>
-            </div>
-            
-            {/* 登録済みその他原価リスト */}
-            {workDetails.costItems.length > 0 && (
-              <>
-                <div className="space-y-3 mb-4">
-                  <p className="text-sm text-gray-400">登録済み: {workDetails.costItems.length}件</p>
-                  {workDetails.costItems.map((item, index) => (
-                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-white text-base font-medium mb-1">{item.category}</p>
-                          <p className="text-sm text-gray-400">{item.description}</p>
-                          <p className="text-white font-semibold text-lg mt-2">¥{formatCurrency(item.amount)}</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const newItems = workDetails.costItems.filter((_, i) => i !== index);
-                            setWorkDetails({...workDetails, costItems: newItems});
-                          }}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors min-h-[40px] min-w-[40px]"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="p-4 bg-gray-800/50 rounded-lg">
-                  <p className="text-white text-xl font-semibold">
-                    小計: ¥{formatCurrency(workDetails.costItems.reduce((sum, item) => sum + item.amount, 0))}
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* ↑ ここまでをStep2のナビゲーションボタンの前に挿入 */}
-
           {/* ナビゲーションボタン */}
           <div className="mt-8 grid grid-cols-3 gap-3">
             <button
@@ -1716,7 +1602,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           </div>
         </div>
       )}
-      
+
+// Part4v2中盤ここまで - 後半（Step3）に続く
+// ========== Part4完全版v2 後半: Step3 廃棄物・スクラップ（色統一: bg-gray-800）==========
+// この部分をPart4v2中盤の後に続けて貼り付けてください
+
       {/* ================ Step3: 廃棄物・スクラップ ================ */}
       {currentStep === 3 && (
         <div>
@@ -2099,10 +1989,189 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   );
 }
 
-// Part4 完全統合版ここまで
-// ========== Part7: 原価分析、Export、ProjectPage ==========
+// Part4v2後半ここまで - Part4完了！
+// ========== Part5: 日報一覧、ReportAccordion、原価分析、Export、ProjectPage ==========
 
-// プロジェクト詳細ページ
+// 日報一覧ページ
+function ReportListPage({ reports, onDelete, onNavigate }) {
+  const [filterMonth, setFilterMonth] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
+  const filteredReports = reports.filter(r => {
+    if (filterMonth && !r.date.startsWith(filterMonth)) return false;
+    const category = r.workDetails?.workCategory || r.workCategory;
+    if (filterCategory && category !== filterCategory) return false;
+    return true;
+  });
+
+  const months = [...new Set(reports.map(r => r.date.substring(0, 7)))].sort().reverse();
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <Select label="月" labelEn="Month" options={months} value={filterMonth} onChange={setFilterMonth} placeholder="全期間" />
+        <Select label="作業区分" labelEn="Category" options={MASTER_DATA.workCategories} value={filterCategory} onChange={setFilterCategory} placeholder="全作業" />
+      </div>
+
+      <p className="text-sm text-gray-600 mb-4">全 {filteredReports.length}件</p>
+
+      {filteredReports.sort((a, b) => new Date(b.date) - new Date(a.date)).map(report => (
+        <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} />
+      ))}
+
+      {filteredReports.length === 0 && <p className="text-center text-gray-400 py-12">該当する日報がありません</p>}
+    </div>
+  );
+}
+
+function ReportAccordion({ report, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border border-gray-700 rounded-lg mb-3 overflow-hidden bg-gray-900/30">
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-800/50 transition-colors"
+      >
+        <div className="text-left flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-lg font-bold text-white">{report.date}</span>
+            <span className="text-sm text-gray-400">({getDayOfWeek(report.date)})</span>
+            <span className="text-sm text-blue-400">{report.weather}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded text-xs font-medium">
+              {report.workDetails?.workCategory || report.workCategory}
+            </span>
+            {(() => {
+              const totalCost = 
+                (report.workDetails?.inHouseWorkers?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0) +
+                (report.workDetails?.outsourcingLabor?.reduce((sum, o) => sum + (o.amount || 0), 0) || 0) +
+                (report.workDetails?.vehicles?.reduce((sum, v) => sum + (v.amount || 0), 0) || 0) +
+                (report.workDetails?.machinery?.reduce((sum, m) => sum + (m.unitPrice || 0), 0) || 0) +
+                (report.workDetails?.costItems?.reduce((sum, c) => sum + (c.amount || 0), 0) || 0) +
+                (report.wasteItems?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0);
+              return totalCost > 0 && (
+                <span className="text-yellow-400 font-semibold">¥{formatCurrency(totalCost)}</span>
+              );
+            })()}
+          </div>
+        </div>
+        <span className="text-gray-400 ml-4">
+          {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="px-4 py-4 bg-gray-800/30 border-t border-gray-700">
+          <div className="mb-4 pb-4 border-b border-gray-700">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-500">記入者:</span>
+              <span className="text-sm text-white">{report.recorder}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-xs text-gray-500 mt-0.5">施工内容:</span>
+              <span className="text-sm text-white">{report.workDetails?.workContent || report.workContent || 'なし'}</span>
+            </div>
+          </div>
+
+          {report.workDetails && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase mb-3">原価明細</p>
+              
+              {report.workDetails.inHouseWorkers?.length > 0 && (
+                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                  <p className="text-xs font-semibold text-blue-400 mb-2">自社人工: {report.workDetails.inHouseWorkers.length}名</p>
+                  {report.workDetails.inHouseWorkers.map((w, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                      • {w.name} <span className="text-gray-500">{w.startTime}-{w.endTime}</span> <span className="text-yellow-400">¥{formatCurrency(w.amount)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+              
+              {report.workDetails.outsourcingLabor?.length > 0 && (
+                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                  <p className="text-xs font-semibold text-blue-400 mb-2">外注人工: {report.workDetails.outsourcingLabor.length}件</p>
+                  {report.workDetails.outsourcingLabor.map((o, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                      • {o.company} <span className="text-gray-500">{o.workers}人</span> <span className="text-yellow-400">¥{formatCurrency(o.amount)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+              
+              {report.workDetails.vehicles?.length > 0 && (
+                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                  <p className="text-xs font-semibold text-blue-400 mb-2">車両: {report.workDetails.vehicles.length}台</p>
+                  {report.workDetails.vehicles.map((v, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                      • {v.type} <span className="text-gray-500">({v.number})</span> <span className="text-yellow-400">¥{formatCurrency(v.amount)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+              
+              {report.workDetails.costItems?.length > 0 && (
+                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                  <p className="text-xs font-semibold text-blue-400 mb-2">その他原価: {report.workDetails.costItems.length}件</p>
+                  {report.workDetails.costItems.map((c, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                      • {c.category} {c.machineryName && <span className="text-gray-500">- {c.machineryName}</span>} <span className="text-yellow-400">¥{formatCurrency(c.amount)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {report.wasteItems && report.wasteItems.length > 0 && (
+            <div className="mb-4 bg-gray-900/30 rounded p-2">
+              <p className="text-xs font-semibold text-red-400 mb-2">
+                廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s, w) => s + w.amount, 0))}
+              </p>
+              {report.wasteItems.map((waste, idx) => (
+                <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                  <p>• {waste.material} <span className="text-gray-500">{waste.quantity}{waste.unit}</span> - {waste.disposalSite}</p>
+                  {waste.manifestNumber && <p className="text-xs text-gray-500 ml-4">マニフェスト: {waste.manifestNumber}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {report.scrapItems && report.scrapItems.length > 0 && (
+            <div className="mb-4 bg-gray-900/30 rounded p-2">
+              <p className="text-xs font-semibold text-green-400 mb-2">
+                スクラップ売上: {report.scrapItems.length}件 / ¥{formatCurrency(Math.abs(report.scrapItems.reduce((s, sc) => s + sc.amount, 0)))}
+              </p>
+              {report.scrapItems.map((scrap, idx) => (
+                <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                  • {scrap.type} <span className="text-gray-500">{scrap.quantity}{scrap.unit}</span> - {scrap.buyer}
+                </p>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4">
+            <Button variant="danger" onClick={onDelete} icon={Trash2}>削除</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ProjectPage
 function ProjectPage({ projectInfo, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
@@ -2212,6 +2281,10 @@ function ProjectPage({ projectInfo, onNavigate }) {
   );
 }
 
+// Part5ここまで - AnalysisPageとExportPageは次のメッセージで
+// ========== Part5追加: AnalysisPage、ExportPage ==========
+// この部分をPart5の後に追加してください
+
 // 原価分析ページ
 function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const costByCategory = { '材料費': 0, '外注費': 0, '経費': 0 };
@@ -2261,6 +2334,10 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     costRatioStatus = '注意';
     costRatioColor = 'text-gray-400';
   }
+
+  const amountStrokeStyle = {
+    textShadow: '0 0 1px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)'
+  };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
@@ -2622,314 +2699,267 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   );
 }
 
-// Part7ここまで - 完了！
-// ========== Part8: メインApp完全版（全ルーティング対応） ==========
+// Part5追加ここまで
+// ========== Part6: メインApp完全版 ==========
 
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentView, setCurrentView] = useState('login');
   const [currentUser, setCurrentUser] = useState(null);
-  const [currentPage, setCurrentPage] = useState('home');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [password, setPassword] = useState('');
-  const [passwordSuccessCallback, setPasswordSuccessCallback] = useState(null);
   
   const [sites, setSites] = useState([]);
-  const [selectedSite, setSelectedSite] = useState('');
-  
+  const [selectedSite, setSelectedSite] = useState(null);
   const [projectInfo, setProjectInfo] = useState({
-    projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
-    salesPerson: '', siteManager: '', startDate: '', endDate: '',
-    contractAmount: '', additionalAmount: '', status: '進行中',
+    projectNumber: '',
+    projectName: '',
+    client: '',
+    workLocation: '',
+    salesPerson: '',
+    siteManager: '',
+    startDate: '',
+    endDate: '',
+    contractAmount: 0,
+    additionalAmount: 0,
+    status: '',
     discharger: '',
     contractedDisposalSites: []
   });
   const [reports, setReports] = useState([]);
+  
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
 
-  // スプラッシュ画面（3秒でフェードアウト）
   useEffect(() => {
-    if (!showSplash) return;
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 3000);
+    const timer = setTimeout(() => setShowSplash(false), 2000);
     return () => clearTimeout(timer);
-  }, [showSplash]);
+  }, []);
 
-  useEffect(() => { 
-    if (isLoggedIn) {
-      loadSites(); 
-    }
-  }, [isLoggedIn]);
-
-  const loadSites = async () => {
-    try {
-      const stored = await window.storage.get('logio-sites');
-      if (stored?.value) {
-        const loadedSites = JSON.parse(stored.value);
-        
-        const sitesWithNumbers = await Promise.all(
-          loadedSites.map(async (site) => {
-            try {
-              const projectStored = await window.storage.get(`logio-project-${site.name}`);
-              if (projectStored?.value) {
-                const projectData = JSON.parse(projectStored.value);
-                return { ...site, projectNumber: projectData.projectNumber || '' };
-              }
-            } catch (error) {
-              return { ...site, projectNumber: '' };
-            }
-            return { ...site, projectNumber: '' };
-          })
-        );
-        
-        setSites(sitesWithNumbers);
-      }
-    } catch (error) { console.log('初回起動'); }
-  };
-
-  const generateProjectNumber = async () => {
-    const currentYear = new Date().getFullYear();
-    const yearPrefix = currentYear.toString();
-    
-    const allProjectNumbers = [];
-    for (const site of sites) {
+  useEffect(() => {
+    const loadData = async () => {
       try {
-        const stored = await window.storage.get(`logio-project-${site.name}`);
-        if (stored?.value) {
-          const projectData = JSON.parse(stored.value);
-          if (projectData.projectNumber) {
-            allProjectNumbers.push(projectData.projectNumber);
+        const sitesResult = await window.storage.get('logio-sites');
+        if (sitesResult?.value) {
+          const parsedSites = JSON.parse(sitesResult.value);
+          setSites(parsedSites);
+        }
+
+        const selectedResult = await window.storage.get('logio-selected-site');
+        if (selectedResult?.value) {
+          setSelectedSite(selectedResult.value);
+          
+          const projectResult = await window.storage.get(`logio-project-${selectedResult.value}`);
+          if (projectResult?.value) {
+            setProjectInfo(JSON.parse(projectResult.value));
+          }
+          
+          const reportsResult = await window.storage.get(`logio-reports-${selectedResult.value}`);
+          if (reportsResult?.value) {
+            setReports(JSON.parse(reportsResult.value));
           }
         }
       } catch (error) {
-        console.log(`Failed to load project info for ${site.name}`);
+        console.error('Failed to load data:', error);
       }
-    }
-    
-    const currentYearNumbers = allProjectNumbers
-      .filter(num => num.startsWith(yearPrefix + '-'))
-      .map(num => {
-        const parts = num.split('-');
-        return parts.length === 2 ? parseInt(parts[1], 10) : 0;
-      })
-      .filter(num => !isNaN(num));
-    
-    const maxNumber = currentYearNumbers.length > 0 ? Math.max(...currentYearNumbers) : 0;
-    const newNumber = (maxNumber + 1).toString().padStart(3, '0');
-    
-    return `${yearPrefix}-${newNumber}`;
-  };
+    };
 
-  // ログイン処理（スクロールリセット対応）
-  const handleLogin = (user) => {
-    setCurrentUser(user);
+    if (isLoggedIn) {
+      loadData();
+    }
+  }, [isLoggedIn]);
+
+  const handleLogin = (userId) => {
     setIsLoggedIn(true);
+    setCurrentUser(userId);
+    setCurrentView('home');
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  // ログアウト処理
   const handleLogout = () => {
     if (confirm('ログアウトしますか？')) {
       setIsLoggedIn(false);
       setCurrentUser(null);
-      setSelectedSite('');
-      setSidebarOpen(false);
+      setCurrentView('login');
+      setSelectedSite(null);
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
   };
 
-  const handleAddSite = async (siteName) => {
-    try {
-      const projectNumber = await generateProjectNumber();
-      
-      const newSite = {
-        name: siteName,
-        createdAt: new Date().toISOString(),
-        status: '進行中',
-        projectNumber: projectNumber
-      };
-      const updatedSites = [...sites, newSite];
-      setSites(updatedSites);
-      await window.storage.set('logio-sites', JSON.stringify(updatedSites));
-      
-      const initialProjectInfo = {
-        projectId: '',
-        projectNumber: projectNumber,
-        projectName: siteName,
-        client: '',
-        workLocation: '',
-        salesPerson: '',
-        siteManager: '',
-        startDate: '',
-        endDate: '',
-        contractAmount: '',
-        additionalAmount: '',
-        status: '進行中',
-        contractedDisposalSites: []
-      };
-      
-      await window.storage.set(`logio-project-${siteName}`, JSON.stringify(initialProjectInfo));
-      
-      setSelectedSite(siteName);
-      setProjectInfo(initialProjectInfo);
-      
-      alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
-    } catch (error) {
-      alert('❌ 現場の追加に失敗しました');
-      console.error(error);
+  const handleNavigate = (view) => {
+    if (view === 'settings') {
+      setShowPasswordModal(true);
+      return;
+    }
+    setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === 'face1991') {
+      setShowPasswordModal(false);
+      setPasswordInput('');
+      setCurrentView('settings');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+      alert('パスワードが正しくありません');
+      setPasswordInput('');
     }
   };
 
-  const handleDeleteSite = async (siteName) => {
-    try {
-      const updatedSites = sites.filter(s => s.name !== siteName);
-      setSites(updatedSites);
-      await window.storage.set('logio-sites', JSON.stringify(updatedSites));
-      await window.storage.delete(`logio-project-${siteName}`);
-      await window.storage.delete(`logio-reports-${siteName}`);
-      
-      if (selectedSite === siteName) {
-        setSelectedSite('');
-      }
-      
-      alert(`✅ 現場「${siteName}」を削除しました`);
-    } catch (error) {
-      alert('❌ 現場の削除に失敗しました');
-    }
+  const handleAddSite = async (siteName) => {
+    const newSites = [...sites, { name: siteName, createdAt: new Date().toISOString() }];
+    setSites(newSites);
+    await window.storage.set('logio-sites', JSON.stringify(newSites));
   };
 
   const handleSelectSite = async (siteName) => {
     setSelectedSite(siteName);
-    await loadProjectInfo(siteName);
-    await loadReports(siteName);
+    await window.storage.set('logio-selected-site', siteName);
+    
+    try {
+      const projectResult = await window.storage.get(`logio-project-${siteName}`);
+      if (projectResult?.value) {
+        setProjectInfo(JSON.parse(projectResult.value));
+      } else {
+        setProjectInfo({
+          projectNumber: '',
+          projectName: '',
+          client: '',
+          workLocation: '',
+          salesPerson: '',
+          siteManager: '',
+          startDate: '',
+          endDate: '',
+          contractAmount: 0,
+          additionalAmount: 0,
+          status: '',
+          discharger: '',
+          contractedDisposalSites: []
+        });
+      }
+
+      const reportsResult = await window.storage.get(`logio-reports-${siteName}`);
+      if (reportsResult?.value) {
+        setReports(JSON.parse(reportsResult.value));
+      } else {
+        setReports([]);
+      }
+    } catch (error) {
+      console.error('Failed to load site data:', error);
+    }
   };
 
-  const loadProjectInfo = async (siteName) => {
-    try {
-      const stored = await window.storage.get(`logio-project-${siteName}`);
-      if (stored?.value) setProjectInfo(JSON.parse(stored.value));
-      else setProjectInfo({
-        projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
-        salesPerson: '', siteManager: '', startDate: '', endDate: '',
-        contractAmount: '', additionalAmount: '', status: '進行中',
-        contractedDisposalSites: []
-      });
-    } catch (error) { console.log('プロジェクト情報なし'); }
+  const handleDeleteSite = async (siteName) => {
+    if (confirm(`現場「${siteName}」を削除しますか？\nこの操作は取り消せません。`)) {
+      const newSites = sites.filter(s => s.name !== siteName);
+      setSites(newSites);
+      await window.storage.set('logio-sites', JSON.stringify(newSites));
+      
+      try {
+        await window.storage.delete(`logio-project-${siteName}`);
+        await window.storage.delete(`logio-reports-${siteName}`);
+      } catch (error) {
+        console.error('Failed to delete site data:', error);
+      }
+      
+      if (selectedSite === siteName) {
+        setSelectedSite(null);
+        await window.storage.delete('logio-selected-site');
+        setProjectInfo({
+          projectNumber: '',
+          projectName: '',
+          client: '',
+          workLocation: '',
+          salesPerson: '',
+          siteManager: '',
+          startDate: '',
+          endDate: '',
+          contractAmount: 0,
+          additionalAmount: 0,
+          status: '',
+          discharger: '',
+          contractedDisposalSites: []
+        });
+        setReports([]);
+      }
+    }
   };
 
-  const loadReports = async (siteName) => {
-    try {
-      const stored = await window.storage.get(`logio-reports-${siteName}`);
-      setReports(stored?.value ? JSON.parse(stored.value) : []);
-    } catch (error) { setReports([]); }
-  };
-
-  const handleSaveProject = async () => {
-    if (!selectedSite) return alert('現場を選択してください');
-    try {
-      const updatedInfo = { ...projectInfo, projectId: projectInfo.projectId || generateId('P'), updatedAt: new Date().toISOString() };
-      await window.storage.set(`logio-project-${selectedSite}`, JSON.stringify(updatedInfo));
-      setProjectInfo(updatedInfo);
-      alert('✅ プロジェクト情報を保存しました');
-      setCurrentPage('home');
-    } catch (error) { alert('❌ 保存に失敗しました'); }
+  const handleSaveProject = async (data) => {
+    setProjectInfo(data);
+    if (selectedSite) {
+      await window.storage.set(`logio-project-${selectedSite}`, JSON.stringify(data));
+    }
+    handleNavigate('home');
   };
 
   const handleSaveReport = async (reportData) => {
-    if (!selectedSite) return alert('現場を選択してください');
-    try {
-      const newReport = {
-        id: Date.now(),
-        reportId: generateId('R'),
-        projectId: projectInfo.projectId || generateId('P'),
-        ...reportData,
-        createdAt: new Date().toISOString()
-      };
-      
-      const updatedReports = [...reports, newReport];
-      setReports(updatedReports);
-      await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
-      
-      alert('✅ 日報を保存しました');
-      setCurrentPage('home');
-    } catch (error) { alert('❌ 保存に失敗しました'); }
+    const newReport = {
+      ...reportData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    const newReports = [...reports, newReport];
+    setReports(newReports);
+    
+    if (selectedSite) {
+      await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(newReports));
+    }
+    
+    handleNavigate('home');
   };
 
   const handleDeleteReport = async (reportId) => {
-    if (!confirm('この日報を削除しますか？')) return;
-    try {
-      const updatedReports = reports.filter(r => r.id !== reportId);
-      setReports(updatedReports);
-      await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
-      alert('✅ 日報を削除しました');
-    } catch (error) { alert('❌ 削除に失敗しました'); }
+    if (confirm('この日報を削除しますか？')) {
+      const newReports = reports.filter(r => r.id !== reportId);
+      setReports(newReports);
+      
+      if (selectedSite) {
+        await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(newReports));
+      }
+    }
   };
 
   const calculateTotals = () => {
-    const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
+    const contractAmount = Number(projectInfo.contractAmount) || 0;
+    const additionalAmount = Number(projectInfo.additionalAmount) || 0;
+    const totalRevenue = contractAmount + additionalAmount;
+
     let accumulatedCost = 0;
     let accumulatedScrap = 0;
-    
+
     reports.forEach(report => {
       if (report.workDetails) {
-        report.workDetails.inHouseWorkers?.forEach(w => accumulatedCost += w.amount || 0);
-        report.workDetails.outsourcingLabor?.forEach(o => accumulatedCost += o.amount || 0);
-        report.workDetails.vehicles?.forEach(v => accumulatedCost += v.amount || 0);
-        report.workDetails.machinery?.forEach(m => accumulatedCost += m.unitPrice || 0);
-        report.workDetails.costItems?.forEach(c => accumulatedCost += c.amount || 0);
+        accumulatedCost += (report.workDetails.inHouseWorkers || []).reduce((sum, w) => sum + (w.amount || 0), 0);
+        accumulatedCost += (report.workDetails.outsourcingLabor || []).reduce((sum, o) => sum + (o.amount || 0), 0);
+        accumulatedCost += (report.workDetails.vehicles || []).reduce((sum, v) => sum + (v.amount || 0), 0);
+        accumulatedCost += (report.workDetails.machinery || []).reduce((sum, m) => sum + (m.unitPrice || 0), 0);
+        accumulatedCost += (report.workDetails.costItems || []).reduce((sum, c) => sum + (c.amount || 0), 0);
       }
       
-      report.wasteItems?.forEach(w => accumulatedCost += w.amount || 0);
-      report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
+      if (report.wasteItems) {
+        accumulatedCost += report.wasteItems.reduce((sum, w) => sum + (w.amount || 0), 0);
+      }
+      
+      if (report.scrapItems) {
+        accumulatedScrap += Math.abs(report.scrapItems.reduce((sum, s) => sum + (s.amount || 0), 0));
+      }
     });
-    
-    const grossProfit = totalRevenue - accumulatedCost + accumulatedScrap;
-    const grossProfitRateContract = totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0';
-    const totalRevenueWithScrap = totalRevenue + accumulatedScrap;
-    const grossProfitRateWithScrap = totalRevenueWithScrap > 0 ? (grossProfit / totalRevenueWithScrap * 100).toFixed(1) : '0.0';
-    
-    return { 
-      totalRevenue, 
-      accumulatedCost, 
-      accumulatedScrap, 
+
+    const grossProfit = totalRevenue - accumulatedCost;
+    const grossProfitWithScrap = grossProfit + accumulatedScrap;
+    const grossProfitRateContract = totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(1) : '0.0';
+    const grossProfitRateWithScrap = totalRevenue > 0 ? ((grossProfitWithScrap / totalRevenue) * 100).toFixed(1) : '0.0';
+
+    return {
+      totalRevenue,
+      accumulatedCost,
+      accumulatedScrap,
       grossProfit,
+      grossProfitWithScrap,
       grossProfitRateContract,
       grossProfitRateWithScrap
     };
-  };
-
-  const handleNavigate = (page) => {
-    if (page === 'settings') {
-      setPasswordSuccessCallback(() => () => setCurrentPage('settings'));
-      setShowPasswordModal(true);
-      setPassword('');
-    } else {
-      setCurrentPage(page);
-    }
-  };
-
-  const handleRequestAddSite = () => {
-    setPasswordSuccessCallback(() => () => setCurrentPage('settings'));
-    setShowPasswordModal(true);
-    setPassword('');
-  };
-
-  const handlePasswordSubmit = () => {
-    if (password === 'face1991') {
-      setShowPasswordModal(false);
-      setPassword('');
-      
-      if (passwordSuccessCallback) {
-        passwordSuccessCallback();
-        setPasswordSuccessCallback(null);
-      } else {
-        setCurrentPage('settings');
-      }
-    } else {
-      alert('❌ パスワードが正しくありません');
-      setPassword('');
-    }
   };
 
   const totals = calculateTotals();
@@ -2943,121 +2973,108 @@ export default function LOGIOApp() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex">
-      <Sidebar 
-        currentPage={currentPage} 
-        onNavigate={handleNavigate} 
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
+    <div className="flex h-screen bg-black text-white overflow-hidden">
+      <Sidebar
+        currentView={currentView}
+        onNavigate={handleNavigate}
         onLogout={handleLogout}
+        selectedSite={selectedSite}
       />
 
-      <div className="flex flex-col flex-1 bg-black">
-        <Header 
-          showMenuButton 
-          onMenuClick={() => setSidebarOpen(true)} 
-        />
+      <div className="flex-1 overflow-y-auto">
+        {currentView === 'home' && (
+          <HomePage
+            selectedSite={selectedSite}
+            sites={sites}
+            onSelectSite={handleSelectSite}
+            onAddSite={handleAddSite}
+            onDeleteSite={handleDeleteSite}
+            onNavigate={handleNavigate}
+            projectInfo={projectInfo}
+            totals={totals}
+            reportsCount={reports.length}
+          />
+        )}
 
-        <main className="flex-1">
-          {currentPage === 'home' && (
-            <HomePage 
-              sites={sites} 
-              selectedSite={selectedSite} 
-              onSelectSite={handleSelectSite} 
-              onNavigate={handleNavigate} 
-              totals={totals} 
-              projectInfo={projectInfo} 
-            />
-          )}
-          
-          {currentPage === 'project' && (
-            <ProjectPage 
-              projectInfo={projectInfo} 
-              onNavigate={setCurrentPage} 
-            />
-          )}
-          
-          {currentPage === 'settings' && (
-            <ProjectSettingsPage 
-              sites={sites} 
-              selectedSite={selectedSite} 
-              projectInfo={projectInfo} 
-              setProjectInfo={setProjectInfo} 
-              onSave={handleSaveProject} 
-              onAddSite={handleAddSite} 
-              onDeleteSite={handleDeleteSite} 
-              onNavigate={setCurrentPage} 
-            />
-          )}
-          
-          {currentPage === 'input' && (
-            <ReportInputPage 
-              onSave={handleSaveReport} 
-              onNavigate={setCurrentPage} 
-              projectInfo={projectInfo} 
-            />
-          )}
-          
-          {currentPage === 'list' && (
-            <ReportListPage 
-              reports={reports} 
-              onDelete={handleDeleteReport} 
-              onNavigate={setCurrentPage} 
-            />
-          )}
-          
-          {currentPage === 'analysis' && (
-            <AnalysisPage 
-              reports={reports} 
-              totals={totals} 
-              projectInfo={projectInfo} 
-              onNavigate={setCurrentPage} 
-            />
-          )}
-          
-          {currentPage === 'export' && (
-            <ExportPage 
-              sites={sites} 
-              reports={reports} 
-              projectInfo={projectInfo} 
-              selectedSite={selectedSite} 
-              onNavigate={setCurrentPage} 
-            />
-          )}
-        </main>
+        {currentView === 'settings' && (
+          <ProjectSettingsPage
+            projectInfo={projectInfo}
+            onSave={handleSaveProject}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'input' && (
+          <ReportInputPage
+            onSave={handleSaveReport}
+            onNavigate={handleNavigate}
+            projectInfo={projectInfo}
+          />
+        )}
+
+        {currentView === 'list' && (
+          <ReportListPage
+            reports={reports}
+            onDelete={handleDeleteReport}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'project' && (
+          <ProjectPage
+            projectInfo={projectInfo}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'analysis' && (
+          <AnalysisPage
+            reports={reports}
+            totals={totals}
+            projectInfo={projectInfo}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'export' && (
+          <ExportPage
+            sites={sites}
+            reports={reports}
+            projectInfo={projectInfo}
+            selectedSite={selectedSite}
+            onNavigate={handleNavigate}
+          />
+        )}
       </div>
 
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
-          <div className="bg-gray-900 p-6 max-w-md w-full rounded-lg border border-gray-700">
-            <h2 className="text-xl font-bold text-white mb-4">管理者認証</h2>
-            <p className="text-sm text-gray-400 mb-4">設定・編集には管理者パスワードが必要です</p>
-            
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              パスワード / Password
-            </label>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-sm w-full mx-4">
+            <h2 className="text-xl font-bold mb-4 text-white">パスワード入力</h2>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
               placeholder="パスワードを入力"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-base font-medium rounded-md focus:outline-none focus:border-blue-500 mb-4"
+              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white rounded-lg focus:outline-none focus:border-blue-500 mb-4"
               autoFocus
             />
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex gap-3">
               <button
-                onClick={handlePasswordSubmit}
-                className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                認証
-              </button>
-              <button
-                onClick={() => { setShowPasswordModal(false); setPassword(''); }}
-                className="px-4 py-3 bg-gray-800 border border-gray-700 text-gray-300 font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setPasswordInput('');
+                }}
+                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium"
               >
                 キャンセル
+              </button>
+              <button
+                onClick={handlePasswordSubmit}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
+                確認
               </button>
             </div>
           </div>
@@ -3067,4 +3084,4 @@ export default function LOGIOApp() {
   );
 }
 
-// Part8ここまで - これで本当に完了！
+// Part6 メインApp完全版ここまで

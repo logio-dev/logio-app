@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, Fil
 
 console.log('✅ LOGIO: Module loaded successfully');
 
+console.log('✅ LOGIO: Module loaded successfully');
+
 // ========== localStorage ラッパー ==========
 if (typeof window !== 'undefined') {
   window.storage = {
@@ -1104,6 +1106,16 @@ export default function LOGIOApp() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* ハンバーガーメニューボタン */}
+      <div className="fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="p-3 bg-gray-900 hover:bg-gray-800 rounded-lg border border-gray-700 transition-colors"
+        >
+          <Menu className="w-6 h-6 text-white" />
+        </button>
+      </div>
+
       <Sidebar
         currentPage={currentPage}
         onNavigate={handleNavigate}

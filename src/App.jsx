@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut } from 'lucide-react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 console.log('✅ LOGIO: Module loaded successfully');
 
-// ========== localStorage ラッパー ==========
+// localStorage ラッパー
 if (typeof window !== 'undefined') {
   window.storage = {
     async get(key) {
@@ -445,12 +444,6 @@ const formatCurrency = (num) => new Intl.NumberFormat('ja-JP').format(num);
 const getDayOfWeek = (dateStr) => {
   const days = ['日', '月', '火', '水', '木', '金', '土'];
   const date = new Date(dateStr);
-  return days[date.getDay()];
-};
-
-// Part1ここまで
-// ========== Part2: サイドバー、スプラッシュ、ログイン画面 ==========
-
 // サイドバー（ログアウトボタン付き）
 function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogout }) {
   const navItems = [
@@ -740,8 +733,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 }
 
 // Part2ここまで
-// ========== Part3: プロジェクト設定、日報一覧、原価分析、Export ==========
-
 // プロジェクト設定ページ（契約処分先チェックボックス対応）
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate }) {
   const [showAddSite, setShowAddSite] = useState(false);
@@ -947,13 +938,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
 // Part3ここまで
 
-// ========== Phase1用 簡易メインApp ==========
-
+// メインApp
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentView, setCurrentView] = useState('login');
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState('login');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState(null);
@@ -985,62 +975,49 @@ export default function LOGIOApp() {
     const loadData = async () => {
       try {
         const sitesResult = await window.storage.get('logio-sites');
-        if (sitesResult?.value) {
-          const parsedSites = JSON.parse(sitesResult.value);
-          setSites(parsedSites);
-        }
+        if (sitesResult?.value) setSites(JSON.parse(sitesResult.value));
 
         const selectedResult = await window.storage.get('logio-selected-site');
         if (selectedResult?.value) {
           setSelectedSite(selectedResult.value);
-          
           const projectResult = await window.storage.get(`logio-project-${selectedResult.value}`);
-          if (projectResult?.value) {
-            setProjectInfo(JSON.parse(projectResult.value));
-          }
+          if (projectResult?.value) setProjectInfo(JSON.parse(projectResult.value));
         }
       } catch (error) {
         console.error('Failed to load data:', error);
       }
     };
-
-    if (isLoggedIn) {
-      loadData();
-    }
+    if (isLoggedIn) loadData();
   }, [isLoggedIn]);
 
   const handleLogin = (userId) => {
     setIsLoggedIn(true);
-    setCurrentUser(userId);
-    setCurrentView('home');
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    setCurrentPage('home');
   };
 
   const handleLogout = () => {
     if (confirm('ログアウトしますか？')) {
       setIsLoggedIn(false);
-      setCurrentUser(null);
-      setCurrentView('login');
+      setCurrentPage('login');
       setSelectedSite(null);
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      setSidebarOpen(false);
     }
   };
 
-  const handleNavigate = (view) => {
-    if (view === 'settings') {
+  const handleNavigate = (page) => {
+    if (page === 'settings') {
       setShowPasswordModal(true);
       return;
     }
-    setCurrentView(view);
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    setCurrentPage(page);
+    setSidebarOpen(false);
   };
 
   const handlePasswordSubmit = () => {
     if (passwordInput === 'face1991') {
       setShowPasswordModal(false);
       setPasswordInput('');
-      setCurrentView('settings');
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      setCurrentPage('settings');
     } else {
       alert('パスワードが正しくありません');
       setPasswordInput('');
@@ -1056,63 +1033,23 @@ export default function LOGIOApp() {
   const handleSelectSite = async (siteName) => {
     setSelectedSite(siteName);
     await window.storage.set('logio-selected-site', siteName);
-    
     try {
       const projectResult = await window.storage.get(`logio-project-${siteName}`);
-      if (projectResult?.value) {
-        setProjectInfo(JSON.parse(projectResult.value));
-      } else {
-        setProjectInfo({
-          projectNumber: '',
-          projectName: '',
-          client: '',
-          workLocation: '',
-          salesPerson: '',
-          siteManager: '',
-          startDate: '',
-          endDate: '',
-          contractAmount: 0,
-          additionalAmount: 0,
-          status: '',
-          discharger: '',
-          contractedDisposalSites: []
-        });
-      }
+      if (projectResult?.value) setProjectInfo(JSON.parse(projectResult.value));
     } catch (error) {
       console.error('Failed to load site data:', error);
     }
   };
 
   const handleDeleteSite = async (siteName) => {
-    if (confirm(`現場「${siteName}」を削除しますか？\nこの操作は取り消せません。`)) {
+    if (confirm(`現場「${siteName}」を削除しますか？`)) {
       const newSites = sites.filter(s => s.name !== siteName);
       setSites(newSites);
       await window.storage.set('logio-sites', JSON.stringify(newSites));
-      
-      try {
-        await window.storage.delete(`logio-project-${siteName}`);
-      } catch (error) {
-        console.error('Failed to delete site data:', error);
-      }
-      
+      await window.storage.delete(`logio-project-${siteName}`);
       if (selectedSite === siteName) {
         setSelectedSite(null);
         await window.storage.delete('logio-selected-site');
-        setProjectInfo({
-          projectNumber: '',
-          projectName: '',
-          client: '',
-          workLocation: '',
-          salesPerson: '',
-          siteManager: '',
-          startDate: '',
-          endDate: '',
-          contractAmount: 0,
-          additionalAmount: 0,
-          status: '',
-          discharger: '',
-          contractedDisposalSites: []
-        });
       }
     }
   };
@@ -1125,25 +1062,31 @@ export default function LOGIOApp() {
     handleNavigate('home');
   };
 
-  if (showSplash) {
-    return <SplashScreen />;
-  }
-
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  if (showSplash) return <SplashScreen />;
+  if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
 
   return (
-    <div className="flex h-screen bg-black text-white overflow-hidden">
+    <div className="min-h-screen bg-black text-white">
+      {/* ハンバーガーメニューボタン */}
+      <div className="fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="p-3 bg-gray-900 hover:bg-gray-800 rounded-lg border border-gray-700 transition-colors"
+        >
+          <Menu className="w-6 h-6 text-white" />
+        </button>
+      </div>
+
       <Sidebar
-        currentView={currentView}
+        currentPage={currentPage}
         onNavigate={handleNavigate}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
         onLogout={handleLogout}
-        selectedSite={selectedSite}
       />
 
-      <div className="flex-1 overflow-y-auto">
-        {currentView === 'home' && (
+      <main className="pt-20 px-4">
+        {currentPage === 'home' && (
           <HomePage
             selectedSite={selectedSite}
             sites={sites}
@@ -1152,12 +1095,12 @@ export default function LOGIOApp() {
             onDeleteSite={handleDeleteSite}
             onNavigate={handleNavigate}
             projectInfo={projectInfo}
-            totals={{ totalRevenue: 0, accumulatedCost: 0, accumulatedScrap: 0, grossProfit: 0 }}
+            totals={{ totalRevenue: 0, accumulatedCost: 0 }}
             reportsCount={0}
           />
         )}
 
-        {currentView === 'settings' && (
+        {currentPage === 'settings' && (
           <ProjectSettingsPage
             projectInfo={projectInfo}
             onSave={handleSaveProject}
@@ -1165,30 +1108,12 @@ export default function LOGIOApp() {
           />
         )}
 
-        {currentView === 'input' && (
-          <div className="p-8 text-center text-gray-400">
-            <p>日報入力機能は Phase2 で追加されます</p>
+        {currentPage !== 'home' && currentPage !== 'settings' && (
+          <div className="p-8 text-center">
+            <p className="text-gray-400 text-lg">この機能は Phase2/3 で追加されます</p>
           </div>
         )}
-
-        {currentView === 'list' && (
-          <div className="p-8 text-center text-gray-400">
-            <p>日報一覧機能は Phase3 で追加されます</p>
-          </div>
-        )}
-
-        {currentView === 'analysis' && (
-          <div className="p-8 text-center text-gray-400">
-            <p>原価分析機能は Phase3 で追加されます</p>
-          </div>
-        )}
-
-        {currentView === 'export' && (
-          <div className="p-8 text-center text-gray-400">
-            <p>Export機能は Phase3 で追加されます</p>
-          </div>
-        )}
-      </div>
+      </main>
 
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
@@ -1209,13 +1134,13 @@ export default function LOGIOApp() {
                   setShowPasswordModal(false);
                   setPasswordInput('');
                 }}
-                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium"
+                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg"
               >
                 キャンセル
               </button>
               <button
                 onClick={handlePasswordSubmit}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
               >
                 確認
               </button>
@@ -1226,5 +1151,3 @@ export default function LOGIOApp() {
     </div>
   );
 }
-
-// Phase1 完了

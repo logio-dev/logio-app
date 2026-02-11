@@ -3,8 +3,6 @@ import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, Fil
 
 console.log('✅ LOGIO: Module loaded successfully');
 
-console.log('✅ LOGIO: Module loaded successfully');
-
 // ========== localStorage ラッパー ==========
 if (typeof window !== 'undefined') {
   window.storage = {

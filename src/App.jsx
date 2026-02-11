@@ -3,7 +3,9 @@ import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, Fil
 
 console.log('✅ LOGIO: Module loaded successfully');
 
-// localStorage ラッパー
+console.log('✅ LOGIO: Module loaded successfully');
+
+// ========== localStorage ラッパー ==========
 if (typeof window !== 'undefined') {
   window.storage = {
     async get(key) {
@@ -447,6 +449,7 @@ const getDayOfWeek = (dateStr) => {
   return days[date.getDay()];
 };
 
+// Part1ここまで
 // サイドバー（ログアウトボタン付き）
 function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogout }) {
   const navItems = [
@@ -941,7 +944,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
 // Part3ここまで
 
-// メインApp
+// ========== メインApp（Phase1完全版） ==========
+
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -993,7 +997,7 @@ export default function LOGIOApp() {
     if (isLoggedIn) loadData();
   }, [isLoggedIn]);
 
-  const handleLogin = (userId) => {
+  const handleLogin = (userData) => {
     setIsLoggedIn(true);
     setCurrentPage('home');
   };
@@ -1013,7 +1017,6 @@ export default function LOGIOApp() {
       return;
     }
     setCurrentPage(page);
-    setSidebarOpen(false);
   };
 
   const handlePasswordSubmit = () => {
@@ -1038,7 +1041,25 @@ export default function LOGIOApp() {
     await window.storage.set('logio-selected-site', siteName);
     try {
       const projectResult = await window.storage.get(`logio-project-${siteName}`);
-      if (projectResult?.value) setProjectInfo(JSON.parse(projectResult.value));
+      if (projectResult?.value) {
+        setProjectInfo(JSON.parse(projectResult.value));
+      } else {
+        setProjectInfo({
+          projectNumber: '',
+          projectName: '',
+          client: '',
+          workLocation: '',
+          salesPerson: '',
+          siteManager: '',
+          startDate: '',
+          endDate: '',
+          contractAmount: 0,
+          additionalAmount: 0,
+          status: '',
+          discharger: '',
+          contractedDisposalSites: []
+        });
+      }
     } catch (error) {
       console.error('Failed to load site data:', error);
     }
@@ -1053,6 +1074,21 @@ export default function LOGIOApp() {
       if (selectedSite === siteName) {
         setSelectedSite(null);
         await window.storage.delete('logio-selected-site');
+        setProjectInfo({
+          projectNumber: '',
+          projectName: '',
+          client: '',
+          workLocation: '',
+          salesPerson: '',
+          siteManager: '',
+          startDate: '',
+          endDate: '',
+          contractAmount: 0,
+          additionalAmount: 0,
+          status: '',
+          discharger: '',
+          contractedDisposalSites: []
+        });
       }
     }
   };
@@ -1070,16 +1106,6 @@ export default function LOGIOApp() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* ハンバーガーメニューボタン */}
-      <div className="fixed top-4 left-4 z-50">
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="p-3 bg-gray-900 hover:bg-gray-800 rounded-lg border border-gray-700 transition-colors"
-        >
-          <Menu className="w-6 h-6 text-white" />
-        </button>
-      </div>
-
       <Sidebar
         currentPage={currentPage}
         onNavigate={handleNavigate}
@@ -1088,7 +1114,7 @@ export default function LOGIOApp() {
         onLogout={handleLogout}
       />
 
-      <main className="pt-20 px-4">
+      <main>
         {currentPage === 'home' && (
           <HomePage
             selectedSite={selectedSite}
@@ -1098,22 +1124,34 @@ export default function LOGIOApp() {
             onDeleteSite={handleDeleteSite}
             onNavigate={handleNavigate}
             projectInfo={projectInfo}
-            totals={{ totalRevenue: 0, accumulatedCost: 0 }}
+            totals={{ 
+              totalRevenue: Number(projectInfo.contractAmount || 0) + Number(projectInfo.additionalAmount || 0),
+              accumulatedCost: 0,
+              accumulatedScrap: 0,
+              grossProfit: Number(projectInfo.contractAmount || 0) + Number(projectInfo.additionalAmount || 0),
+              grossProfitRateContract: '0.0',
+              grossProfitRateWithScrap: '0.0'
+            }}
             reportsCount={0}
           />
         )}
 
         {currentPage === 'settings' && (
           <ProjectSettingsPage
+            sites={sites}
+            selectedSite={selectedSite}
             projectInfo={projectInfo}
+            setProjectInfo={setProjectInfo}
             onSave={handleSaveProject}
+            onAddSite={handleAddSite}
+            onDeleteSite={handleDeleteSite}
             onNavigate={handleNavigate}
           />
         )}
 
         {currentPage !== 'home' && currentPage !== 'settings' && (
           <div className="p-8 text-center">
-            <p className="text-gray-400 text-lg">この機能は Phase2/3 で追加されます</p>
+            <p className="text-gray-400 text-lg mt-20">📝 この機能は Phase2/3 で追加されます</p>
           </div>
         )}
       </main>

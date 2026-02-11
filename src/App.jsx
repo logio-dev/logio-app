@@ -444,6 +444,9 @@ const formatCurrency = (num) => new Intl.NumberFormat('ja-JP').format(num);
 const getDayOfWeek = (dateStr) => {
   const days = ['日', '月', '火', '水', '木', '金', '土'];
   const date = new Date(dateStr);
+  return days[date.getDay()];
+};
+
 // サイドバー（ログアウトボタン付き）
 function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogout }) {
   const navItems = [

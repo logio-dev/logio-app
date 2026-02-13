@@ -2282,3 +2282,701 @@ export default function LOGIOApp() {
 }
 
 // Part5ここまで
+// ========== Part6: 日報一覧、PROJECT詳細 ==========
+
+function ReportListPage({ reports, onDelete, onNavigate }) {
+  const [filterMonth, setFilterMonth] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+
+  const filteredReports = reports.filter(r => {
+    if (filterMonth && !r.date.startsWith(filterMonth)) return false;
+    const category = r.workDetails?.workCategory || r.workCategory;
+    if (filterCategory && category !== filterCategory) return false;
+    return true;
+  });
+
+  const months = [...new Set(reports.map(r => r.date.substring(0, 7)))].sort().reverse();
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <Select label="月" labelEn="Month" options={months} value={filterMonth} onChange={setFilterMonth} placeholder="全期間" />
+        <Select label="作業区分" labelEn="Category" options={MASTER_DATA.workCategories} value={filterCategory} onChange={setFilterCategory} placeholder="全作業" />
+      </div>
+
+      <p className="text-sm text-gray-600 mb-4">全 {filteredReports.length}件</p>
+
+      {filteredReports.sort((a, b) => new Date(b.date) - new Date(a.date)).map(report => (
+        <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} />
+      ))}
+
+      {filteredReports.length === 0 && <p className="text-center text-gray-400 py-12">該当する日報がありません</p>}
+    </div>
+  );
+}
+
+function ReportAccordion({ report, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border border-gray-700 rounded-lg mb-3 overflow-hidden bg-gray-900/30">
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-800/50 transition-colors"
+      >
+        <div className="text-left flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-lg font-bold text-white">{report.date}</span>
+            <span className="text-sm text-gray-400">({getDayOfWeek(report.date)})</span>
+            <span className="text-sm text-blue-400">{report.weather}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded text-xs font-medium">
+              {report.workDetails?.workCategory || report.workCategory}
+            </span>
+            {(() => {
+              const totalCost = 
+                (report.workDetails?.inHouseWorkers?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0) +
+                (report.workDetails?.outsourcingLabor?.reduce((sum, o) => sum + (o.amount || 0), 0) || 0) +
+                (report.workDetails?.vehicles?.reduce((sum, v) => sum + (v.amount || 0), 0) || 0) +
+                (report.workDetails?.machinery?.reduce((sum, m) => sum + (m.unitPrice || 0), 0) || 0) +
+                (report.wasteItems?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0);
+              return totalCost > 0 && (
+                <span className="text-yellow-400 font-semibold">¥{formatCurrency(totalCost)}</span>
+              );
+            })()}
+          </div>
+        </div>
+        <span className="text-gray-400 ml-4">
+          {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="px-4 py-4 bg-gray-800/30 border-t border-gray-700">
+          <div className="mb-4 pb-4 border-b border-gray-700">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-500">記入者:</span>
+              <span className="text-sm text-white">{report.recorder}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-xs text-gray-500 mt-0.5">施工内容:</span>
+              <span className="text-sm text-white">{report.workDetails?.workContent || report.workContent || 'なし'}</span>
+            </div>
+          </div>
+
+          {report.workDetails && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase mb-3">原価明細</p>
+              
+              {report.workDetails.inHouseWorkers?.length > 0 && (
+                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                  <p className="text-xs font-semibold text-blue-400 mb-2">自社人工: {report.workDetails.inHouseWorkers.length}名</p>
+                  {report.workDetails.inHouseWorkers.map((w, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                      • {w.name} <span className="text-gray-500">{w.startTime}-{w.endTime}</span> <span className="text-yellow-400">¥{formatCurrency(w.amount)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+              
+              {report.workDetails.outsourcingLabor?.length > 0 && (
+                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                  <p className="text-xs font-semibold text-blue-400 mb-2">外注人工: {report.workDetails.outsourcingLabor.length}件</p>
+                  {report.workDetails.outsourcingLabor.map((o, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                      • {o.company} <span className="text-gray-500">{o.workers}人</span> <span className="text-yellow-400">¥{formatCurrency(o.amount)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+              
+              {report.workDetails.vehicles?.length > 0 && (
+                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                  <p className="text-xs font-semibold text-blue-400 mb-2">車両: {report.workDetails.vehicles.length}台</p>
+                  {report.workDetails.vehicles.map((v, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                      • {v.type} <span className="text-gray-500">({v.number})</span> <span className="text-yellow-400">¥{formatCurrency(v.amount)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+              
+              {report.workDetails.machinery?.length > 0 && (
+                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                  <p className="text-xs font-semibold text-blue-400 mb-2">重機: {report.workDetails.machinery.length}台</p>
+                  {report.workDetails.machinery.map((m, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                      • {m.type} <span className="text-yellow-400">¥{formatCurrency(m.unitPrice)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {report.wasteItems && report.wasteItems.length > 0 && (
+            <div className="mb-4 bg-gray-900/30 rounded p-2">
+              <p className="text-xs font-semibold text-red-400 mb-2">
+                廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s, w) => s + w.amount, 0))}
+              </p>
+              {report.wasteItems.map((waste, idx) => (
+                <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                  <p>• {waste.material} <span className="text-gray-500">{waste.quantity}{waste.unit}</span> - {waste.disposalSite}</p>
+                  {waste.manifestNumber && <p className="text-xs text-gray-500 ml-4">マニフェスト: {waste.manifestNumber}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {report.scrapItems && report.scrapItems.length > 0 && (
+            <div className="mb-4 bg-gray-900/30 rounded p-2">
+              <p className="text-xs font-semibold text-green-400 mb-2">
+                スクラップ売上: {report.scrapItems.length}件 / ¥{formatCurrency(Math.abs(report.scrapItems.reduce((s, sc) => s + sc.amount, 0)))}
+              </p>
+              {report.scrapItems.map((scrap, idx) => (
+                <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">
+                  • {scrap.type} <span className="text-gray-500">{scrap.quantity}{scrap.unit}</span> - {scrap.buyer}
+                </p>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4">
+            <Button variant="danger" onClick={onDelete} icon={Trash2}>削除</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProjectPage({ projectInfo, onNavigate }) {
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+
+      {projectInfo?.projectName && (
+        <div className="mb-6 px-4 py-4 bg-gray-900/50 border border-gray-800 rounded-md">
+          <div className="text-white text-lg font-bold leading-relaxed mb-2">
+            {projectInfo.projectName}
+          </div>
+          {projectInfo.projectNumber && (
+            <div className="text-gray-500 text-xs font-medium tracking-wide">
+              PROJECT NO.: {projectInfo.projectNumber}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-400">基本情報</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">発注者 / CLIENT</p>
+              <p className="text-lg font-medium text-white">{projectInfo.client || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">現場住所 / LOCATION</p>
+              <p className="text-lg font-medium text-white">{projectInfo.workLocation || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">営業担当 / SALES</p>
+              <p className="text-lg font-medium text-white">{projectInfo.salesPerson || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">現場責任者 / MANAGER</p>
+              <p className="text-lg font-medium text-white">{projectInfo.siteManager || '-'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-400">期間</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">開始日 / START DATE</p>
+              <p className="text-lg font-medium text-white">{projectInfo.startDate || '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">終了日 / END DATE</p>
+              <p className="text-lg font-medium text-white">{projectInfo.endDate || '-'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-400">金額</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">契約金額 / CONTRACT AMOUNT</p>
+              <p className="text-2xl font-bold text-white">
+                ¥{projectInfo.contractAmount ? formatCurrency(parseFloat(projectInfo.contractAmount)) : '0'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">追加金額 / ADDITIONAL AMOUNT</p>
+              <p className="text-2xl font-bold text-blue-400">
+                ¥{projectInfo.additionalAmount ? formatCurrency(parseFloat(projectInfo.additionalAmount)) : '0'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-400">ステータス</h2>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">状態 / STATUS</p>
+            <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
+              projectInfo.status === '進行中' ? 'bg-green-900/30 text-green-400' :
+              projectInfo.status === '完了' ? 'bg-blue-900/30 text-blue-400' :
+              'bg-gray-800 text-gray-400'
+            }`}>
+              {projectInfo.status || '-'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <button
+          onClick={() => onNavigate('settings')}
+          className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <Settings className="w-5 h-5" />
+          編集する
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Part6ここまで
+// ========== Part7: 原価分析、Export ==========
+
+function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
+  const costByCategory = { '人工費': 0, '車両費': 0, '重機費': 0, '産廃費': 0 };
+
+  reports.forEach(r => {
+    if (r.workDetails) {
+      r.workDetails.inHouseWorkers?.forEach(w => costByCategory['人工費'] += w.amount || 0);
+      r.workDetails.outsourcingLabor?.forEach(o => costByCategory['人工費'] += o.amount || 0);
+      r.workDetails.vehicles?.forEach(v => costByCategory['車両費'] += v.amount || 0);
+      r.workDetails.machinery?.forEach(m => costByCategory['重機費'] += m.unitPrice || 0);
+    }
+    r.wasteItems?.forEach(w => costByCategory['産廃費'] += w.amount || 0);
+  });
+
+  const pieData = Object.keys(costByCategory).map(key => ({
+    name: key,
+    value: costByCategory[key]
+  })).filter(d => d.value > 0);
+
+  const COLORS = ['#1E3A8A', '#3B82F6', '#60A5FA', '#93C5FD'];
+
+  const monthlyData = {};
+  reports.forEach(r => {
+    const month = r.date.substring(0, 7);
+    if (!monthlyData[month]) monthlyData[month] = 0;
+    if (r.workDetails) {
+      r.workDetails.inHouseWorkers?.forEach(w => monthlyData[month] += w.amount || 0);
+      r.workDetails.outsourcingLabor?.forEach(o => monthlyData[month] += o.amount || 0);
+      r.workDetails.vehicles?.forEach(v => monthlyData[month] += v.amount || 0);
+      r.workDetails.machinery?.forEach(m => monthlyData[month] += m.unitPrice || 0);
+    }
+    r.wasteItems?.forEach(w => monthlyData[month] += w.amount || 0);
+  });
+
+  const barData = Object.keys(monthlyData).sort().map(month => ({
+    month: month.substring(5),
+    cost: Math.round(monthlyData[month] / 10000)
+  }));
+
+  const costRatio = totals.totalRevenue > 0 ? ((totals.accumulatedCost / totals.totalRevenue) * 100).toFixed(1) : '0.0';
+  const costRatioNum = parseFloat(costRatio);
+  let costRatioStatus = '余裕あり';
+  let costRatioColor = 'text-blue-400';
+  if (costRatioNum >= 85) {
+    costRatioStatus = '要警戒';
+    costRatioColor = 'text-red-400';
+  } else if (costRatioNum >= 70) {
+    costRatioStatus = '注意';
+    costRatioColor = 'text-yellow-400';
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+      
+      {projectInfo?.projectName && (
+        <div className="mb-6 px-4 py-4 bg-gray-900/50 border border-gray-800 rounded-md">
+          <div className="text-white text-lg font-bold leading-relaxed mb-2">
+            {projectInfo.projectName}
+          </div>
+          {projectInfo.projectNumber && (
+            <div className="text-gray-500 text-xs font-medium tracking-wide">
+              PROJECT NO.: {projectInfo.projectNumber}
+            </div>
+          )}
+        </div>
+      )}
+      
+      <div className="mb-6">
+        <SectionHeader title="財務サマリー / Financial Summary" />
+        <div className="bg-gray-900/50 rounded-md p-5 space-y-3">
+          <div className="flex justify-between items-center py-2 border-b border-gray-800">
+            <span className="text-xs font-medium text-gray-400">売上 / Revenue</span>
+            <span className="text-lg font-semibold text-white tabular-nums">¥{formatCurrency(totals.totalRevenue)}</span>
+          </div>
+          <div className="flex justify-between items-center py-2 border-b border-gray-800">
+            <span className="text-xs font-medium text-gray-400">原価 / Cost</span>
+            <span className="text-lg font-semibold text-red-400/80 tabular-nums">¥{formatCurrency(totals.accumulatedCost)}</span>
+          </div>
+          {totals.accumulatedScrap > 0 && (
+            <div className="flex justify-between items-center py-2 border-b border-gray-800">
+              <span className="text-xs font-medium text-gray-400">スクラップ / Scrap</span>
+              <span className="text-lg font-semibold text-white tabular-nums">¥{formatCurrency(totals.accumulatedScrap)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center py-2 border-b-2 border-gray-700">
+            <span className="text-xs font-medium text-gray-400">粗利 / Profit</span>
+            <span className={`text-lg font-semibold tabular-nums ${totals.grossProfit >= 0 ? 'text-blue-400/90' : 'text-red-400/80'}`}>
+              ¥{formatCurrency(totals.grossProfit)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center py-2">
+            <span className="text-xs font-medium text-gray-400">粗利率 / Margin</span>
+            <div className="text-right">
+              <span className="text-lg font-semibold text-white tabular-nums">{totals.grossProfitRateContract}%</span>
+              <span className="text-xs text-gray-500 ml-2">(込み: {totals.grossProfitRateWithScrap}%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6 bg-gray-900/50 rounded-md p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1">原価率 / Cost Ratio</p>
+            <p className={`text-4xl font-semibold ${costRatioColor} tabular-nums`}>{costRatio}%</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-gray-500 mb-2">目安</p>
+            <p className={`text-lg font-semibold ${costRatioColor}`}>{costRatioStatus}</p>
+          </div>
+        </div>
+      </div>
+
+      <SectionHeader title="原価構成比 / Cost Structure" />
+      
+      {pieData.length > 0 ? (
+        <div className="bg-gray-900/50 rounded-md p-5 mb-6">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `¥${formatCurrency(value)}`} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div className="mt-4 space-y-2 pt-4 border-t border-gray-800">
+            {pieData.map((item, idx) => {
+              const total = pieData.reduce((s, d) => s + d.value, 0);
+              const percent = ((item.value / total) * 100).toFixed(1);
+              return (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-gray-400">{item.name}</span>
+                  <div className="text-right">
+                    <span className="text-sm font-semibold text-white tabular-nums">¥{formatCurrency(item.value)}</span>
+                    <span className="text-xs text-gray-500 ml-2">({percent}%)</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-900/50 rounded-md p-8">
+          <p className="text-center text-gray-500 text-sm">データがありません</p>
+        </div>
+      )}
+
+      <div className="mt-8">
+        <SectionHeader title="月別原価推移 / Monthly Trend" />
+        
+        {barData.length > 0 ? (
+          <div className="bg-gray-900/50 rounded-md p-5">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="month" stroke="#9CA3AF" />
+                <YAxis label={{ value: '(万円)', angle: -90, position: 'insideLeft' }} stroke="#9CA3AF" />
+                <Tooltip formatter={(value) => `${value}万円`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                <Bar dataKey="cost" fill="#3B82F6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="bg-gray-900/50 rounded-md p-8">
+            <p className="text-center text-gray-500 text-sm">データがありません</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
+  const [gasUrl, setGasUrl] = useState('');
+  const [autoExport, setAutoExport] = useState(false);
+  const [lastExport, setLastExport] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState('');
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      const gasUrlResult = await window.storage.get('logio-gas-url');
+      const autoResult = await window.storage.get('logio-auto-export');
+      const lastResult = await window.storage.get('logio-last-export');
+      
+      if (gasUrlResult?.value) setGasUrl(gasUrlResult.value);
+      if (autoResult?.value) setAutoExport(autoResult.value === 'true');
+      if (lastResult?.value) setLastExport(lastResult.value);
+    };
+    loadSettings();
+  }, []);
+
+  const handleSaveSettings = async () => {
+    if (gasUrl) {
+      await window.storage.set('logio-gas-url', gasUrl);
+    }
+    setExportStatus('✅ 設定を保存しました');
+    setTimeout(() => setExportStatus(''), 3000);
+  };
+
+  const handleToggleAutoExport = async (checked) => {
+    setAutoExport(checked);
+    await window.storage.set('logio-auto-export', checked.toString());
+  };
+
+  const handleManualExport = async () => {
+    if (!gasUrl) {
+      setExportStatus('❌ GAS URLを入力してください');
+      return;
+    }
+
+    setExporting(true);
+    setExportStatus('📤 エクスポート中...');
+
+    try {
+      const siteData = {
+        siteName: sites.find(s => s.name === selectedSite)?.name || '',
+        projectNumber: projectInfo.projectNumber || '',
+        projectName: projectInfo.projectName || '',
+        client: projectInfo.client || '',
+        workLocation: projectInfo.workLocation || '',
+        salesPerson: projectInfo.salesPerson || '',
+        siteManager: projectInfo.siteManager || '',
+        startDate: projectInfo.startDate || '',
+        endDate: projectInfo.endDate || '',
+        contractAmount: projectInfo.contractAmount || 0,
+        additionalAmount: projectInfo.additionalAmount || 0,
+        status: projectInfo.status || '',
+        discharger: projectInfo.discharger || '',
+        contractedDisposalSites: projectInfo.contractedDisposalSites || []
+      };
+
+      const payload = {
+        action: 'exportAll',
+        siteData: siteData,
+        reportData: reports
+      };
+
+      await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        mode: 'no-cors'
+      });
+
+      const now = new Date().toLocaleString('ja-JP');
+      setLastExport(now);
+      await window.storage.set('logio-last-export', now);
+      
+      setExportStatus(`✅ エクスポート完了！（${now}）\n現場データ: 1件、日報データ: ${reports.length}件`);
+    } catch (error) {
+      setExportStatus('❌ エクスポートに失敗しました: ' + error.message);
+    } finally {
+      setExporting(false);
+      setTimeout(() => setExportStatus(''), 8000);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-8 bg-black min-h-screen">
+      <div className="mb-4">
+        <button
+          onClick={() => onNavigate('home')}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+        >
+          <X className="w-4 h-4" />
+          閉じる
+        </button>
+      </div>
+
+      <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
+      <p className="text-gray-400 text-sm mb-8">データをGoogle スプレッドシートにエクスポート</p>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
+        
+        <div className="mb-4">
+          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+            GAS URL <span className="text-red-500">*必須</span>
+          </label>
+          <input
+            type="text"
+            value={gasUrl}
+            onChange={(e) => setGasUrl(e.target.value)}
+            placeholder="例: https://script.google.com/macros/s/..."
+            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-3"
+          />
+          
+          <button
+            onClick={handleSaveSettings}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Save className="inline w-4 h-4 mr-2" />
+            保存
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-1">自動エクスポート</h3>
+            <p className="text-sm text-gray-400">データ保存時に自動的にエクスポート</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoExport}
+              onChange={(e) => handleToggleAutoExport(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+      </div>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-white mb-4">手動エクスポート</h2>
+        
+        <button
+          onClick={handleManualExport}
+          disabled={exporting || !gasUrl}
+          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors ${
+            exporting || !gasUrl
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          <ChevronUp className="inline w-5 h-5 mr-2" />
+          {exporting ? 'エクスポート中...' : 'エクスポート実行'}
+        </button>
+
+        {exportStatus && (
+          <div className={`mt-4 p-3 rounded-lg text-sm whitespace-pre-line ${
+            exportStatus.startsWith('✅') 
+              ? 'bg-green-900/30 text-green-400 border border-green-800'
+              : exportStatus.startsWith('❌')
+              ? 'bg-red-900/30 text-red-400 border border-red-800'
+              : 'bg-blue-900/30 text-blue-400 border border-blue-800'
+          }`}>
+            {exportStatus}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
+        
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between py-2 border-b border-gray-800">
+            <span className="text-gray-400">最終エクスポート</span>
+            <span className="text-white font-medium">
+              {lastExport || '未実行'}
+            </span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-800">
+            <span className="text-gray-400">現場データ</span>
+            <span className="text-white font-medium">{sites.length}件</span>
+          </div>
+          <div className="flex justify-between py-2">
+            <span className="text-gray-400">日報データ</span>
+            <span className="text-white font-medium">{reports.length}件</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Part7ここまで
+// ========== Part8: メインApp修正版（全ページ対応） ==========
+// Part5を削除して、これに置き換えてください
+
+const handleDeleteReport = async (reportId) => {
+  if (!confirm('この日報を削除しますか？')) return;
+  try {
+    const updatedReports = reports.filter(r => r.id !== reportId);
+    setReports(updatedReports);
+    await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
+    alert('✅ 日報を削除しました');
+  } catch (error) {
+    alert('❌ 削除に失敗しました');
+  }
+};
+
+// メインAppの<main>部分を以下に置き換え
+<main className="flex-1">
+  {currentPage === 'home' && <HomePage sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite} onNavigate={handleNavigate} totals={totals} projectInfo={projectInfo} />}
+  {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} />}
+  {currentPage === 'input' && <ReportInputPage onSave={handleSaveReport} onNavigate={setCurrentPage} projectInfo={projectInfo} />}
+  {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} />}
+  {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
+  {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} onNavigate={setCurrentPage} />}
+  {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
+</main>

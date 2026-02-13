@@ -1305,6 +1305,334 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             )}
           </div>
 
+          {/* 外注人工 */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              外注人工
+            </label>
+            
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">会社名</label>
+                  <select
+                    id="outsourcing-company-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                    {MASTER_DATA.outsourcingCompanies.map((company) => (
+                      <option key={company} value={company}>{company}</option>
+                    ))}
+                    <option value="__custom__">その他（手入力）</option>
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">人数</label>
+                    <input
+                      id="outsourcing-workers-input"
+                      type="number"
+                      placeholder="3"
+                      min="1"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">区分</label>
+                    <select
+                      id="outsourcing-shift-input"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                      defaultValue="daytime"
+                    >
+                      <option value="daytime">日勤 (¥{formatCurrency(unitPrices.outsourcingDaytime)}/人)</option>
+                      <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.outsourcingNighttime)}/人)</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const companySelect = document.getElementById('outsourcing-company-select');
+                    let company = companySelect.value;
+                    
+                    if (company === '__custom__') {
+                      company = prompt('会社名を入力してください');
+                      if (!company) return;
+                    } else if (!company) {
+                      alert('会社名を選択してください');
+                      return;
+                    }
+                    
+                    const workersInput = document.getElementById('outsourcing-workers-input');
+                    const workers = parseInt(workersInput.value);
+                    const shiftType = document.getElementById('outsourcing-shift-input').value;
+                    
+                    if (!workers || workers < 1) {
+                      alert('人数を入力してください');
+                      return;
+                    }
+                    
+                    const amount = workers * (shiftType === 'daytime' ? unitPrices.outsourcingDaytime : unitPrices.outsourcingNighttime);
+                    
+                    setWorkDetails({
+                      ...workDetails,
+                      outsourcingLabor: [...workDetails.outsourcingLabor, { company, workers, shiftType, amount }]
+                    });
+                    
+                    companySelect.value = '';
+                    workersInput.value = '';
+                    document.getElementById('outsourcing-shift-input').value = 'daytime';
+                  }}
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
+            
+            {workDetails.outsourcingLabor.length > 0 && (
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.outsourcingLabor.length}件</p>
+                  {workDetails.outsourcingLabor.map((item, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium mb-1">{item.company}</p>
+                          <p className="text-sm text-gray-400">{item.workers}人 × {item.shiftType === 'daytime' ? '日勤' : '夜間'}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newLabor = workDetails.outsourcingLabor.filter((_, i) => i !== index);
+                            setWorkDetails({...workDetails, outsourcingLabor: newLabor});
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-white font-semibold text-lg">¥{formatCurrency(item.amount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.outsourcingLabor.reduce((sum, item) => sum + item.amount, 0))}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* 車両 */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              車両
+            </label>
+            
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">車種</label>
+                  <select
+                    id="vehicle-type-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                    onChange={(e) => {
+                      const numberSelect = document.getElementById('vehicle-number-select');
+                      numberSelect.innerHTML = '<option value="">選択してください</option>';
+                      
+                      if (e.target.value && MASTER_DATA.vehicleNumbersByType[e.target.value]) {
+                        MASTER_DATA.vehicleNumbersByType[e.target.value].forEach(num => {
+                          const option = document.createElement('option');
+                          option.value = num;
+                          option.textContent = num;
+                          numberSelect.appendChild(option);
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">選択してください</option>
+                    {MASTER_DATA.vehicles.map((v) => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">車番</label>
+                  <select
+                    id="vehicle-number-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                  </select>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const type = document.getElementById('vehicle-type-select').value;
+                    const number = document.getElementById('vehicle-number-select').value;
+                    
+                    if (!type || !number) {
+                      alert('車種と車番を選択してください');
+                      return;
+                    }
+                    
+                    const amount = VEHICLE_UNIT_PRICES[type] || 0;
+                    
+                    setWorkDetails({
+                      ...workDetails,
+                      vehicles: [...workDetails.vehicles, { type, number, amount }]
+                    });
+                    
+                    document.getElementById('vehicle-type-select').value = '';
+                    document.getElementById('vehicle-number-select').innerHTML = '<option value="">選択してください</option>';
+                  }}
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
+            
+            {workDetails.vehicles.length > 0 && (
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.vehicles.length}台</p>
+                  {workDetails.vehicles.map((v, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-white text-base font-medium">{v.type} ({v.number})</p>
+                        <p className="text-sm text-gray-400">¥{formatCurrency(v.amount)}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newVehicles = workDetails.vehicles.filter((_, i) => i !== index);
+                          setWorkDetails({...workDetails, vehicles: newVehicles});
+                        }}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.vehicles.reduce((sum, v) => sum + v.amount, 0))}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* 重機 */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              重機
+            </label>
+            
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">機種</label>
+                  <select
+                    id="machinery-type-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                    {MASTER_DATA.heavyMachinery.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">単価</label>
+                  <input
+                    id="machinery-price-input"
+                    type="number"
+                    placeholder="50000"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const typeSelect = document.getElementById('machinery-type-select');
+                    let type = typeSelect.value;
+                    
+                    if (type === 'その他（フリー入力）') {
+                      type = prompt('機種名を入力してください');
+                      if (!type) return;
+                    } else if (!type) {
+                      alert('機種を選択してください');
+                      return;
+                    }
+                    
+                    const price = parseFloat(document.getElementById('machinery-price-input').value);
+                    
+                    if (!price || price <= 0) {
+                      alert('単価を入力してください');
+                      return;
+                    }
+                    
+                    setWorkDetails({
+                      ...workDetails,
+                      machinery: [...workDetails.machinery, { type, unitPrice: price }]
+                    });
+                    
+                    typeSelect.value = '';
+                    document.getElementById('machinery-price-input').value = '';
+                  }}
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
+            
+            {workDetails.machinery.length > 0 && (
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {workDetails.machinery.length}台</p>
+                  {workDetails.machinery.map((m, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-white text-base font-medium">{m.type}</p>
+                        <p className="text-sm text-gray-400">¥{formatCurrency(m.unitPrice)}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newMachinery = workDetails.machinery.filter((_, i) => i !== index);
+                          setWorkDetails({...workDetails, machinery: newMachinery});
+                        }}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(workDetails.machinery.reduce((sum, m) => sum + m.unitPrice, 0))}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="mt-8 grid grid-cols-3 gap-3">
             <button
               onClick={() => setCurrentStep(1)}
@@ -1333,6 +1661,335 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           <SectionHeader title="産廃・スクラップ / Waste & Scrap" />
           
           <p className="text-sm text-gray-400 mb-6">※ 産廃・スクラップがない場合はそのまま保存できます</p>
+
+          {/* 産廃 */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              産廃処分費
+            </label>
+            
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">種類</label>
+                  <select
+                    id="waste-type-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                    {MASTER_DATA.wasteTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                    <option value="__custom__">その他（手入力）</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">処分先</label>
+                  <select
+                    id="waste-disposal-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                    {projectInfo?.contractedDisposalSites?.map((site) => (
+                      <option key={site} value={site}>{site}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">数量</label>
+                    <input
+                      id="waste-quantity-input"
+                      type="number"
+                      step="0.1"
+                      placeholder="10"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">単位</label>
+                    <select
+                      id="waste-unit-select"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                      defaultValue="㎥"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="㎥">㎥</option>
+                      <option value="t">t</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">単価</label>
+                  <input
+                    id="waste-price-input"
+                    type="number"
+                    placeholder="11000"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">マニフェスト番号</label>
+                  <input
+                    id="waste-manifest-input"
+                    type="text"
+                    placeholder="ABC123"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const typeSelect = document.getElementById('waste-type-select');
+                    let type = typeSelect.value;
+                    
+                    if (type === '__custom__') {
+                      type = prompt('産廃種類を入力してください');
+                      if (!type) return;
+                    } else if (!type) {
+                      alert('種類を選択してください');
+                      return;
+                    }
+                    
+                    const disposal = document.getElementById('waste-disposal-select').value;
+                    const quantity = parseFloat(document.getElementById('waste-quantity-input').value);
+                    const unit = document.getElementById('waste-unit-select').value;
+                    const price = parseFloat(document.getElementById('waste-price-input').value);
+                    const manifest = document.getElementById('waste-manifest-input').value;
+                    
+                    if (!disposal || !quantity || !price || !manifest) {
+                      alert('すべての項目を入力してください');
+                      return;
+                    }
+                    
+                    const amount = quantity * price;
+                    
+                    setWasteItems([...wasteItems, {
+                      material: type,
+                      disposalSite: disposal,
+                      quantity,
+                      unit,
+                      unitPrice: price,
+                      amount,
+                      manifestNumber: manifest
+                    }]);
+                    
+                    typeSelect.value = '';
+                    document.getElementById('waste-disposal-select').value = '';
+                    document.getElementById('waste-quantity-input').value = '';
+                    document.getElementById('waste-unit-select').value = '㎥';
+                    document.getElementById('waste-price-input').value = '';
+                    document.getElementById('waste-manifest-input').value = '';
+                  }}
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
+            
+            {wasteItems.length > 0 && (
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {wasteItems.length}件</p>
+                  {wasteItems.map((item, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium">{item.material} → {item.disposalSite}</p>
+                          <p className="text-sm text-gray-400">
+                            {item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(item.amount)}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">マニフェスト: {item.manifestNumber}</p>
+                        </div>
+                        <button
+                          onClick={() => setWasteItems(wasteItems.filter((_, i) => i !== index))}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(wasteItems.reduce((sum, item) => sum + item.amount, 0))}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* スクラップ */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-400 mb-4">
+              スクラップ売上
+            </label>
+            
+            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">種類</label>
+                  <select
+                    id="scrap-type-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                    {MASTER_DATA.scrapTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                    <option value="__custom__">その他（手入力）</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">買取業者</label>
+                  <select
+                    id="scrap-buyer-select"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    defaultValue=""
+                  >
+                    <option value="">選択してください</option>
+                    {MASTER_DATA.buyers.map((buyer) => (
+                      <option key={buyer} value={buyer}>{buyer}</option>
+                    ))}
+                    <option value="__custom__">その他（手入力）</option>
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">数量</label>
+                    <input
+                      id="scrap-quantity-input"
+                      type="number"
+                      step="0.1"
+                      placeholder="120"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">単位</label>
+                    <select
+                      id="scrap-unit-select"
+                      className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                      defaultValue="kg"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="㎥">㎥</option>
+                      <option value="t">t</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">単価</label>
+                  <input
+                    id="scrap-price-input"
+                    type="number"
+                    placeholder="85"
+                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const typeSelect = document.getElementById('scrap-type-select');
+                    let type = typeSelect.value;
+                    
+                    if (type === '__custom__') {
+                      type = prompt('スクラップ種類を入力してください');
+                      if (!type) return;
+                    } else if (!type) {
+                      alert('種類を選択してください');
+                      return;
+                    }
+                    
+                    const buyerSelect = document.getElementById('scrap-buyer-select');
+                    let buyer = buyerSelect.value;
+                    
+                    if (buyer === '__custom__') {
+                      buyer = prompt('買取業者を入力してください');
+                      if (!buyer) return;
+                    } else if (!buyer) {
+                      alert('買取業者を選択してください');
+                      return;
+                    }
+                    
+                    const quantity = parseFloat(document.getElementById('scrap-quantity-input').value);
+                    const unit = document.getElementById('scrap-unit-select').value;
+                    const price = parseFloat(document.getElementById('scrap-price-input').value);
+                    
+                    if (!quantity || !price) {
+                      alert('数量と単価を入力してください');
+                      return;
+                    }
+                    
+                    const amount = -(quantity * price);
+                    
+                    setScrapItems([...scrapItems, {
+                      type,
+                      buyer,
+                      quantity,
+                      unit,
+                      unitPrice: price,
+                      amount
+                    }]);
+                    
+                    typeSelect.value = '';
+                    buyerSelect.value = '';
+                    document.getElementById('scrap-quantity-input').value = '';
+                    document.getElementById('scrap-unit-select').value = 'kg';
+                    document.getElementById('scrap-price-input').value = '';
+                  }}
+                  className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
+            
+            {scrapItems.length > 0 && (
+              <>
+                <div className="space-y-3 mb-4">
+                  <p className="text-sm text-gray-400">登録済み: {scrapItems.length}件</p>
+                  {scrapItems.map((item, index) => (
+                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <p className="text-white text-base font-medium">{item.type} → {item.buyer}</p>
+                          <p className="text-sm text-gray-400">
+                            {item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(Math.abs(item.amount))}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setScrapItems(scrapItems.filter((_, i) => i !== index))}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="p-4 bg-gray-800/50 rounded-lg">
+                  <p className="text-white text-xl font-semibold">
+                    小計: ¥{formatCurrency(Math.abs(scrapItems.reduce((sum, item) => sum + item.amount, 0)))}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
 
           <div className="mt-8 grid grid-cols-3 gap-3">
             <button

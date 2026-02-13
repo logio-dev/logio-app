@@ -2019,3 +2019,266 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 }
 
 // Part4ここまで
+// ========== Part5: メインApp ==========
+
+export default function LOGIOApp() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState('home');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  
+  const [sites, setSites] = useState([]);
+  const [selectedSite, setSelectedSite] = useState('');
+  const [projectInfo, setProjectInfo] = useState({
+    projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
+    salesPerson: '', siteManager: '', startDate: '', endDate: '',
+    contractAmount: '', additionalAmount: '', status: '進行中',
+    discharger: '', contractedDisposalSites: []
+  });
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
+    if (!showSplash) return;
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, [showSplash]);
+
+  useEffect(() => { 
+    if (isLoggedIn) loadSites(); 
+  }, [isLoggedIn]);
+
+  const loadSites = async () => {
+    try {
+      const stored = await window.storage.get('logio-sites');
+      if (stored?.value) {
+        const loadedSites = JSON.parse(stored.value);
+        const sitesWithNumbers = await Promise.all(
+          loadedSites.map(async (site) => {
+            try {
+              const projectStored = await window.storage.get(`logio-project-${site.name}`);
+              if (projectStored?.value) {
+                const projectData = JSON.parse(projectStored.value);
+                return { ...site, projectNumber: projectData.projectNumber || '' };
+              }
+            } catch (error) {
+              return { ...site, projectNumber: '' };
+            }
+            return { ...site, projectNumber: '' };
+          })
+        );
+        setSites(sitesWithNumbers);
+      }
+    } catch (error) { console.log('初回起動'); }
+  };
+
+  const generateProjectNumber = async () => {
+    const currentYear = new Date().getFullYear();
+    const yearPrefix = currentYear.toString();
+    const allProjectNumbers = [];
+    for (const site of sites) {
+      try {
+        const stored = await window.storage.get(`logio-project-${site.name}`);
+        if (stored?.value) {
+          const projectData = JSON.parse(stored.value);
+          if (projectData.projectNumber) allProjectNumbers.push(projectData.projectNumber);
+        }
+      } catch (error) {}
+    }
+    const currentYearNumbers = allProjectNumbers
+      .filter(num => num.startsWith(yearPrefix + '-'))
+      .map(num => {
+        const parts = num.split('-');
+        return parts.length === 2 ? parseInt(parts[1], 10) : 0;
+      })
+      .filter(num => !isNaN(num));
+    const maxNumber = currentYearNumbers.length > 0 ? Math.max(...currentYearNumbers) : 0;
+    const newNumber = (maxNumber + 1).toString().padStart(3, '0');
+    return `${yearPrefix}-${newNumber}`;
+  };
+
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handleLogout = () => {
+    if (confirm('ログアウトしますか？')) {
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      setSelectedSite('');
+      setSidebarOpen(false);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  };
+
+  const handleAddSite = async (siteName) => {
+    try {
+      const projectNumber = await generateProjectNumber();
+      const newSite = { name: siteName, createdAt: new Date().toISOString(), status: '進行中', projectNumber };
+      const updatedSites = [...sites, newSite];
+      setSites(updatedSites);
+      await window.storage.set('logio-sites', JSON.stringify(updatedSites));
+      const initialProjectInfo = {
+        projectId: '', projectNumber, projectName: siteName, client: '', workLocation: '',
+        salesPerson: '', siteManager: '', startDate: '', endDate: '',
+        contractAmount: '', additionalAmount: '', status: '進行中', 
+        discharger: '', contractedDisposalSites: []
+      };
+      await window.storage.set(`logio-project-${siteName}`, JSON.stringify(initialProjectInfo));
+      setSelectedSite(siteName);
+      setProjectInfo(initialProjectInfo);
+      alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
+    } catch (error) {
+      alert('❌ 現場の追加に失敗しました');
+    }
+  };
+
+  const handleDeleteSite = async (siteName) => {
+    try {
+      const updatedSites = sites.filter(s => s.name !== siteName);
+      setSites(updatedSites);
+      await window.storage.set('logio-sites', JSON.stringify(updatedSites));
+      await window.storage.delete(`logio-project-${siteName}`);
+      await window.storage.delete(`logio-reports-${siteName}`);
+      if (selectedSite === siteName) setSelectedSite('');
+      alert(`✅ 現場「${siteName}」を削除しました`);
+    } catch (error) {
+      alert('❌ 現場の削除に失敗しました');
+    }
+  };
+
+  const handleSelectSite = async (siteName) => {
+    setSelectedSite(siteName);
+    await loadProjectInfo(siteName);
+    await loadReports(siteName);
+  };
+
+  const loadProjectInfo = async (siteName) => {
+    try {
+      const stored = await window.storage.get(`logio-project-${siteName}`);
+      if (stored?.value) setProjectInfo(JSON.parse(stored.value));
+      else setProjectInfo({
+        projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
+        salesPerson: '', siteManager: '', startDate: '', endDate: '',
+        contractAmount: '', additionalAmount: '', status: '進行中',
+        discharger: '', contractedDisposalSites: []
+      });
+    } catch (error) {}
+  };
+
+  const loadReports = async (siteName) => {
+    try {
+      const stored = await window.storage.get(`logio-reports-${siteName}`);
+      setReports(stored?.value ? JSON.parse(stored.value) : []);
+    } catch (error) { setReports([]); }
+  };
+
+  const handleSaveProject = async () => {
+    if (!selectedSite) return alert('現場を選択してください');
+    try {
+      const updatedInfo = { ...projectInfo, projectId: projectInfo.projectId || generateId('P'), updatedAt: new Date().toISOString() };
+      await window.storage.set(`logio-project-${selectedSite}`, JSON.stringify(updatedInfo));
+      setProjectInfo(updatedInfo);
+      alert('✅ プロジェクト情報を保存しました');
+      setCurrentPage('home');
+    } catch (error) { alert('❌ 保存に失敗しました'); }
+  };
+
+  const handleSaveReport = async (reportData) => {
+    if (!selectedSite) return alert('現場を選択してください');
+    try {
+      const newReport = {
+        id: Date.now(),
+        reportId: generateId('R'),
+        projectId: projectInfo.projectId || generateId('P'),
+        ...reportData,
+        createdAt: new Date().toISOString()
+      };
+      const updatedReports = [...reports, newReport];
+      setReports(updatedReports);
+      await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
+      alert('✅ 日報を保存しました');
+      setCurrentPage('home');
+    } catch (error) { alert('❌ 保存に失敗しました'); }
+  };
+
+  const calculateTotals = () => {
+    const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
+    let accumulatedCost = 0;
+    let accumulatedScrap = 0;
+    reports.forEach(report => {
+      if (report.workDetails) {
+        report.workDetails.inHouseWorkers?.forEach(w => accumulatedCost += w.amount || 0);
+        report.workDetails.outsourcingLabor?.forEach(o => accumulatedCost += o.amount || 0);
+        report.workDetails.vehicles?.forEach(v => accumulatedCost += v.amount || 0);
+        report.workDetails.machinery?.forEach(m => accumulatedCost += m.unitPrice || 0);
+      }
+      report.wasteItems?.forEach(w => accumulatedCost += w.amount || 0);
+      report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
+    });
+    const grossProfit = totalRevenue - accumulatedCost + accumulatedScrap;
+    const grossProfitRateContract = totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0';
+    const grossProfitRateWithScrap = (totalRevenue + accumulatedScrap) > 0 ? (grossProfit / (totalRevenue + accumulatedScrap) * 100).toFixed(1) : '0.0';
+    return { totalRevenue, accumulatedCost, accumulatedScrap, grossProfit, grossProfitRateContract, grossProfitRateWithScrap };
+  };
+
+  const handleNavigate = (page) => {
+    if (page === 'settings') {
+      setShowPasswordModal(true);
+      setPassword('');
+    } else {
+      setCurrentPage(page);
+    }
+  };
+
+  const handlePasswordSubmit = () => {
+    if (password === 'face1991') {
+      setShowPasswordModal(false);
+      setPassword('');
+      setCurrentPage('settings');
+    } else {
+      alert('❌ パスワードが正しくありません');
+      setPassword('');
+    }
+  };
+
+  const totals = calculateTotals();
+
+  if (showSplash) return <SplashScreen />;
+  if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
+
+  return (
+    <div className="min-h-screen bg-black flex">
+      <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
+      <div className="flex flex-col flex-1 bg-black">
+        <Header showMenuButton onMenuClick={() => setSidebarOpen(true)} />
+        <main className="flex-1">
+          {currentPage === 'home' && <HomePage sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite} onNavigate={handleNavigate} totals={totals} projectInfo={projectInfo} />}
+          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} />}
+          {currentPage === 'input' && <ReportInputPage onSave={handleSaveReport} onNavigate={setCurrentPage} projectInfo={projectInfo} />}
+          {currentPage !== 'home' && currentPage !== 'input' && currentPage !== 'settings' && (
+            <div className="p-8 text-center"><p className="text-gray-400 text-lg mt-20">📝 この機能は Phase3 で追加されます</p></div>
+          )}
+        </main>
+      </div>
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
+          <div className="bg-gray-900 p-6 max-w-md w-full rounded-lg border border-gray-700">
+            <h2 className="text-xl font-bold text-white mb-4">管理者認証</h2>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()} placeholder="パスワードを入力" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-base rounded-md focus:outline-none focus:border-blue-500 mb-4" autoFocus />
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={handlePasswordSubmit} className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">認証</button>
+              <button onClick={() => { setShowPasswordModal(false); setPassword(''); }} className="px-4 py-3 bg-gray-800 border border-gray-700 text-gray-300 font-medium rounded-lg hover:bg-gray-700">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Part5ここまで

@@ -2205,7 +2205,17 @@ export default function LOGIOApp() {
       setCurrentPage('home');
     } catch (error) { alert('❌ 保存に失敗しました'); }
   };
-
+const handleDeleteReport = async (reportId) => {
+  if (!confirm('この日報を削除しますか？')) return;
+  try {
+    const updatedReports = reports.filter(r => r.id !== reportId);
+    setReports(updatedReports);
+    await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
+    alert('✅ 日報を削除しました');
+  } catch (error) {
+    alert('❌ 削除に失敗しました');
+  }
+};
   const calculateTotals = () => {
     const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
     let accumulatedCost = 0;
@@ -2257,13 +2267,14 @@ export default function LOGIOApp() {
       <div className="flex flex-col flex-1 bg-black">
         <Header showMenuButton onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1">
-          {currentPage === 'home' && <HomePage sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite} onNavigate={handleNavigate} totals={totals} projectInfo={projectInfo} />}
-          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} />}
-          {currentPage === 'input' && <ReportInputPage onSave={handleSaveReport} onNavigate={setCurrentPage} projectInfo={projectInfo} />}
-          {currentPage !== 'home' && currentPage !== 'input' && currentPage !== 'settings' && (
-            <div className="p-8 text-center"><p className="text-gray-400 text-lg mt-20">📝 この機能は Phase3 で追加されます</p></div>
-          )}
-        </main>
+  {currentPage === 'home' && <HomePage sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite} onNavigate={handleNavigate} totals={totals} projectInfo={projectInfo} />}
+  {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} />}
+  {currentPage === 'input' && <ReportInputPage onSave={handleSaveReport} onNavigate={setCurrentPage} projectInfo={projectInfo} />}
+  {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} />}
+  {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
+  {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} onNavigate={setCurrentPage} />}
+  {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
+</main>
       </div>
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
@@ -2955,28 +2966,3 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 }
 
 // Part7ここまで
-// ========== Part8: メインApp修正版（全ページ対応） ==========
-// Part5を削除して、これに置き換えてください
-
-const handleDeleteReport = async (reportId) => {
-  if (!confirm('この日報を削除しますか？')) return;
-  try {
-    const updatedReports = reports.filter(r => r.id !== reportId);
-    setReports(updatedReports);
-    await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
-    alert('✅ 日報を削除しました');
-  } catch (error) {
-    alert('❌ 削除に失敗しました');
-  }
-};
-
-// メインAppの<main>部分を以下に置き換え
-<main className="flex-1">
-  {currentPage === 'home' && <HomePage sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite} onNavigate={handleNavigate} totals={totals} projectInfo={projectInfo} />}
-  {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} />}
-  {currentPage === 'input' && <ReportInputPage onSave={handleSaveReport} onNavigate={setCurrentPage} projectInfo={projectInfo} />}
-  {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} />}
-  {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
-  {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} onNavigate={setCurrentPage} />}
-  {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
-</main>

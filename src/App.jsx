@@ -2777,21 +2777,20 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   );
 }
 
+// ========== ExportPage 差し替え用 ==========
+// 既存の function ExportPage(...) { ... } を丸ごとこれに置き換え
+
 function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   const [gasUrl, setGasUrl] = useState('');
-  const [autoExport, setAutoExport] = useState(false);
-  const [lastExport, setLastExport] = useState('');
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
+  const [lastExport, setLastExport] = useState('');
 
   useEffect(() => {
     const loadSettings = async () => {
       const gasUrlResult = await window.storage.get('logio-gas-url');
-      const autoResult = await window.storage.get('logio-auto-export');
       const lastResult = await window.storage.get('logio-last-export');
-      
       if (gasUrlResult?.value) setGasUrl(gasUrlResult.value);
-      if (autoResult?.value) setAutoExport(autoResult.value === 'true');
       if (lastResult?.value) setLastExport(lastResult.value);
     };
     loadSettings();
@@ -2805,23 +2804,27 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
     setTimeout(() => setExportStatus(''), 3000);
   };
 
-  const handleToggleAutoExport = async (checked) => {
-    setAutoExport(checked);
-    await window.storage.set('logio-auto-export', checked.toString());
-  };
-
-  const handleManualExport = async () => {
+  // 解体作業日報をスプシにエクスポート
+  const handleExportWorkReport = async () => {
     if (!gasUrl) {
       setExportStatus('❌ GAS URLを入力してください');
       return;
     }
+    if (!selectedSite) {
+      setExportStatus('❌ 現場を選択してください');
+      return;
+    }
+    if (reports.length === 0) {
+      setExportStatus('❌ 日報データがありません');
+      return;
+    }
 
     setExporting(true);
-    setExportStatus('📤 エクスポート中...');
+    setExportStatus('📤 解体作業日報をスプレッドシートに作成中...');
 
     try {
       const siteData = {
-        siteName: sites.find(s => s.name === selectedSite)?.name || '',
+        siteName: selectedSite,
         projectNumber: projectInfo.projectNumber || '',
         projectName: projectInfo.projectName || '',
         client: projectInfo.client || '',
@@ -2838,7 +2841,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       };
 
       const payload = {
-        action: 'exportAll',
+        action: 'exportWorkReport',
         siteData: siteData,
         reportData: reports
       };
@@ -2854,7 +2857,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       setLastExport(now);
       await window.storage.set('logio-last-export', now);
       
-      setExportStatus(`✅ エクスポート完了！（${now}）\n現場データ: 1件、日報データ: ${reports.length}件`);
+      setExportStatus(`✅ 解体作業日報をスプレッドシートに作成しました！（${now}）\n日報データ: ${reports.length}件`);
     } catch (error) {
       setExportStatus('❌ エクスポートに失敗しました: ' + error.message);
     } finally {
@@ -2876,8 +2879,9 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       </div>
 
       <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
-      <p className="text-gray-400 text-sm mb-8">データをGoogle スプレッドシートにエクスポート</p>
+      <p className="text-gray-400 text-sm mb-8">解体作業日報をGoogle スプレッドシートに出力</p>
 
+      {/* GAS URL設定 */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         
@@ -2903,38 +2907,30 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         </div>
       </div>
 
+      {/* 解体作業日報エクスポート */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-1">自動エクスポート</h3>
-            <p className="text-sm text-gray-400">データ保存時に自動的にエクスポート</p>
+        <h2 className="text-xl font-semibold text-white mb-2">解体作業日報</h2>
+        <p className="text-gray-400 text-sm mb-4">LOGIO仕様の解体作業日報をスプレッドシートに自動生成します</p>
+        
+        {selectedSite && (
+          <div className="mb-4 p-3 bg-gray-800/50 rounded-lg">
+            <p className="text-xs text-gray-500 mb-1">現場</p>
+            <p className="text-white font-medium">{selectedSite}</p>
+            <p className="text-xs text-gray-500 mt-2">日報数: {reports.length}件</p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={autoExport}
-              onChange={(e) => handleToggleAutoExport(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-        </div>
-      </div>
-
-      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-white mb-4">手動エクスポート</h2>
+        )}
         
         <button
-          onClick={handleManualExport}
-          disabled={exporting || !gasUrl}
-          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors ${
-            exporting || !gasUrl
+          onClick={handleExportWorkReport}
+          disabled={exporting || !gasUrl || !selectedSite}
+          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${
+            exporting || !gasUrl || !selectedSite
               ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
-          <ChevronUp className="inline w-5 h-5 mr-2" />
-          {exporting ? 'エクスポート中...' : 'エクスポート実行'}
+          <FileText className="w-5 h-5" />
+          {exporting ? '作成中...' : '解体作業日報をスプシに作成'}
         </button>
 
         {exportStatus && (
@@ -2950,19 +2946,18 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         )}
       </div>
 
+      {/* ステータス */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
         <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
         
         <div className="space-y-3 text-sm">
           <div className="flex justify-between py-2 border-b border-gray-800">
             <span className="text-gray-400">最終エクスポート</span>
-            <span className="text-white font-medium">
-              {lastExport || '未実行'}
-            </span>
+            <span className="text-white font-medium">{lastExport || '未実行'}</span>
           </div>
           <div className="flex justify-between py-2 border-b border-gray-800">
-            <span className="text-gray-400">現場データ</span>
-            <span className="text-white font-medium">{sites.length}件</span>
+            <span className="text-gray-400">現場</span>
+            <span className="text-white font-medium">{selectedSite || '未選択'}</span>
           </div>
           <div className="flex justify-between py-2">
             <span className="text-gray-400">日報データ</span>
@@ -2973,6 +2968,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
     </div>
   );
 }
+
 
 // Part7ここまで
 // ========== Part9: 解体作業日報PDF出力（A3横・現場単位） ==========

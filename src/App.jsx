@@ -594,7 +594,7 @@ function LoginPage({ onLogin }) {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-[360px]">
           <div className="text-center mb-10">
-            <LOGIOLogo size="lg" />
+            <LOGIOLogo size="md" />
             <p className="text-sm text-gray-500 mt-3" style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}>現場管理をスマートに</p>
           </div>
           <div className="rounded-xl p-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>

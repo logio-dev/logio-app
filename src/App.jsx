@@ -573,15 +573,11 @@ function LoginPage({ onLogin }) {
 
   const handleLogin = async () => {
     setError('');
-    
-    // 自社ログイン判定
     if ((userId === 'face1991' && password === 'face1991') ||
         (userId === 'ryokuka2005' && password === 'ryokuka2005')) {
       onLogin({ type: 'company', userId });
       return;
     }
-    
-    // 協力会社ログイン判定
     const validPartnerIds = ['TCY001', 'ALT001', 'YMD001', 'KWD001', 'MRK001', 'MM001'];
     if (validPartnerIds.includes(userId)) {
       const expectedPass = userId.toLowerCase();
@@ -590,58 +586,62 @@ function LoginPage({ onLogin }) {
         return;
       }
     }
-    
     setError('IDまたはパスワードが正しくありません');
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="flex flex-col items-center justify-center mb-10">
-          <LOGIOLogo size="lg" />
-        </div>
-        
-        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              ID
-            </label>
-            <input
-              type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="IDを入力"
-              className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
-            />
+    <div className="min-h-screen bg-black flex flex-col">
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-[360px]">
+          <div className="text-center mb-10">
+            <LOGIOLogo size="lg" />
+            <p className="text-sm text-gray-500 mt-3" style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}>現場管理をスマートに</p>
           </div>
-          
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
-              パスワード
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              placeholder="パスワードを入力"
-              className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          
-          {error && (
-            <div className="mb-6 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-400 text-sm">
-              {error}
+          <div className="rounded-xl p-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-gray-400 mb-2" style={{ fontFamily: 'Inter, sans-serif' }}>ID</label>
+              <input
+                type="text"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="IDを入力"
+                className="w-full px-4 py-3 bg-transparent text-white text-sm rounded-lg focus:outline-none transition-all"
+                style={{ border: '1px solid rgba(255,255,255,0.12)', fontFamily: 'Inter, sans-serif' }}
+                onFocus={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.4)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.12)'}
+              />
             </div>
-          )}
-          
-          <button
-            onClick={handleLogin}
-            className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-base transition-colors"
-          >
-            ログイン
-          </button>
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-gray-400 mb-2" style={{ fontFamily: 'Inter, sans-serif' }}>パスワード</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                placeholder="パスワードを入力"
+                className="w-full px-4 py-3 bg-transparent text-white text-sm rounded-lg focus:outline-none transition-all"
+                style={{ border: '1px solid rgba(255,255,255,0.12)', fontFamily: 'Inter, sans-serif' }}
+                onFocus={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.4)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.12)'}
+              />
+            </div>
+            {error && (
+              <div className="mb-5 p-3 rounded-lg text-sm" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontFamily: 'Inter, sans-serif' }}>
+                {error}
+              </div>
+            )}
+            <button
+              onClick={handleLogin}
+              className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:bg-white active:scale-[0.98]"
+              style={{ background: '#EDEDED', color: '#000', fontFamily: 'Inter, sans-serif' }}
+            >
+              ログイン
+            </button>
+          </div>
         </div>
+      </div>
+      <div className="text-center py-6">
+        <p className="text-xs text-gray-600" style={{ fontFamily: 'Inter, sans-serif' }}>© 2026 LOGIO</p>
       </div>
     </div>
   );

@@ -152,24 +152,24 @@ function Header({ title, showMenuButton = false, onMenuClick }) {
           <button onClick={onMenuClick} className="transition-colors" style={{ color: 'rgba(255,255,255,0.6)' }}
             onMouseEnter={e => e.currentTarget.style.color='white'}
             onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.6)'}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
               <path d="M3 8H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
               <path d="M6 16H18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
           </button>
         )}
-        <span className="text-white text-lg font-extrabold" style={{ letterSpacing: '-0.03em', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>LOGIO</span>
+        <span className="text-white font-extrabold" style={{ fontSize: '22px', letterSpacing: '-0.03em', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>LOGIO</span>
       </div>
       <div className="flex items-center gap-1">
         <button className="p-2 transition-colors rounded-lg" style={{ color: 'rgba(255,255,255,0.4)' }}
           onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
           onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
-          <Calendar className="w-4 h-4" />
+          <Calendar className="w-5 h-5" />
         </button>
         <button className="p-2 transition-colors rounded-lg" style={{ color: 'rgba(255,255,255,0.4)' }}
           onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
           onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
-          <Activity className="w-4 h-4" />
+          <Activity className="w-5 h-5" />
         </button>
       </div>
     </header>
@@ -539,8 +539,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               <div className="flex items-center gap-3">
                 <div className="logio-status-dot" />
                 <div>
-                  <p className="text-white font-semibold" style={{ fontSize: '15px' }}>{selectedSite}</p>
-                  {projectNumber && <p className="text-gray-500 mt-0.5 tracking-wider" style={{ fontSize: '11px' }}>{projectNumber}</p>}
+                  <p className="text-white font-semibold" style={{ fontSize: '17px' }}>{selectedSite}</p>
+                  {projectNumber && <p className="text-gray-500 mt-0.5 tracking-wider" style={{ fontSize: '11px' }}>PROJECT NO.: {projectNumber}</p>}
                 </div>
               </div>
             ) : (
@@ -602,79 +602,43 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               </div>
             </div>
 
-            {/* 原価率 + 工期 */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="px-4 py-3.5" style={card}>
-                <div className="flex items-center justify-between mb-2.5">
+            {/* ===== 2×2グリッド：粗利・粗利率・原価率・工期 ===== */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {/* 粗利 */}
+              <div className="px-4 py-4" style={card}>
+                <p className="logio-lbl mb-2">粗利</p>
+                <p className="font-bold tabular-nums" style={{ fontSize: '20px', color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>
+                  ¥{formatCurrency(totals.grossProfit)}
+                </p>
+              </div>
+              {/* 粗利率 */}
+              <div className="px-4 py-4" style={card}>
+                <p className="logio-lbl mb-2">粗利率</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-white font-bold tabular-nums" style={{ fontSize: '20px' }}>{totals.grossProfitRateContract}%</p>
+                  <TrendingUp className="w-4 h-4" style={{ color: '#34D399' }} />
+                </div>
+              </div>
+              {/* 原価率 */}
+              <div className="px-4 py-4" style={card}>
+                <div className="flex items-center justify-between mb-2">
                   <p className="logio-lbl">原価率</p>
                   <span className="font-medium px-1.5 py-0.5 rounded" style={{ fontSize: '10px', background: costBarBg, color: costBarColor }}>{costStatus}</span>
                 </div>
-                <p className="text-white font-bold tabular-nums mb-2.5" style={{ fontSize: '20px' }}>{costRatioFixed}%</p>
+                <p className="text-white font-bold tabular-nums mb-2" style={{ fontSize: '20px' }}>{costRatioFixed}%</p>
                 <div className="logio-progress-track h-1.5">
                   <div className="logio-progress-bar h-full" style={{ width: `${Math.min(costRatio,100)}%`, backgroundColor: costBarColor }} />
                 </div>
               </div>
-              <div className="px-4 py-3.5" style={card}>
-                <div className="flex items-center justify-between mb-2.5">
+              {/* 工期 */}
+              <div className="px-4 py-4" style={card}>
+                <div className="flex items-center justify-between mb-2">
                   <p className="logio-lbl">工期</p>
                   <span className="font-medium text-gray-400" style={{ fontSize: '10px' }}>{remainDays !== null ? `残${remainDays}日` : '未設定'}</span>
                 </div>
-                <p className="text-white font-bold tabular-nums mb-2.5" style={{ fontSize: '20px' }}>{Math.round(progressPercent)}%</p>
+                <p className="text-white font-bold tabular-nums mb-2" style={{ fontSize: '20px' }}>{Math.round(progressPercent)}%</p>
                 <div className="logio-progress-track h-1.5">
                   <div className="logio-progress-bar h-full" style={{ width: `${progressPercent}%`, backgroundColor: progressPercent >= 90 ? '#F59E0B' : '#3B82F6' }} />
-                </div>
-              </div>
-            </div>
-
-            {/* 日別コストミニバーチャート */}
-            <div className="px-4 py-3.5 mb-4" style={card}>
-              <p className="logio-lbl mb-3">直近7日の原価推移</p>
-              <div className="flex items-end gap-1.5" style={{ height: '48px' }}>
-                {dailyData.map((d, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div style={{ height: '40px', display: 'flex', alignItems: 'flex-end', width: '100%' }}>
-                      <div className="logio-mini-bar w-full" style={{ height: `${Math.max((d.cost/maxCost)*100, d.cost>0?8:2)}%`, opacity: d.cost>0?1:0.15 }} />
-                    </div>
-                    <span style={{ fontSize: '8px', color: '#4B5563' }}>{d.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 最近の日報（折りたたみ） */}
-            <div className="overflow-hidden mb-6" style={card}>
-              <button onClick={() => setReportsOpen(!reportsOpen)}
-                className="w-full px-4 py-3 flex items-center justify-between transition-colors"
-                style={{ borderBottom: reportsOpen ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                <p className="logio-lbl">最近の日報</p>
-                <div className="flex items-center gap-3">
-                  <button onClick={(e) => { e.stopPropagation(); onNavigate('list'); }}
-                    className="transition-colors" style={{ fontSize: '11px', color: '#3B82F6' }}>
-                    すべて見る →
-                  </button>
-                  <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${reportsOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </button>
-              <div className={`finance-detail ${reportsOpen ? 'open' : ''}`}>
-                <div>
-                  {recentReports.length === 0 ? (
-                    <div className="px-4 py-4"><p className="text-gray-600" style={{ fontSize: '13px' }}>日報がありません</p></div>
-                  ) : (
-                    <div>
-                      {recentReports.map((r, idx) => (
-                        <div key={idx} className="logio-activity-line px-4 py-3" style={{ borderBottom: idx < recentReports.length-1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
-                          <div className="logio-activity-dot" />
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-white font-medium" style={{ fontSize: '13px' }}>{r.workContent || '（内容なし）'}</p>
-                              <p className="text-gray-500 mt-0.5" style={{ fontSize: '11px' }}>{r.date} · {r.workCategory}</p>
-                            </div>
-                            <p className="text-gray-400 tabular-nums" style={{ fontSize: '13px' }}>¥{formatCurrency(r.cost)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -919,34 +883,36 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
       {currentStep === 1 && (
         <div>
           <SectionHeader title="基本情報 / Basic Info" />
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-3">作業日 <span className="text-red-500">*</span></label>
-              <input type="date" value={report.date} onChange={(e) => setReport({...report, date: e.target.value})}
-                className="w-full px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-3">天候 <span className="text-red-500">*</span></label>
-              <select value={report.weather} onChange={(e) => setReport({...report, weather: e.target.value})}
-                className="w-full px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
-                <option value="">選択してください</option>
-                {MASTER_DATA.weather.map((w) => <option key={w} value={w}>{w}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-3">記入者 <span className="text-red-500">*</span></label>
-              <select value={report.recorder} onChange={(e) => {
-                const val = e.target.value;
-                if (val === '__custom__') {
-                  const n = prompt('記入者名を入力してください');
-                  if (n) setReport({...report, recorder: '', customRecorder: n});
-                } else { setReport({...report, recorder: val, customRecorder: ''}); }
-              }} className="w-full px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
-                <option value="">選択してください</option>
-                {MASTER_DATA.employees.map((name) => <option key={name} value={name}>{name}</option>)}
-                <option value="__custom__">その他（手入力）</option>
-              </select>
-              {report.customRecorder && <p className="text-xs text-blue-400 mt-2">入力値: {report.customRecorder}</p>}
+          <div className="mb-8 rounded-lg p-4 border border-white/[0.08]" style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-3">作業日 <span className="text-red-500">*</span></label>
+                <input type="date" value={report.date} onChange={(e) => setReport({...report, date: e.target.value})}
+                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-3">天候 <span className="text-red-500">*</span></label>
+                <select value={report.weather} onChange={(e) => setReport({...report, weather: e.target.value})}
+                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
+                  <option value="">選択してください</option>
+                  {MASTER_DATA.weather.map((w) => <option key={w} value={w}>{w}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-3">記入者 <span className="text-red-500">*</span></label>
+                <select value={report.recorder} onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '__custom__') {
+                    const n = prompt('記入者名を入力してください');
+                    if (n) setReport({...report, recorder: '', customRecorder: n});
+                  } else { setReport({...report, recorder: val, customRecorder: ''}); }
+                }} className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
+                  <option value="">選択してください</option>
+                  {MASTER_DATA.employees.map((name) => <option key={name} value={name}>{name}</option>)}
+                  <option value="__custom__">その他（手入力）</option>
+                </select>
+                {report.customRecorder && <p className="text-xs text-blue-400 mt-2">入力値: {report.customRecorder}</p>}
+              </div>
             </div>
           </div>
           <div className="mt-8 grid grid-cols-2 gap-4">
@@ -1444,6 +1410,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 // ========== ReportListPage ==========
 function ReportListPage({ reports, onDelete, onNavigate }) {
   const [filterMonth, setFilterMonth] = useState('');
+
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const [filterCategory, setFilterCategory] = useState('');
 
   const filteredReports = reports.filter(r => {
@@ -1641,6 +1609,7 @@ function ProjectPage({ projectInfo, onNavigate }) {
 
 // ========== AnalysisPage ==========
 function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const costByCategory = { '人工費': 0, '車両費': 0, '重機費': 0, '産廃費': 0 };
   reports.forEach(r => {
     if (r.workDetails) {

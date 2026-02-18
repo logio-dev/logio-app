@@ -1779,9 +1779,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
     setExportStatus('📤 解体作業日報をスプレッドシートに作成中...');
 
     try {
-      // 契約処分先を改行区切りでフォーマット（スプシのセル内改行対応）
-      const disposalSitesFormatted = (projectInfo.contractedDisposalSites || []).join('\n');
-
       const siteData = {
         siteName: selectedSite,
         projectNumber: projectInfo.projectNumber || '',
@@ -1796,10 +1793,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         additionalAmount: projectInfo.additionalAmount || 0,
         status: projectInfo.status || '',
         discharger: projectInfo.discharger || '',
-        // ★ 改行区切りで送信
-        contractedDisposalSites: disposalSitesFormatted,
-        contractedDisposalSitesArray: projectInfo.contractedDisposalSites || [],
-        // ★ 追加費用セクション
+        contractedDisposalSites: projectInfo.contractedDisposalSites || [],
         transferCost: projectInfo.transferCost || 0,
         leaseCost: projectInfo.leaseCost || 0,
         materialsCost: projectInfo.materialsCost || 0,
@@ -1809,14 +1803,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         action: 'exportWorkReport',
         siteData,
         reportData: reports,
-        // ★ スプシにセクション情報を付加
-        sheetSections: {
-          hasAdditionalCosts: !!(projectInfo.transferCost || projectInfo.leaseCost || projectInfo.materialsCost),
-          additionalCostsTotal:
-            (parseFloat(projectInfo.transferCost) || 0) +
-            (parseFloat(projectInfo.leaseCost) || 0) +
-            (parseFloat(projectInfo.materialsCost) || 0),
-        }
       };
 
       await fetch(gasUrl, {

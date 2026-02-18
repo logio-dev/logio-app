@@ -142,28 +142,33 @@ const getDayOfWeek = (dateStr) => {
 
 // ========== 共通コンポーネント ==========
 
-// ★ ヘッダー（右上にカレンダー/アクティビティアイコン追加）
+// ★ ヘッダー（DashboardSample準拠）
 function Header({ title, showMenuButton = false, onMenuClick }) {
   return (
-    <header className="bg-black px-4 py-4 flex items-center justify-between sticky top-0 z-40 border-b border-gray-900">
-      <div className="flex items-center">
+    <header className="bg-black px-5 py-4 flex items-center justify-between sticky top-0 z-40"
+      style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex items-center gap-3">
         {showMenuButton && (
-          <button onClick={onMenuClick} className="mr-4 text-white hover:text-gray-300 transition-colors">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <button onClick={onMenuClick} className="transition-colors" style={{ color: 'rgba(255,255,255,0.6)' }}
+            onMouseEnter={e => e.currentTarget.style.color='white'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.6)'}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M3 8H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
               <path d="M6 16H18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
           </button>
         )}
-        <LOGIOLogo size="xs" />
-        {title && <span className="ml-4 text-gray-400 text-sm font-medium">{title}</span>}
+        <span className="text-white text-lg font-extrabold" style={{ letterSpacing: '-0.03em', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>LOGIO</span>
       </div>
-      {/* 右上ダミーアイコン */}
-      <div className="flex items-center gap-3">
-        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-400 transition-colors rounded-md hover:bg-gray-900">
+      <div className="flex items-center gap-1">
+        <button className="p-2 transition-colors rounded-lg" style={{ color: 'rgba(255,255,255,0.4)' }}
+          onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
+          onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
           <Calendar className="w-4 h-4" />
         </button>
-        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-400 transition-colors rounded-md hover:bg-gray-900">
+        <button className="p-2 transition-colors rounded-lg" style={{ color: 'rgba(255,255,255,0.4)' }}
+          onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
+          onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
           <Activity className="w-4 h-4" />
         </button>
       </div>
@@ -178,7 +183,8 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
         {label} / {labelEn} {required && <span className="text-red-500">*</span>}
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 bg-white border-2 border-gray-300 text-black text-base font-medium focus:outline-none focus:border-blue-900"
+        className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
         required={required}>
         <option value="">{placeholder}</option>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -205,7 +211,8 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
         {label} / {labelEn}
       </label>
       <button type="button" onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-md text-left focus:outline-none focus:border-blue-500 transition-colors relative">
+        className="w-full px-4 py-3 text-left focus:outline-none transition-colors relative rounded-lg"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
         {selectedOption ? (
           <div>
             <div className="text-white text-base font-medium">{selectedOption.title}</div>
@@ -217,10 +224,14 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
         <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (
-        <div className="absolute left-0 right-0 z-50 mt-1 bg-gray-900 border border-gray-700 rounded-md shadow-xl max-h-80 overflow-y-auto">
+        <div className="absolute left-0 right-0 z-50 mt-1 rounded-lg shadow-xl max-h-80 overflow-y-auto"
+          style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)' }}>
           {options.map((option) => (
             <button key={option.value} type="button" onClick={() => { onChange(option.value); setIsOpen(false); }}
-              className="w-full px-4 py-3 text-left hover:bg-blue-600 transition-colors border-b border-gray-800 last:border-b-0 relative">
+              className="w-full px-4 py-3 text-left transition-colors relative"
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+              onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
+              onMouseLeave={e => e.currentTarget.style.background='transparent'}>
               <div className="pr-8">
                 <div className="text-white text-base font-medium">{option.title}</div>
                 {option.subtitle && <div className="text-gray-500 text-xs mt-1">{option.subtitle}</div>}
@@ -241,21 +252,27 @@ function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "
         {label} / {labelEn} {required && <span className="text-red-500">*</span>}
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full px-4 py-3 bg-white border-2 border-gray-300 text-black text-base font-medium focus:outline-none focus:border-blue-900"
+        className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
         required={required} />
     </div>
   );
 }
 
 function Button({ children, onClick, variant = 'primary', className = '', icon: Icon, disabled = false }) {
-  const baseClass = "w-full px-6 py-4 font-bold text-lg transition-all flex items-center justify-center gap-2";
+  const baseClass = "w-full px-6 py-4 font-bold text-lg transition-all flex items-center justify-center gap-2 rounded-lg";
   const variants = {
-    primary: disabled ? "bg-gray-400 text-gray-200 cursor-not-allowed" : "bg-blue-900 text-white hover:bg-blue-800",
-    secondary: "bg-white text-black border-2 border-gray-300 hover:bg-gray-100",
-    danger: "bg-red-600 text-white hover:bg-red-500"
+    primary: disabled ? "opacity-40 cursor-not-allowed" : "text-white",
+    secondary: "border text-white",
+    danger: "text-white"
+  };
+  const styles = {
+    primary: disabled ? { background: 'rgba(255,255,255,0.1)' } : { background: 'rgba(59,130,246,0.8)' },
+    secondary: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' },
+    danger: { background: 'rgba(239,68,68,0.8)' }
   };
   return (
-    <button onClick={onClick} className={`${baseClass} ${variants[variant]} ${className}`} disabled={disabled}>
+    <button onClick={onClick} className={`${baseClass} ${variants[variant]} ${className}`} disabled={disabled} style={styles[variant]}>
       {Icon && <Icon className="w-5 h-5" />}
       {children}
     </button>
@@ -270,7 +287,7 @@ function MetricCard({ label, value, unit = "", type = "neutral", rawValue = 0, s
     rate: "text-white", scrap: "text-white"
   };
   return (
-    <div className="bg-gray-900/50 rounded-md p-4 flex flex-col gap-2">
+    <div className="rgba(255,255,255,0.02) rounded-md p-4 flex flex-col gap-2">
       <p className="text-gray-500 text-[10px] font-medium uppercase tracking-wider">{label}</p>
       <div>
         <p className={`text-xl font-semibold ${textStyles[type]} tabular-nums`}
@@ -324,7 +341,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
                   return (
                     <button key={item.id} onClick={() => { onNavigate(item.id); setSidebarOpen(false); }}
                       className={`w-full group flex items-center px-3 py-3 text-sm font-medium transition-colors min-h-[48px] ${
-                        currentPage === item.id ? 'bg-white text-black' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                        currentPage === item.id ? 'text-white' : 'text-gray-500 hover:text-white'
                       }`}>
                       <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
                       {item.label}
@@ -333,7 +350,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
                 })}
               </nav>
             </div>
-            <div className="p-4 border-t border-gray-800">
+            <div className="p-4 border-t border-white/[0.06]">
               <button onClick={onLogout} className="w-full px-4 py-3 text-sm font-medium text-gray-300 hover:text-white transition-colors flex items-center gap-3 rounded-lg"
                 style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                 <LogOut className="h-5 w-5" />
@@ -418,232 +435,287 @@ function LoginPage({ onLogin }) {
   );
 }
 
-// ========== ★ HomePage（Dashboard版） ==========
+// ========== ★ HomePage（DashboardSample.jsx完全準拠） ==========
+// ========== ★ HomePage（DashboardSample完全準拠・最近の日報折りたたみ） ==========
 function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports }) {
-  const [summaryOpen, setSummaryOpen] = useState(true);
+  const [financeOpen, setFinanceOpen] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(true);
+  const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
-  const siteOptions = sites.map(site => ({
-    value: site.name,
-    title: site.name,
-    subtitle: site.projectNumber ? `PROJECT NO.: ${site.projectNumber}` : 'PROJECT NO.: -'
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setSiteDropdownOpen(false);
+    };
+    if (siteDropdownOpen) { document.addEventListener('mousedown', handleClickOutside); return () => document.removeEventListener('mousedown', handleClickOutside); }
+  }, [siteDropdownOpen]);
+
+  // 原価率
+  const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+  const costRatioFixed = costRatio.toFixed(1);
+  let costBarColor = "#3B82F6";
+  let costBarBg = "rgba(59,130,246,0.12)";
+  let costStatus = "Good";
+  if (costRatio >= 85) { costBarColor = "#EF4444"; costBarBg = "rgba(239,68,68,0.12)"; costStatus = "危険"; }
+  else if (costRatio >= 70) { costBarColor = "#F59E0B"; costBarBg = "rgba(245,158,11,0.12)"; costStatus = "注意"; }
+
+  // 工期
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = projectInfo?.startDate ? new Date(projectInfo.startDate) : null;
+  const end = projectInfo?.endDate ? new Date(projectInfo.endDate) : null;
+  const totalDays = start && end ? Math.max(1, Math.ceil((end - start) / 86400000)) : 1;
+  const elapsedDays = start ? Math.max(0, Math.ceil((today - start) / 86400000)) : 0;
+  const remainDays = end ? Math.max(0, Math.ceil((end - today) / 86400000)) : null;
+  const progressPercent = Math.min(100, (elapsedDays / totalDays) * 100);
+
+  // 日別コスト（直近7日）
+  const getDailyCosts = () => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayReports = (reports || []).filter(r => r.date === dateStr);
+      const cost = dayReports.reduce((sum, r) => sum +
+        (r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
+        (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
+        (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
+        (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
+        (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
+      days.push({ cost, label: ['日','月','火','水','木','金','土'][d.getDay()] });
+    }
+    return days;
+  };
+  const dailyData = getDailyCosts();
+  const maxCost = Math.max(...dailyData.map(d=>d.cost), 1);
+
+  // 最近の日報
+  const recentReports = [...(reports||[])].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3).map(r => ({
+    date: r.date,
+    workCategory: r.workDetails?.workCategory || '',
+    workContent: r.workDetails?.workContent || '',
+    cost: (r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
+          (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
+          (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
+          (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
+          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0)
   }));
 
-  // 原価率計算
-  const costRatio = totals.totalRevenue > 0
-    ? ((totals.accumulatedCost / totals.totalRevenue) * 100).toFixed(1) : '0.0';
+  const selectedSiteData = sites.find(s => s.name === selectedSite);
+  const projectNumber = selectedSiteData?.projectNumber || projectInfo?.projectNumber || '';
 
-  // 工期残日数計算
-  const calcDaysLeft = () => {
-    if (!projectInfo?.endDate) return null;
-    const end = new Date(projectInfo.endDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
-    return diff;
-  };
-  const daysLeft = calcDaysLeft();
-
-  // 日別コスト（最近7日分のミニバーチャート用）
-  const getDailyData = () => {
-    if (!reports || reports.length === 0) return [];
-    const last7 = [...reports]
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 7)
-      .reverse();
-    return last7.map(r => {
-      const cost =
-        (r.workDetails?.inHouseWorkers?.reduce((s, w) => s + (w.amount || 0), 0) || 0) +
-        (r.workDetails?.outsourcingLabor?.reduce((s, o) => s + (o.amount || 0), 0) || 0) +
-        (r.workDetails?.vehicles?.reduce((s, v) => s + (v.amount || 0), 0) || 0) +
-        (r.workDetails?.machinery?.reduce((s, m) => s + (m.unitPrice || 0), 0) || 0) +
-        (r.wasteItems?.reduce((s, w) => s + (w.amount || 0), 0) || 0);
-      return { date: r.date.slice(5), cost: Math.round(cost / 1000), label: `${parseInt(r.date.slice(8))}日` };
-    });
-  };
-  const dailyData = getDailyData();
-
-  // 最近の日報フィード（最新3件）
-  const recentReports = [...(reports || [])]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 3);
-
-  const navButtons = [
-    { id: 'input', label: '日報入力', icon: Plus, primary: true },
-    { id: 'list', label: '日報一覧', icon: FileText, primary: false },
-    { id: 'analysis', label: '原価分析', icon: BarChart3, primary: false },
-    { id: 'settings', label: '設定', icon: Settings, primary: false },
-  ];
+  const card = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', transition: 'border-color 0.15s ease' };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-5 bg-black min-h-screen">
-      {/* 現場セレクタ */}
-      <DarkSelect
-        label="現場" labelEn="PROJECT"
-        options={siteOptions} value={selectedSite} onChange={onSelectSite}
-        placeholder="現場を選択してください"
-      />
+    <div className="min-h-screen bg-black text-white">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
+        .finance-detail.open { grid-template-rows: 1fr; }
+        .finance-detail > div { overflow: hidden; }
+        .logio-progress-track { background: rgba(255,255,255,0.04); border-radius: 999px; overflow: hidden; }
+        .logio-progress-bar { border-radius: 999px; transition: width 0.8s ease; }
+        .logio-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; animation: logiopulse 2s ease infinite; flex-shrink: 0; }
+        @keyframes logiopulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+        .logio-nav-btn { position:relative; overflow:hidden; transition:all 0.15s ease; }
+        .logio-nav-btn:active { transform:scale(0.98); }
+        .logio-lbl { font-size: 11px; font-weight: 500; color: #6B7280; letter-spacing: 0.04em; }
+        .logio-val-lg { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+        .logio-val-md { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+        .logio-mini-bar { background: rgba(59,130,246,0.6); border-radius: 2px 2px 0 0; min-height: 2px; }
+        .logio-activity-line { position:relative; padding-left:20px; }
+        .logio-activity-line::before { content:''; position:absolute; left:3px; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.06); }
+        .logio-activity-dot { position:absolute; left:0; top:6px; width:7px; height:7px; border-radius:50%; background:#3B82F6; border:2px solid #000; }
+      `}</style>
 
-      {selectedSite && (
-        <>
-          {/* ===== 財務サマリー（折りたたみ） ===== */}
-          <div className="mb-4 rounded-lg overflow-hidden border border-gray-800">
-            <button
-              onClick={() => setSummaryOpen(!summaryOpen)}
-              className="w-full px-4 py-3 flex items-center justify-between bg-gray-900/60 hover:bg-gray-900 transition-colors"
-            >
+      <div className="max-w-2xl mx-auto px-4 py-5">
+
+        {/* 現場セレクター */}
+        <div className="relative mb-5" ref={dropdownRef}>
+          <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
+            className="w-full px-4 py-3.5 flex items-center justify-between text-left"
+            style={card}>
+            {selectedSite ? (
               <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">財務サマリー</span>
-                {!summaryOpen && (
-                  <span className={`text-sm font-bold tabular-nums ${totals.grossProfit >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
-                    粗利 ¥{formatCurrency(totals.grossProfit)}
-                  </span>
-                )}
+                <div className="logio-status-dot" />
+                <div>
+                  <p className="text-white font-semibold" style={{ fontSize: '15px' }}>{selectedSite}</p>
+                  {projectNumber && <p className="text-gray-500 mt-0.5 tracking-wider" style={{ fontSize: '11px' }}>{projectNumber}</p>}
+                </div>
               </div>
-              {summaryOpen
-                ? <ChevronUp className="w-4 h-4 text-gray-500" />
-                : <ChevronDown className="w-4 h-4 text-gray-500" />
-              }
-            </button>
+            ) : (
+              <span className="text-gray-500" style={{ fontSize: '14px' }}>現場を選択してください</span>
+            )}
+            <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${siteDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {siteDropdownOpen && (
+            <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-xl overflow-hidden"
+              style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)' }}>
+              {sites.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-gray-500">現場が登録されていません</div>
+              ) : sites.map(site => (
+                <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); }}
+                  className="w-full px-4 py-3 text-left flex items-center justify-between transition-colors"
+                  style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                  onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
+                  onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                  <div>
+                    <p className="text-white font-medium" style={{ fontSize: '14px' }}>{site.name}</p>
+                    {site.projectNumber && <p className="text-gray-500 mt-0.5" style={{ fontSize: '11px' }}>{site.projectNumber}</p>}
+                  </div>
+                  {selectedSite === site.name && <Check className="w-4 h-4 text-blue-500" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-            {summaryOpen && (
-              <div className="px-4 py-4 bg-black/60 border-t border-gray-800 space-y-2">
-                {[
-                  { label: '売上 / Revenue', value: `¥${formatCurrency(totals.totalRevenue)}`, color: 'text-white' },
-                  { label: '原価 / Cost', value: `¥${formatCurrency(totals.accumulatedCost)}`, color: 'text-red-400/80' },
-                  ...(totals.accumulatedScrap > 0 ? [{ label: 'スクラップ / Scrap', value: `¥${formatCurrency(totals.accumulatedScrap)}`, color: 'text-gray-300' }] : []),
-                  { label: '粗利 / Profit', value: `¥${formatCurrency(totals.grossProfit)}`, color: totals.grossProfit >= 0 ? 'text-blue-400' : 'text-red-400', bold: true },
-                  { label: '粗利率 / Margin', value: `${totals.grossProfitRateContract}%`, color: 'text-white' },
-                ].map((row, i) => (
-                  <div key={i} className={`flex justify-between items-center py-1.5 ${i < 4 ? 'border-b border-gray-800/60' : ''}`}>
-                    <span className="text-[11px] text-gray-500 uppercase tracking-wide">{row.label}</span>
-                    <span className={`text-sm font-semibold tabular-nums ${row.color} ${row.bold ? 'text-base' : ''}`}>{row.value}</span>
+        {selectedSite && (
+          <>
+            {/* 粗利・粗利率（折りたたみ） */}
+            <div className="overflow-hidden mb-4" style={card}>
+              <button onClick={() => setFinanceOpen(!financeOpen)}
+                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-white/[0.01] transition-colors">
+                <div className="flex items-baseline gap-8">
+                  <div>
+                    <p className="logio-lbl mb-1">粗利</p>
+                    <p className="logio-val-lg" style={{ color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>¥{formatCurrency(totals.grossProfit)}</p>
+                  </div>
+                  <div>
+                    <p className="logio-lbl mb-1">粗利率</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="logio-val-lg text-white">{totals.grossProfitRateContract}%</p>
+                      <TrendingUp className="w-4 h-4" style={{ color: '#34D399' }} />
+                    </div>
+                  </div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${financeOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`finance-detail ${financeOpen ? 'open' : ''}`}>
+                <div>
+                  <div className="px-5 py-3 grid grid-cols-3 gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div><p className="logio-lbl mb-1">売上</p><p className="logio-val-md text-white">¥{formatCurrency(totals.totalRevenue)}</p></div>
+                    <div><p className="logio-lbl mb-1">原価</p><p className="logio-val-md" style={{ color: 'rgba(248,113,113,0.8)' }}>¥{formatCurrency(totals.accumulatedCost)}</p></div>
+                    {totals.accumulatedScrap > 0 && <div><p className="logio-lbl mb-1">スクラップ</p><p className="logio-val-md text-white">¥{formatCurrency(totals.accumulatedScrap)}</p></div>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 原価率 + 工期 */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="px-4 py-3.5" style={card}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="logio-lbl">原価率</p>
+                  <span className="font-medium px-1.5 py-0.5 rounded" style={{ fontSize: '10px', background: costBarBg, color: costBarColor }}>{costStatus}</span>
+                </div>
+                <p className="text-white font-bold tabular-nums mb-2.5" style={{ fontSize: '20px' }}>{costRatioFixed}%</p>
+                <div className="logio-progress-track h-1.5">
+                  <div className="logio-progress-bar h-full" style={{ width: `${Math.min(costRatio,100)}%`, backgroundColor: costBarColor }} />
+                </div>
+              </div>
+              <div className="px-4 py-3.5" style={card}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="logio-lbl">工期</p>
+                  <span className="font-medium text-gray-400" style={{ fontSize: '10px' }}>{remainDays !== null ? `残${remainDays}日` : '未設定'}</span>
+                </div>
+                <p className="text-white font-bold tabular-nums mb-2.5" style={{ fontSize: '20px' }}>{Math.round(progressPercent)}%</p>
+                <div className="logio-progress-track h-1.5">
+                  <div className="logio-progress-bar h-full" style={{ width: `${progressPercent}%`, backgroundColor: progressPercent >= 90 ? '#F59E0B' : '#3B82F6' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* 日別コストミニバーチャート */}
+            <div className="px-4 py-3.5 mb-4" style={card}>
+              <p className="logio-lbl mb-3">直近7日の原価推移</p>
+              <div className="flex items-end gap-1.5" style={{ height: '48px' }}>
+                {dailyData.map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div style={{ height: '40px', display: 'flex', alignItems: 'flex-end', width: '100%' }}>
+                      <div className="logio-mini-bar w-full" style={{ height: `${Math.max((d.cost/maxCost)*100, d.cost>0?8:2)}%`, opacity: d.cost>0?1:0.15 }} />
+                    </div>
+                    <span style={{ fontSize: '8px', color: '#4B5563' }}>{d.label}</span>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* ===== 原価率 + 工期 横並びカード ===== */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {/* 原価率カード */}
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-800">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">原価率 / Cost Ratio</p>
-              <p className={`text-3xl font-bold tabular-nums ${
-                parseFloat(costRatio) >= 85 ? 'text-red-400' :
-                parseFloat(costRatio) >= 70 ? 'text-yellow-400' : 'text-blue-400'
-              }`}>{costRatio}<span className="text-lg font-medium">%</span></p>
-              <p className={`text-xs mt-1 font-medium ${
-                parseFloat(costRatio) >= 85 ? 'text-red-500' :
-                parseFloat(costRatio) >= 70 ? 'text-yellow-500' : 'text-gray-500'
-              }`}>{parseFloat(costRatio) >= 85 ? '⚠ 要警戒' : parseFloat(costRatio) >= 70 ? '注意' : '余裕あり'}</p>
             </div>
 
-            {/* 工期カード */}
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-800">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">工期残 / Days Left</p>
-              {daysLeft !== null ? (
-                <>
-                  <p className={`text-3xl font-bold tabular-nums ${
-                    daysLeft < 0 ? 'text-red-400' : daysLeft <= 7 ? 'text-yellow-400' : 'text-white'
-                  }`}>{Math.abs(daysLeft)}<span className="text-lg font-medium">日</span></p>
-                  <p className={`text-xs mt-1 font-medium ${daysLeft < 0 ? 'text-red-500' : 'text-gray-500'}`}>
-                    {daysLeft < 0 ? '⚠ 期限超過' : daysLeft === 0 ? '本日まで' : '残り'}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-3xl font-bold text-gray-700">—</p>
-                  <p className="text-xs mt-1 text-gray-600">工期未設定</p>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* ===== 日別コスト ミニバーチャート ===== */}
-          {dailyData.length > 0 && (
-            <div className="mb-4 bg-gray-900/40 rounded-lg p-4 border border-gray-800">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-3">直近の日別コスト（千円）</p>
-              <ResponsiveContainer width="100%" height={72}>
-                <BarChart data={dailyData} margin={{ top: 0, right: 0, left: -32, bottom: 0 }}>
-                  <XAxis dataKey="label" tick={{ fill: '#4B5563', fontSize: 9 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#4B5563', fontSize: 9 }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                    contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: 6, fontSize: 11 }}
-                    formatter={(v) => [`${v}千円`, 'コスト']}
-                  />
-                  <Bar dataKey="cost" fill="#1D4ED8" radius={[2, 2, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
-          {/* ===== 最近の日報フィード ===== */}
-          {recentReports.length > 0 && (
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">最近の日報</p>
-                <button onClick={() => onNavigate('list')} className="text-[10px] text-blue-500 hover:text-blue-400 transition-colors">すべて見る →</button>
-              </div>
-              <div className="space-y-2">
-                {recentReports.map((r) => {
-                  const dayCost =
-                    (r.workDetails?.inHouseWorkers?.reduce((s, w) => s + (w.amount || 0), 0) || 0) +
-                    (r.workDetails?.outsourcingLabor?.reduce((s, o) => s + (o.amount || 0), 0) || 0) +
-                    (r.workDetails?.vehicles?.reduce((s, v) => s + (v.amount || 0), 0) || 0) +
-                    (r.workDetails?.machinery?.reduce((s, m) => s + (m.unitPrice || 0), 0) || 0) +
-                    (r.wasteItems?.reduce((s, w) => s + (w.amount || 0), 0) || 0);
-                  return (
-                    <div key={r.id} className="flex items-center justify-between px-3 py-2.5 rounded-md bg-gray-900/40 border border-gray-800">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <span className="text-white text-sm font-medium tabular-nums">{r.date}</span>
-                          <span className="text-gray-600 text-xs ml-1">({getDayOfWeek(r.date)})</span>
-                        </div>
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">
-                          {r.workDetails?.workCategory || '—'}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        {dayCost > 0 && <p className="text-xs text-gray-300 tabular-nums">¥{formatCurrency(dayCost)}</p>}
-                        <p className="text-[10px] text-gray-600">{r.weather}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ===== 4列ナビボタン ===== */}
-          <div className="grid grid-cols-4 gap-2 mt-2">
-            {navButtons.map(({ id, label, icon: Icon, primary }) => (
-              <button key={id} onClick={() => onNavigate(id)}
-                className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-lg transition-colors ${
-                  primary
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-gray-900 hover:bg-gray-800 text-gray-400 border border-gray-800'
-                }`}>
-                <Icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium leading-tight text-center">{label}</span>
+            {/* 最近の日報（折りたたみ） */}
+            <div className="overflow-hidden mb-6" style={card}>
+              <button onClick={() => setReportsOpen(!reportsOpen)}
+                className="w-full px-4 py-3 flex items-center justify-between transition-colors"
+                style={{ borderBottom: reportsOpen ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                <p className="logio-lbl">最近の日報</p>
+                <div className="flex items-center gap-3">
+                  <button onClick={(e) => { e.stopPropagation(); onNavigate('list'); }}
+                    className="transition-colors" style={{ fontSize: '11px', color: '#3B82F6' }}>
+                    すべて見る →
+                  </button>
+                  <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${reportsOpen ? 'rotate-180' : ''}`} />
+                </div>
               </button>
-            ))}
-          </div>
-        </>
-      )}
+              <div className={`finance-detail ${reportsOpen ? 'open' : ''}`}>
+                <div>
+                  {recentReports.length === 0 ? (
+                    <div className="px-4 py-4"><p className="text-gray-600" style={{ fontSize: '13px' }}>日報がありません</p></div>
+                  ) : (
+                    <div>
+                      {recentReports.map((r, idx) => (
+                        <div key={idx} className="logio-activity-line px-4 py-3" style={{ borderBottom: idx < recentReports.length-1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
+                          <div className="logio-activity-dot" />
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-white font-medium" style={{ fontSize: '13px' }}>{r.workContent || '（内容なし）'}</p>
+                              <p className="text-gray-500 mt-0.5" style={{ fontSize: '11px' }}>{r.date} · {r.workCategory}</p>
+                            </div>
+                            <p className="text-gray-400 tabular-nums" style={{ fontSize: '13px' }}>¥{formatCurrency(r.cost)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
-      {!selectedSite && sites.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-gray-600 text-sm mb-4">現場が登録されていません</p>
-          <button onClick={() => onNavigate('settings')}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors">
-            現場を追加する
-          </button>
-        </div>
-      )}
+            {/* ナビボタン */}
+            <div className="grid grid-cols-4 gap-2 mb-6">
+              <button onClick={() => onNavigate('input')}
+                className="logio-nav-btn flex flex-col items-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">
+                <Plus className="w-5 h-5" />
+                <span className="font-semibold" style={{ fontSize: '11px' }}>日報入力</span>
+              </button>
+              {[
+                { id:'list', icon:FileText, label:'日報一覧' },
+                { id:'analysis', icon:BarChart3, label:'原価分析' },
+                { id:'settings', icon:Settings, label:'設定' },
+              ].map(({ id, icon:Icon, label }) => (
+                <button key={id} onClick={() => onNavigate(id)}
+                  className="logio-nav-btn flex flex-col items-center gap-2 py-4 rounded-xl transition-colors text-gray-400 hover:text-white"
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium" style={{ fontSize: '11px' }}>{label}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {!selectedSite && sites.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-gray-600 text-sm mb-4">現場が登録されていません</p>
+            <button onClick={() => onNavigate('settings')}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors">
+              現場を追加する
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
 
 // ========== ★ ProjectSettingsPage（回送費・リース費・資材費追加） ==========
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate }) {
@@ -672,10 +744,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-2xl mx-auto px-6 py-8 bg-black min-h-screen text-white">
       <div className="mb-4">
         <button onClick={() => onNavigate('home')}
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+          className="px-4 py-2 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -684,19 +757,21 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
       {!showAddSite ? (
         <button onClick={() => setShowAddSite(true)}
-          className="w-full mb-6 px-4 py-3 bg-blue-900 text-white text-base font-bold hover:bg-blue-800 transition-colors flex items-center justify-center gap-2">
+          className="w-full mb-6 px-4 py-3 text-white text-base font-bold transition-colors flex items-center justify-center gap-2 rounded-lg"
+          style={{ background: 'rgba(59,130,246,0.8)' }}>
           <Plus className="w-5 h-5" />新規現場を追加
         </button>
       ) : (
-        <div className="mb-6 p-4 bg-gray-50 border-2 border-gray-300">
+        <div className="mb-6 p-4 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">新規現場名</label>
           <input type="text" value={newSiteName} onChange={(e) => setNewSiteName(e.target.value)}
             placeholder="例: 渋谷〇〇ビル解体工事"
-            className="w-full px-4 py-3 bg-white border-2 border-gray-300 text-black text-base font-medium focus:outline-none focus:border-blue-900 mb-3" />
+            className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none mb-3 rounded-lg"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }} />
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={handleAddSite} className="px-4 py-3 bg-blue-900 text-white font-bold hover:bg-blue-800 transition-colors">追加</button>
+            <button onClick={handleAddSite} className="px-4 py-3 text-white font-bold transition-colors rounded-lg" style={{ background: 'rgba(59,130,246,0.8)' }}>追加</button>
             <button onClick={() => { setShowAddSite(false); setNewSiteName(''); }}
-              className="px-4 py-3 bg-white border-2 border-gray-300 text-black font-bold hover:bg-gray-100 transition-colors">キャンセル</button>
+              className="px-4 py-3 font-bold transition-colors rounded-lg" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}>キャンセル</button>
           </div>
         </div>
       )}
@@ -706,10 +781,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">登録済み現場 ({sites.length})</p>
           <div className="space-y-2">
             {sites.map((site, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-300">
-                <span className="text-base font-medium">{site.name}</span>
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span className="text-white text-base font-medium">{site.name}</span>
                 <button onClick={() => handleDeleteSite(site.name)}
-                  className="px-3 py-1 bg-red-600 text-white text-sm font-bold hover:bg-red-500 transition-colors">削除</button>
+                  className="px-3 py-1 text-sm font-bold transition-colors rounded-lg" style={{ background: 'rgba(239,68,68,0.2)', color: '#F87171' }}>削除</button>
               </div>
             ))}
           </div>
@@ -722,7 +797,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
           <div className="mb-6">
             <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">工事番号 / PROJECT NO.</label>
-            <div className="px-4 py-4 bg-gray-900/30 border border-gray-800 rounded-md">
+            <div className="px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
               <div className="text-white text-base font-semibold tabular-nums">{projectInfo.projectNumber || '未設定'}</div>
               <p className="text-xs text-gray-600 mt-1">※ 自動採番（編集不可）</p>
             </div>
@@ -738,12 +813,14 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">工期開始 / Start</label>
               <input type="date" value={projectInfo.startDate} onChange={(e) => setProjectInfo({...projectInfo, startDate: e.target.value})}
-                className="w-full px-4 py-3 bg-white border-2 border-gray-300 text-black text-base font-medium focus:outline-none focus:border-blue-900" />
+                className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', colorScheme: 'dark' }} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">工期終了 / End</label>
               <input type="date" value={projectInfo.endDate} onChange={(e) => setProjectInfo({...projectInfo, endDate: e.target.value})}
-                className="w-full px-4 py-3 bg-white border-2 border-gray-300 text-black text-base font-medium focus:outline-none focus:border-blue-900" />
+                className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', colorScheme: 'dark' }} />
             </div>
           </div>
 
@@ -752,7 +829,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
           {/* ★ 回送費・リース費・資材費 */}
           <div className="mb-2">
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-6 pb-2 border-b border-gray-800">
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-6 pb-2 border-b border-white/[0.06]">
               追加費用項目 / Additional Costs
             </p>
           </div>
@@ -780,13 +857,13 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-3">
               契約処分先 / Contracted Disposal Sites <span className="text-red-500">*</span>
             </label>
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 space-y-2 max-h-80 overflow-y-auto">
+            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] space-y-2 max-h-80 overflow-y-auto">
               {MASTER_DATA.disposalSites.map((site) => {
                 const isSelected = (projectInfo.contractedDisposalSites || []).includes(site);
                 return (
                   <button key={site} type="button" onClick={() => toggleDisposalSite(site)}
                     className={`w-full px-4 py-3 text-left text-sm rounded-md transition-colors flex items-center gap-3 ${
-                      isSelected ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                      isSelected ? 'bg-blue-600 text-white' : 'bg-black text-gray-300 hover:bg-gray-700'
                     }`}>
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-white bg-white' : 'border-gray-500'}`}>
                       {isSelected && <Check className="w-4 h-4 text-blue-600" />}
@@ -846,12 +923,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-3">作業日 <span className="text-red-500">*</span></label>
               <input type="date" value={report.date} onChange={(e) => setReport({...report, date: e.target.value})}
-                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                className="w-full px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-3">天候 <span className="text-red-500">*</span></label>
               <select value={report.weather} onChange={(e) => setReport({...report, weather: e.target.value})}
-                className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
+                className="w-full px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
                 <option value="">選択してください</option>
                 {MASTER_DATA.weather.map((w) => <option key={w} value={w}>{w}</option>)}
               </select>
@@ -864,7 +941,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                   const n = prompt('記入者名を入力してください');
                   if (n) setReport({...report, recorder: '', customRecorder: n});
                 } else { setReport({...report, recorder: val, customRecorder: ''}); }
-              }} className="w-full px-4 py-4 bg-gray-900/50 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
+              }} className="w-full px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
                 <option value="">選択してください</option>
                 {MASTER_DATA.employees.map((name) => <option key={name} value={name}>{name}</option>)}
                 <option value="__custom__">その他（手入力）</option>
@@ -873,7 +950,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             </div>
           </div>
           <div className="mt-8 grid grid-cols-2 gap-4">
-            <button onClick={handleCancel} className="py-4 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
+            <button onClick={handleCancel} className="py-4 px-4 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
             <button onClick={() => setCurrentStep(2)} disabled={!isStep1Valid()}
               className="py-4 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors font-medium text-base">次へ</button>
           </div>
@@ -884,13 +961,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         <div>
           <SectionHeader title="原価明細 / Cost Details" />
 
-          <div className="mb-8 bg-gray-900/50 rounded-lg p-4 border border-gray-700">
+          <div className="mb-8 rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08]">
             <h3 className="text-base font-semibold text-white mb-4">施工内容</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-2">区分</label>
                 <select value={workDetails.workCategory} onChange={(e) => setWorkDetails({...workDetails, workCategory: e.target.value})}
-                  className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
+                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
                   <option value="">選択してください</option>
                   {MASTER_DATA.workCategories.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -899,21 +976,21 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 <label className="block text-sm text-gray-400 mb-2">内容</label>
                 <input type="text" placeholder="施工内容を入力してください" value={workDetails.workContent}
                   onChange={(e) => setWorkDetails({...workDetails, workContent: e.target.value})}
-                  className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
               </div>
             </div>
           </div>
 
-          <div className="my-8 border-t border-gray-700"></div>
+          <div className="my-8 border-t border-white/[0.08]"></div>
 
           {/* 自社人工 */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">自社人工</label>
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">作業員</label>
-                  <select id="worker-name-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="worker-name-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                     <option value="">選択してください</option>
                     {MASTER_DATA.inHouseWorkers.map((n) => <option key={n} value={n}>{n}</option>)}
                     <option value="__custom__">その他（手入力）</option>
@@ -923,7 +1000,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                   {['start', 'end'].map((t) => (
                     <div key={t}>
                       <label className="block text-sm text-gray-400 mb-2">{t === 'start' ? '開始' : '終了'}</label>
-                      <select id={`worker-${t}-input`} className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                      <select id={`worker-${t}-input`} className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                         <option value="">--:--</option>
                         {MASTER_DATA.workingHoursOptions.map((time) => <option key={time} value={time}>{time}</option>)}
                       </select>
@@ -932,7 +1009,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">区分</label>
-                  <select id="worker-shift-input" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="daytime">
+                  <select id="worker-shift-input" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="daytime">
                     <option value="daytime">日勤 (¥{formatCurrency(unitPrices.inHouseDaytime)})</option>
                     <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.inHouseNighttime)})</option>
                     <option value="nightLoading">夜間積込 (¥{formatCurrency(unitPrices.inHouseNightLoading)})</option>
@@ -962,14 +1039,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <>
                 <div className="space-y-3 mb-4">
                   {workDetails.inHouseWorkers.map((worker, index) => (
-                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <p className="text-white text-base font-medium mb-1">{worker.name}</p>
                           <p className="text-sm text-gray-400">{worker.startTime} - {worker.endTime}</p>
                         </div>
                         <button onClick={() => setWorkDetails({...workDetails, inHouseWorkers: workDetails.inHouseWorkers.filter((_,i)=>i!==index)})}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors">
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors">
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
@@ -990,7 +1067,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     </div>
                   ))}
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-black/50 rounded-lg">
                   <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0))}</p>
                 </div>
               </>
@@ -1000,11 +1077,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 外注人工 */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">外注人工</label>
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">会社名</label>
-                  <select id="outsourcing-company-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="outsourcing-company-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                     <option value="">選択してください</option>
                     {MASTER_DATA.outsourcingCompanies.map((c) => <option key={c} value={c}>{c}</option>)}
                     <option value="__custom__">その他（手入力）</option>
@@ -1013,11 +1090,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">人数</label>
-                    <input id="outsourcing-workers-input" type="number" placeholder="3" min="1" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                    <input id="outsourcing-workers-input" type="number" placeholder="3" min="1" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">区分</label>
-                    <select id="outsourcing-shift-input" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="daytime">
+                    <select id="outsourcing-shift-input" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="daytime">
                       <option value="daytime">日勤 (¥{formatCurrency(unitPrices.outsourcingDaytime)}/人)</option>
                       <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.outsourcingNighttime)}/人)</option>
                     </select>
@@ -1042,14 +1119,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <>
                 <div className="space-y-3 mb-4">
                   {workDetails.outsourcingLabor.map((item, index) => (
-                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <p className="text-white text-base font-medium mb-1">{item.company}</p>
                           <p className="text-sm text-gray-400">{item.workers}人 × {item.shiftType === 'daytime' ? '日勤' : '夜間'}</p>
                         </div>
                         <button onClick={() => setWorkDetails({...workDetails, outsourcingLabor: workDetails.outsourcingLabor.filter((_,i)=>i!==index)})}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors">
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors">
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
@@ -1057,7 +1134,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     </div>
                   ))}
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-black/50 rounded-lg">
                   <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(workDetails.outsourcingLabor.reduce((s,o)=>s+o.amount,0))}</p>
                 </div>
               </>
@@ -1067,11 +1144,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 車両 */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">車両</label>
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">車種</label>
-                  <select id="vehicle-type-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue=""
+                  <select id="vehicle-type-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue=""
                     onChange={(e) => {
                       const numberSelect = document.getElementById('vehicle-number-select');
                       numberSelect.innerHTML = '<option value="">選択してください</option>';
@@ -1087,7 +1164,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">車番</label>
-                  <select id="vehicle-number-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="vehicle-number-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                     <option value="">選択してください</option>
                   </select>
                 </div>
@@ -1106,19 +1183,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <>
                 <div className="space-y-3 mb-4">
                   {workDetails.vehicles.map((v, index) => (
-                    <div key={index} className="bg-gray-900/50 rounded-lg p-4 flex items-center justify-between">
+                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4 flex items-center justify-between">
                       <div>
                         <p className="text-white text-base font-medium">{v.type} ({v.number})</p>
                         <p className="text-sm text-gray-400">¥{formatCurrency(v.amount)}</p>
                       </div>
                       <button onClick={() => setWorkDetails({...workDetails, vehicles: workDetails.vehicles.filter((_,i)=>i!==index)})}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors">
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors">
                         <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   ))}
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-black/50 rounded-lg">
                   <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(workDetails.vehicles.reduce((s,v)=>s+v.amount,0))}</p>
                 </div>
               </>
@@ -1128,18 +1205,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 重機 */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">重機</label>
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">機種</label>
-                  <select id="machinery-type-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="machinery-type-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                     <option value="">選択してください</option>
                     {MASTER_DATA.heavyMachinery.map((m) => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">単価</label>
-                  <input id="machinery-price-input" type="number" placeholder="50000" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                  <input id="machinery-price-input" type="number" placeholder="50000" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <button onClick={() => {
                   const typeSelect = document.getElementById('machinery-type-select');
@@ -1157,19 +1234,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <>
                 <div className="space-y-3 mb-4">
                   {workDetails.machinery.map((m, index) => (
-                    <div key={index} className="bg-gray-900/50 rounded-lg p-4 flex items-center justify-between">
+                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4 flex items-center justify-between">
                       <div>
                         <p className="text-white text-base font-medium">{m.type}</p>
                         <p className="text-sm text-gray-400">¥{formatCurrency(m.unitPrice)}</p>
                       </div>
                       <button onClick={() => setWorkDetails({...workDetails, machinery: workDetails.machinery.filter((_,i)=>i!==index)})}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors">
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors">
                         <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   ))}
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-black/50 rounded-lg">
                   <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0))}</p>
                 </div>
               </>
@@ -1177,8 +1254,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           </div>
 
           <div className="mt-8 grid grid-cols-3 gap-3">
-            <button onClick={() => setCurrentStep(1)} className="py-4 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">← 戻る</button>
-            <button onClick={handleCancel} className="py-4 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
+            <button onClick={() => setCurrentStep(1)} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">← 戻る</button>
+            <button onClick={handleCancel} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
             <button onClick={() => setCurrentStep(3)} className="py-4 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">次へ →</button>
           </div>
         </div>
@@ -1192,11 +1269,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 産廃 */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">産廃処分費</label>
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">種類</label>
-                  <select id="waste-type-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="waste-type-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                     <option value="">選択してください</option>
                     {MASTER_DATA.wasteTypes.map((t) => <option key={t} value={t}>{t}</option>)}
                     <option value="__custom__">その他（手入力）</option>
@@ -1204,7 +1281,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">処分先</label>
-                  <select id="waste-disposal-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="waste-disposal-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                     <option value="">選択してください</option>
                     {projectInfo?.contractedDisposalSites?.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -1212,22 +1289,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">数量</label>
-                    <input id="waste-quantity-input" type="number" step="0.1" placeholder="10" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                    <input id="waste-quantity-input" type="number" step="0.1" placeholder="10" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">単位</label>
-                    <select id="waste-unit-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="㎥">
+                    <select id="waste-unit-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="㎥">
                       <option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option>
                     </select>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">単価</label>
-                  <input id="waste-price-input" type="number" placeholder="11000" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                  <input id="waste-price-input" type="number" placeholder="11000" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">マニフェスト番号</label>
-                  <input id="waste-manifest-input" type="text" placeholder="ABC123" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                  <input id="waste-manifest-input" type="text" placeholder="ABC123" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <button onClick={() => {
                   const typeSelect = document.getElementById('waste-type-select');
@@ -1251,7 +1328,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <>
                 <div className="space-y-3 mb-4">
                   {wasteItems.map((item, index) => (
-                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <p className="text-white text-base font-medium">{item.material} → {item.disposalSite}</p>
@@ -1259,12 +1336,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                           <p className="text-xs text-gray-500 mt-1">マニフェスト: {item.manifestNumber}</p>
                         </div>
                         <button onClick={() => setWasteItems(wasteItems.filter((_,i)=>i!==index))}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"><Trash2 className="w-5 h-5" /></button>
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors"><Trash2 className="w-5 h-5" /></button>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-black/50 rounded-lg">
                   <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(wasteItems.reduce((s,i)=>s+i.amount,0))}</p>
                 </div>
               </>
@@ -1274,11 +1351,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* スクラップ */}
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-400 mb-4">スクラップ売上</label>
-            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700 mb-4">
+            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">種類</label>
-                  <select id="scrap-type-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="scrap-type-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                     <option value="">選択してください</option>
                     {MASTER_DATA.scrapTypes.map((t) => <option key={t} value={t}>{t}</option>)}
                     <option value="__custom__">その他（手入力）</option>
@@ -1286,7 +1363,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">買取業者</label>
-                  <select id="scrap-buyer-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="scrap-buyer-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
                     <option value="">選択してください</option>
                     {MASTER_DATA.buyers.map((b) => <option key={b} value={b}>{b}</option>)}
                     <option value="__custom__">その他（手入力）</option>
@@ -1295,18 +1372,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">数量</label>
-                    <input id="scrap-quantity-input" type="number" step="0.1" placeholder="120" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                    <input id="scrap-quantity-input" type="number" step="0.1" placeholder="120" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-2">単位</label>
-                    <select id="scrap-unit-select" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="kg">
+                    <select id="scrap-unit-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="kg">
                       <option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option>
                     </select>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">単価</label>
-                  <input id="scrap-price-input" type="number" placeholder="85" className="w-full px-4 py-4 bg-gray-800 border border-gray-700 text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                  <input id="scrap-price-input" type="number" placeholder="85" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <button onClick={() => {
                   const typeSelect = document.getElementById('scrap-type-select');
@@ -1332,19 +1409,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <>
                 <div className="space-y-3 mb-4">
                   {scrapItems.map((item, index) => (
-                    <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <p className="text-white text-base font-medium">{item.type} → {item.buyer}</p>
                           <p className="text-sm text-gray-400">{item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(Math.abs(item.amount))}</p>
                         </div>
                         <button onClick={() => setScrapItems(scrapItems.filter((_,i)=>i!==index))}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-800 rounded transition-colors"><Trash2 className="w-5 h-5" /></button>
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors"><Trash2 className="w-5 h-5" /></button>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="p-4 bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-black/50 rounded-lg">
                   <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0)))}</p>
                 </div>
               </>
@@ -1352,8 +1429,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           </div>
 
           <div className="mt-8 grid grid-cols-3 gap-3">
-            <button onClick={() => setCurrentStep(2)} className="py-4 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">← 戻る</button>
-            <button onClick={handleCancel} className="py-4 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
+            <button onClick={() => setCurrentStep(2)} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">← 戻る</button>
+            <button onClick={handleCancel} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
             <button onClick={handleSave} className="py-4 px-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-base flex items-center justify-center gap-2">
               <Save className="w-5 h-5" />保存
             </button>
@@ -1381,7 +1458,7 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
     <div className="max-w-2xl mx-auto px-6 py-8">
       <div className="mb-4">
         <button onClick={() => onNavigate('home')}
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+          className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -1401,8 +1478,8 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
 function ReportAccordion({ report, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="border border-gray-700 rounded-lg mb-3 overflow-hidden bg-gray-900/30">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-800/50 transition-colors">
+    <div className="border border-white/[0.08] rounded-lg mb-3 overflow-hidden rgba(255,255,255,0.02)">
+      <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-black/50 transition-colors">
         <div className="text-left flex-1">
           <div className="flex items-center gap-3 mb-1">
             <span className="text-lg font-bold text-white">{report.date}</span>
@@ -1425,8 +1502,8 @@ function ReportAccordion({ report, onDelete }) {
         <span className="text-gray-400 ml-4">{isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}</span>
       </button>
       {isOpen && (
-        <div className="px-4 py-4 bg-gray-800/30 border-t border-gray-700">
-          <div className="mb-4 pb-4 border-b border-gray-700">
+        <div className="px-4 py-4 bg-black/30 border-t border-white/[0.08]">
+          <div className="mb-4 pb-4 border-b border-white/[0.08]">
             <div className="flex items-center gap-2 mb-2"><span className="text-xs text-gray-500">記入者:</span><span className="text-sm text-white">{report.recorder}</span></div>
             <div className="flex items-start gap-2"><span className="text-xs text-gray-500 mt-0.5">施工内容:</span><span className="text-sm text-white">{report.workDetails?.workContent || report.workContent || 'なし'}</span></div>
           </div>
@@ -1434,7 +1511,7 @@ function ReportAccordion({ report, onDelete }) {
             <div className="mb-4">
               <p className="text-xs font-semibold text-gray-400 uppercase mb-3">原価明細</p>
               {report.workDetails.inHouseWorkers?.length > 0 && (
-                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
                   <p className="text-xs font-semibold text-blue-400 mb-2">自社人工: {report.workDetails.inHouseWorkers.length}名</p>
                   {report.workDetails.inHouseWorkers.map((w, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {w.name} <span className="text-gray-500">{w.startTime}-{w.endTime}</span> <span className="text-yellow-400">¥{formatCurrency(w.amount)}</span></p>
@@ -1442,7 +1519,7 @@ function ReportAccordion({ report, onDelete }) {
                 </div>
               )}
               {report.workDetails.outsourcingLabor?.length > 0 && (
-                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
                   <p className="text-xs font-semibold text-blue-400 mb-2">外注人工: {report.workDetails.outsourcingLabor.length}件</p>
                   {report.workDetails.outsourcingLabor.map((o, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {o.company} <span className="text-gray-500">{o.workers}人</span> <span className="text-yellow-400">¥{formatCurrency(o.amount)}</span></p>
@@ -1450,7 +1527,7 @@ function ReportAccordion({ report, onDelete }) {
                 </div>
               )}
               {report.workDetails.vehicles?.length > 0 && (
-                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
                   <p className="text-xs font-semibold text-blue-400 mb-2">車両: {report.workDetails.vehicles.length}台</p>
                   {report.workDetails.vehicles.map((v, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {v.type} <span className="text-gray-500">({v.number})</span> <span className="text-yellow-400">¥{formatCurrency(v.amount)}</span></p>
@@ -1458,7 +1535,7 @@ function ReportAccordion({ report, onDelete }) {
                 </div>
               )}
               {report.workDetails.machinery?.length > 0 && (
-                <div className="mb-3 bg-gray-900/30 rounded p-2">
+                <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
                   <p className="text-xs font-semibold text-blue-400 mb-2">重機: {report.workDetails.machinery.length}台</p>
                   {report.workDetails.machinery.map((m, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {m.type} <span className="text-yellow-400">¥{formatCurrency(m.unitPrice)}</span></p>
@@ -1468,7 +1545,7 @@ function ReportAccordion({ report, onDelete }) {
             </div>
           )}
           {report.wasteItems?.length > 0 && (
-            <div className="mb-4 bg-gray-900/30 rounded p-2">
+            <div className="mb-4 rgba(255,255,255,0.02) rounded p-2">
               <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount,0))}</p>
               {report.wasteItems.map((waste, idx) => (
                 <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
@@ -1479,7 +1556,7 @@ function ReportAccordion({ report, onDelete }) {
             </div>
           )}
           {report.scrapItems?.length > 0 && (
-            <div className="mb-4 bg-gray-900/30 rounded p-2">
+            <div className="mb-4 rgba(255,255,255,0.02) rounded p-2">
               <p className="text-xs font-semibold text-green-400 mb-2">スクラップ: {report.scrapItems.length}件 / ¥{formatCurrency(Math.abs(report.scrapItems.reduce((s,sc)=>s+sc.amount,0)))}</p>
               {report.scrapItems.map((scrap, idx) => (
                 <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {scrap.type} <span className="text-gray-500">{scrap.quantity}{scrap.unit}</span> - {scrap.buyer}</p>
@@ -1504,12 +1581,12 @@ function ProjectPage({ projectInfo, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       {projectInfo?.projectName && (
-        <div className="mb-6 px-4 py-4 bg-gray-900/50 border border-gray-800 rounded-md">
+        <div className="mb-6 px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
           <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.projectName}</div>
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
@@ -1549,7 +1626,7 @@ function ProjectPage({ projectInfo, onNavigate }) {
           <h2 className="text-xl font-semibold mb-4 text-blue-400">ステータス</h2>
           <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
             projectInfo.status === '進行中' ? 'bg-green-900/30 text-green-400' :
-            projectInfo.status === '完了' ? 'bg-blue-900/30 text-blue-400' : 'bg-gray-800 text-gray-400'
+            projectInfo.status === '完了' ? 'bg-blue-900/30 text-blue-400' : 'bg-black text-gray-400'
           }`}>{projectInfo.status || '-'}</span>
         </div>
       </div>
@@ -1602,26 +1679,26 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       {projectInfo?.projectName && (
-        <div className="mb-6 px-4 py-4 bg-gray-900/50 border border-gray-800 rounded-md">
+        <div className="mb-6 px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
           <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.projectName}</div>
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
       <div className="mb-6">
         <SectionHeader title="財務サマリー / Financial Summary" />
-        <div className="bg-gray-900/50 rounded-md p-5 space-y-3">
+        <div className="rgba(255,255,255,0.02) rounded-md p-5 space-y-3">
           {[
             { label: '売上 / Revenue', value: totals.totalRevenue, color: 'text-white' },
             { label: '原価 / Cost', value: totals.accumulatedCost, color: 'text-red-400/80' },
             ...(totals.accumulatedScrap > 0 ? [{ label: 'スクラップ / Scrap', value: totals.accumulatedScrap, color: 'text-white' }] : []),
             { label: '粗利 / Profit', value: totals.grossProfit, color: totals.grossProfit >= 0 ? 'text-blue-400/90' : 'text-red-400/80', bold: true },
           ].map((row, i, arr) => (
-            <div key={i} className={`flex justify-between items-center py-2 ${i < arr.length - 1 ? 'border-b border-gray-800' : ''}`}>
+            <div key={i} className={`flex justify-between items-center py-2 ${i < arr.length - 1 ? 'border-b border-white/[0.06]' : ''}`}>
               <span className="text-xs font-medium text-gray-400">{row.label}</span>
               <span className={`${row.bold ? 'text-lg' : ''} font-semibold ${row.color} tabular-nums`}>¥{formatCurrency(row.value)}</span>
             </div>
@@ -1635,7 +1712,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           </div>
         </div>
       </div>
-      <div className="mb-6 bg-gray-900/50 rounded-md p-5">
+      <div className="mb-6 rgba(255,255,255,0.02) rounded-md p-5">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1">原価率 / Cost Ratio</p>
@@ -1651,7 +1728,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       </div>
       <SectionHeader title="原価構成比 / Cost Structure" />
       {pieData.length > 0 ? (
-        <div className="bg-gray-900/50 rounded-md p-5 mb-6">
+        <div className="rgba(255,255,255,0.02) rounded-md p-5 mb-6">
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
@@ -1661,7 +1738,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
               <Legend />
             </PieChart>
           </ResponsiveContainer>
-          <div className="mt-4 space-y-2 pt-4 border-t border-gray-800">
+          <div className="mt-4 space-y-2 pt-4 border-t border-white/[0.06]">
             {pieData.map((item, idx) => {
               const total = pieData.reduce((s, d) => s + d.value, 0);
               return (
@@ -1677,12 +1754,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           </div>
         </div>
       ) : (
-        <div className="bg-gray-900/50 rounded-md p-8"><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+        <div className="rgba(255,255,255,0.02) rounded-md p-8"><p className="text-center text-gray-500 text-sm">データがありません</p></div>
       )}
       <div className="mt-8">
         <SectionHeader title="月別原価推移 / Monthly Trend" />
         {barData.length > 0 ? (
-          <div className="bg-gray-900/50 rounded-md p-5">
+          <div className="rgba(255,255,255,0.02) rounded-md p-5">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={barData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -1694,7 +1771,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="bg-gray-900/50 rounded-md p-8"><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+          <div className="rgba(255,255,255,0.02) rounded-md p-8"><p className="text-center text-gray-500 text-sm">データがありません</p></div>
         )}
       </div>
     </div>
@@ -1796,19 +1873,19 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 bg-black min-h-screen">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
       <p className="text-gray-400 text-sm mb-8">解体作業日報をGoogle スプレッドシートに出力</p>
 
-      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+      <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         <div className="mb-4">
           <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">GAS URL <span className="text-red-500">*必須</span></label>
           <input type="text" value={gasUrl} onChange={(e) => setGasUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
-            className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-3" />
+            className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-3" />
           <button onClick={handleSaveSettings} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
             <Save className="inline w-4 h-4 mr-2" />保存
           </button>
@@ -1817,7 +1894,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 
       {/* ★ エクスポートデータプレビュー（スプシ改善確認用） */}
       {selectedSite && (
-        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+        <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">エクスポートデータ確認</h2>
 
           {/* 基本情報 */}
@@ -1829,7 +1906,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
               ['発注者', projectInfo.client || '-'],
               ['工期', `${projectInfo.startDate || '-'} ～ ${projectInfo.endDate || '-'}`],
             ].map(([label, val]) => (
-              <div key={label} className="flex justify-between py-1 border-b border-gray-800">
+              <div key={label} className="flex justify-between py-1 border-b border-white/[0.06]">
                 <span className="text-xs text-gray-500">{label}</span>
                 <span className="text-xs text-white">{val}</span>
               </div>
@@ -1838,7 +1915,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 
           {/* 契約処分先（改行プレビュー） */}
           <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">契約処分先（スプシ内改行）</p>
-          <div className="bg-gray-800/60 rounded p-3 mb-4">
+          <div className="bg-black/60 rounded p-3 mb-4">
             {(projectInfo.contractedDisposalSites || []).length > 0 ? (
               <div className="space-y-1">
                 {(projectInfo.contractedDisposalSites || []).map((site, i) => (
@@ -1860,7 +1937,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
                   ['リース費', projectInfo.leaseCost],
                   ['資材費', projectInfo.materialsCost],
                 ].filter(([, v]) => v).map(([label, val]) => (
-                  <div key={label} className="flex justify-between py-1 border-b border-gray-800">
+                  <div key={label} className="flex justify-between py-1 border-b border-white/[0.06]">
                     <span className="text-xs text-gray-500">{label}</span>
                     <span className="text-xs text-white">¥{formatCurrency(parseFloat(val))}</span>
                   </div>
@@ -1879,7 +1956,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         </div>
       )}
 
-      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 mb-6">
+      <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-white mb-2">解体作業日報</h2>
         <p className="text-gray-400 text-sm mb-4">LOGIO仕様の解体作業日報をスプレッドシートに自動生成します</p>
         <button onClick={handleExportWorkReport} disabled={exporting || !gasUrl || !selectedSite}
@@ -1897,11 +1974,11 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         )}
       </div>
 
-      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+      <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6">
         <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
         <div className="space-y-3 text-sm">
           {[['最終エクスポート', lastExport || '未実行'], ['現場', selectedSite || '未選択'], ['日報データ', `${reports.length}件`]].map(([label, val]) => (
-            <div key={label} className="flex justify-between py-2 border-b border-gray-800 last:border-b-0">
+            <div key={label} className="flex justify-between py-2 border-b border-white/[0.06] last:border-b-0">
               <span className="text-gray-400">{label}</span>
               <span className="text-white font-medium">{val}</span>
             </div>
@@ -1990,8 +2067,8 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
         }
       `}</style>
 
-      <div className="no-print bg-black border-b border-gray-800 p-4 flex items-center justify-between sticky top-0 z-50">
-        <button onClick={() => onNavigate('list')} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+      <div className="no-print bg-black border-b border-white/[0.06] p-4 flex items-center justify-between sticky top-0 z-50">
+        <button onClick={() => onNavigate('list')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <ChevronLeft className="w-4 h-4" />日報一覧に戻る
         </button>
         <div className="flex items-center gap-3">
@@ -2150,7 +2227,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
           </table>
 
           <div className="mt-2 flex justify-end">
-            <div className="border border-gray-700 bg-gray-900/80 px-6 py-2 flex items-center gap-4">
+            <div className="border border-white/[0.08] bg-black px-6 py-2 flex items-center gap-4">
               <span className="text-gray-400 text-xs font-bold">原価合計</span>
               <span className="text-white text-lg font-black tabular-nums">¥{formatCurrency(totalCost)}</span>
             </div>
@@ -2406,13 +2483,13 @@ export default function LOGIOApp() {
       </div>
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
-          <div className="bg-gray-900 p-6 max-w-md w-full rounded-lg border border-gray-700">
+          <div className="bg-black p-6 max-w-md w-full rounded-lg border border-white/[0.08]">
             <h2 className="text-xl font-bold text-white mb-4">管理者認証</h2>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-              placeholder="パスワードを入力" className="w-full px-4 py-3 bg-gray-800 border border-gray-700 text-white text-base rounded-md focus:outline-none focus:border-blue-500 mb-4" autoFocus />
+              placeholder="パスワードを入力" className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-base rounded-md focus:outline-none focus:border-blue-500 mb-4" autoFocus />
             <div className="grid grid-cols-2 gap-3">
               <button onClick={handlePasswordSubmit} className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">認証</button>
-              <button onClick={() => { setShowPasswordModal(false); setPassword(''); }} className="px-4 py-3 bg-gray-800 border border-gray-700 text-gray-300 font-medium rounded-lg hover:bg-gray-700">キャンセル</button>
+              <button onClick={() => { setShowPasswordModal(false); setPassword(''); }} className="px-4 py-3 bg-black border border-white/[0.08] text-gray-300 font-medium rounded-lg hover:bg-gray-700">キャンセル</button>
             </div>
           </div>
         </div>

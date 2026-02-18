@@ -572,36 +572,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
         {selectedSite && (
           <>
-            {/* 粗利・粗利率（折りたたみ） */}
-            <div className="overflow-hidden mb-4" style={card}>
-              <button onClick={() => setFinanceOpen(!financeOpen)}
-                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-white/[0.01] transition-colors">
-                <div className="flex items-baseline gap-8">
-                  <div>
-                    <p className="logio-lbl mb-1">粗利</p>
-                    <p className="logio-val-lg" style={{ color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>¥{formatCurrency(totals.grossProfit)}</p>
-                  </div>
-                  <div>
-                    <p className="logio-lbl mb-1">粗利率</p>
-                    <div className="flex items-center gap-1.5">
-                      <p className="logio-val-lg text-white">{totals.grossProfitRateContract}%</p>
-                      <TrendingUp className="w-4 h-4" style={{ color: '#34D399' }} />
-                    </div>
-                  </div>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${financeOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <div className={`finance-detail ${financeOpen ? 'open' : ''}`}>
-                <div>
-                  <div className="px-5 py-3 grid grid-cols-3 gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div><p className="logio-lbl mb-1">売上</p><p className="logio-val-md text-white">¥{formatCurrency(totals.totalRevenue)}</p></div>
-                    <div><p className="logio-lbl mb-1">原価</p><p className="logio-val-md" style={{ color: 'rgba(248,113,113,0.8)' }}>¥{formatCurrency(totals.accumulatedCost)}</p></div>
-                    {totals.accumulatedScrap > 0 && <div><p className="logio-lbl mb-1">スクラップ</p><p className="logio-val-md text-white">¥{formatCurrency(totals.accumulatedScrap)}</p></div>}
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* ===== 2×2グリッド：粗利・粗利率・原価率・工期 ===== */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               {/* 粗利 */}
@@ -857,11 +827,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   const [unitPrices] = useState({ inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, outsourcingDaytime: 25000, outsourcingNighttime: 30000 });
   const [wasteItems, setWasteItems] = useState([]);
   const [scrapItems, setScrapItems] = useState([]);
+  // カスタム入力用state
+  const [customWorkerName, setCustomWorkerName] = useState('');
+  const [customOutsourcingCompany, setCustomOutsourcingCompany] = useState('');
+  const [customMachineryType, setCustomMachineryType] = useState('');
+  const [customWasteType, setCustomWasteType] = useState('');
+  const [customScrapType, setCustomScrapType] = useState('');
+  const [customScrapBuyer, setCustomScrapBuyer] = useState('');
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [currentStep]);
 
   const handleCancel = () => { if (confirm('入力内容を破棄してホーム画面に戻りますか？')) onNavigate('home'); };
-  const isStep1Valid = () => report.date && (report.recorder || report.customRecorder);
+  const isStep1Valid = () => report.date && ((report.recorder && report.recorder !== '__custom__') || report.customRecorder);
   const handleSave = async () => {
     onSave({ ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems });
   };
@@ -902,16 +879,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 <label className="block text-sm font-medium text-gray-400 mb-3">記入者 <span className="text-red-500">*</span></label>
                 <select value={report.recorder} onChange={(e) => {
                   const val = e.target.value;
-                  if (val === '__custom__') {
-                    const n = prompt('記入者名を入力してください');
-                    if (n) setReport({...report, recorder: '', customRecorder: n});
-                  } else { setReport({...report, recorder: val, customRecorder: ''}); }
+                  if (val === '__custom__') { setReport({...report, recorder: '__custom__', customRecorder: ''}); }
+                  else { setReport({...report, recorder: val, customRecorder: ''}); }
                 }} className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
                   <option value="">選択してください</option>
                   {MASTER_DATA.employees.map((name) => <option key={name} value={name}>{name}</option>)}
                   <option value="__custom__">その他（手入力）</option>
                 </select>
-                {report.customRecorder && <p className="text-xs text-blue-400 mt-2">入力値: {report.customRecorder}</p>}
+                {report.recorder === '__custom__' && (
+                  <input type="text" value={report.customRecorder} onChange={e => setReport({...report, customRecorder: e.target.value})}
+                    placeholder="記入者名を入力" className="w-full mt-2 px-4 py-4 bg-black border border-blue-500 text-white text-base rounded-lg focus:outline-none" autoFocus />
+                )}
               </div>
             </div>
           </div>
@@ -956,11 +934,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">作業員</label>
-                  <select id="worker-name-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
+                  <select id="worker-name-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue=""
+                    onChange={e => { if (e.target.value === '__custom__') setCustomWorkerName(''); }}>
                     <option value="">選択してください</option>
                     {MASTER_DATA.inHouseWorkers.map((n) => <option key={n} value={n}>{n}</option>)}
                     <option value="__custom__">その他（手入力）</option>
                   </select>
+                  <input type="text" value={customWorkerName} onChange={e => setCustomWorkerName(e.target.value)}
+                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {['start', 'end'].map((t) => (
@@ -983,9 +964,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <button onClick={() => {
                   const nameSelect = document.getElementById('worker-name-select');
-                  let name = nameSelect.value;
-                  if (name === '__custom__') { name = prompt('作業員名を入力してください'); if (!name) return; }
-                  else if (!name) { alert('作業員を選択してください'); return; }
+                  let name = nameSelect.value === '__custom__' ? customWorkerName : nameSelect.value;
+                  if (!name) { alert('作業員を選択または入力してください'); return; }
                   const startTime = document.getElementById('worker-start-input').value;
                   const endTime = document.getElementById('worker-end-input').value;
                   const shiftType = document.getElementById('worker-shift-input').value;
@@ -994,7 +974,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                   if (shiftType === 'nighttime') amount = unitPrices.inHouseNighttime;
                   if (shiftType === 'nightLoading') amount = unitPrices.inHouseNightLoading;
                   setWorkDetails({ ...workDetails, inHouseWorkers: [...workDetails.inHouseWorkers, { name, startTime, endTime, shiftType, amount }] });
-                  nameSelect.value = '';
+                  nameSelect.value = ''; setCustomWorkerName('');
                   document.getElementById('worker-start-input').value = '';
                   document.getElementById('worker-end-input').value = '';
                   document.getElementById('worker-shift-input').value = 'daytime';
@@ -1052,6 +1032,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     {MASTER_DATA.outsourcingCompanies.map((c) => <option key={c} value={c}>{c}</option>)}
                     <option value="__custom__">その他（手入力）</option>
                   </select>
+                  <input type="text" value={customOutsourcingCompany} onChange={e => setCustomOutsourcingCompany(e.target.value)}
+                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1068,16 +1050,15 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <button onClick={() => {
                   const companySelect = document.getElementById('outsourcing-company-select');
-                  let company = companySelect.value;
-                  if (company === '__custom__') { company = prompt('会社名を入力してください'); if (!company) return; }
-                  else if (!company) { alert('会社名を選択してください'); return; }
+                  let company = companySelect.value === '__custom__' ? customOutsourcingCompany : companySelect.value;
+                  if (!company) { alert('会社名を選択または入力してください'); return; }
                   const workersInput = document.getElementById('outsourcing-workers-input');
                   const workers = parseInt(workersInput.value);
                   const shiftType = document.getElementById('outsourcing-shift-input').value;
                   if (!workers || workers < 1) { alert('人数を入力してください'); return; }
                   const amount = workers * (shiftType === 'daytime' ? unitPrices.outsourcingDaytime : unitPrices.outsourcingNighttime);
                   setWorkDetails({ ...workDetails, outsourcingLabor: [...workDetails.outsourcingLabor, { company, workers, shiftType, amount }] });
-                  companySelect.value = ''; workersInput.value = ''; document.getElementById('outsourcing-shift-input').value = 'daytime';
+                  companySelect.value = ''; setCustomOutsourcingCompany(''); workersInput.value = ''; document.getElementById('outsourcing-shift-input').value = 'daytime';
                 }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
               </div>
             </div>
@@ -1179,6 +1160,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     <option value="">選択してください</option>
                     {MASTER_DATA.heavyMachinery.map((m) => <option key={m} value={m}>{m}</option>)}
                   </select>
+                  <input type="text" value={customMachineryType} onChange={e => setCustomMachineryType(e.target.value)}
+                    placeholder="その他（フリー入力）の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">単価</label>
@@ -1186,13 +1169,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <button onClick={() => {
                   const typeSelect = document.getElementById('machinery-type-select');
-                  let type = typeSelect.value;
-                  if (type === 'その他（フリー入力）') { type = prompt('機種名を入力してください'); if (!type) return; }
-                  else if (!type) { alert('機種を選択してください'); return; }
+                  let type = typeSelect.value === 'その他（フリー入力）' ? customMachineryType : typeSelect.value;
+                  if (!type) type = customMachineryType;
+                  if (!type) { alert('機種を選択または入力してください'); return; }
                   const price = parseFloat(document.getElementById('machinery-price-input').value);
                   if (!price || price <= 0) { alert('単価を入力してください'); return; }
                   setWorkDetails({ ...workDetails, machinery: [...workDetails.machinery, { type, unitPrice: price }] });
-                  typeSelect.value = ''; document.getElementById('machinery-price-input').value = '';
+                  typeSelect.value = ''; setCustomMachineryType(''); document.getElementById('machinery-price-input').value = '';
                 }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
               </div>
             </div>
@@ -1244,6 +1227,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     {MASTER_DATA.wasteTypes.map((t) => <option key={t} value={t}>{t}</option>)}
                     <option value="__custom__">その他（手入力）</option>
                   </select>
+                  <input type="text" value={customWasteType} onChange={e => setCustomWasteType(e.target.value)}
+                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">処分先</label>
@@ -1274,9 +1259,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <button onClick={() => {
                   const typeSelect = document.getElementById('waste-type-select');
-                  let type = typeSelect.value;
-                  if (type === '__custom__') { type = prompt('産廃種類を入力してください'); if (!type) return; }
-                  else if (!type) { alert('種類を選択してください'); return; }
+                  let type = typeSelect.value === '__custom__' ? customWasteType : typeSelect.value;
+                  if (!type) { alert('種類を選択または入力してください'); return; }
                   const disposal = document.getElementById('waste-disposal-select').value;
                   const quantity = parseFloat(document.getElementById('waste-quantity-input').value);
                   const unit = document.getElementById('waste-unit-select').value;
@@ -1284,7 +1268,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                   const manifest = document.getElementById('waste-manifest-input').value;
                   if (!disposal || !quantity || !price || !manifest) { alert('すべての項目を入力してください'); return; }
                   setWasteItems([...wasteItems, { material: type, disposalSite: disposal, quantity, unit, unitPrice: price, amount: quantity * price, manifestNumber: manifest }]);
-                  typeSelect.value = ''; document.getElementById('waste-disposal-select').value = '';
+                  typeSelect.value = ''; setCustomWasteType(''); document.getElementById('waste-disposal-select').value = '';
                   document.getElementById('waste-quantity-input').value = ''; document.getElementById('waste-unit-select').value = '㎥';
                   document.getElementById('waste-price-input').value = ''; document.getElementById('waste-manifest-input').value = '';
                 }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
@@ -1326,6 +1310,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     {MASTER_DATA.scrapTypes.map((t) => <option key={t} value={t}>{t}</option>)}
                     <option value="__custom__">その他（手入力）</option>
                   </select>
+                  <input type="text" value={customScrapType} onChange={e => setCustomScrapType(e.target.value)}
+                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-2">買取業者</label>
@@ -1334,6 +1320,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                     {MASTER_DATA.buyers.map((b) => <option key={b} value={b}>{b}</option>)}
                     <option value="__custom__">その他（手入力）</option>
                   </select>
+                  <input type="text" value={customScrapBuyer} onChange={e => setCustomScrapBuyer(e.target.value)}
+                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1353,19 +1341,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
                 </div>
                 <button onClick={() => {
                   const typeSelect = document.getElementById('scrap-type-select');
-                  let type = typeSelect.value;
-                  if (type === '__custom__') { type = prompt('スクラップ種類を入力してください'); if (!type) return; }
-                  else if (!type) { alert('種類を選択してください'); return; }
+                  let type = typeSelect.value === '__custom__' ? customScrapType : typeSelect.value;
+                  if (!type) { alert('種類を選択または入力してください'); return; }
                   const buyerSelect = document.getElementById('scrap-buyer-select');
-                  let buyer = buyerSelect.value;
-                  if (buyer === '__custom__') { buyer = prompt('買取業者を入力してください'); if (!buyer) return; }
-                  else if (!buyer) { alert('買取業者を選択してください'); return; }
+                  let buyer = buyerSelect.value === '__custom__' ? customScrapBuyer : buyerSelect.value;
+                  if (!buyer) { alert('買取業者を選択または入力してください'); return; }
                   const quantity = parseFloat(document.getElementById('scrap-quantity-input').value);
                   const unit = document.getElementById('scrap-unit-select').value;
                   const price = parseFloat(document.getElementById('scrap-price-input').value);
                   if (!quantity || !price) { alert('数量と単価を入力してください'); return; }
                   setScrapItems([...scrapItems, { type, buyer, quantity, unit, unitPrice: price, amount: -(quantity * price) }]);
-                  typeSelect.value = ''; buyerSelect.value = '';
+                  typeSelect.value = ''; buyerSelect.value = ''; setCustomScrapType(''); setCustomScrapBuyer('');
                   document.getElementById('scrap-quantity-input').value = ''; document.getElementById('scrap-unit-select').value = 'kg';
                   document.getElementById('scrap-price-input').value = '';
                 }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
@@ -2368,6 +2354,7 @@ export default function LOGIOApp() {
       setReports(updatedReports);
       await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
       alert('✅ 日報を保存しました');
+      window.scrollTo({ top: 0, behavior: 'instant' });
       setCurrentPage('home');
     } catch (error) { alert('❌ 保存に失敗しました'); }
   };

@@ -572,24 +572,38 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
         {selectedSite && (
           <>
-            {/* ===== 2×2グリッド：粗利・粗利率・原価率・工期 ===== */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {/* 粗利 */}
-              <div className="px-4 py-4" style={card}>
-                <p className="logio-lbl mb-2">粗利</p>
-                <p className="font-bold tabular-nums" style={{ fontSize: '20px', color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>
-                  ¥{formatCurrency(totals.grossProfit)}
-                </p>
-              </div>
-              {/* 粗利率 */}
-              <div className="px-4 py-4" style={card}>
-                <p className="logio-lbl mb-2">粗利率</p>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-white font-bold tabular-nums" style={{ fontSize: '20px' }}>{totals.grossProfitRateContract}%</p>
-                  <TrendingUp className="w-4 h-4" style={{ color: '#34D399' }} />
+            {/* 粗利・粗利率（折りたたみ） */}
+            <div className="overflow-hidden mb-4" style={card}>
+              <button onClick={() => setFinanceOpen(!financeOpen)}
+                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-white/[0.01] transition-colors">
+                <div className="flex items-baseline gap-8">
+                  <div>
+                    <p className="logio-lbl mb-1">粗利</p>
+                    <p className="logio-val-lg" style={{ color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>¥{formatCurrency(totals.grossProfit)}</p>
+                  </div>
+                  <div>
+                    <p className="logio-lbl mb-1">粗利率</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="logio-val-lg text-white">{totals.grossProfitRateContract}%</p>
+                      <TrendingUp className="w-4 h-4" style={{ color: '#34D399' }} />
+                    </div>
+                  </div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${financeOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`finance-detail ${financeOpen ? 'open' : ''}`}>
+                <div>
+                  <div className="px-5 py-3 grid grid-cols-3 gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div><p className="logio-lbl mb-1">売上</p><p className="logio-val-md text-white">¥{formatCurrency(totals.totalRevenue)}</p></div>
+                    <div><p className="logio-lbl mb-1">原価</p><p className="logio-val-md" style={{ color: 'rgba(248,113,113,0.8)' }}>¥{formatCurrency(totals.accumulatedCost)}</p></div>
+                    {totals.accumulatedScrap > 0 && <div><p className="logio-lbl mb-1">スクラップ</p><p className="logio-val-md text-white">¥{formatCurrency(totals.accumulatedScrap)}</p></div>}
+                  </div>
                 </div>
               </div>
-              {/* 原価率 */}
+            </div>
+
+            {/* 原価率・工期 */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
               <div className="px-4 py-4" style={card}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="logio-lbl">原価率</p>
@@ -600,7 +614,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                   <div className="logio-progress-bar h-full" style={{ width: `${Math.min(costRatio,100)}%`, backgroundColor: costBarColor }} />
                 </div>
               </div>
-              {/* 工期 */}
               <div className="px-4 py-4" style={card}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="logio-lbl">工期</p>

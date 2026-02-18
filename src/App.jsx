@@ -2404,7 +2404,7 @@ export default function LOGIOApp() {
   };
 
   const totals = calculateTotals();
-  window.__navigatePDF = (report) => { setSelectedReport(report); setCurrentPage('pdf'); };
+  window.__navigatePDF = (report) => { setSelectedReport(report); setCurrentPage('pdf'); window.scrollTo({ top: 0, behavior: 'instant' }); };
 
   if (showSplash) return <SplashScreen />;
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;

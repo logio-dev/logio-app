@@ -93,7 +93,7 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
 // ========== マスタデータ ==========
 const MASTER_DATA = {
   projectNames: ['内装解体', 'スケルトン解体', '建物解体', '外装解体', '外構解体', 'アスベスト除去', '設備解体', '躯体解体'],
-  salesPersons: ['間野', '八ツ田', '木嶋', '西', '鈴木', '原'],
+  salesPersons: ['間野', '八ツ田', '木嶋', '西', '鈴木', '原', '二宮'],
   employees: ['五十嵐悠哉', '折田優作', '稲葉正輝', '井ケ田浩寿', '大野勝也', '石森達也', '一村琢磨', '間野昂平'],
   inHouseWorkers: ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也'],
   outsourcingCompanies: ['TCY興業', 'ALTEQ', '山田興業', '川田工業', 'マルカイ工業', 'MM興業'],
@@ -664,10 +664,13 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 }
 
 
-// ========== ★ ProjectSettingsPage（回送費・リース費・資材費追加） ==========
+// ========== ★ ProjectSettingsPage ==========
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
+  const [showSiteList, setShowSiteList] = useState(false); // ★ デフォルト折りたたみ
+  // ★ 経費state
+  const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
 
   const handleAddSite = () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
@@ -690,6 +693,18 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
     });
   };
 
+  // ★ 経費の追加・削除
+  const addExpense = () => {
+    if (!expenseForm.name || !expenseForm.amount) return;
+    const expenses = projectInfo.expenses || [];
+    setProjectInfo({ ...projectInfo, expenses: [...expenses, { name: expenseForm.name, amount: parseFloat(expenseForm.amount) }] });
+    setExpenseForm({ name: '', amount: '' });
+  };
+  const removeExpense = (i) => {
+    const expenses = (projectInfo.expenses || []).filter((_, idx) => idx !== i);
+    setProjectInfo({ ...projectInfo, expenses });
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 bg-black min-h-screen text-white">
       <div className="mb-4">
@@ -704,12 +719,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
       {!showAddSite ? (
         <button onClick={() => setShowAddSite(true)}
-          className="w-full mb-6 px-4 py-3 text-white text-base font-bold transition-colors flex items-center justify-center gap-2 rounded-lg"
+          className="w-full mb-4 px-4 py-3 text-white text-base font-bold transition-colors flex items-center justify-center gap-2 rounded-lg"
           style={{ background: 'rgba(59,130,246,0.8)' }}>
           <Plus className="w-5 h-5" />新規現場を追加
         </button>
       ) : (
-        <div className="mb-6 p-4 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="mb-4 p-4 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">新規現場名</label>
           <input type="text" value={newSiteName} onChange={(e) => setNewSiteName(e.target.value)}
             placeholder="例: 渋谷〇〇ビル解体工事"
@@ -723,18 +738,26 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         </div>
       )}
 
+      {/* ★ 登録済み現場 - デフォルト折りたたみ */}
       {sites.length > 0 && (
         <div className="mb-8">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">登録済み現場 ({sites.length})</p>
-          <div className="space-y-2">
-            {sites.map((site, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <span className="text-white text-base font-medium">{site.name}</span>
-                <button onClick={() => handleDeleteSite(site.name)}
-                  className="px-3 py-1 text-sm font-bold transition-colors rounded-lg" style={{ background: 'rgba(239,68,68,0.2)', color: '#F87171' }}>削除</button>
-              </div>
-            ))}
-          </div>
+          <button onClick={() => setShowSiteList(!showSiteList)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg mb-2 transition-colors"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">登録済み現場 ({sites.length})</p>
+            <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${showSiteList ? 'rotate-180' : ''}`} />
+          </button>
+          {showSiteList && (
+            <div className="space-y-2">
+              {sites.map((site, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span className="text-white text-base font-medium">{site.name}</span>
+                  <button onClick={() => handleDeleteSite(site.name)}
+                    className="px-3 py-1 text-sm font-bold transition-colors rounded-lg" style={{ background: 'rgba(239,68,68,0.2)', color: '#F87171' }}>削除</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -774,27 +797,56 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount} onChange={(val) => setProjectInfo({...projectInfo, contractAmount: val})} placeholder="5000000" />
           <TextInput label="追加金額（税抜）" labelEn="Additional Amount" type="number" value={projectInfo.additionalAmount} onChange={(val) => setProjectInfo({...projectInfo, additionalAmount: val})} placeholder="0" />
 
-          {/* ★ 回送費・リース費・資材費 */}
-          <div className="mb-2">
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-3 mt-6 pb-2 border-b border-white/[0.06]">
-              追加費用項目 / Additional Costs
-            </p>
+          {/* 固定費 */}
+          <div className="mb-2 mt-6">
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider pb-2 border-b border-white/[0.06]">固定費 / Fixed Costs</p>
           </div>
-          <TextInput
-            label="回送費" labelEn="Transfer Cost"
-            type="number" value={projectInfo.transferCost || ''}
-            onChange={(val) => setProjectInfo({...projectInfo, transferCost: val})}
-            placeholder="0" />
-          <TextInput
-            label="リース費" labelEn="Lease Cost"
-            type="number" value={projectInfo.leaseCost || ''}
-            onChange={(val) => setProjectInfo({...projectInfo, leaseCost: val})}
-            placeholder="0" />
-          <TextInput
-            label="資材費" labelEn="Materials Cost"
-            type="number" value={projectInfo.materialsCost || ''}
-            onChange={(val) => setProjectInfo({...projectInfo, materialsCost: val})}
-            placeholder="0" />
+          <TextInput label="回送費" labelEn="Transfer Cost" type="number" value={projectInfo.transferCost || ''} onChange={(val) => setProjectInfo({...projectInfo, transferCost: val})} placeholder="0" />
+          <TextInput label="リース費" labelEn="Lease Cost" type="number" value={projectInfo.leaseCost || ''} onChange={(val) => setProjectInfo({...projectInfo, leaseCost: val})} placeholder="0" />
+          <TextInput label="資材費" labelEn="Materials Cost" type="number" value={projectInfo.materialsCost || ''} onChange={(val) => setProjectInfo({...projectInfo, materialsCost: val})} placeholder="0" />
+
+          {/* ★ 経費セクション */}
+          <div className="mb-2 mt-6">
+            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider pb-2 border-b border-white/[0.06]">経費 / Expenses</p>
+          </div>
+          <div className="mb-4" style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup><col style={{width:'45%'}}/><col style={{width:'35%'}}/><col style={{width:'20%'}}/></colgroup>
+              <thead>
+                <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  {['項目名','金額',''].map((h,i) => (
+                    <th key={i} style={{ padding: '7px 10px', fontSize: '9px', fontWeight: '600', color: '#4B5563', letterSpacing: '0.04em', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(projectInfo.expenses || []).map((exp, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <td style={{ padding: '8px 10px', fontSize: '12px', color: 'rgba(255,255,255,0.85)' }}>{exp.name}</td>
+                    <td style={{ padding: '8px 10px', fontSize: '12px', color: '#FCD34D', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>¥{formatCurrency(exp.amount)}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      <button onClick={() => removeExpense(i)} style={{ width: '24px', height: '24px', borderRadius: '4px', border: 'none', cursor: 'pointer', background: 'rgba(239,68,68,0.12)', color: '#F87171', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>✕</button>
+                    </td>
+                  </tr>
+                ))}
+                {/* 入力行 */}
+                <tr style={{ background: 'rgba(59,130,246,0.04)', borderTop: '1px solid rgba(59,130,246,0.2)' }}>
+                  <td style={{ padding: '6px 8px' }}>
+                    <input type="text" value={expenseForm.name} onChange={e => setExpenseForm({...expenseForm, name: e.target.value})}
+                      placeholder="例: 交通費" className="w-full bg-black text-white text-xs border border-white/10 rounded px-2 py-2 outline-none focus:border-blue-500" />
+                  </td>
+                  <td style={{ padding: '6px 8px' }}>
+                    <input type="number" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})}
+                      placeholder="金額" className="w-full bg-black text-white text-xs border border-white/10 rounded px-2 py-2 outline-none focus:border-blue-500" />
+                  </td>
+                  <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                    <button onClick={addExpense} disabled={!expenseForm.name || !expenseForm.amount}
+                      style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', cursor: (!expenseForm.name || !expenseForm.amount) ? 'not-allowed' : 'pointer', background: (!expenseForm.name || !expenseForm.amount) ? 'rgba(255,255,255,0.04)' : '#2563EB', color: (!expenseForm.name || !expenseForm.amount) ? '#374151' : 'white', fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>+</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status} onChange={(val) => setProjectInfo({...projectInfo, status: val})} />
           <TextInput label="排出事業者" labelEn="Discharger" value={projectInfo.discharger || ''} onChange={(val) => setProjectInfo({...projectInfo, discharger: val})} placeholder="株式会社LOGIO" required />
@@ -833,28 +885,100 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 }
 
 // ========== ReportInputPage ==========
+// 共通テーブルコンポーネント
+const RowTable = ({ headers, widths, children }) => (
+  <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden', marginBottom: '16px' }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+      <colgroup>{widths.map((w,i) => <col key={i} style={{width:w}} />)}</colgroup>
+      <thead>
+        <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+          {headers.map((h,i) => (
+            <th key={i} style={{ padding: '6px 6px', fontSize: '9px', fontWeight: '600', color: '#4B5563', letterSpacing: '0.04em', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>{children}</tbody>
+    </table>
+  </div>
+);
+const RTd = ({ children, center, right, money, input }) => (
+  <td style={{ padding: input ? '5px 5px' : '7px 6px', fontSize: '12px', color: money ? '#FCD34D' : 'rgba(255,255,255,0.85)', textAlign: center ? 'center' : right ? 'right' : 'left', borderBottom: '1px solid rgba(255,255,255,0.03)', fontVariantNumeric: money ? 'tabular-nums' : 'normal' }}>{children}</td>
+);
+const rSel = "w-full bg-black text-white border border-white/10 rounded px-1 py-1.5 outline-none focus:border-blue-500 text-xs";
+const rInp = "w-full bg-black text-white border border-white/10 rounded px-1 py-1.5 outline-none focus:border-blue-500 text-xs";
+const AddRowBtn = ({ onClick, disabled }) => (
+  <button onClick={onClick} disabled={disabled} style={{ width:'26px', height:'26px', borderRadius:'5px', border:'none', cursor: disabled?'not-allowed':'pointer', background: disabled?'rgba(255,255,255,0.04)':'#2563EB', color: disabled?'#374151':'white', fontSize:'16px', fontWeight:'700', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>+</button>
+);
+const DelRowBtn = ({ onClick }) => (
+  <button onClick={onClick} style={{ width:'22px', height:'22px', borderRadius:'4px', border:'none', cursor:'pointer', background:'rgba(239,68,68,0.12)', color:'#F87171', fontSize:'11px', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>✕</button>
+);
+const SubTotal = ({ label, value }) => value > 0 ? (
+  <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 10px', background:'rgba(255,255,255,0.02)', borderRadius:'6px', marginBottom:'16px' }}>
+    <span style={{ fontSize:'11px', color:'#6B7280' }}>{label}小計</span>
+    <span style={{ fontSize:'13px', fontWeight:'700', color:'#60A5FA', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(value)}</span>
+  </div>
+) : null;
+
 function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [report, setReport] = useState({ date: new Date().toISOString().split('T')[0], weather: '', recorder: '', customRecorder: '' });
   const [workDetails, setWorkDetails] = useState({ workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], costItems: [] });
-  const [unitPrices] = useState({ inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, outsourcingDaytime: 25000, outsourcingNighttime: 30000 });
+  const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
   const [wasteItems, setWasteItems] = useState([]);
   const [scrapItems, setScrapItems] = useState([]);
-  // カスタム入力用state
-  const [customWorkerName, setCustomWorkerName] = useState('');
-  const [customOutsourcingCompany, setCustomOutsourcingCompany] = useState('');
-  const [customMachineryType, setCustomMachineryType] = useState('');
-  const [customWasteType, setCustomWasteType] = useState('');
-  const [customScrapType, setCustomScrapType] = useState('');
-  const [customScrapBuyer, setCustomScrapBuyer] = useState('');
+
+  // 入力フォームstate（一行形式）
+  const [wForm, setWForm] = useState({ name:'', start:'', end:'', shift:'daytime' });
+  const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime' });
+  const [vForm, setVForm] = useState({ type:'', number:'' });
+  const [mForm, setMForm] = useState({ type:'', price:'' });
+  const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'' });
+  const [scrapForm, setScrapForm] = useState({ type:'', buyer:'', qty:'', unit:'kg', price:'' });
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [currentStep]);
 
   const handleCancel = () => { if (confirm('入力内容を破棄してホーム画面に戻りますか？')) onNavigate('home'); };
   const isStep1Valid = () => report.date && ((report.recorder && report.recorder !== '__custom__') || report.customRecorder);
-  const handleSave = async () => {
-    onSave({ ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems });
+  const handleSave = async () => { onSave({ ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems }); };
+
+  // 登録ハンドラ
+  const addWorker = () => {
+    if (!wForm.name||!wForm.start||!wForm.end) return;
+    const amount = wForm.shift==='nighttime'?unitPrices.inHouseNighttime:wForm.shift==='nightLoading'?unitPrices.inHouseNightLoading:unitPrices.inHouseDaytime;
+    setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm,amount}]});
+    setWForm({name:'',start:'',end:'',shift:'daytime'});
   };
+  const addOutsource = () => {
+    if (!oForm.company||!oForm.count) return;
+    const amount = parseInt(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime);
+    setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,amount}]});
+    setOForm({company:'',count:'',shift:'daytime'});
+  };
+  const addVehicle = () => {
+    if (!vForm.type||!vForm.number) return;
+    setWorkDetails({...workDetails, vehicles:[...workDetails.vehicles,{...vForm,amount:VEHICLE_UNIT_PRICES[vForm.type]||0}]});
+    setVForm({type:'',number:''});
+  };
+  const addMachinery = () => {
+    if (!mForm.type||!mForm.price) return;
+    setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)}]});
+    setMForm({type:'',price:''});
+  };
+  const addWaste = () => {
+    if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.manifest) return;
+    const qty=parseFloat(wasteForm.qty), price=parseFloat(wasteForm.price);
+    setWasteItems([...wasteItems,{material:wasteForm.type,disposalSite:wasteForm.disposal,quantity:qty,unit:wasteForm.unit,unitPrice:price,amount:qty*price,manifestNumber:wasteForm.manifest}]);
+    setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:''});
+  };
+  const addScrap = () => {
+    if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price) return;
+    const qty=parseFloat(scrapForm.qty), price=parseFloat(scrapForm.price);
+    setScrapItems([...scrapItems,{type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:price,amount:-(qty*price)}]);
+    setScrapForm({type:'',buyer:'',qty:'',unit:'kg',price:''});
+  };
+
+  const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':'日勤';
+  const shiftColor = s => s==='nighttime'?'#8B5CF6':s==='nightLoading'?'#6366F1':'#3B82F6';
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen relative pb-24">
@@ -870,6 +994,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         ))}
       </div>
 
+      {/* ===== Step 1: 基本情報 ===== */}
       {currentStep === 1 && (
         <div>
           <SectionHeader title="基本情報 / Basic Info" />
@@ -914,306 +1039,114 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         </div>
       )}
 
+      {/* ===== Step 2: 原価明細 ===== */}
       {currentStep === 2 && (
         <div>
           <SectionHeader title="原価明細 / Cost Details" />
 
-          <div className="mb-8 rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08]">
-            <h3 className="text-base font-semibold text-white mb-4">施工内容</h3>
-            <div className="space-y-4">
+          {/* 施工内容 */}
+          <div className="mb-6 rounded-lg p-4 border border-white/[0.08]" style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm text-gray-400 mb-2">区分</label>
+                <label className="block text-xs text-gray-500 mb-1">区分</label>
                 <select value={workDetails.workCategory} onChange={(e) => setWorkDetails({...workDetails, workCategory: e.target.value})}
-                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
-                  <option value="">選択してください</option>
+                  className="w-full px-3 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-lg focus:outline-none focus:border-blue-500">
+                  <option value="">選択</option>
                   {MASTER_DATA.workCategories.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-2">内容</label>
-                <input type="text" placeholder="施工内容を入力してください" value={workDetails.workContent}
+                <label className="block text-xs text-gray-500 mb-1">内容</label>
+                <input type="text" placeholder="施工内容" value={workDetails.workContent}
                   onChange={(e) => setWorkDetails({...workDetails, workContent: e.target.value})}
-                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+                  className="w-full px-3 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-lg focus:outline-none focus:border-blue-500" />
               </div>
             </div>
           </div>
 
-          <div className="my-8 border-t border-white/[0.08]"></div>
+          {/* ---- 自社人工 ---- */}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">自社人工</p>
+          <RowTable headers={['氏名','開始','終了','区分','金額','']} widths={['24%','13%','13%','17%','22%','11%']}>
+            {workDetails.inHouseWorkers.map((w,i) => (
+              <tr key={i}>
+                <RTd>{w.name}</RTd>
+                <RTd center>{w.start}</RTd>
+                <RTd center>{w.end}</RTd>
+                <RTd center><span style={{fontSize:'9px',padding:'2px 4px',borderRadius:'3px',background:`${shiftColor(w.shift)}22`,color:shiftColor(w.shift),fontWeight:'600'}}>{shiftLabel(w.shift)}</span></RTd>
+                <RTd right money>¥{formatCurrency(w.amount)}</RTd>
+                <RTd center><DelRowBtn onClick={() => setWorkDetails({...workDetails, inHouseWorkers: workDetails.inHouseWorkers.filter((_,j)=>j!==i)})}/></RTd>
+              </tr>
+            ))}
+            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
+              <RTd input><select value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})} className={rSel}><option value="">氏名</option>{MASTER_DATA.inHouseWorkers.map(n=><option key={n}>{n}</option>)}</select></RTd>
+              <RTd input><select value={wForm.start} onChange={e=>setWForm({...wForm,start:e.target.value})} className={rSel}><option value="">開始</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t}>{t}</option>)}</select></RTd>
+              <RTd input><select value={wForm.end} onChange={e=>setWForm({...wForm,end:e.target.value})} className={rSel}><option value="">終了</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t}>{t}</option>)}</select></RTd>
+              <RTd input><select value={wForm.shift} onChange={e=>setWForm({...wForm,shift:e.target.value})} className={rSel}><option value="daytime">日勤</option><option value="nighttime">夜間</option><option value="nightLoading">夜積</option></select></RTd>
+              <RTd right><span style={{fontSize:'10px',color:'#60A5FA'}}>¥{formatCurrency(wForm.shift==='nighttime'?unitPrices.inHouseNighttime:wForm.shift==='nightLoading'?unitPrices.inHouseNightLoading:unitPrices.inHouseDaytime)}</span></RTd>
+              <RTd center><AddRowBtn onClick={addWorker} disabled={!wForm.name||!wForm.start||!wForm.end}/></RTd>
+            </tr>
+          </RowTable>
+          <SubTotal label="自社人工" value={workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0)} />
 
-          {/* 自社人工 */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-400 mb-4">自社人工</label>
-            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">作業員</label>
-                  <select id="worker-name-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue=""
-                    onChange={e => { if (e.target.value === '__custom__') setCustomWorkerName(''); }}>
-                    <option value="">選択してください</option>
-                    {MASTER_DATA.inHouseWorkers.map((n) => <option key={n} value={n}>{n}</option>)}
-                    <option value="__custom__">その他（手入力）</option>
-                  </select>
-                  <input type="text" value={customWorkerName} onChange={e => setCustomWorkerName(e.target.value)}
-                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {['start', 'end'].map((t) => (
-                    <div key={t}>
-                      <label className="block text-sm text-gray-400 mb-2">{t === 'start' ? '開始' : '終了'}</label>
-                      <select id={`worker-${t}-input`} className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
-                        <option value="">--:--</option>
-                        {MASTER_DATA.workingHoursOptions.map((time) => <option key={time} value={time}>{time}</option>)}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">区分</label>
-                  <select id="worker-shift-input" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="daytime">
-                    <option value="daytime">日勤 (¥{formatCurrency(unitPrices.inHouseDaytime)})</option>
-                    <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.inHouseNighttime)})</option>
-                    <option value="nightLoading">夜間積込 (¥{formatCurrency(unitPrices.inHouseNightLoading)})</option>
-                  </select>
-                </div>
-                <button onClick={() => {
-                  const nameSelect = document.getElementById('worker-name-select');
-                  let name = nameSelect.value === '__custom__' ? customWorkerName : nameSelect.value;
-                  if (!name) { alert('作業員を選択または入力してください'); return; }
-                  const startTime = document.getElementById('worker-start-input').value;
-                  const endTime = document.getElementById('worker-end-input').value;
-                  const shiftType = document.getElementById('worker-shift-input').value;
-                  if (!startTime || !endTime) { alert('開始時刻と終了時刻を選択してください'); return; }
-                  let amount = unitPrices.inHouseDaytime;
-                  if (shiftType === 'nighttime') amount = unitPrices.inHouseNighttime;
-                  if (shiftType === 'nightLoading') amount = unitPrices.inHouseNightLoading;
-                  setWorkDetails({ ...workDetails, inHouseWorkers: [...workDetails.inHouseWorkers, { name, startTime, endTime, shiftType, amount }] });
-                  nameSelect.value = ''; setCustomWorkerName('');
-                  document.getElementById('worker-start-input').value = '';
-                  document.getElementById('worker-end-input').value = '';
-                  document.getElementById('worker-shift-input').value = 'daytime';
-                }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
-              </div>
-            </div>
-            {workDetails.inHouseWorkers.length > 0 && (
-              <>
-                <div className="space-y-3 mb-4">
-                  {workDetails.inHouseWorkers.map((worker, index) => (
-                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="text-white text-base font-medium mb-1">{worker.name}</p>
-                          <p className="text-sm text-gray-400">{worker.startTime} - {worker.endTime}</p>
-                        </div>
-                        <button onClick={() => setWorkDetails({...workDetails, inHouseWorkers: workDetails.inHouseWorkers.filter((_,i)=>i!==index)})}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors">
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                      <div className="space-y-3">
-                        <select value={worker.shiftType} onChange={(e) => {
-                          const newType = e.target.value;
-                          let newAmount = newType === 'nighttime' ? unitPrices.inHouseNighttime : newType === 'nightLoading' ? unitPrices.inHouseNightLoading : unitPrices.inHouseDaytime;
-                          const newWorkers = [...workDetails.inHouseWorkers];
-                          newWorkers[index] = {...newWorkers[index], shiftType: newType, amount: newAmount};
-                          setWorkDetails({...workDetails, inHouseWorkers: newWorkers});
-                        }} className="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
-                          <option value="daytime">日勤 (¥{formatCurrency(unitPrices.inHouseDaytime)})</option>
-                          <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.inHouseNighttime)})</option>
-                          <option value="nightLoading">夜間積込 (¥{formatCurrency(unitPrices.inHouseNightLoading)})</option>
-                        </select>
-                        <div className="text-right"><span className="text-white font-semibold text-lg">¥{formatCurrency(worker.amount)}</span></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4 bg-black/50 rounded-lg">
-                  <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0))}</p>
-                </div>
-              </>
-            )}
-          </div>
+          {/* ---- 外注人工 ---- */}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">外注人工</p>
+          <RowTable headers={['会社名','人数','区分','金額','']} widths={['30%','14%','20%','25%','11%']}>
+            {workDetails.outsourcingLabor.map((o,i) => (
+              <tr key={i}>
+                <RTd>{o.company}</RTd>
+                <RTd center>{o.count}人</RTd>
+                <RTd center><span style={{fontSize:'9px',padding:'2px 4px',borderRadius:'3px',background:`${shiftColor(o.shift)}22`,color:shiftColor(o.shift),fontWeight:'600'}}>{shiftLabel(o.shift)}</span></RTd>
+                <RTd right money>¥{formatCurrency(o.amount)}</RTd>
+                <RTd center><DelRowBtn onClick={() => setWorkDetails({...workDetails, outsourcingLabor: workDetails.outsourcingLabor.filter((_,j)=>j!==i)})}/></RTd>
+              </tr>
+            ))}
+            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
+              <RTd input><select value={oForm.company} onChange={e=>setOForm({...oForm,company:e.target.value})} className={rSel}><option value="">会社名</option>{MASTER_DATA.outsourcingCompanies.map(c=><option key={c}>{c}</option>)}</select></RTd>
+              <RTd input><input type="number" min="1" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="人数" className={rInp}/></RTd>
+              <RTd input><select value={oForm.shift} onChange={e=>setOForm({...oForm,shift:e.target.value})} className={rSel}><option value="daytime">日勤</option><option value="nighttime">夜間</option></select></RTd>
+              <RTd right><span style={{fontSize:'10px',color:'#60A5FA'}}>{oForm.count?`¥${formatCurrency(parseInt(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}`:'-'}</span></RTd>
+              <RTd center><AddRowBtn onClick={addOutsource} disabled={!oForm.company||!oForm.count}/></RTd>
+            </tr>
+          </RowTable>
+          <SubTotal label="外注人工" value={workDetails.outsourcingLabor.reduce((s,o)=>s+o.amount,0)} />
 
-          {/* 外注人工 */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-400 mb-4">外注人工</label>
-            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">会社名</label>
-                  <select id="outsourcing-company-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
-                    <option value="">選択してください</option>
-                    {MASTER_DATA.outsourcingCompanies.map((c) => <option key={c} value={c}>{c}</option>)}
-                    <option value="__custom__">その他（手入力）</option>
-                  </select>
-                  <input type="text" value={customOutsourcingCompany} onChange={e => setCustomOutsourcingCompany(e.target.value)}
-                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">人数</label>
-                    <input id="outsourcing-workers-input" type="number" placeholder="3" min="1" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">区分</label>
-                    <select id="outsourcing-shift-input" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="daytime">
-                      <option value="daytime">日勤 (¥{formatCurrency(unitPrices.outsourcingDaytime)}/人)</option>
-                      <option value="nighttime">夜間 (¥{formatCurrency(unitPrices.outsourcingNighttime)}/人)</option>
-                    </select>
-                  </div>
-                </div>
-                <button onClick={() => {
-                  const companySelect = document.getElementById('outsourcing-company-select');
-                  let company = companySelect.value === '__custom__' ? customOutsourcingCompany : companySelect.value;
-                  if (!company) { alert('会社名を選択または入力してください'); return; }
-                  const workersInput = document.getElementById('outsourcing-workers-input');
-                  const workers = parseInt(workersInput.value);
-                  const shiftType = document.getElementById('outsourcing-shift-input').value;
-                  if (!workers || workers < 1) { alert('人数を入力してください'); return; }
-                  const amount = workers * (shiftType === 'daytime' ? unitPrices.outsourcingDaytime : unitPrices.outsourcingNighttime);
-                  setWorkDetails({ ...workDetails, outsourcingLabor: [...workDetails.outsourcingLabor, { company, workers, shiftType, amount }] });
-                  companySelect.value = ''; setCustomOutsourcingCompany(''); workersInput.value = ''; document.getElementById('outsourcing-shift-input').value = 'daytime';
-                }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
-              </div>
-            </div>
-            {workDetails.outsourcingLabor.length > 0 && (
-              <>
-                <div className="space-y-3 mb-4">
-                  {workDetails.outsourcingLabor.map((item, index) => (
-                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="text-white text-base font-medium mb-1">{item.company}</p>
-                          <p className="text-sm text-gray-400">{item.workers}人 × {item.shiftType === 'daytime' ? '日勤' : '夜間'}</p>
-                        </div>
-                        <button onClick={() => setWorkDetails({...workDetails, outsourcingLabor: workDetails.outsourcingLabor.filter((_,i)=>i!==index)})}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors">
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                      <div className="text-right"><span className="text-white font-semibold text-lg">¥{formatCurrency(item.amount)}</span></div>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4 bg-black/50 rounded-lg">
-                  <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(workDetails.outsourcingLabor.reduce((s,o)=>s+o.amount,0))}</p>
-                </div>
-              </>
-            )}
-          </div>
+          {/* ---- 車両 ---- */}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">車両</p>
+          <RowTable headers={['車種','車番','金額','']} widths={['30%','28%','30%','12%']}>
+            {workDetails.vehicles.map((v,i) => (
+              <tr key={i}>
+                <RTd>{v.type}</RTd>
+                <RTd center>{v.number}</RTd>
+                <RTd right money>¥{formatCurrency(v.amount)}</RTd>
+                <RTd center><DelRowBtn onClick={() => setWorkDetails({...workDetails, vehicles: workDetails.vehicles.filter((_,j)=>j!==i)})}/></RTd>
+              </tr>
+            ))}
+            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
+              <RTd input><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:''})} className={rSel}><option value="">車種</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></RTd>
+              <RTd input><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} className={rSel}><option value="">車番</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></RTd>
+              <RTd right><span style={{fontSize:'10px',color:'#60A5FA'}}>{vForm.type?`¥${formatCurrency(VEHICLE_UNIT_PRICES[vForm.type]||0)}`:'-'}</span></RTd>
+              <RTd center><AddRowBtn onClick={addVehicle} disabled={!vForm.type||!vForm.number}/></RTd>
+            </tr>
+          </RowTable>
+          <SubTotal label="車両" value={workDetails.vehicles.reduce((s,v)=>s+v.amount,0)} />
 
-          {/* 車両 */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-400 mb-4">車両</label>
-            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">車種</label>
-                  <select id="vehicle-type-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue=""
-                    onChange={(e) => {
-                      const numberSelect = document.getElementById('vehicle-number-select');
-                      numberSelect.innerHTML = '<option value="">選択してください</option>';
-                      if (e.target.value && MASTER_DATA.vehicleNumbersByType[e.target.value]) {
-                        MASTER_DATA.vehicleNumbersByType[e.target.value].forEach(num => {
-                          const option = document.createElement('option'); option.value = num; option.textContent = num; numberSelect.appendChild(option);
-                        });
-                      }
-                    }}>
-                    <option value="">選択してください</option>
-                    {MASTER_DATA.vehicles.map((v) => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">車番</label>
-                  <select id="vehicle-number-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
-                    <option value="">選択してください</option>
-                  </select>
-                </div>
-                <button onClick={() => {
-                  const type = document.getElementById('vehicle-type-select').value;
-                  const number = document.getElementById('vehicle-number-select').value;
-                  if (!type || !number) { alert('車種と車番を選択してください'); return; }
-                  const amount = VEHICLE_UNIT_PRICES[type] || 0;
-                  setWorkDetails({ ...workDetails, vehicles: [...workDetails.vehicles, { type, number, amount }] });
-                  document.getElementById('vehicle-type-select').value = '';
-                  document.getElementById('vehicle-number-select').innerHTML = '<option value="">選択してください</option>';
-                }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
-              </div>
-            </div>
-            {workDetails.vehicles.length > 0 && (
-              <>
-                <div className="space-y-3 mb-4">
-                  {workDetails.vehicles.map((v, index) => (
-                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-white text-base font-medium">{v.type} ({v.number})</p>
-                        <p className="text-sm text-gray-400">¥{formatCurrency(v.amount)}</p>
-                      </div>
-                      <button onClick={() => setWorkDetails({...workDetails, vehicles: workDetails.vehicles.filter((_,i)=>i!==index)})}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4 bg-black/50 rounded-lg">
-                  <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(workDetails.vehicles.reduce((s,v)=>s+v.amount,0))}</p>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* 重機 */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-400 mb-4">重機</label>
-            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">機種</label>
-                  <select id="machinery-type-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
-                    <option value="">選択してください</option>
-                    {MASTER_DATA.heavyMachinery.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                  <input type="text" value={customMachineryType} onChange={e => setCustomMachineryType(e.target.value)}
-                    placeholder="その他（フリー入力）の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">単価</label>
-                  <input id="machinery-price-input" type="number" placeholder="50000" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                </div>
-                <button onClick={() => {
-                  const typeSelect = document.getElementById('machinery-type-select');
-                  let type = typeSelect.value === 'その他（フリー入力）' ? customMachineryType : typeSelect.value;
-                  if (!type) type = customMachineryType;
-                  if (!type) { alert('機種を選択または入力してください'); return; }
-                  const price = parseFloat(document.getElementById('machinery-price-input').value);
-                  if (!price || price <= 0) { alert('単価を入力してください'); return; }
-                  setWorkDetails({ ...workDetails, machinery: [...workDetails.machinery, { type, unitPrice: price }] });
-                  typeSelect.value = ''; setCustomMachineryType(''); document.getElementById('machinery-price-input').value = '';
-                }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
-              </div>
-            </div>
-            {workDetails.machinery.length > 0 && (
-              <>
-                <div className="space-y-3 mb-4">
-                  {workDetails.machinery.map((m, index) => (
-                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-white text-base font-medium">{m.type}</p>
-                        <p className="text-sm text-gray-400">¥{formatCurrency(m.unitPrice)}</p>
-                      </div>
-                      <button onClick={() => setWorkDetails({...workDetails, machinery: workDetails.machinery.filter((_,i)=>i!==index)})}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4 bg-black/50 rounded-lg">
-                  <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0))}</p>
-                </div>
-              </>
-            )}
-          </div>
+          {/* ---- 重機 ---- */}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">重機</p>
+          <RowTable headers={['機種','単価','']} widths={['50%','38%','12%']}>
+            {workDetails.machinery.map((m,i) => (
+              <tr key={i}>
+                <RTd>{m.type}</RTd>
+                <RTd right money>¥{formatCurrency(m.unitPrice)}</RTd>
+                <RTd center><DelRowBtn onClick={() => setWorkDetails({...workDetails, machinery: workDetails.machinery.filter((_,j)=>j!==i)})}/></RTd>
+              </tr>
+            ))}
+            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
+              <RTd input><select value={mForm.type} onChange={e=>setMForm({...mForm,type:e.target.value})} className={rSel}><option value="">機種</option>{MASTER_DATA.heavyMachinery.map(m=><option key={m}>{m}</option>)}</select></RTd>
+              <RTd input><input type="number" value={mForm.price} onChange={e=>setMForm({...mForm,price:e.target.value})} placeholder="単価" className={rInp}/></RTd>
+              <RTd center><AddRowBtn onClick={addMachinery} disabled={!mForm.type||!mForm.price}/></RTd>
+            </tr>
+          </RowTable>
+          <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />
 
           <div className="mt-8 grid grid-cols-3 gap-3">
             <button onClick={() => setCurrentStep(1)} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">← 戻る</button>
@@ -1223,175 +1156,67 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         </div>
       )}
 
+      {/* ===== Step 3: 産廃・スクラップ ===== */}
       {currentStep === 3 && (
         <div>
           <SectionHeader title="産廃・スクラップ / Waste & Scrap" />
-          <p className="text-sm text-gray-400 mb-6">※ 産廃・スクラップがない場合はそのまま保存できます</p>
+          <p className="text-sm text-gray-400 mb-6">※ない場合はそのまま保存できます</p>
 
-          {/* 産廃 */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-400 mb-4">産廃処分費</label>
-            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">種類</label>
-                  <select id="waste-type-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
-                    <option value="">選択してください</option>
-                    {MASTER_DATA.wasteTypes.map((t) => <option key={t} value={t}>{t}</option>)}
-                    <option value="__custom__">その他（手入力）</option>
-                  </select>
-                  <input type="text" value={customWasteType} onChange={e => setCustomWasteType(e.target.value)}
-                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+          {/* ---- 産廃 ---- */}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">産廃処分費</p>
+          <RowTable headers={['種類','処分先','数量','単価','マニNo.','']} widths={['17%','17%','13%','13%','28%','12%']}>
+            {wasteItems.map((w,i) => (
+              <tr key={i}>
+                <RTd>{w.material}</RTd>
+                <RTd>{w.disposalSite}</RTd>
+                <RTd center>{w.quantity}{w.unit}</RTd>
+                <RTd right money>¥{formatCurrency(w.unitPrice)}</RTd>
+                <RTd>{w.manifestNumber}</RTd>
+                <RTd center><DelRowBtn onClick={() => setWasteItems(wasteItems.filter((_,j)=>j!==i))}/></RTd>
+              </tr>
+            ))}
+            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
+              <RTd input><select value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} className={rSel}><option value="">種類</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></RTd>
+              <RTd input><select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} className={rSel}><option value="">処分先</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></RTd>
+              <RTd input>
+                <div style={{display:'flex',gap:'2px'}}>
+                  <input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="数量" className={rInp} style={{width:'55%'}}/>
+                  <select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} className={rSel} style={{width:'45%'}}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">処分先</label>
-                  <select id="waste-disposal-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
-                    <option value="">選択してください</option>
-                    {projectInfo?.contractedDisposalSites?.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">数量</label>
-                    <input id="waste-quantity-input" type="number" step="0.1" placeholder="10" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">単位</label>
-                    <select id="waste-unit-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="㎥">
-                      <option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">単価</label>
-                  <input id="waste-price-input" type="number" placeholder="11000" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">マニフェスト番号</label>
-                  <input id="waste-manifest-input" type="text" placeholder="ABC123" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                </div>
-                <button onClick={() => {
-                  const typeSelect = document.getElementById('waste-type-select');
-                  let type = typeSelect.value === '__custom__' ? customWasteType : typeSelect.value;
-                  if (!type) { alert('種類を選択または入力してください'); return; }
-                  const disposal = document.getElementById('waste-disposal-select').value;
-                  const quantity = parseFloat(document.getElementById('waste-quantity-input').value);
-                  const unit = document.getElementById('waste-unit-select').value;
-                  const price = parseFloat(document.getElementById('waste-price-input').value);
-                  const manifest = document.getElementById('waste-manifest-input').value;
-                  if (!disposal || !quantity || !price || !manifest) { alert('すべての項目を入力してください'); return; }
-                  setWasteItems([...wasteItems, { material: type, disposalSite: disposal, quantity, unit, unitPrice: price, amount: quantity * price, manifestNumber: manifest }]);
-                  typeSelect.value = ''; setCustomWasteType(''); document.getElementById('waste-disposal-select').value = '';
-                  document.getElementById('waste-quantity-input').value = ''; document.getElementById('waste-unit-select').value = '㎥';
-                  document.getElementById('waste-price-input').value = ''; document.getElementById('waste-manifest-input').value = '';
-                }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
-              </div>
-            </div>
-            {wasteItems.length > 0 && (
-              <>
-                <div className="space-y-3 mb-4">
-                  {wasteItems.map((item, index) => (
-                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <p className="text-white text-base font-medium">{item.material} → {item.disposalSite}</p>
-                          <p className="text-sm text-gray-400">{item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(item.amount)}</p>
-                          <p className="text-xs text-gray-500 mt-1">マニフェスト: {item.manifestNumber}</p>
-                        </div>
-                        <button onClick={() => setWasteItems(wasteItems.filter((_,i)=>i!==index))}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors"><Trash2 className="w-5 h-5" /></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4 bg-black/50 rounded-lg">
-                  <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(wasteItems.reduce((s,i)=>s+i.amount,0))}</p>
-                </div>
-              </>
-            )}
-          </div>
+              </RTd>
+              <RTd input><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="単価" className={rInp}/></RTd>
+              <RTd input><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="マニNo." className={rInp}/></RTd>
+              <RTd center><AddRowBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.manifest}/></RTd>
+            </tr>
+          </RowTable>
+          <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount,0)} />
 
-          {/* スクラップ */}
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-400 mb-4">スクラップ売上</label>
-            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] mb-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">種類</label>
-                  <select id="scrap-type-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
-                    <option value="">選択してください</option>
-                    {MASTER_DATA.scrapTypes.map((t) => <option key={t} value={t}>{t}</option>)}
-                    <option value="__custom__">その他（手入力）</option>
-                  </select>
-                  <input type="text" value={customScrapType} onChange={e => setCustomScrapType(e.target.value)}
-                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
+          {/* ---- スクラップ ---- */}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">スクラップ売上</p>
+          <RowTable headers={['種類','買取業者','数量','単価','']} widths={['20%','22%','18%','18%','22%','']}>
+            {scrapItems.map((s,i) => (
+              <tr key={i}>
+                <RTd>{s.type}</RTd>
+                <RTd>{s.buyer}</RTd>
+                <RTd center>{s.quantity}{s.unit}</RTd>
+                <RTd right money>¥{formatCurrency(s.unitPrice)}</RTd>
+                <RTd center><DelRowBtn onClick={() => setScrapItems(scrapItems.filter((_,j)=>j!==i))}/></RTd>
+              </tr>
+            ))}
+            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
+              <RTd input><select value={scrapForm.type} onChange={e=>setScrapForm({...scrapForm,type:e.target.value})} className={rSel}><option value="">種類</option>{MASTER_DATA.scrapTypes.map(t=><option key={t}>{t}</option>)}</select></RTd>
+              <RTd input><select value={scrapForm.buyer} onChange={e=>setScrapForm({...scrapForm,buyer:e.target.value})} className={rSel}><option value="">買取業者</option>{MASTER_DATA.buyers.map(b=><option key={b}>{b}</option>)}</select></RTd>
+              <RTd input>
+                <div style={{display:'flex',gap:'2px'}}>
+                  <input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm({...scrapForm,qty:e.target.value})} placeholder="数量" className={rInp} style={{width:'55%'}}/>
+                  <select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} className={rSel} style={{width:'45%'}}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">買取業者</label>
-                  <select id="scrap-buyer-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="">
-                    <option value="">選択してください</option>
-                    {MASTER_DATA.buyers.map((b) => <option key={b} value={b}>{b}</option>)}
-                    <option value="__custom__">その他（手入力）</option>
-                  </select>
-                  <input type="text" value={customScrapBuyer} onChange={e => setCustomScrapBuyer(e.target.value)}
-                    placeholder="その他の場合ここに入力" className="w-full mt-2 px-4 py-4 bg-black border border-white/[0.06] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">数量</label>
-                    <input id="scrap-quantity-input" type="number" step="0.1" placeholder="120" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-2">単位</label>
-                    <select id="scrap-unit-select" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" defaultValue="kg">
-                      <option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">単価</label>
-                  <input id="scrap-price-input" type="number" placeholder="85" className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-                </div>
-                <button onClick={() => {
-                  const typeSelect = document.getElementById('scrap-type-select');
-                  let type = typeSelect.value === '__custom__' ? customScrapType : typeSelect.value;
-                  if (!type) { alert('種類を選択または入力してください'); return; }
-                  const buyerSelect = document.getElementById('scrap-buyer-select');
-                  let buyer = buyerSelect.value === '__custom__' ? customScrapBuyer : buyerSelect.value;
-                  if (!buyer) { alert('買取業者を選択または入力してください'); return; }
-                  const quantity = parseFloat(document.getElementById('scrap-quantity-input').value);
-                  const unit = document.getElementById('scrap-unit-select').value;
-                  const price = parseFloat(document.getElementById('scrap-price-input').value);
-                  if (!quantity || !price) { alert('数量と単価を入力してください'); return; }
-                  setScrapItems([...scrapItems, { type, buyer, quantity, unit, unitPrice: price, amount: -(quantity * price) }]);
-                  typeSelect.value = ''; buyerSelect.value = ''; setCustomScrapType(''); setCustomScrapBuyer('');
-                  document.getElementById('scrap-quantity-input').value = ''; document.getElementById('scrap-unit-select').value = 'kg';
-                  document.getElementById('scrap-price-input').value = '';
-                }} className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">登録</button>
-              </div>
-            </div>
-            {scrapItems.length > 0 && (
-              <>
-                <div className="space-y-3 mb-4">
-                  {scrapItems.map((item, index) => (
-                    <div key={index} className="rgba(255,255,255,0.02) rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <p className="text-white text-base font-medium">{item.type} → {item.buyer}</p>
-                          <p className="text-sm text-gray-400">{item.quantity}{item.unit} × ¥{formatCurrency(item.unitPrice)} = ¥{formatCurrency(Math.abs(item.amount))}</p>
-                        </div>
-                        <button onClick={() => setScrapItems(scrapItems.filter((_,i)=>i!==index))}
-                          className="p-2 text-red-400 hover:text-red-300 hover:bg-black rounded transition-colors"><Trash2 className="w-5 h-5" /></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-4 bg-black/50 rounded-lg">
-                  <p className="text-white text-xl font-semibold">小計: ¥{formatCurrency(Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0)))}</p>
-                </div>
-              </>
-            )}
-          </div>
+              </RTd>
+              <RTd input><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="単価" className={rInp}/></RTd>
+              <RTd center><AddRowBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price}/></RTd>
+            </tr>
+          </RowTable>
+          <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />
 
           <div className="mt-8 grid grid-cols-3 gap-3">
             <button onClick={() => setCurrentStep(2)} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">← 戻る</button>
@@ -1405,6 +1230,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     </div>
   );
 }
+
 
 // ========== ReportListPage ==========
 function ReportListPage({ reports, onDelete, onNavigate }) {

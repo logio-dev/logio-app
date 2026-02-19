@@ -938,7 +938,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [currentStep]);
 
   const handleCancel = () => { if (confirm('入力内容を破棄してホーム画面に戻りますか？')) onNavigate('home'); };
-  const isStep1Valid = () => report.date && ((report.recorder && report.recorder !== '__custom__') || report.customRecorder);
+  const isStep1Valid = () => report.date && report.recorder;
   const handleSave = async () => { onSave({ ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems }); };
 
   // 登録ハンドラ
@@ -1015,19 +1015,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-3">記入者 <span className="text-red-500">*</span></label>
-                <select value={report.recorder} onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === '__custom__') { setReport({...report, recorder: '__custom__', customRecorder: ''}); }
-                  else { setReport({...report, recorder: val, customRecorder: ''}); }
-                }} className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
+                <select value={report.recorder} onChange={(e) => setReport({...report, recorder: e.target.value, customRecorder: ''})}
+                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
                   <option value="">選択してください</option>
                   {MASTER_DATA.employees.map((name) => <option key={name} value={name}>{name}</option>)}
-                  <option value="__custom__">その他（手入力）</option>
                 </select>
-                {report.recorder === '__custom__' && (
-                  <input type="text" value={report.customRecorder} onChange={e => setReport({...report, customRecorder: e.target.value})}
-                    placeholder="記入者名を入力" className="w-full mt-2 px-4 py-4 bg-black border border-blue-500 text-white text-base rounded-lg focus:outline-none" autoFocus />
-                )}
               </div>
             </div>
           </div>
@@ -1193,7 +1185,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
           {/* ---- スクラップ ---- */}
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">スクラップ売上</p>
-          <RowTable headers={['種類','買取業者','数量','単価','']} widths={['20%','22%','18%','18%','22%','']}>
+          <RowTable headers={['種類','買取業者','数量','単価','']} widths={['20%','22%','20%','26%','12%']}>
             {scrapItems.map((s,i) => (
               <tr key={i}>
                 <RTd>{s.type}</RTd>
@@ -1808,7 +1800,11 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
   const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-  const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalWasteCost;
+  const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalWasteCost
+    + (parseFloat(projectInfo.transferCost) || 0)
+    + (parseFloat(projectInfo.leaseCost) || 0)
+    + (parseFloat(projectInfo.materialsCost) || 0)
+    + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const grossProfit = totalRevenue - totalCost + totalScrapRevenue;
 
   const fmtDate = (dateStr) => { if (!dateStr) return ''; const p = dateStr.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
@@ -1901,6 +1897,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                     ...(projectInfo.transferCost ? [['回送費', parseFloat(projectInfo.transferCost)]] : []),
                     ...(projectInfo.leaseCost ? [['リース費', parseFloat(projectInfo.leaseCost)]] : []),
                     ...(projectInfo.materialsCost ? [['資材費', parseFloat(projectInfo.materialsCost)]] : []),
+                    ...(projectInfo.expenses || []).map(e => [e.name, parseFloat(e.amount) || 0]),
                     ['金属売上', totalScrapRevenue],
                   ].map(([label, val]) => (
                     <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>

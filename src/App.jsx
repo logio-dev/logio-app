@@ -1592,6 +1592,49 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   };
 
   // ★ スプシ改善版エクスポート（契約処分先改行 + 追加費用セクション）
+  const handleExportMonthlyReport = async () => {
+    if (!gasUrl) { setExportStatus('❌ GAS URLを入力してください'); return; }
+    if (!selectedSite) { setExportStatus('❌ 現場を選択してください'); return; }
+
+    setExporting(true);
+    setExportStatus('📤 月報を更新中...');
+
+    try {
+      const siteData = {
+        siteName: selectedSite,
+        projectNumber: projectInfo.projectNumber || '',
+        projectName: projectInfo.projectName || '',
+        client: projectInfo.client || '',
+        workLocation: projectInfo.workLocation || '',
+        salesPerson: projectInfo.salesPerson || '',
+        siteManager: projectInfo.siteManager || '',
+        startDate: projectInfo.startDate || '',
+        endDate: projectInfo.endDate || '',
+        contractAmount: projectInfo.contractAmount || 0,
+        additionalAmount: projectInfo.additionalAmount || 0,
+        status: projectInfo.status || '',
+        transferCost: projectInfo.transferCost || 0,
+        leaseCost: projectInfo.leaseCost || 0,
+        materialsCost: projectInfo.materialsCost || 0,
+      };
+
+      await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'updateMonthlyReport', siteData, reportData: reports }),
+        mode: 'no-cors'
+      });
+
+      const now = new Date().toLocaleString('ja-JP');
+      setExportStatus(`✅ 月報を更新しました！（${now}）`);
+    } catch (error) {
+      setExportStatus('❌ 月報更新に失敗しました: ' + error.message);
+    } finally {
+      setExporting(false);
+      setTimeout(() => setExportStatus(''), 8000);
+    }
+  };
+
   const handleExportWorkReport = async () => {
     if (!gasUrl) { setExportStatus('❌ GAS URLを入力してください'); return; }
     if (!selectedSite) { setExportStatus('❌ 現場を選択してください'); return; }
@@ -1732,6 +1775,18 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
           <div className="text-xs text-gray-500">日報データ: {reports.length}件</div>
         </div>
       )}
+
+      <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-white mb-2">月報</h2>
+        <p className="text-gray-400 text-sm mb-4">全現場の月報シートにこの現場の情報を反映します。PROJECT NO.をキーに更新・追加されます。</p>
+        <button onClick={handleExportMonthlyReport} disabled={exporting || !gasUrl || !selectedSite}
+          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${
+            exporting || !gasUrl || !selectedSite ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-green-700 text-white hover:bg-green-600'
+          }`}>
+          <FileText className="w-5 h-5" />
+          {exporting ? '更新中...' : '月報を更新'}
+        </button>
+      </div>
 
       <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-white mb-2">解体作業日報</h2>

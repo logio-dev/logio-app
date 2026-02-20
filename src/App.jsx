@@ -850,6 +850,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
           <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status} onChange={(val) => setProjectInfo({...projectInfo, status: val})} />
           <TextInput label="排出事業者" labelEn="Discharger" value={projectInfo.discharger || ''} onChange={(val) => setProjectInfo({...projectInfo, discharger: val})} placeholder="株式会社LOGIO" required />
+          <TextInput label="運搬会社" labelEn="Transport Company" value={projectInfo.transportCompany || ''} onChange={(val) => setProjectInfo({...projectInfo, transportCompany: val})} placeholder="〇〇運送株式会社" />
 
           {/* 契約処分先 チェックボックス */}
           <div className="mb-6">
@@ -1611,6 +1612,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         additionalAmount: projectInfo.additionalAmount || 0,
         status: projectInfo.status || '',
         discharger: projectInfo.discharger || '',
+        transportCompany: projectInfo.transportCompany || '',
         contractedDisposalSites: projectInfo.contractedDisposalSites || [],
         transferCost: projectInfo.transferCost || 0,
         leaseCost: projectInfo.leaseCost || 0,

@@ -668,9 +668,9 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
-  const [showSiteList, setShowSiteList] = useState(false); // ★ デフォルト折りたたみ
-  // ★ 経費state
+  const [showSiteList, setShowSiteList] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
 
   const handleAddSite = () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
@@ -1364,6 +1364,7 @@ function ReportAccordion({ report, onDelete }) {
 
 // ========== ProjectPage ==========
 function ProjectPage({ projectInfo, onNavigate }) {
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
       <div className="mb-4">
@@ -1571,6 +1572,8 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [lastExport, setLastExport] = useState('');
+
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -2166,6 +2169,7 @@ export default function LOGIOApp() {
       await window.storage.set(`logio-project-${selectedSite}`, JSON.stringify(updatedInfo));
       setProjectInfo(updatedInfo);
       alert('✅ プロジェクト情報を保存しました');
+      window.scrollTo({ top: 0, behavior: 'instant' });
       setCurrentPage('home');
     } catch (error) { alert('❌ 保存に失敗しました'); }
   };
@@ -2219,6 +2223,7 @@ export default function LOGIOApp() {
   };
 
   const handleNavigate = (page) => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
     if (page === 'settings') { setShowPasswordModal(true); setPassword(''); }
     else setCurrentPage(page);
   };

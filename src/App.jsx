@@ -145,8 +145,8 @@ const getDayOfWeek = (dateStr) => {
 // ★ ヘッダー（DashboardSample準拠）
 function Header({ title, showMenuButton = false, onMenuClick }) {
   return (
-    <header className="bg-black px-5 py-4 flex items-center justify-between sticky top-0 z-40"
-      style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+    <header className="bg-black px-5 flex items-center justify-between sticky top-0 z-40"
+      style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingTop:'env(safe-area-inset-top, 16px)', paddingBottom:'12px' }}>
       <div className="flex items-center gap-3">
         {showMenuButton && (
           <button onClick={onMenuClick} className="transition-colors" style={{ color: 'rgba(255,255,255,0.6)' }}
@@ -331,7 +331,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
                 <X className="h-6 w-6 text-white" />
               </button>
             </div>
-            <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
+            <div className="flex-1 h-0 overflow-y-auto" style={{ paddingTop:'calc(env(safe-area-inset-top, 0px) + 20px)', paddingBottom:'16px' }}>
               <div className="flex items-center flex-shrink-0 px-4 mb-8">
                 <LOGIOLogo size="sm" />
               </div>
@@ -350,7 +350,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
                 })}
               </nav>
             </div>
-            <div className="p-4 border-t border-white/[0.06]">
+            <div className="border-t border-white/[0.06]" style={{ padding:'16px', paddingBottom:'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
               <button onClick={onLogout} className="w-full px-4 py-3 text-sm font-medium text-gray-300 hover:text-white transition-colors flex items-center gap-3 rounded-lg"
                 style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                 <LogOut className="h-5 w-5" />
@@ -922,303 +922,429 @@ const SubTotal = ({ label, value }) => value > 0 ? (
 
 function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [report, setReport] = useState({ date: new Date().toISOString().split('T')[0], weather: '', recorder: '', customRecorder: '' });
-  const [workDetails, setWorkDetails] = useState({ workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], costItems: [] });
-  const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
+  const [prevStep, setPrevStep] = useState(null);
+  const [report, setReport] = useState({ date: new Date().toISOString().split('T')[0], weather: '晴', recorder: '' });
+  const [workDetails, setWorkDetails] = useState({ workCategory: '解体', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [] });
+  const unitPrices = { daytime: 25000, nighttime: 35000, nightLoading: 25000, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
   const [wasteItems, setWasteItems] = useState([]);
   const [scrapItems, setScrapItems] = useState([]);
-
-  // 入力フォームstate（一行形式）
-  const [wForm, setWForm] = useState({ name:'', start:'', end:'', shift:'daytime' });
+  const [wForm, setWForm] = useState({ name:'', start:'08:00', end:'18:00', shift:'daytime' });
   const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime' });
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
   const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'' });
   const [scrapForm, setScrapForm] = useState({ type:'', buyer:'', qty:'', unit:'kg', price:'' });
+  const [showDone, setShowDone] = useState(false);
+  const [contentHistory, setContentHistory] = useState([]);
 
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [currentStep]);
+  // 施工内容履歴をstorageから読み込み
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await window.storage.get('logio-content-history');
+        if (r?.value) setContentHistory(JSON.parse(r.value));
+      } catch(e) {}
+    };
+    load();
+  }, []);
 
-  const handleCancel = () => { if (confirm('入力内容を破棄してホーム画面に戻りますか？')) onNavigate('home'); };
-  const isStep1Valid = () => report.date && report.recorder;
-  const handleSave = async () => { onSave({ ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems }); };
+  const saveContentHistory = async (val) => {
+    if (!val.trim()) return;
+    const items = val.split('・').map(s => s.trim()).filter(Boolean);
+    const merged = [...new Set([...items, ...contentHistory])].slice(0, 10);
+    setContentHistory(merged);
+    try { await window.storage.set('logio-content-history', JSON.stringify(merged)); } catch(e) {}
+  };
 
-  // 登録ハンドラ
+  const goStep = (n) => {
+    setPrevStep(currentStep);
+    setCurrentStep(n);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':'日勤';
+  const shiftBadgeStyle = s => s==='nighttime'?{background:'rgba(168,85,247,0.15)',color:'#c084fc'}:s==='nightLoading'?{background:'rgba(99,102,241,0.15)',color:'#818cf8'}:{background:'rgba(59,130,246,0.15)',color:'#60a5fa'};
+
   const addWorker = () => {
     if (!wForm.name||!wForm.start||!wForm.end) return;
-    const amount = wForm.shift==='nighttime'?unitPrices.inHouseNighttime:wForm.shift==='nightLoading'?unitPrices.inHouseNightLoading:unitPrices.inHouseDaytime;
-    setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm,amount}]});
-    setWForm({name:'',start:'',end:'',shift:'daytime'});
+    const amount = wForm.shift==='nighttime'?unitPrices.nighttime:wForm.shift==='nightLoading'?unitPrices.nightLoading:unitPrices.daytime;
+    setWorkDetails(d=>({...d, inHouseWorkers:[...d.inHouseWorkers,{...wForm,amount}]}));
+    setWForm(f=>({...f,name:''}));
   };
   const addOutsource = () => {
     if (!oForm.company||!oForm.count) return;
     const amount = parseInt(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime);
-    setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,amount}]});
-    setOForm({company:'',count:'',shift:'daytime'});
+    setWorkDetails(d=>({...d, outsourcingLabor:[...d.outsourcingLabor,{...oForm,amount}]}));
+    setOForm(f=>({...f,company:'',count:''}));
   };
   const addVehicle = () => {
     if (!vForm.type||!vForm.number) return;
-    setWorkDetails({...workDetails, vehicles:[...workDetails.vehicles,{...vForm,amount:VEHICLE_UNIT_PRICES[vForm.type]||0}]});
+    setWorkDetails(d=>({...d, vehicles:[...d.vehicles,{...vForm,amount:VEHICLE_UNIT_PRICES[vForm.type]||0}]}));
     setVForm({type:'',number:''});
   };
   const addMachinery = () => {
     if (!mForm.type||!mForm.price) return;
-    setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)}]});
+    setWorkDetails(d=>({...d, machinery:[...d.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)}]}));
     setMForm({type:'',price:''});
   };
   const addWaste = () => {
-    if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.manifest) return;
+    if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price) return;
     const qty=parseFloat(wasteForm.qty), price=parseFloat(wasteForm.price);
-    setWasteItems([...wasteItems,{material:wasteForm.type,disposalSite:wasteForm.disposal,quantity:qty,unit:wasteForm.unit,unitPrice:price,amount:qty*price,manifestNumber:wasteForm.manifest}]);
-    setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:''});
+    setWasteItems(w=>[...w,{material:wasteForm.type,disposalSite:wasteForm.disposal,quantity:qty,unit:wasteForm.unit,unitPrice:price,amount:qty*price,manifestNumber:wasteForm.manifest}]);
+    setWasteForm(f=>({...f,type:'',disposal:'',qty:'',price:'',manifest:''}));
   };
   const addScrap = () => {
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price) return;
     const qty=parseFloat(scrapForm.qty), price=parseFloat(scrapForm.price);
-    setScrapItems([...scrapItems,{type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:price,amount:-(qty*price)}]);
-    setScrapForm({type:'',buyer:'',qty:'',unit:'kg',price:''});
+    setScrapItems(s=>[...s,{type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:price,amount:-(qty*price)}]);
+    setScrapForm(f=>({...f,type:'',buyer:'',qty:'',price:''}));
+  };
+  const handleSave = async () => {
+    await saveContentHistory(workDetails.workContent);
+    setShowDone(true);
+    onSave({ ...report, workDetails, wasteItems, scrapItems });
   };
 
-  const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':'日勤';
-  const shiftColor = s => s==='nighttime'?'#8B5CF6':s==='nightLoading'?'#6366F1':'#3B82F6';
+  // 共通スタイル
+  const fieldBase = { background:'#0a0a0a', border:'1px solid #1a1a1a', color:'#f3f4f6', fontSize:'14px', padding:'10px 12px', borderRadius:'8px', outline:'none', width:'100%', fontFamily:'inherit', WebkitAppearance:'none', appearance:'none' };
+  const secLabel = { fontSize:'10px', fontWeight:700, color:'#4b5563', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'10px', display:'flex', alignItems:'center' };
+  const listWrap = { background:'#080808', border:'1px solid #141414', borderRadius:'12px', overflow:'hidden', marginBottom:'8px' };
+  const listItem = { display:'flex', alignItems:'center', padding:'11px 13px', gap:'10px', borderBottom:'1px solid #0d0d0d' };
+  const avatar = { width:30, height:30, borderRadius:'50%', background:'#1f2937', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'11px', fontWeight:700, color:'#9ca3af', flexShrink:0 };
+  const inputCard = { background:'rgba(37,99,235,0.04)', border:'1px solid rgba(59,130,246,0.12)', borderRadius:'12px', padding:'14px', marginTop:'6px' };
+  const g2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'8px' };
+  const g3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'8px' };
+  const g1 = { display:'grid', gridTemplateColumns:'1fr', marginBottom:'8px' };
+  const addBtn = { width:'100%', padding:'10px', background:'transparent', border:'1px dashed #1f2937', color:'#4b5563', borderRadius:'8px', fontSize:'13px', cursor:'pointer', marginTop:'4px' };
+  const fLabel = { fontSize:'9px', fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', display:'block', marginBottom:'5px' };
 
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen relative pb-24">
-      <button onClick={() => onNavigate('home')}
-        className="fixed right-6 bottom-6 z-50 w-14 h-14 bg-black/80 hover:bg-black border-2 border-white rounded-full flex items-center justify-center shadow-lg transition-all"
-        style={{ backdropFilter: 'blur(10px)' }}>
-        <X className="w-6 h-6 text-white" />
-      </button>
-
-      <div className="mb-6 flex items-center justify-center gap-2">
-        {[1, 2, 3].map((step) => (
-          <div key={step} className={`w-3 h-3 rounded-full ${step === currentStep ? 'bg-blue-500' : step < currentStep ? 'bg-blue-300' : 'bg-gray-700'}`} />
+  // ステップバー
+  const StepBar = () => (
+    <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(0,0,0,0.9)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px 10px' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px' }}>
+        <span style={{ fontSize:'16px', fontWeight:700 }}>日報入力</span>
+        <button onClick={() => { if (confirm('入力を破棄しますか？')) onNavigate('home'); }} style={{ color:'#4b5563', background:'none', border:'none', cursor:'pointer', fontSize:'22px', lineHeight:1 }}>×</button>
+      </div>
+      <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'8px', marginBottom:'4px' }}>
+        {[1,2,3].map(i => (
+          <div key={i} style={{
+            width: i === currentStep ? '20px' : '8px',
+            height:'8px', borderRadius:'4px',
+            background: i < currentStep ? '#22c55e' : i === currentStep ? '#3b82f6' : '#1f2937',
+            transition:'all 0.35s cubic-bezier(0.4,0,0.2,1)',
+          }} />
         ))}
       </div>
+    </div>
+  );
+
+  // フッターボタン
+  const Footer = ({ onBack, onNext, nextLabel='次へ →', nextColor='#2563eb', disabled=false }) => (
+    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'672px', background:'rgba(0,0,0,0.92)', backdropFilter:'blur(20px)', borderTop:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px', paddingBottom:'calc(12px + env(safe-area-inset-bottom))', display:'flex', gap:'10px', zIndex:39 }}>
+      {onBack && <button onClick={onBack} style={{ flex:1, padding:'13px', background:'#0a0a0a', border:'1px solid #1a1a1a', color:'#6b7280', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>← 戻る</button>}
+      <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'13px', background: disabled ? '#1f2937' : nextColor, color: disabled ? '#4b5563' : 'white', border:'none', borderRadius:'10px', fontSize:'14px', fontWeight:700, cursor: disabled ? 'not-allowed' : 'pointer' }}>{nextLabel}</button>
+    </div>
+  );
+
+  // リストアイテム
+  const ListItem = ({ children, last=false }) => (
+    <div style={{ ...listItem, borderBottom: last ? 'none' : '1px solid #0d0d0d' }}>{children}</div>
+  );
+
+  return (
+    <div style={{ background:'#000', minHeight:'100vh' }}>
+      <StepBar />
+
+      <div style={{ padding:'16px 16px 100px' }}>
 
       {/* ===== Step 1: 基本情報 ===== */}
       {currentStep === 1 && (
         <div>
-          <SectionHeader title="基本情報 / Basic Info" />
-          <div className="mb-8 rounded-lg p-4 border border-white/[0.08]" style={{ background: 'rgba(255,255,255,0.02)' }}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-3">作業日 <span className="text-red-500">*</span></label>
-                <input type="date" value={report.date} onChange={(e) => setReport({...report, date: e.target.value})}
-                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-3">天候 <span className="text-red-500">*</span></label>
-                <select value={report.weather} onChange={(e) => setReport({...report, weather: e.target.value})}
-                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
-                  <option value="">選択してください</option>
-                  {MASTER_DATA.weather.map((w) => <option key={w} value={w}>{w}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-3">記入者 <span className="text-red-500">*</span></label>
-                <select value={report.recorder} onChange={(e) => setReport({...report, recorder: e.target.value, customRecorder: ''})}
-                  className="w-full px-4 py-4 bg-black border border-white/[0.08] text-white text-base rounded-lg focus:outline-none focus:border-blue-500">
-                  <option value="">選択してください</option>
-                  {MASTER_DATA.employees.map((name) => <option key={name} value={name}>{name}</option>)}
+          <div style={{ marginBottom:'22px' }}>
+            <div style={secLabel}>基本情報 <span style={{fontSize:'9px',color:'#374151',fontWeight:600,letterSpacing:'0.06em',marginLeft:'4px'}}>/ BASIC INFO</span><span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'8px' }} /></div>
+            <div style={g2}>
+              <div><label style={fLabel}>日付</label><input type="date" value={report.date} onChange={e=>setReport(r=>({...r,date:e.target.value}))} style={fieldBase} /></div>
+              <div><label style={fLabel}>天候</label>
+                <select value={report.weather} onChange={e=>setReport(r=>({...r,weather:e.target.value}))} style={fieldBase}>
+                  {MASTER_DATA.weather.map(w=><option key={w}>{w}</option>)}
                 </select>
               </div>
             </div>
+            <div style={g1}><div><label style={fLabel}>記入者 <span style={{color:'#f87171'}}>*</span></label>
+              <select value={report.recorder} onChange={e=>setReport(r=>({...r,recorder:e.target.value}))} style={fieldBase}>
+                <option value="">選択してください</option>
+                {MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}
+              </select>
+            </div></div>
           </div>
-          <div className="mt-8 grid grid-cols-2 gap-4">
-            <button onClick={handleCancel} className="py-4 px-4 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
-            <button onClick={() => setCurrentStep(2)} disabled={!isStep1Valid()}
-              className="py-4 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors font-medium text-base">次へ</button>
+
+          <div style={{ marginBottom:'22px' }}>
+            <div style={secLabel}>施工情報 <span style={{fontSize:'9px',color:'#374151',fontWeight:600,letterSpacing:'0.06em',marginLeft:'4px'}}>/ WORK INFO</span><span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'8px' }} /></div>
+            <div style={{...g1, marginBottom:'8px'}}><div><label style={fLabel}>区分</label>
+              <select value={workDetails.workCategory} onChange={e=>setWorkDetails(d=>({...d,workCategory:e.target.value}))} style={fieldBase}>
+                {MASTER_DATA.workCategories.map(c=><option key={c}>{c}</option>)}
+              </select>
+            </div></div>
+            <div><label style={fLabel}>施工内容</label>
+              <textarea value={workDetails.workContent} onChange={e=>setWorkDetails(d=>({...d,workContent:e.target.value}))} placeholder="施工内容を入力..." style={{...fieldBase, minHeight:'68px', lineHeight:1.5, resize:'none'}} />
+              {contentHistory.length > 0 && (
+                <>
+                  <div style={{ fontSize:'9px', color:'#374151', margin:'8px 0 5px', display:'flex', alignItems:'center', gap:'4px' }}>⏱ 最近の入力</div>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:'5px' }}>
+                    {contentHistory.map((t,i) => (
+                      <span key={i} onClick={() => setWorkDetails(d=>({...d, workContent: d.workContent ? d.workContent + '・' + t : t}))}
+                        style={{ fontSize:'11px', color:'#6b7280', background:'#0d0d0d', border:'1px solid #1a1a1a', padding:'4px 10px', borderRadius:'20px', cursor:'pointer' }}>{t}</span>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+
+          <Footer onNext={() => goStep(2)} disabled={!report.date || !report.recorder} />
         </div>
       )}
 
-      {/* ===== Step 2: 原価明細 ===== */}
+      {/* ===== Step 2: 作業詳細 ===== */}
       {currentStep === 2 && (
         <div>
-          <SectionHeader title="原価明細 / Cost Details" />
-
-          {/* 施工内容 */}
-          <div className="mb-6 rounded-lg p-4 border border-white/[0.08]" style={{ background: 'rgba(255,255,255,0.02)' }}>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">区分</label>
-                <select value={workDetails.workCategory} onChange={(e) => setWorkDetails({...workDetails, workCategory: e.target.value})}
-                  className="w-full px-3 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-lg focus:outline-none focus:border-blue-500">
-                  <option value="">選択</option>
-                  {MASTER_DATA.workCategories.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+          {/* 自社人工 */}
+          <div style={{ marginBottom:'22px' }}>
+            <div style={secLabel}>自社人工 <span style={{fontSize:'9px',color:'#374151',fontWeight:600,letterSpacing:'0.06em',marginLeft:'4px'}}>/ IN-HOUSE LABOR</span><span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'8px' }} /></div>
+            {workDetails.inHouseWorkers.length > 0 && (
+              <div style={listWrap}>
+                {workDetails.inHouseWorkers.map((w,i) => (
+                  <ListItem key={i} last={i===workDetails.inHouseWorkers.length-1}>
+                    <div style={{...avatar}}>{w.name[0]}</div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:'13px', fontWeight:600, color:'#e5e7eb' }}>{w.name} <span style={{ fontSize:'9px', padding:'2px 6px', borderRadius:'4px', fontWeight:700, ...shiftBadgeStyle(w.shift) }}>{shiftLabel(w.shift)}</span></div>
+                      <div style={{ fontSize:'11px', color:'#6b7280', marginTop:'1px' }}>{w.start} → {w.end}</div>
+                    </div>
+                    <div style={{ fontSize:'13px', fontWeight:700, color:'#60a5fa' }}>¥{formatCurrency(w.amount)}</div>
+                    <span onClick={() => setWorkDetails(d=>({...d,inHouseWorkers:d.inHouseWorkers.filter((_,j)=>j!==i)}))} style={{ color:'#2d2d2d', cursor:'pointer', fontSize:'18px', padding:'2px 4px' }}>×</span>
+                  </ListItem>
+                ))}
               </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">内容</label>
-                <input type="text" placeholder="施工内容" value={workDetails.workContent}
-                  onChange={(e) => setWorkDetails({...workDetails, workContent: e.target.value})}
-                  className="w-full px-3 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-lg focus:outline-none focus:border-blue-500" />
+            )}
+            <div style={inputCard}>
+              <div style={{ fontSize:'10px', fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px' }}>＋ 人工を追加</div>
+              <div style={g2}>
+                <div><label style={fLabel}>氏名</label><select value={wForm.name} onChange={e=>setWForm(f=>({...f,name:e.target.value}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}</select></div>
+                <div><label style={fLabel}>区分</label><select value={wForm.shift} onChange={e=>setWForm(f=>({...f,shift:e.target.value}))} style={fieldBase}><option value="daytime">日勤</option><option value="nighttime">夜間</option><option value="nightLoading">夜積</option></select></div>
               </div>
+              <div style={g2}>
+                <div><label style={fLabel}>開始</label><input type="time" value={wForm.start} onChange={e=>setWForm(f=>({...f,start:e.target.value}))} style={fieldBase} /></div>
+                <div><label style={fLabel}>終了</label><input type="time" value={wForm.end} onChange={e=>setWForm(f=>({...f,end:e.target.value}))} style={fieldBase} /></div>
+              </div>
+              <button onClick={addWorker} style={addBtn}>＋ 追加</button>
             </div>
           </div>
 
-          {/* ---- 自社人工 ---- */}
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">自社人工</p>
-          <RowTable headers={['氏名','開始','終了','区分','金額','']} widths={['24%','13%','13%','17%','22%','11%']}>
-            {workDetails.inHouseWorkers.map((w,i) => (
-              <tr key={i}>
-                <RTd>{w.name}</RTd>
-                <RTd center>{w.start}</RTd>
-                <RTd center>{w.end}</RTd>
-                <RTd center><span style={{fontSize:'9px',padding:'2px 4px',borderRadius:'3px',background:`${shiftColor(w.shift)}22`,color:shiftColor(w.shift),fontWeight:'600'}}>{shiftLabel(w.shift)}</span></RTd>
-                <RTd right money>¥{formatCurrency(w.amount)}</RTd>
-                <RTd center><DelRowBtn onClick={() => setWorkDetails({...workDetails, inHouseWorkers: workDetails.inHouseWorkers.filter((_,j)=>j!==i)})}/></RTd>
-              </tr>
-            ))}
-            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
-              <RTd input><select value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})} className={rSel}><option value="">氏名</option>{MASTER_DATA.inHouseWorkers.map(n=><option key={n}>{n}</option>)}</select></RTd>
-              <RTd input><select value={wForm.start} onChange={e=>setWForm({...wForm,start:e.target.value})} className={rSel}><option value="">開始</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t}>{t}</option>)}</select></RTd>
-              <RTd input><select value={wForm.end} onChange={e=>setWForm({...wForm,end:e.target.value})} className={rSel}><option value="">終了</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t}>{t}</option>)}</select></RTd>
-              <RTd input><select value={wForm.shift} onChange={e=>setWForm({...wForm,shift:e.target.value})} className={rSel}><option value="daytime">日勤</option><option value="nighttime">夜間</option><option value="nightLoading">夜積</option></select></RTd>
-              <RTd right><span style={{fontSize:'10px',color:'#60A5FA'}}>¥{formatCurrency(wForm.shift==='nighttime'?unitPrices.inHouseNighttime:wForm.shift==='nightLoading'?unitPrices.inHouseNightLoading:unitPrices.inHouseDaytime)}</span></RTd>
-              <RTd center><AddRowBtn onClick={addWorker} disabled={!wForm.name||!wForm.start||!wForm.end}/></RTd>
-            </tr>
-          </RowTable>
-          <SubTotal label="自社人工" value={workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0)} />
-
-          {/* ---- 外注人工 ---- */}
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">外注人工</p>
-          <RowTable headers={['会社名','人数','区分','金額','']} widths={['30%','14%','20%','25%','11%']}>
-            {workDetails.outsourcingLabor.map((o,i) => (
-              <tr key={i}>
-                <RTd>{o.company}</RTd>
-                <RTd center>{o.count}人</RTd>
-                <RTd center><span style={{fontSize:'9px',padding:'2px 4px',borderRadius:'3px',background:`${shiftColor(o.shift)}22`,color:shiftColor(o.shift),fontWeight:'600'}}>{shiftLabel(o.shift)}</span></RTd>
-                <RTd right money>¥{formatCurrency(o.amount)}</RTd>
-                <RTd center><DelRowBtn onClick={() => setWorkDetails({...workDetails, outsourcingLabor: workDetails.outsourcingLabor.filter((_,j)=>j!==i)})}/></RTd>
-              </tr>
-            ))}
-            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
-              <RTd input><select value={oForm.company} onChange={e=>setOForm({...oForm,company:e.target.value})} className={rSel}><option value="">会社名</option>{MASTER_DATA.outsourcingCompanies.map(c=><option key={c}>{c}</option>)}</select></RTd>
-              <RTd input><input type="number" min="1" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="人数" className={rInp}/></RTd>
-              <RTd input><select value={oForm.shift} onChange={e=>setOForm({...oForm,shift:e.target.value})} className={rSel}><option value="daytime">日勤</option><option value="nighttime">夜間</option></select></RTd>
-              <RTd right><span style={{fontSize:'10px',color:'#60A5FA'}}>{oForm.count?`¥${formatCurrency(parseInt(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}`:'-'}</span></RTd>
-              <RTd center><AddRowBtn onClick={addOutsource} disabled={!oForm.company||!oForm.count}/></RTd>
-            </tr>
-          </RowTable>
-          <SubTotal label="外注人工" value={workDetails.outsourcingLabor.reduce((s,o)=>s+o.amount,0)} />
-
-          {/* ---- 車両 ---- */}
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">車両</p>
-          <RowTable headers={['車種','車番','金額','']} widths={['30%','28%','30%','12%']}>
-            {workDetails.vehicles.map((v,i) => (
-              <tr key={i}>
-                <RTd>{v.type}</RTd>
-                <RTd center>{v.number}</RTd>
-                <RTd right money>¥{formatCurrency(v.amount)}</RTd>
-                <RTd center><DelRowBtn onClick={() => setWorkDetails({...workDetails, vehicles: workDetails.vehicles.filter((_,j)=>j!==i)})}/></RTd>
-              </tr>
-            ))}
-            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
-              <RTd input><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:''})} className={rSel}><option value="">車種</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></RTd>
-              <RTd input><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} className={rSel}><option value="">車番</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></RTd>
-              <RTd right><span style={{fontSize:'10px',color:'#60A5FA'}}>{vForm.type?`¥${formatCurrency(VEHICLE_UNIT_PRICES[vForm.type]||0)}`:'-'}</span></RTd>
-              <RTd center><AddRowBtn onClick={addVehicle} disabled={!vForm.type||!vForm.number}/></RTd>
-            </tr>
-          </RowTable>
-          <SubTotal label="車両" value={workDetails.vehicles.reduce((s,v)=>s+v.amount,0)} />
-
-          {/* ---- 重機 ---- */}
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">重機</p>
-          <RowTable headers={['機種','単価','']} widths={['50%','38%','12%']}>
-            {workDetails.machinery.map((m,i) => (
-              <tr key={i}>
-                <RTd>{m.type}</RTd>
-                <RTd right money>¥{formatCurrency(m.unitPrice)}</RTd>
-                <RTd center><DelRowBtn onClick={() => setWorkDetails({...workDetails, machinery: workDetails.machinery.filter((_,j)=>j!==i)})}/></RTd>
-              </tr>
-            ))}
-            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
-              <RTd input><select value={mForm.type} onChange={e=>setMForm({...mForm,type:e.target.value})} className={rSel}><option value="">機種</option>{MASTER_DATA.heavyMachinery.map(m=><option key={m}>{m}</option>)}</select></RTd>
-              <RTd input><input type="number" value={mForm.price} onChange={e=>setMForm({...mForm,price:e.target.value})} placeholder="単価" className={rInp}/></RTd>
-              <RTd center><AddRowBtn onClick={addMachinery} disabled={!mForm.type||!mForm.price}/></RTd>
-            </tr>
-          </RowTable>
-          <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />
-
-          <div className="mt-8 grid grid-cols-3 gap-3">
-            <button onClick={() => setCurrentStep(1)} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">← 戻る</button>
-            <button onClick={handleCancel} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
-            <button onClick={() => setCurrentStep(3)} className="py-4 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-base">次へ →</button>
+          {/* 外注人工 */}
+          <div style={{ marginBottom:'22px' }}>
+            <div style={secLabel}>外注人工 <span style={{fontSize:'9px',color:'#374151',fontWeight:600,letterSpacing:'0.06em',marginLeft:'4px'}}>/ OUTSOURCING</span><span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'8px' }} /></div>
+            {workDetails.outsourcingLabor.length > 0 && (
+              <div style={listWrap}>
+                {workDetails.outsourcingLabor.map((o,i) => (
+                  <ListItem key={i} last={i===workDetails.outsourcingLabor.length-1}>
+                    <div style={{...avatar, background:'rgba(245,158,11,0.1)', color:'#f59e0b', fontSize:'9px'}}>外注</div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:'13px', fontWeight:600, color:'#e5e7eb' }}>{o.company}</div>
+                      <div style={{ fontSize:'11px', color:'#6b7280', marginTop:'1px' }}>{o.count}人 · {shiftLabel(o.shift)}</div>
+                    </div>
+                    <div style={{ fontSize:'13px', fontWeight:700, color:'#60a5fa' }}>¥{formatCurrency(o.amount)}</div>
+                    <span onClick={() => setWorkDetails(d=>({...d,outsourcingLabor:d.outsourcingLabor.filter((_,j)=>j!==i)}))} style={{ color:'#2d2d2d', cursor:'pointer', fontSize:'18px', padding:'2px 4px' }}>×</span>
+                  </ListItem>
+                ))}
+              </div>
+            )}
+            <div style={inputCard}>
+              <div style={{ fontSize:'10px', fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px' }}>＋ 外注を追加</div>
+              <div style={g2}>
+                <div><label style={fLabel}>会社</label><select value={oForm.company} onChange={e=>setOForm(f=>({...f,company:e.target.value}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.subcontractors.map(c=><option key={c}>{c}</option>)}</select></div>
+                <div><label style={fLabel}>区分</label><select value={oForm.shift} onChange={e=>setOForm(f=>({...f,shift:e.target.value}))} style={fieldBase}><option value="daytime">日勤</option><option value="nighttime">夜間</option></select></div>
+              </div>
+              <div style={g1}><div><label style={fLabel}>人数</label><input type="number" value={oForm.count} onChange={e=>setOForm(f=>({...f,count:e.target.value}))} placeholder="0" inputMode="numeric" style={fieldBase} /></div></div>
+              <button onClick={addOutsource} style={addBtn}>＋ 追加</button>
+            </div>
           </div>
+
+          {/* 車両 */}
+          <div style={{ marginBottom:'22px' }}>
+            <div style={secLabel}>車両 <span style={{fontSize:'9px',color:'#374151',fontWeight:600,letterSpacing:'0.06em',marginLeft:'4px'}}>/ VEHICLES</span><span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'8px' }} /></div>
+            {workDetails.vehicles.length > 0 && (
+              <div style={listWrap}>
+                {workDetails.vehicles.map((v,i) => (
+                  <ListItem key={i} last={i===workDetails.vehicles.length-1}>
+                    <div style={{...avatar, fontSize:'9px'}}>{v.type}</div>
+                    <div style={{ flex:1 }}><div style={{ fontSize:'13px', fontWeight:600, color:'#e5e7eb' }}>{v.type}ダンプ <span style={{ color:'#6b7280' }}>· {v.number}</span></div></div>
+                    <span onClick={() => setWorkDetails(d=>({...d,vehicles:d.vehicles.filter((_,j)=>j!==i)}))} style={{ color:'#2d2d2d', cursor:'pointer', fontSize:'18px', padding:'2px 4px' }}>×</span>
+                  </ListItem>
+                ))}
+              </div>
+            )}
+            <div style={inputCard}>
+              <div style={{ fontSize:'10px', fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px' }}>＋ 車両を追加</div>
+              <div style={g2}>
+                <div><label style={fLabel}>車種</label><select value={vForm.type} onChange={e=>setVForm(f=>({...f,type:e.target.value,number:''}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.vehicleTypes.map(t=><option key={t}>{t}</option>)}</select></div>
+                <div><label style={fLabel}>車番</label><select value={vForm.number} onChange={e=>setVForm(f=>({...f,number:e.target.value}))} style={fieldBase}><option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></div>
+              </div>
+              <button onClick={addVehicle} style={addBtn}>＋ 追加</button>
+            </div>
+          </div>
+
+          {/* 重機 */}
+          <div style={{ marginBottom:'22px' }}>
+            <div style={secLabel}>重機 <span style={{fontSize:'9px',color:'#374151',fontWeight:600,letterSpacing:'0.06em',marginLeft:'4px'}}>/ MACHINERY</span><span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'8px' }} /></div>
+            {workDetails.machinery.length > 0 && (
+              <div style={listWrap}>
+                {workDetails.machinery.map((m,i) => (
+                  <ListItem key={i} last={i===workDetails.machinery.length-1}>
+                    <div style={{ flex:1 }}><div style={{ fontSize:'13px', color:'#e5e7eb' }}>{m.type}</div></div>
+                    <div style={{ fontSize:'13px', fontWeight:700, color:'#60a5fa' }}>¥{formatCurrency(m.unitPrice)}</div>
+                    <span onClick={() => setWorkDetails(d=>({...d,machinery:d.machinery.filter((_,j)=>j!==i)}))} style={{ color:'#2d2d2d', cursor:'pointer', fontSize:'18px', padding:'2px 4px' }}>×</span>
+                  </ListItem>
+                ))}
+              </div>
+            )}
+            <div style={inputCard}>
+              <div style={{ fontSize:'10px', fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px' }}>＋ 重機を追加</div>
+              <div style={g2}>
+                <div><label style={fLabel}>機種</label><select value={mForm.type} onChange={e=>setMForm(f=>({...f,type:e.target.value}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.heavyMachinery.map(m=><option key={m}>{m}</option>)}</select></div>
+                <div><label style={fLabel}>単価</label><input type="number" value={mForm.price} onChange={e=>setMForm(f=>({...f,price:e.target.value}))} placeholder="0" inputMode="decimal" style={fieldBase} /></div>
+              </div>
+              <button onClick={addMachinery} style={addBtn}>＋ 追加</button>
+            </div>
+          </div>
+
+          <Footer onBack={() => goStep(1)} onNext={() => goStep(3)} />
         </div>
       )}
 
       {/* ===== Step 3: 産廃・スクラップ ===== */}
       {currentStep === 3 && (
         <div>
-          <SectionHeader title="産廃・スクラップ / Waste & Scrap" />
-          <p className="text-sm text-gray-400 mb-6">※ない場合はそのまま保存できます</p>
-
-          {/* ---- 産廃 ---- */}
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">産廃処分費</p>
-          <RowTable headers={['種類','処分先','数量','単価','マニNo.','']} widths={['17%','17%','13%','13%','28%','12%']}>
-            {wasteItems.map((w,i) => (
-              <tr key={i}>
-                <RTd>{w.material}</RTd>
-                <RTd>{w.disposalSite}</RTd>
-                <RTd center>{w.quantity}{w.unit}</RTd>
-                <RTd right money>¥{formatCurrency(w.unitPrice)}</RTd>
-                <RTd>{w.manifestNumber}</RTd>
-                <RTd center><DelRowBtn onClick={() => setWasteItems(wasteItems.filter((_,j)=>j!==i))}/></RTd>
-              </tr>
-            ))}
-            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
-              <RTd input><select value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} className={rSel}><option value="">種類</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></RTd>
-              <RTd input><select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} className={rSel}><option value="">処分先</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></RTd>
-              <RTd input>
-                <div style={{display:'flex',gap:'2px'}}>
-                  <input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="数量" className={rInp} style={{width:'55%'}}/>
-                  <select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} className={rSel} style={{width:'45%'}}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select>
-                </div>
-              </RTd>
-              <RTd input><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="単価" className={rInp}/></RTd>
-              <RTd input><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="マニNo." className={rInp}/></RTd>
-              <RTd center><AddRowBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.manifest}/></RTd>
-            </tr>
-          </RowTable>
-          <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount,0)} />
-
-          {/* ---- スクラップ ---- */}
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">スクラップ売上</p>
-          <RowTable headers={['種類','買取業者','数量','単価','']} widths={['20%','22%','20%','26%','12%']}>
-            {scrapItems.map((s,i) => (
-              <tr key={i}>
-                <RTd>{s.type}</RTd>
-                <RTd>{s.buyer}</RTd>
-                <RTd center>{s.quantity}{s.unit}</RTd>
-                <RTd right money>¥{formatCurrency(s.unitPrice)}</RTd>
-                <RTd center><DelRowBtn onClick={() => setScrapItems(scrapItems.filter((_,j)=>j!==i))}/></RTd>
-              </tr>
-            ))}
-            <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
-              <RTd input><select value={scrapForm.type} onChange={e=>setScrapForm({...scrapForm,type:e.target.value})} className={rSel}><option value="">種類</option>{MASTER_DATA.scrapTypes.map(t=><option key={t}>{t}</option>)}</select></RTd>
-              <RTd input><select value={scrapForm.buyer} onChange={e=>setScrapForm({...scrapForm,buyer:e.target.value})} className={rSel}><option value="">買取業者</option>{MASTER_DATA.buyers.map(b=><option key={b}>{b}</option>)}</select></RTd>
-              <RTd input>
-                <div style={{display:'flex',gap:'2px'}}>
-                  <input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm({...scrapForm,qty:e.target.value})} placeholder="数量" className={rInp} style={{width:'55%'}}/>
-                  <select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} className={rSel} style={{width:'45%'}}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select>
-                </div>
-              </RTd>
-              <RTd input><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="単価" className={rInp}/></RTd>
-              <RTd center><AddRowBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price}/></RTd>
-            </tr>
-          </RowTable>
-          <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />
-
-          <div className="mt-8 grid grid-cols-3 gap-3">
-            <button onClick={() => setCurrentStep(2)} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">← 戻る</button>
-            <button onClick={handleCancel} className="py-4 px-3 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-base">キャンセル</button>
-            <button onClick={handleSave} className="py-4 px-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-base flex items-center justify-center gap-2">
-              <Save className="w-5 h-5" />保存
-            </button>
+          {/* 産廃 */}
+          <div style={{ marginBottom:'22px' }}>
+            <div style={secLabel}>産廃処分費 <span style={{fontSize:'9px',color:'#374151',fontWeight:600,letterSpacing:'0.06em',marginLeft:'4px'}}>/ WASTE DISPOSAL</span><span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'8px' }} /></div>
+            {wasteItems.length > 0 && (
+              <div style={listWrap}>
+                {wasteItems.map((w,i) => (
+                  <div key={i} style={{ padding:'11px 13px', borderBottom: i===wasteItems.length-1?'none':'1px solid #0d0d0d' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:'7px', marginBottom:'3px' }}>
+                      <span style={{ fontSize:'10px', fontWeight:700, background:'#1a1a1a', color:'#9ca3af', padding:'2px 7px', borderRadius:'4px' }}>{w.material}</span>
+                      <span style={{ fontSize:'12px', color:'#d1d5db', flex:1 }}>{w.disposalSite}</span>
+                      <span onClick={() => setWasteItems(wasteItems.filter((_,j)=>j!==i))} style={{ color:'#2d2d2d', cursor:'pointer', fontSize:'18px' }}>×</span>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between' }}>
+                      <span style={{ fontSize:'11px', color:'#4b5563' }}>{w.quantity}{w.unit} × ¥{formatCurrency(w.unitPrice)} {w.manifestNumber && `· ${w.manifestNumber}`}</span>
+                      <span style={{ fontSize:'13px', fontWeight:700, color:'#f59e0b' }}>¥{formatCurrency(w.amount)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {wasteItems.length > 0 && (
+              <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 2px', marginBottom:'8px' }}>
+                <span style={{ fontSize:'10px', color:'#4b5563' }}>産廃小計</span>
+                <span style={{ fontSize:'14px', fontWeight:700, color:'#60a5fa' }}>¥{formatCurrency(wasteItems.reduce((s,w)=>s+w.amount,0))}</span>
+              </div>
+            )}
+            <div style={inputCard}>
+              <div style={{ fontSize:'10px', fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px' }}>＋ 産廃を追加</div>
+              <div style={g2}>
+                <div><label style={fLabel}>種類</label><select value={wasteForm.type} onChange={e=>setWasteForm(f=>({...f,type:e.target.value}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></div>
+                <div><label style={fLabel}>処分先</label><select value={wasteForm.disposal} onChange={e=>setWasteForm(f=>({...f,disposal:e.target.value}))} style={fieldBase}><option value="">選択</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></div>
+              </div>
+              <div style={g3}>
+                <div><label style={fLabel}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm(f=>({...f,qty:e.target.value}))} placeholder="0" inputMode="decimal" style={fieldBase} /></div>
+                <div><label style={fLabel}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm(f=>({...f,unit:e.target.value}))} style={fieldBase}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select></div>
+                <div><label style={fLabel}>単価</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm(f=>({...f,price:e.target.value}))} placeholder="0" inputMode="decimal" style={fieldBase} /></div>
+              </div>
+              <div style={g1}><div><label style={fLabel}>マニフェストNo.</label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm(f=>({...f,manifest:e.target.value}))} placeholder="例: 123456789" style={fieldBase} /></div></div>
+              <button onClick={addWaste} style={addBtn}>＋ 追加</button>
+            </div>
           </div>
+
+          {/* スクラップ */}
+          <div style={{ marginBottom:'22px' }}>
+            <div style={secLabel}>スクラップ売上 <span style={{fontSize:'9px',color:'#374151',fontWeight:600,letterSpacing:'0.06em',marginLeft:'4px'}}>/ SCRAP REVENUE</span><span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'8px' }} /></div>
+            {scrapItems.length > 0 && (
+              <div style={listWrap}>
+                {scrapItems.map((s,i) => (
+                  <div key={i} style={{ padding:'11px 13px', borderBottom: i===scrapItems.length-1?'none':'1px solid #0d0d0d' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:'7px', marginBottom:'3px' }}>
+                      <span style={{ fontSize:'10px', fontWeight:700, background:'rgba(251,191,36,0.1)', color:'#fbbf24', padding:'2px 7px', borderRadius:'4px' }}>{s.type}</span>
+                      <span style={{ fontSize:'12px', color:'#d1d5db', flex:1 }}>{s.buyer}</span>
+                      <span onClick={() => setScrapItems(scrapItems.filter((_,j)=>j!==i))} style={{ color:'#2d2d2d', cursor:'pointer', fontSize:'18px' }}>×</span>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between' }}>
+                      <span style={{ fontSize:'11px', color:'#4b5563' }}>{s.quantity}{s.unit} × ¥{formatCurrency(s.unitPrice)}</span>
+                      <span style={{ fontSize:'13px', fontWeight:700, color:'#4ade80' }}>¥{formatCurrency(Math.abs(s.amount))}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {scrapItems.length > 0 && (
+              <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 2px', marginBottom:'8px' }}>
+                <span style={{ fontSize:'10px', color:'#4b5563' }}>スクラップ小計</span>
+                <span style={{ fontSize:'14px', fontWeight:700, color:'#4ade80' }}>¥{formatCurrency(Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0)))}</span>
+              </div>
+            )}
+            <div style={{...inputCard, background:'rgba(22,163,74,0.03)', border:'1px solid rgba(74,222,128,0.12)'}}>
+              <div style={{ fontSize:'10px', fontWeight:700, color:'#16a34a', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px' }}>＋ スクラップを追加</div>
+              <div style={g2}>
+                <div><label style={fLabel}>種類</label><select value={scrapForm.type} onChange={e=>setScrapForm(f=>({...f,type:e.target.value}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.scrapTypes.map(t=><option key={t}>{t}</option>)}</select></div>
+                <div><label style={fLabel}>買取業者</label><select value={scrapForm.buyer} onChange={e=>setScrapForm(f=>({...f,buyer:e.target.value}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.buyers.map(b=><option key={b}>{b}</option>)}</select></div>
+              </div>
+              <div style={g3}>
+                <div><label style={fLabel}>数量</label><input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm(f=>({...f,qty:e.target.value}))} placeholder="0" inputMode="decimal" style={fieldBase} /></div>
+                <div><label style={fLabel}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm(f=>({...f,unit:e.target.value}))} style={fieldBase}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
+                <div><label style={fLabel}>単価</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm(f=>({...f,price:e.target.value}))} placeholder="0" inputMode="decimal" style={fieldBase} /></div>
+              </div>
+              <button onClick={addScrap} style={{...addBtn, borderColor:'#14532d', color:'#4ade80'}}>＋ 追加</button>
+            </div>
+          </div>
+
+          <Footer onBack={() => goStep(2)} onNext={handleSave} nextLabel="保存する" nextColor="#16a34a" />
         </div>
+      )}
+
+      </div>{/* /padding wrapper */}
+
+      {/* ===== スワイプアップ保存完了パネル ===== */}
+      {showDone && (
+        <>
+          <div onClick={() => { setShowDone(false); onNavigate('home'); }}
+            style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:90, animation:'fadeIn 0.35s ease' }} />
+          <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'672px', background:'#080808', borderTop:'1px solid #1a1a1a', borderRadius:'22px 22px 0 0', padding:'10px 22px', paddingBottom:'calc(48px + env(safe-area-inset-bottom))', zIndex:91, animation:'slideUp 0.48s cubic-bezier(0.32,0.72,0,1)' }}>
+            <div style={{ width:36, height:4, background:'#1f2937', borderRadius:2, margin:'0 auto 24px' }} />
+            <div style={{ display:'flex', justifyContent:'center', marginBottom:'18px' }}>
+              <div style={{ width:68, height:68, borderRadius:'50%', background:'rgba(34,197,94,0.08)', border:'1.5px solid #16a34a', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'30px' }}>✓</div>
+            </div>
+            <div style={{ textAlign:'center', fontSize:'20px', fontWeight:700, marginBottom:'4px' }}>保存しました</div>
+            <div style={{ textAlign:'center', fontSize:'12px', color:'#6b7280', marginBottom:'24px' }}>{report.date} · {workDetails.workContent || '日報'}</div>
+            <div style={{ background:'#0d0d0d', borderRadius:'12px', padding:'14px', marginBottom:'22px' }}>
+              {[
+                ['自社人工', `${workDetails.inHouseWorkers.length}名`],
+                ['外注人工', `${workDetails.outsourcingLabor.length}社`],
+                ['産廃', `${wasteItems.length}件`],
+                ['スクラップ', `${scrapItems.length}件`],
+              ].map(([k,v],i) => (
+                <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderTop: i>0 ? '1px solid #111' : 'none' }}>
+                  <span style={{ fontSize:'12px', color:'#6b7280' }}>{k}</span>
+                  <span style={{ fontSize:'12px', fontWeight:600, color:'#e5e7eb' }}>{v}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'flex', gap:'10px' }}>
+              <button onClick={() => { setShowDone(false); onNavigate('home'); }} style={{ flex:1, padding:'13px', background:'#111', border:'1px solid #1a1a1a', color:'#9ca3af', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>ホームへ</button>
+              <button onClick={() => { setShowDone(false); onNavigate('input'); }} style={{ flex:2, padding:'13px', background:'#16a34a', color:'white', border:'none', borderRadius:'10px', fontSize:'14px', fontWeight:700, cursor:'pointer' }}>続けて入力</button>
+            </div>
+          </div>
+          <style>{`@keyframes slideUp{from{transform:translateX(-50%) translateY(100%)}to{transform:translateX(-50%) translateY(0)}} @keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
+        </>
       )}
     </div>
   );

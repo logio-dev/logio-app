@@ -1161,7 +1161,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             <div style={inputCard}>
               <div style={{ fontSize:'10px', fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px' }}>＋ 外注を追加</div>
               <div style={g2}>
-                <div><label style={fLabel}>会社</label><select value={oForm.company} onChange={e=>setOForm(f=>({...f,company:e.target.value}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.subcontractors.map(c=><option key={c}>{c}</option>)}</select></div>
+                <div><label style={fLabel}>会社</label><select value={oForm.company} onChange={e=>setOForm(f=>({...f,company:e.target.value}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.outsourcingCompanies.map(c=><option key={c}>{c}</option>)}</select></div>
                 <div><label style={fLabel}>区分</label><select value={oForm.shift} onChange={e=>setOForm(f=>({...f,shift:e.target.value}))} style={fieldBase}><option value="daytime">日勤</option><option value="nighttime">夜間</option></select></div>
               </div>
               <div style={g1}><div><label style={fLabel}>人数</label><input type="number" value={oForm.count} onChange={e=>setOForm(f=>({...f,count:e.target.value}))} placeholder="0" inputMode="numeric" style={fieldBase} /></div></div>
@@ -1186,7 +1186,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             <div style={inputCard}>
               <div style={{ fontSize:'10px', fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'12px' }}>＋ 車両を追加</div>
               <div style={g2}>
-                <div><label style={fLabel}>車種</label><select value={vForm.type} onChange={e=>setVForm(f=>({...f,type:e.target.value,number:''}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.vehicleTypes.map(t=><option key={t}>{t}</option>)}</select></div>
+                <div><label style={fLabel}>車種</label><select value={vForm.type} onChange={e=>setVForm(f=>({...f,type:e.target.value,number:''}))} style={fieldBase}><option value="">選択</option>{MASTER_DATA.vehicles.map(t=><option key={t}>{t}</option>)}</select></div>
                 <div><label style={fLabel}>車番</label><select value={vForm.number} onChange={e=>setVForm(f=>({...f,number:e.target.value}))} style={fieldBase}><option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></div>
               </div>
               <button onClick={addVehicle} style={addBtn}>＋ 追加</button>

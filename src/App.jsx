@@ -142,10 +142,11 @@ const getDayOfWeek = (dateStr) => {
 
 // ========== 共通コンポーネント ==========
 
-// ★ ヘッダー（Share-Me風・ロゴ中央固定）
+// ★ ヘッダー（fixed固定・ロゴ中央）
 function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onNotification, notificationCount = 0 }) {
   return (
-    <header className="bg-black sticky top-0 z-40" style={{
+    <header className="bg-black" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
       borderBottom: '1px solid rgba(255,255,255,0.06)',
       paddingTop: 'env(safe-area-inset-top, 0px)',
     }}>
@@ -592,35 +593,108 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
         {selectedSite && (
           <>
-            {/* 粗利・粗利率（折りたたみ） */}
-            <div className="overflow-hidden mb-4" style={card}>
-              <button onClick={() => setFinanceOpen(!financeOpen)}
-                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-white/[0.01] transition-colors">
-                <div className="flex items-baseline gap-8">
-                  <div>
-                    <p className="logio-lbl mb-1">粗利</p>
-                    <p className="logio-val-lg" style={{ color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>¥{formatCurrency(totals.grossProfit)}</p>
-                  </div>
-                  <div>
-                    <p className="logio-lbl mb-1">粗利率</p>
-                    <div className="flex items-center gap-1.5">
-                      <p className="logio-val-lg text-white">{totals.grossProfitRateContract}%</p>
-                      <TrendingUp className="w-4 h-4" style={{ color: '#34D399' }} />
+            {/* 株価風原価推移グラフ（粗利含む・折りたたみ） */}
+            {(() => {
+              const chartData = (() => {
+                const days = [];
+                for (let i = 6; i >= 0; i--) {
+                  const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
+                  const dateStr = d.toISOString().split('T')[0];
+                  const dayReports = (reports||[]).filter(r => r.date === dateStr);
+                  const cost = dayReports.reduce((sum,r) =>
+                    sum + (r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0)
+                        + (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0)
+                        + (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0)
+                        + (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0)
+                        + (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
+                  const label = `${d.getMonth()+1}/${d.getDate()}`;
+                  days.push({ label, cost });
+                }
+                return days;
+              })();
+              const vals = chartData.map(d=>d.cost);
+              const minV = Math.min(...vals), maxV = Math.max(...vals,1);
+              const range = maxV - minV || 1;
+              const W = 300, H = 80, PX = 4, PY = 6;
+              const tx = i => PX + (i/(chartData.length-1||1))*(W-PX*2);
+              const ty = v => H - PY - ((v-minV)/range)*(H-PY*2);
+              const pts = chartData.map((d,i)=>[tx(i),ty(d.cost)]);
+              const lineD = pts.map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+              const areaD = lineD + ` L${pts[pts.length-1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`;
+              const first = vals[0]||0, last = vals[vals.length-1]||0;
+              const pct = first > 0 ? ((last-first)/first*100) : 0;
+              const isUp = last >= first;
+              const avg = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+              const fmtK = n => n >= 10000 ? `¥${Math.round(n/10000)}万` : `¥${formatCurrency(n)}`;
+              return (
+                <div className="overflow-hidden mb-4" style={card}>
+                  <button onClick={() => setFinanceOpen(!financeOpen)}
+                    className="w-full px-4 py-4 flex items-center justify-between text-left"
+                    style={{ background:'none', border:'none', cursor:'pointer', width:'100%' }}>
+                    <div>
+                      <p className="logio-lbl mb-1">原価推移 / COST TREND</p>
+                      <div style={{ display:'flex', alignItems:'baseline', gap:'10px' }}>
+                        <span style={{ fontSize:'24px', fontWeight:700, color:'white', fontVariantNumeric:'tabular-nums' }}>{fmtK(last)}</span>
+                        {first > 0 && <span style={{ fontSize:'12px', fontWeight:600, color: isUp?'#22c55e':'#ef4444' }}>
+                          {isUp?'▲':'▼'} {Math.abs(pct).toFixed(1)}%
+                        </span>}
+                      </div>
+                      {/* 粗利をサブ表示 */}
+                      <div style={{ display:'flex', gap:'16px', marginTop:'6px' }}>
+                        <span style={{ fontSize:'11px', color:'#4B5563' }}>粗利 <span style={{ color: totals.grossProfit >= 0 ? 'rgba(255,255,255,0.6)' : '#f87171', fontWeight:600 }}>¥{formatCurrency(totals.grossProfit)}</span></span>
+                        <span style={{ fontSize:'11px', color:'#4B5563' }}>粗利率 <span style={{ color:'rgba(255,255,255,0.6)', fontWeight:600 }}>{totals.grossProfitRateContract}%</span></span>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${financeOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <div className={`finance-detail ${financeOpen ? 'open' : ''}`}>
+                    <div>
+                      <div style={{ padding:'0 12px 16px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+                        {/* SVGグラフ */}
+                        <div style={{ width:'100%', marginBottom:'6px', paddingTop:'12px' }}>
+                          <svg viewBox={`0 0 ${W} ${H}`} style={{ width:'100%', height:'72px', overflow:'visible' }} preserveAspectRatio="none">
+                            <defs>
+                              <linearGradient id="cgUp" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25"/>
+                                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"/>
+                              </linearGradient>
+                              <linearGradient id="cgDn" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.25"/>
+                                <stop offset="100%" stopColor="#ef4444" stopOpacity="0"/>
+                              </linearGradient>
+                            </defs>
+                            <path d={areaD} fill={`url(#${isUp?'cgUp':'cgDn'})`}/>
+                            <path d={lineD} fill="none" stroke={isUp?'#3b82f6':'#ef4444'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                            <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={isUp?'#3b82f6':'#ef4444'} stroke="#000" strokeWidth="1.5"/>
+                          </svg>
+                        </div>
+                        {/* X軸 */}
+                        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'12px' }}>
+                          {chartData.filter((_,i)=>i===0||i===Math.floor(chartData.length/2)||i===chartData.length-1).map((d,i)=>(
+                            <span key={i} style={{ fontSize:'9px', color:'#374151' }}>{d.label}</span>
+                          ))}
+                        </div>
+                        {/* 統計 */}
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px', paddingTop:'10px', borderTop:'1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ textAlign:'center' }}>
+                            <div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px', textTransform:'uppercase' }}>最高</div>
+                            <div style={{ fontSize:'13px', fontWeight:700, color:'#22c55e' }}>{fmtK(maxV)}</div>
+                          </div>
+                          <div style={{ textAlign:'center' }}>
+                            <div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px', textTransform:'uppercase' }}>最低</div>
+                            <div style={{ fontSize:'13px', fontWeight:700, color:'#ef4444' }}>{fmtK(minV)}</div>
+                          </div>
+                          <div style={{ textAlign:'center' }}>
+                            <div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px', textTransform:'uppercase' }}>平均/日</div>
+                            <div style={{ fontSize:'13px', fontWeight:700, color:'white' }}>{fmtK(avg)}</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${financeOpen ? 'rotate-180' : ''}`} />
-              </button>
-              <div className={`finance-detail ${financeOpen ? 'open' : ''}`}>
-                <div>
-                  <div className="px-5 py-3 grid grid-cols-3 gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div><p className="logio-lbl mb-1">売上</p><p className="logio-val-md text-white">¥{formatCurrency(totals.totalRevenue)}</p></div>
-                    <div><p className="logio-lbl mb-1">原価</p><p className="logio-val-md" style={{ color: 'rgba(248,113,113,0.8)' }}>¥{formatCurrency(totals.accumulatedCost)}</p></div>
-                    {totals.accumulatedScrap > 0 && <div><p className="logio-lbl mb-1">スクラップ</p><p className="logio-val-md text-white">¥{formatCurrency(totals.accumulatedScrap)}</p></div>}
-                  </div>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* 原価率・工期 */}
             <div className="grid grid-cols-2 gap-3 mb-6">
@@ -666,6 +740,34 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 </button>
               ))}
             </div>
+
+            {/* 最近の日報 */}
+            {recentReports.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="logio-lbl">最近の日報 / RECENT</p>
+                  <button onClick={() => onNavigate('list')} style={{ fontSize:'11px', color:'#3b82f6', background:'none', border:'none', cursor:'pointer', fontWeight:600 }}>すべて見る</button>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                  {recentReports.map((r, i) => (
+                    <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+                        <div style={{ textAlign:'center', minWidth:'32px' }}>
+                          <p style={{ fontSize:'13px', fontWeight:700, color:'white', lineHeight:1 }}>{r.date.substring(8)}</p>
+                          <p style={{ fontSize:'9px', color:'#4B5563', marginTop:'2px' }}>{'日月火水木金土'[new Date(r.date).getDay()]}</p>
+                        </div>
+                        <div style={{ width:'1px', height:'28px', background:'rgba(255,255,255,0.06)' }} />
+                        <div>
+                          {r.workCategory && <span style={{ fontSize:'10px', fontWeight:600, color:'#3b82f6', background:'rgba(59,130,246,0.1)', padding:'2px 6px', borderRadius:'4px', marginRight:'6px' }}>{r.workCategory}</span>}
+                          <span style={{ fontSize:'12px', color:'rgba(255,255,255,0.55)' }}>{r.workContent || '—'}</span>
+                        </div>
+                      </div>
+                      {r.cost > 0 && <p style={{ fontSize:'12px', fontWeight:700, color:'#fcd34d', fontVariantNumeric:'tabular-nums', flexShrink:0 }}>¥{formatCurrency(r.cost)}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -2350,7 +2452,7 @@ export default function LOGIOApp() {
           const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
           return costRatio >= 70 ? 1 : 0;
         })()} />
-        <main className="flex-1">
+        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' }}>
           {currentPage === 'home' && (
             <HomePage
               sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite}

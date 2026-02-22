@@ -143,7 +143,7 @@ const getDayOfWeek = (dateStr) => {
 // ========== 共通コンポーネント ==========
 
 // ★ ヘッダー（Share-Me風・ロゴ中央固定）
-function Header({ title, showMenuButton = false, onMenuClick }) {
+function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onNotification, notificationCount = 0 }) {
   return (
     <header className="bg-black sticky top-0 z-40" style={{
       borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -165,14 +165,27 @@ function Header({ title, showMenuButton = false, onMenuClick }) {
         </div>
         {/* 中央：ロゴ */}
         <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'white', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
-        {/* 右：アイコン */}
-        <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px' }}>
-          <button style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+        {/* 右：アイコン3つ */}
+        <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
+          {/* カレンダー */}
+          <button onClick={onCalendar} title="工期確認" style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
             onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
             onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
             <Calendar className="w-5 h-5" />
           </button>
-          <button style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+          {/* ベル（通知） */}
+          <button onClick={onNotification} title="通知" style={{ position:'relative', color: notificationCount > 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
+            onMouseLeave={e => e.currentTarget.style.color= notificationCount > 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)'}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            {notificationCount > 0 && (
+              <span style={{ position:'absolute', top:'4px', right:'4px', width:'8px', height:'8px', borderRadius:'50%', background:'#ef4444', border:'1.5px solid #000' }} />
+            )}
+          </button>
+          {/* Activity → Export */}
+          <button onClick={onExport} title="エクスポート" style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
             onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
             onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
             <Activity className="w-5 h-5" />
@@ -2116,6 +2129,8 @@ export default function LOGIOApp() {
   const [currentPage, setCurrentPage] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [password, setPassword] = useState('');
   const [selectedReport, setSelectedReport] = useState(null);
   const [sites, setSites] = useState([]);
@@ -2331,7 +2346,10 @@ export default function LOGIOApp() {
     <div className="min-h-screen bg-black flex">
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       <div className="flex flex-col flex-1 bg-black">
-        <Header showMenuButton onMenuClick={() => setSidebarOpen(true)} />
+        <Header showMenuButton onMenuClick={() => setSidebarOpen(true)} onCalendar={() => setShowCalendarModal(true)} onExport={() => handleNavigate('export')} onNotification={() => setShowNotificationModal(true)} notificationCount={(() => {
+          const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+          return costRatio >= 70 ? 1 : 0;
+        })()} />
         <main className="flex-1">
           {currentPage === 'home' && (
             <HomePage
@@ -2367,6 +2385,111 @@ export default function LOGIOApp() {
           </div>
         </div>
       )}
+
+      {/* 工期確認モーダル */}
+      {showCalendarModal && (() => {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const start = projectInfo?.startDate ? new Date(projectInfo.startDate) : null;
+        const end = projectInfo?.endDate ? new Date(projectInfo.endDate) : null;
+        const totalDays = start && end ? Math.max(1, Math.ceil((end - start) / 86400000)) : 0;
+        const elapsedDays = start ? Math.max(0, Math.ceil((today - start) / 86400000)) : 0;
+        const remainDays = end ? Math.max(0, Math.ceil((end - today) / 86400000)) : null;
+        const progressPercent = totalDays > 0 ? Math.min(100, (elapsedDays / totalDays) * 100) : 0;
+        const barColor = progressPercent >= 90 ? '#f59e0b' : '#3b82f6';
+        return (
+          <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50" onClick={() => setShowCalendarModal(false)}
+            style={{ backdropFilter:'blur(4px)' }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background:'#0a0a0a', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 24px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+              {/* ハンドル */}
+              <div style={{ width:'36px', height:'4px', background:'rgba(255,255,255,0.15)', borderRadius:'2px', margin:'0 auto 24px' }} />
+              <p style={{ fontSize:'11px', fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'16px' }}>工期 / Schedule</p>
+              {selectedSite ? (
+                <>
+                  <p style={{ fontSize:'16px', fontWeight:700, color:'white', marginBottom:'20px' }}>{selectedSite}</p>
+                  {/* 日付 */}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'20px' }}>
+                    {[['開始日', projectInfo?.startDate], ['終了日', projectInfo?.endDate]].map(([label, val]) => (
+                      <div key={label} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px', padding:'14px' }}>
+                        <p style={{ fontSize:'10px', color:'#6B7280', marginBottom:'6px' }}>{label}</p>
+                        <p style={{ fontSize:'15px', fontWeight:600, color:'white' }}>{val || '未設定'}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* 進捗バー */}
+                  <div style={{ marginBottom:'16px' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'8px' }}>
+                      <span style={{ fontSize:'12px', color:'#6B7280' }}>経過 {elapsedDays}日 / 全{totalDays}日</span>
+                      <span style={{ fontSize:'12px', fontWeight:700, color: remainDays === 0 ? '#ef4444' : remainDays !== null && remainDays <= 7 ? '#f59e0b' : '#6B7280' }}>
+                        {remainDays !== null ? `残 ${remainDays}日` : '未設定'}
+                      </span>
+                    </div>
+                    <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:'99px', height:'6px', overflow:'hidden' }}>
+                      <div style={{ width:`${progressPercent}%`, height:'100%', background:barColor, borderRadius:'99px', transition:'width 0.6s ease' }} />
+                    </div>
+                    <p style={{ fontSize:'24px', fontWeight:800, color:'white', marginTop:'12px', tabularNums:true }}>{Math.round(progressPercent)}%</p>
+                  </div>
+                </>
+              ) : (
+                <p style={{ fontSize:'14px', color:'#6B7280', textAlign:'center', padding:'20px 0' }}>現場を選択してください</p>
+              )}
+              <button onClick={() => setShowCalendarModal(false)}
+                style={{ width:'100%', padding:'14px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer', marginTop:'8px' }}>
+                閉じる
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* 通知モーダル */}
+      {showNotificationModal && (() => {
+        const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+        const alerts = [];
+        if (costRatio >= 85)
+          alerts.push({ level:'danger', icon:'🚨', title:'原価率が危険水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 85%以下` });
+        else if (costRatio >= 70)
+          alerts.push({ level:'warn', icon:'⚠️', title:'原価率が注意水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 70%以下` });
+
+        const levelColor = { danger:'#ef4444', warn:'#f59e0b' };
+        const levelBg = { danger:'rgba(239,68,68,0.08)', warn:'rgba(245,158,11,0.08)' };
+
+        return (
+          <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50" onClick={() => setShowNotificationModal(false)}
+            style={{ backdropFilter:'blur(4px)' }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background:'#0a0a0a', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 24px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+              <div style={{ width:'36px', height:'4px', background:'rgba(255,255,255,0.15)', borderRadius:'2px', margin:'0 auto 24px' }} />
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px' }}>
+                <p style={{ fontSize:'11px', fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.1em' }}>通知 / Notifications</p>
+                {alerts.length > 0 && <span style={{ fontSize:'11px', fontWeight:700, color:'#ef4444', background:'rgba(239,68,68,0.1)', padding:'2px 8px', borderRadius:'99px' }}>{alerts.length}件</span>}
+              </div>
+              {alerts.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'32px 0' }}>
+                  <p style={{ fontSize:'28px', marginBottom:'12px' }}>✅</p>
+                  <p style={{ fontSize:'14px', color:'#6B7280' }}>アラートはありません</p>
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:'10px', marginBottom:'16px' }}>
+                  {alerts.map((a, i) => (
+                    <div key={i} style={{ background: levelBg[a.level], border:`1px solid ${levelColor[a.level]}33`, borderRadius:'12px', padding:'14px 16px', display:'flex', gap:'12px', alignItems:'flex-start' }}>
+                      <span style={{ fontSize:'20px', flexShrink:0 }}>{a.icon}</span>
+                      <div>
+                        <p style={{ fontSize:'13px', fontWeight:700, color: levelColor[a.level], marginBottom:'4px' }}>{a.title}</p>
+                        <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.5)' }}>{a.body}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => setShowNotificationModal(false)}
+                style={{ width:'100%', padding:'14px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
+                閉じる
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

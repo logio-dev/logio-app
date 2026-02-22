@@ -460,6 +460,7 @@ function LoginPage({ onLogin }) {
 // ========== ★ HomePage（DashboardSample完全準拠・最近の日報折りたたみ） ==========
 function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports }) {
   const [financeOpen, setFinanceOpen] = useState(false);
+  const [chartOpen, setChartOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(true);
   const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -685,7 +686,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               const mpts=chartData.map((d,i)=>[mtx(i),mty(d.cost)]);
               const mlineD=mpts.map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
               const mareaD=mlineD+` L${mpts[mpts.length-1][0].toFixed(1)},${mH} L${mpts[0][0].toFixed(1)},${mH} Z`;
-              const [chartOpen, setChartOpen] = useState(false);
               return (
                 <div className="overflow-hidden mb-4" style={card}>
                   <style>{`

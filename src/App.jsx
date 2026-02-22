@@ -650,10 +650,22 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         )}
 
         {!selectedSite && sites.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-gray-600 text-sm mb-4">現場が登録されていません</p>
+          <div className="flex flex-col items-center justify-center" style={{ minHeight: '60vh' }}>
+            {/* ロゴ薄表示 */}
+            <div style={{ marginBottom: '32px', opacity: 0.06 }}>
+              <LOGIOLogo size="lg" />
+            </div>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>
+              NO SITE REGISTERED
+            </p>
+            <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '36px' }}>
+              現場が登録されていません
+            </p>
             <button onClick={() => onNavigate('settings')}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors">
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 28px', background: '#1d4ed8', border: 'none', color: 'white', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#1e40af'}
+              onMouseLeave={e => e.currentTarget.style.background = '#1d4ed8'}>
+              <span style={{ fontSize: '16px' }}>＋</span>
               現場を追加する
             </button>
           </div>
@@ -980,15 +992,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':'日勤';
   const shiftColor = s => s==='nighttime'?'#8B5CF6':s==='nightLoading'?'#6366F1':'#3B82F6';
 
-  // ドット形式ステップバー
   const StepDots = () => (
     <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'8px', padding:'14px 0 10px' }}>
       {[1,2,3].map(i => (
         <div key={i} style={{
-          width: i === currentStep ? '22px' : '8px',
-          height: '8px', borderRadius: '4px',
+          width: '8px', height: '8px', borderRadius: '50%',
           background: i < currentStep ? '#22c55e' : i === currentStep ? '#3b82f6' : '#1f2937',
-          transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
+          transition: 'all 0.3s ease',
+          flexShrink: 0,
         }} />
       ))}
     </div>
@@ -1190,12 +1201,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
             {/* 産廃 */}
             <SecLabel ja="産廃処分費" en="Waste Disposal" />
-            <RowTable headers={['種類','処分先','数量','単価','マニNo.','']} widths={['17%','17%','13%','13%','28%','12%']}>
+            <RowTable headers={['種類','処分先','数量','単位','単価','マニNo.','']} widths={['16%','15%','12%','10%','12%','24%','11%']}>
               {wasteItems.map((w,i) => (
                 <tr key={i}>
                   <RTd>{w.material}</RTd>
                   <RTd>{w.disposalSite}</RTd>
-                  <RTd center>{w.quantity}{w.unit}</RTd>
+                  <RTd center>{w.quantity}</RTd>
+                  <RTd center>{w.unit}</RTd>
                   <RTd right money>¥{formatCurrency(w.unitPrice)}</RTd>
                   <RTd>{w.manifestNumber}</RTd>
                   <RTd center><DelRowBtn onClick={()=>setWasteItems(wasteItems.filter((_,j)=>j!==i))}/></RTd>
@@ -1204,12 +1216,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
                 <RTd input><select value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} className={rSel}><option value="">種類</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></RTd>
                 <RTd input><select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} className={rSel}><option value="">処分先</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></RTd>
-                <RTd input>
-                  <div style={{display:'flex',gap:'2px'}}>
-                    <input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="数量" className={rInp} style={{width:'55%'}}/>
-                    <select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} className={rSel} style={{width:'45%'}}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select>
-                  </div>
-                </RTd>
+                <RTd input><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" className={rInp}/></RTd>
+                <RTd input><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} className={rSel}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select></RTd>
                 <RTd input><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="単価" className={rInp}/></RTd>
                 <RTd input><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="マニNo." className={rInp}/></RTd>
                 <RTd center><AddRowBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.manifest}/></RTd>
@@ -1219,12 +1227,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
             {/* スクラップ */}
             <SecLabel ja="スクラップ売上" en="Scrap Revenue" />
-            <RowTable headers={['種類','買取業者','数量','単価','']} widths={['20%','22%','20%','26%','12%']}>
+            <RowTable headers={['種類','買取業者','数量','単位','単価','']} widths={['18%','20%','12%','10%','28%','12%']}>
               {scrapItems.map((s,i) => (
                 <tr key={i}>
                   <RTd>{s.type}</RTd>
                   <RTd>{s.buyer}</RTd>
-                  <RTd center>{s.quantity}{s.unit}</RTd>
+                  <RTd center>{s.quantity}</RTd>
+                  <RTd center>{s.unit}</RTd>
                   <RTd right money>¥{formatCurrency(s.unitPrice)}</RTd>
                   <RTd center><DelRowBtn onClick={()=>setScrapItems(scrapItems.filter((_,j)=>j!==i))}/></RTd>
                 </tr>
@@ -1232,19 +1241,15 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <tr style={{background:'rgba(59,130,246,0.04)',borderTop:'1px solid rgba(59,130,246,0.2)'}}>
                 <RTd input><select value={scrapForm.type} onChange={e=>setScrapForm({...scrapForm,type:e.target.value})} className={rSel}><option value="">種類</option>{MASTER_DATA.scrapTypes.map(t=><option key={t}>{t}</option>)}</select></RTd>
                 <RTd input><select value={scrapForm.buyer} onChange={e=>setScrapForm({...scrapForm,buyer:e.target.value})} className={rSel}><option value="">買取業者</option>{MASTER_DATA.buyers.map(b=><option key={b}>{b}</option>)}</select></RTd>
-                <RTd input>
-                  <div style={{display:'flex',gap:'2px'}}>
-                    <input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm({...scrapForm,qty:e.target.value})} placeholder="数量" className={rInp} style={{width:'55%'}}/>
-                    <select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} className={rSel} style={{width:'45%'}}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select>
-                  </div>
-                </RTd>
+                <RTd input><input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm({...scrapForm,qty:e.target.value})} placeholder="0" className={rInp}/></RTd>
+                <RTd input><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} className={rSel}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select></RTd>
                 <RTd input><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="単価" className={rInp}/></RTd>
                 <RTd center><AddRowBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price}/></RTd>
               </tr>
             </RowTable>
             <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />
 
-            <Footer onBack={() => setCurrentStep(2)} onNext={handleSave} nextLabel="💾 保存する" nextColor="#16a34a" />
+            <Footer onBack={() => setCurrentStep(2)} onNext={handleSave} nextLabel="保存する" nextColor="#16a34a" />
           </div>
         )}
       </div>

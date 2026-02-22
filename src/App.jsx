@@ -142,35 +142,42 @@ const getDayOfWeek = (dateStr) => {
 
 // ========== 共通コンポーネント ==========
 
-// ★ ヘッダー（DashboardSample準拠）
+// ★ ヘッダー（Share-Me風・ロゴ中央固定）
 function Header({ title, showMenuButton = false, onMenuClick }) {
   return (
-    <header className="bg-black px-5 flex items-center justify-between sticky top-0 z-40"
-      style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingTop:'env(safe-area-inset-top, 16px)', paddingBottom:'12px' }}>
-      <div className="flex items-center gap-3">
-        {showMenuButton && (
-          <button onClick={onMenuClick} className="transition-colors" style={{ color: 'rgba(255,255,255,0.6)' }}
-            onMouseEnter={e => e.currentTarget.style.color='white'}
-            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.6)'}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-              <path d="M3 8H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M6 16H18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
+    <header className="bg-black sticky top-0 z-40" style={{
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      paddingTop: 'env(safe-area-inset-top, 0px)',
+    }}>
+      <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', height:'52px', paddingLeft:'16px', paddingRight:'16px' }}>
+        {/* 左：ハンバーガー */}
+        <div style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)' }}>
+          {showMenuButton && (
+            <button onClick={onMenuClick} style={{ color:'rgba(255,255,255,0.55)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
+              onMouseEnter={e => e.currentTarget.style.color='white'}
+              onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.55)'}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M3 8H21" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+                <path d="M6 16H18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          )}
+        </div>
+        {/* 中央：ロゴ */}
+        <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'white', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
+        {/* 右：アイコン */}
+        <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px' }}>
+          <button style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
+            <Calendar className="w-5 h-5" />
           </button>
-        )}
-        <span className="text-white font-extrabold" style={{ fontSize: '22px', letterSpacing: '-0.03em', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>LOGIO</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <button className="p-2 transition-colors rounded-lg" style={{ color: 'rgba(255,255,255,0.4)' }}
-          onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
-          onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
-          <Calendar className="w-5 h-5" />
-        </button>
-        <button className="p-2 transition-colors rounded-lg" style={{ color: 'rgba(255,255,255,0.4)' }}
-          onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
-          onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.4)'}>
-          <Activity className="w-5 h-5" />
-        </button>
+          <button style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
+            <Activity className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </header>
   );
@@ -528,7 +535,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         .logio-activity-dot { position:absolute; left:0; top:6px; width:7px; height:7px; border-radius:50%; background:#3B82F6; border:2px solid #000; }
       `}</style>
 
-      <div className="max-w-2xl mx-auto px-4 py-5">
+      <div className="max-w-2xl mx-auto px-4 py-5" style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -651,21 +658,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
         {!selectedSite && sites.length === 0 && (
           <div className="flex flex-col items-center justify-center" style={{ minHeight: '60vh' }}>
-            {/* ロゴ薄表示 */}
-            <div style={{ marginBottom: '32px', opacity: 0.06 }}>
-              <LOGIOLogo size="lg" />
-            </div>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>
-              NO SITE REGISTERED
-            </p>
-            <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '36px' }}>
+            <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '32px' }}>
               現場が登録されていません
             </p>
             <button onClick={() => onNavigate('settings')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 28px', background: '#1d4ed8', border: 'none', color: 'white', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#1e40af'}
-              onMouseLeave={e => e.currentTarget.style.background = '#1d4ed8'}>
-              <span style={{ fontSize: '16px' }}>＋</span>
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: '#1e2d4a', border: 'none', color: 'rgba(255,255,255,0.85)', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#263a5e'}
+              onMouseLeave={e => e.currentTarget.style.background = '#1e2d4a'}>
+              <span style={{ fontSize: '15px' }}>＋</span>
               現場を追加する
             </button>
           </div>

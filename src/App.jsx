@@ -790,7 +790,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         )}
       </div>
 
-      {/* ボトム固定ナビ */}
+      {/* ボトム固定ナビ（現場選択後のみ表示） */}
+      {selectedSite && (
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: '42rem',
@@ -816,6 +817,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           </button>
         ))}
       </div>
+      )}
     </div>
   );
 }
@@ -1045,13 +1047,13 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 // ========== ReportInputPage ==========
 // 共通テーブルコンポーネント
 const RowTable = ({ headers, widths, children }) => (
-  <div style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden', marginBottom: '16px' }}>
-    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+  <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch', border:'1px solid #1a1a1a', borderRadius:'10px', marginBottom:'4px', scrollbarWidth:'none' }}>
+    <table style={{ width:'100%', minWidth: widths.reduce((s,w)=>s+parseInt(w),0)+'px', borderCollapse:'collapse', tableLayout:'fixed' }}>
       <colgroup>{widths.map((w,i) => <col key={i} style={{width:w}} />)}</colgroup>
       <thead>
-        <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+        <tr style={{ background:'#0f172a' }}>
           {headers.map((h,i) => (
-            <th key={i} style={{ padding: '8px 6px', fontSize: '9px', fontWeight: '600', color: '#4B5563', letterSpacing: '0.04em', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+            <th key={i} style={{ padding:'9px 8px', fontSize:'9px', fontWeight:'700', color:'#60a5fa', letterSpacing:'0.06em', textAlign:'center', borderBottom:'1px solid #1e3a5f', whiteSpace:'nowrap' }}>{h}</th>
           ))}
         </tr>
       </thead>
@@ -1072,11 +1074,11 @@ const DelRowBtn = ({ onClick }) => (
   <button onClick={onClick} style={{ width:'32px', height:'32px', borderRadius:'6px', border:'none', cursor:'pointer', background:'rgba(239,68,68,0.12)', color:'#F87171', fontSize:'13px', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>✕</button>
 );
 const SubTotal = ({ label, value }) => value > 0 ? (
-  <div style={{ display:'flex', justifyContent:'space-between', padding:'8px 12px', background:'rgba(255,255,255,0.02)', borderRadius:'6px', marginBottom:'16px' }}>
-    <span style={{ fontSize:'11px', color:'#6B7280' }}>{label}小計</span>
+  <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 4px 14px', alignItems:'center' }}>
+    <span style={{ fontSize:'10px', color:'#4B5563' }}>{label}小計</span>
     <span style={{ fontSize:'13px', fontWeight:'700', color:'#60A5FA', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(value)}</span>
   </div>
-) : null;
+) : <div style={{marginBottom:'14px'}} />;
 
 
 function ReportInputPage({ onSave, onNavigate, projectInfo }) {
@@ -1187,13 +1189,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
       {/* 粘着ヘッダー */}
       <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(0,0,0,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px 0' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px' }}>
-          <span style={{ fontSize:'16px', fontWeight:700 }}>日報入力</span>
+          <span style={{ fontSize:'17px', fontWeight:700 }}>日報入力</span>
           <button onClick={handleCancel} style={{ color:'#4b5563', background:'none', border:'none', cursor:'pointer', fontSize:'22px', lineHeight:1 }}>×</button>
         </div>
         <StepDots />
       </div>
 
-      <div style={{ padding:'16px 16px 20px' }}>
+      <div style={{ padding:'20px 16px' }}>
 
         {/* ===== Step 1: 基本情報 ===== */}
         {currentStep === 1 && (
@@ -1233,26 +1235,31 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
             {/* 施工情報 */}
             <div style={{ marginBottom:'20px', borderRadius:'10px', padding:'14px', border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.02)' }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
-                <div>
-                  <label style={{ display:'block', fontSize:'10px', color:'#6B7280', marginBottom:'6px' }}>区分</label>
-                  <select value={workDetails.workCategory} onChange={e=>setWorkDetails({...workDetails,workCategory:e.target.value})}
-                    style={{ width:'100%', padding:'11px 10px', background:'#000', border:'1px solid rgba(255,255,255,0.08)', color:'white', fontSize:'13px', borderRadius:'8px', outline:'none' }}>
-                    <option value="">選択</option>
-                    {MASTER_DATA.workCategories.map(c=><option key={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display:'block', fontSize:'10px', color:'#6B7280', marginBottom:'6px' }}>施工内容</label>
-                  <input type="text" placeholder="施工内容" value={workDetails.workContent} onChange={e=>setWorkDetails({...workDetails,workContent:e.target.value})}
-                    style={{ width:'100%', padding:'11px 10px', background:'#000', border:'1px solid rgba(255,255,255,0.08)', color:'white', fontSize:'13px', borderRadius:'8px', outline:'none', boxSizing:'border-box' }} />
+              <div style={{ marginBottom:'12px' }}>
+                <label style={{ display:'block', fontSize:'10px', color:'#6B7280', marginBottom:'6px' }}>区分</label>
+                <select value={workDetails.workCategory} onChange={e=>setWorkDetails({...workDetails,workCategory:e.target.value})}
+                  style={{ width:'100%', padding:'11px 10px', background:'#000', border:'1px solid rgba(255,255,255,0.08)', color:'white', fontSize:'13px', borderRadius:'8px', outline:'none' }}>
+                  <option value="">選択</option>
+                  {MASTER_DATA.workCategories.map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:'10px', color:'#6B7280', marginBottom:'6px' }}>施工内容</label>
+                <input type="text" placeholder="例）1F解体作業" value={workDetails.workContent} onChange={e=>setWorkDetails({...workDetails,workContent:e.target.value})}
+                  style={{ width:'100%', padding:'11px 10px', background:'#000', border:'1px solid rgba(255,255,255,0.08)', color:'white', fontSize:'13px', borderRadius:'8px', outline:'none', boxSizing:'border-box' }} />
+                <p style={{ fontSize:'9px', color:'#374151', margin:'6px 0 4px', display:'flex', alignItems:'center', gap:'4px' }}>⏱ 候補から選択</p>
+                <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
+                  {['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'].filter(t=>!workDetails.workContent||t.includes(workDetails.workContent)).map(t=>(
+                    <button key={t} onClick={()=>setWorkDetails({...workDetails,workContent:t})}
+                      style={{ fontSize:'11px', color: workDetails.workContent===t?'#60a5fa':'#6B7280', background: workDetails.workContent===t?'rgba(59,130,246,0.12)':'#0f172a', border:`1px solid ${workDetails.workContent===t?'#3b82f6':'#1f2937'}`, padding:'5px 10px', borderRadius:'20px', cursor:'pointer', whiteSpace:'nowrap', transition:'all 0.15s' }}>{t}</button>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* 自社人工 */}
             <SecLabel ja="自社人工" en="In-House Labor" />
-            <RowTable headers={['氏名','開始','終了','区分','金額','']} widths={['24%','13%','13%','17%','22%','11%']}>
+            <RowTable headers={['氏名','開始','終了','区分','金額','']} widths={['80px','58px','58px','54px','74px','36px']}>
               {workDetails.inHouseWorkers.map((w,i) => (
                 <tr key={i}>
                   <RTd>{w.name}</RTd>
@@ -1276,7 +1283,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
             {/* 外注人工 */}
             <SecLabel ja="外注人工" en="Outsourcing" />
-            <RowTable headers={['会社名','人数','区分','金額','']} widths={['30%','14%','20%','25%','11%']}>
+            <RowTable headers={['会社名','人数','区分','金額','']} widths={['110px','58px','58px','80px','36px']}>
               {workDetails.outsourcingLabor.map((o,i) => (
                 <tr key={i}>
                   <RTd>{o.company}</RTd>
@@ -1298,7 +1305,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
             {/* 車両 */}
             <SecLabel ja="車両" en="Vehicles" />
-            <RowTable headers={['車種','車番','金額','']} widths={['30%','28%','30%','12%']}>
+            <RowTable headers={['車種','車番','金額','']} widths={['100px','110px','80px','36px']}>
               {workDetails.vehicles.map((v,i) => (
                 <tr key={i}>
                   <RTd>{v.type}</RTd>
@@ -1318,7 +1325,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
             {/* 重機 */}
             <SecLabel ja="重機" en="Machinery" />
-            <RowTable headers={['機種','単価','']} widths={['50%','38%','12%']}>
+            <RowTable headers={['機種','単価','']} widths={['140px','100px','36px']}>
               {workDetails.machinery.map((m,i) => (
                 <tr key={i}>
                   <RTd>{m.type}</RTd>
@@ -1346,7 +1353,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
             {/* 産廃 */}
             <SecLabel ja="産廃処分費" en="Waste Disposal" />
-            <RowTable headers={['種類','処分先','数量','単位','単価','マニNo.','']} widths={['16%','15%','12%','10%','12%','24%','11%']}>
+            <RowTable headers={['種類','処分先','数量','単位','単価','マニNo.','']} widths={['80px','90px','58px','50px','72px','100px','36px']}>
               {wasteItems.map((w,i) => (
                 <tr key={i}>
                   <RTd>{w.material}</RTd>
@@ -1372,7 +1379,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
             {/* スクラップ */}
             <SecLabel ja="スクラップ売上" en="Scrap Revenue" />
-            <RowTable headers={['種類','買取業者','数量','単位','単価','']} widths={['18%','20%','12%','10%','28%','12%']}>
+            <RowTable headers={['種類','買取業者','数量','単位','単価','']} widths={['80px','110px','58px','50px','80px','36px']}>
               {scrapItems.map((s,i) => (
                 <tr key={i}>
                   <RTd>{s.type}</RTd>

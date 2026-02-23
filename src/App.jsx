@@ -528,7 +528,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const card = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', transition: 'border-color 0.15s ease' };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-black text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -550,7 +550,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         .logio-activity-dot { position:absolute; left:0; top:6px; width:7px; height:7px; border-radius:50%; background:#3B82F6; border:2px solid #000; }
       `}</style>
 
-      <div className="max-w-2xl mx-auto px-4 py-5" style={{ paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="max-w-2xl mx-auto px-4 py-5" style={{ flex:1, paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -1175,7 +1175,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   );
 
   return (
-    <div style={{ background:'#000', minHeight:'100vh', paddingBottom:'80px' }}>
+    <div style={{ background:'#000', minHeight:'100vh', paddingBottom:'80px', display:'flex', flexDirection:'column' }}>
       {/* 粘着ヘッダー */}
       <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(0,0,0,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px 0' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px' }}>

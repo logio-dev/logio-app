@@ -650,7 +650,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               </div>
             </div>
 
-            {/* 株価風グラフ（折りたたみ・ナビボタン上） */}
+            {/* 原価推移グラフ（折りたたみ） */}
             {(() => {
               const chartData = (() => {
                 const days = [];
@@ -663,108 +663,90 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                        +(r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0)
                        +(r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0)
                        +(r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0),0);
-                  days.push({ label:`${d.getMonth()+1}/${d.getDate()}`, cost });
+                  days.push({ label:`${d.getMonth()+1}/${d.getDate()}`, cost, isToday: i===0 });
                 }
                 return days;
               })();
               const vals = chartData.map(d=>d.cost);
-              const minV = Math.min(...vals), maxV = Math.max(...vals,1), range = maxV-minV||1;
+              const maxV = Math.max(...vals, 1);
               const fmtK = n => n>=10000?`¥${Math.round(n/10000)}万`:`¥${formatCurrency(n)}`;
-              const W=300,H=72,PX=4,PY=6;
-              const tx = i => PX+(i/(chartData.length-1||1))*(W-PX*2);
-              const ty = v => H-PY-((v-minV)/range)*(H-PY*2);
-              const pts = chartData.map((d,i)=>[tx(i),ty(d.cost)]);
-              const lineD = pts.map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-              const areaD = lineD+` L${pts[pts.length-1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`;
-              const first=vals[0]||0, last=vals[vals.length-1]||0;
+              const last = vals[vals.length-1]||0;
+              const first = vals[0]||0;
               const pct = first>0?((last-first)/first*100):0;
               const isUp = last>=first;
               const avg = vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
-              const dotColor = isUp?'#3b82f6':'#ef4444';
-              // ミニグラフ用(80x32)
-              const mW=80,mH=32,mPX=2,mPY=3;
-              const mtx=i=>mPX+(i/(chartData.length-1||1))*(mW-mPX*2);
-              const mty=v=>mH-mPY-((v-minV)/range)*(mH-mPY*2);
-              const mpts=chartData.map((d,i)=>[mtx(i),mty(d.cost)]);
-              const mlineD=mpts.map((p,i)=>`${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-              const mareaD=mlineD+` L${mpts[mpts.length-1][0].toFixed(1)},${mH} L${mpts[0][0].toFixed(1)},${mH} Z`;
+              const maxDay = vals.indexOf(Math.max(...vals));
+
+              // ミニ縦棒（ヘッダー用 72x28）
+              const MiniBar = () => {
+                const bw = 6, gap = 3, mH = 28;
+                return (
+                  <svg width="72" height={mH} style={{ flexShrink:0 }}>
+                    {chartData.map((d,i) => {
+                      const h = maxV > 0 ? Math.max((d.cost/maxV)*(mH-4), d.cost>0?2:0) : 0;
+                      const x = i*(bw+gap);
+                      const isLast = i===chartData.length-1;
+                      const color = isLast ? '#3b82f6' : i===maxDay ? '#60a5fa' : '#1e3a5f';
+                      return <rect key={i} x={x} y={mH-h} width={bw} height={h} rx="1.5" fill={color} opacity={isLast?1:0.7} />;
+                    })}
+                  </svg>
+                );
+              };
+
+              // フル縦棒（展開用）
+              const FullBar = () => {
+                const fH = 80, bw = 22, gap = 8;
+                const totalW = chartData.length*(bw+gap)-gap;
+                return (
+                  <svg viewBox={`0 0 ${totalW} ${fH+20}`} style={{ width:'100%', height:'88px' }} preserveAspectRatio="xMidYMid meet">
+                    {chartData.map((d,i) => {
+                      const h = maxV > 0 ? Math.max((d.cost/maxV)*fH, d.cost>0?3:0) : 0;
+                      const x = i*(bw+gap);
+                      const isLast = i===chartData.length-1;
+                      const isMax = i===maxDay && d.cost>0;
+                      const color = isLast ? '#3b82f6' : isMax ? '#60a5fa' : '#1e3a5f';
+                      return (
+                        <g key={i}>
+                          <rect x={x} y={fH-h} width={bw} height={h} rx="3" fill={color} opacity={isLast?1:0.8}/>
+                          {isLast && h>0 && (
+                            <rect x={x} y={fH-h} width={bw} height={Math.min(h,6)} rx="3" fill="#60a5fa" opacity="0.6"/>
+                          )}
+                          <text x={x+bw/2} y={fH+12} textAnchor="middle" fontSize="8" fill={d.isToday?'#60a5fa':'#374151'}>{d.label}</text>
+                          {d.cost>0 && (
+                            <text x={x+bw/2} y={fH-h-4} textAnchor="middle" fontSize="7" fill={isLast?'#60a5fa':isMax?'#9ca3af':'#374151'}>
+                              {Math.round(d.cost/10000)}万
+                            </text>
+                          )}
+                        </g>
+                      );
+                    })}
+                  </svg>
+                );
+              };
+
               return (
                 <div className="overflow-hidden mb-4" style={card}>
-                  <style>{`
-                    @keyframes dotPulse { 0%{r:3;opacity:1} 60%{r:7;opacity:0} 100%{r:3;opacity:1} }
-                    @keyframes dotGlow  { 0%,100%{opacity:1} 50%{opacity:0.5} }
-                    .chart-dot-pulse { animation: dotPulse 2s ease-out infinite; transform-box:fill-box; transform-origin:center; }
-                    .chart-dot-core  { animation: dotGlow 2s ease-in-out infinite; }
-                  `}</style>
-                  {/* ヘッダー行（常時表示） */}
                   <button onClick={() => setChartOpen(!chartOpen)}
                     style={{ width:'100%', padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
                       <div>
                         <p className="logio-lbl" style={{ marginBottom:'2px' }}>原価推移 / COST TREND</p>
                         <div style={{ display:'flex', alignItems:'baseline', gap:'8px' }}>
                           <span style={{ fontSize:'18px', fontWeight:700, color:'white', fontVariantNumeric:'tabular-nums' }}>{fmtK(last)}</span>
-                          {first>0 && <span style={{ fontSize:'11px', fontWeight:600, color:isUp?'#3b82f6':'#ef4444' }}>{isUp?'▲':'▼'} {Math.abs(pct).toFixed(1)}%</span>}
+                          {first>0 && <span style={{ fontSize:'11px', fontWeight:600, color:isUp?'#3b82f6':'#ef4444' }}>{isUp?'↑':'↓'} {Math.abs(pct).toFixed(1)}%</span>}
                         </div>
                       </div>
-                      {/* ミニグラフ */}
-                      <svg viewBox={`0 0 ${mW} ${mH}`} style={{ width:'72px', height:'28px', flexShrink:0 }} preserveAspectRatio="none">
-                        <defs>
-                          <linearGradient id="mgUp" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={dotColor} stopOpacity="0.2"/>
-                            <stop offset="100%" stopColor={dotColor} stopOpacity="0"/>
-                          </linearGradient>
-                          <linearGradient id="mgFade" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="black" stopOpacity="1"/>
-                            <stop offset="30%" stopColor="black" stopOpacity="0"/>
-                          </linearGradient>
-                          <mask id="mgMask">
-                            <rect width={mW} height={mH} fill="white"/>
-                            <rect width={mW} height={mH} fill="url(#mgFade)"/>
-                          </mask>
-                        </defs>
-                        <g mask="url(#mgMask)">
-                          <path d={mareaD} fill="url(#mgUp)"/>
-                          <path d={mlineD} fill="none" stroke={dotColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </g>
-                        {/* パルスリング */}
-                        <circle cx={mpts[mpts.length-1][0]} cy={mpts[mpts.length-1][1]} r="3" fill={dotColor} opacity="0" className="chart-dot-pulse"/>
-                        {/* コアドット */}
-                        <circle cx={mpts[mpts.length-1][0]} cy={mpts[mpts.length-1][1]} r="2.5" fill={dotColor} stroke="#000" strokeWidth="1.2" className="chart-dot-core"/>
-                      </svg>
+                      <MiniBar />
                     </div>
                     <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${chartOpen?'rotate-180':''}`}/>
                   </button>
-                  {/* 展開：フルグラフ */}
                   <div className={`finance-detail ${chartOpen?'open':''}`}>
-                    <div>
-                      <div style={{ padding:'4px 14px 16px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
-                        <svg viewBox={`0 0 ${W} ${H}`} style={{ width:'100%', height:'68px' }} preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="fgUp" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25"/>
-                              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0"/>
-                            </linearGradient>
-                            <linearGradient id="fgDn" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.25"/>
-                              <stop offset="100%" stopColor="#ef4444" stopOpacity="0"/>
-                            </linearGradient>
-                          </defs>
-                          <path d={areaD} fill={`url(#${isUp?'fgUp':'fgDn'})`}/>
-                          <path d={lineD} fill="none" stroke={dotColor} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                          <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="4" fill={dotColor} opacity="0" className="chart-dot-pulse"/>
-                          <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="3" fill={dotColor} stroke="#000" strokeWidth="1.5" className="chart-dot-core"/>
-                        </svg>
-                        <div style={{ display:'flex', justifyContent:'space-between', margin:'4px 0 12px' }}>
-                          {chartData.filter((_,i)=>i===0||i===Math.floor(chartData.length/2)||i===chartData.length-1).map((d,i)=>(
-                            <span key={i} style={{ fontSize:'9px', color:'#374151' }}>{d.label}</span>
-                          ))}
-                        </div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px', paddingTop:'10px', borderTop:'1px solid rgba(255,255,255,0.05)' }}>
-                          <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>最高</div><div style={{ fontSize:'13px', fontWeight:700, color:'#22c55e' }}>{fmtK(maxV)}</div></div>
-                          <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>最低</div><div style={{ fontSize:'13px', fontWeight:700, color:'#ef4444' }}>{fmtK(minV)}</div></div>
-                          <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>平均/日</div><div style={{ fontSize:'13px', fontWeight:700, color:'white' }}>{fmtK(avg)}</div></div>
-                        </div>
+                    <div style={{ padding:'8px 16px 16px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+                      <FullBar />
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px', paddingTop:'10px', borderTop:'1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>最高</div><div style={{ fontSize:'13px', fontWeight:700, color:'#22c55e' }}>{fmtK(maxV)}</div></div>
+                        <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>本日</div><div style={{ fontSize:'13px', fontWeight:700, color:'#60a5fa' }}>{fmtK(last)}</div></div>
+                        <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>平均/日</div><div style={{ fontSize:'13px', fontWeight:700, color:'white' }}>{fmtK(avg)}</div></div>
                       </div>
                     </div>
                   </div>
@@ -1426,7 +1408,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* スクラップ */}
           <SectionLabel ja="スクラップ売上" en="Scrap Revenue" />
           {scrapItems.map((s,i)=>(
-            <ItemCard key={i} avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80" avatarText="鉄"
+            <ItemCard key={i} avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80" avatarText={s.type.charAt(0)}
               name={s.type} meta={`${s.quantity}${s.unit}　${s.buyer}`}
               amount={`¥${formatCurrency(s.unitPrice)}`} amountColor="#4ade80"
               onDel={()=>setScrapItems(scrapItems.filter((_,j)=>j!==i))} />
@@ -1441,6 +1423,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>単価</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
+            {scrapForm.qty && scrapForm.price && (
+              <div style={{ textAlign:'right', fontSize:'12px', color:'#4ade80', fontWeight:'600', marginBottom:'8px' }}>
+                ¥{formatCurrency(parseFloat(scrapForm.qty||0)*parseFloat(scrapForm.price||0))}
+              </div>
+            )}
             <AddBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price} />
           </div>
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}

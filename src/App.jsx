@@ -532,6 +532,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        /* iOSズーム防止: input/selectは必ず16px以上 */
+        input, select, textarea { font-size: 16px !important; }
         .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
         .finance-detail.open { grid-template-rows: 1fr; }
         .finance-detail > div { overflow: hidden; }
@@ -991,11 +993,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                 <tr style={{ background: 'rgba(59,130,246,0.04)', borderTop: '1px solid rgba(59,130,246,0.2)' }}>
                   <td style={{ padding: '6px 8px' }}>
                     <input type="text" value={expenseForm.name} onChange={e => setExpenseForm({...expenseForm, name: e.target.value})}
-                      placeholder="例: 交通費" className="w-full bg-black text-white text-xs border border-white/10 rounded px-2 py-2 outline-none focus:border-blue-500" />
+                      placeholder="例: 交通費" className="w-full bg-black text-white border border-white/10 rounded px-2 py-2 outline-none focus:border-blue-500" style={{fontSize:'16px'}} />
                   </td>
                   <td style={{ padding: '6px 8px' }}>
                     <input type="number" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})}
-                      placeholder="金額" className="w-full bg-black text-white text-xs border border-white/10 rounded px-2 py-2 outline-none focus:border-blue-500" />
+                      placeholder="金額" className="w-full bg-black text-white border border-white/10 rounded px-2 py-2 outline-none focus:border-blue-500" style={{fontSize:'16px'}} />
                   </td>
                   <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                     <button onClick={addExpense} disabled={!expenseForm.name || !expenseForm.amount}
@@ -1063,8 +1065,9 @@ const RowTable = ({ headers, widths, children }) => (
 const RTd = ({ children, center, right, money, input }) => (
   <td style={{ padding: input ? '6px 5px' : '10px 6px', fontSize: '12px', color: money ? '#FCD34D' : 'rgba(255,255,255,0.85)', textAlign: center ? 'center' : right ? 'right' : 'left', borderBottom: '1px solid rgba(255,255,255,0.03)', fontVariantNumeric: money ? 'tabular-nums' : 'normal' }}>{children}</td>
 );
-const rSel = "w-full bg-black text-white border border-white/10 rounded px-1 py-2 outline-none focus:border-blue-500 text-xs";
-const rInp = "w-full bg-black text-white border border-white/10 rounded px-1 py-2 outline-none focus:border-blue-500 text-xs";
+const rSel = "w-full bg-black text-white border border-white/10 rounded px-1 py-2 outline-none focus:border-blue-500";
+const rInp = "w-full bg-black text-white border border-white/10 rounded px-1 py-2 outline-none focus:border-blue-500";
+const rStyle = { fontSize: '16px' };
 // タップ領域を大きくしたボタン
 const AddRowBtn = ({ onClick, disabled }) => (
   <button onClick={onClick} disabled={disabled} style={{ width:'36px', height:'36px', borderRadius:'7px', border:'none', cursor: disabled?'not-allowed':'pointer', background: disabled?'rgba(255,255,255,0.04)':'#2563EB', color: disabled?'#374151':'white', fontSize:'18px', fontWeight:'700', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>+</button>
@@ -1184,8 +1187,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   );
 
   const inputCard = { background:'rgba(59,130,246,0.04)', border:'1px dashed rgba(59,130,246,0.25)', borderRadius:'12px', padding:'14px', marginBottom:'20px' };
-  const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'14px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit' };
-  const inpTxt = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'14px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit' };
+  const inpTxt = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'10px', fontWeight:'700', color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
@@ -1258,18 +1261,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}
-                style={{ ...inpTxt, fontSize:'15px', padding:'13px 14px', colorScheme:'dark' }} />
+                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', colorScheme:'dark' }} />
             </div>
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>天候 <span style={{color:'#f87171'}}>*</span></label>
-              <select value={report.weather} onChange={e=>setReport({...report,weather:e.target.value})} style={{ ...inpSel, padding:'13px 14px', fontSize:'15px' }}>
+              <select value={report.weather} onChange={e=>setReport({...report,weather:e.target.value})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px' }}>
                 <option value="">選択してください</option>
                 {MASTER_DATA.weather.map(w=><option key={w}>{w}</option>)}
               </select>
             </div>
             <div>
               <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>記入者 <span style={{color:'#f87171'}}>*</span></label>
-              <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'15px' }}>
+              <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px' }}>
                 <option value="">選択してください</option>
                 {MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}
               </select>
@@ -2051,6 +2054,8 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const [allReports, setAllReports] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+
   useEffect(() => {
     const loadAllReports = async () => {
       try {
@@ -2303,6 +2308,19 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
 // ========== メインApp ==========
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
+
+  // iOSズーム防止：viewport maximum-scale=1 をJSからセット
+  useEffect(() => {
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (vp) {
+      vp.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+      document.head.appendChild(meta);
+    }
+  }, []);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');

@@ -461,6 +461,7 @@ function LoginPage({ onLogin }) {
 function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports }) {
   const [financeOpen, setFinanceOpen] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
+  const [wasteOpen, setWasteOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(true);
   const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -650,103 +651,75 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               </div>
             </div>
 
-            {/* 原価推移グラフ（折りたたみ） */}
+            {/* 産廃処分費カード（ドーナツ＋横棒） */}
             {(() => {
-              const chartData = (() => {
-                const days = [];
-                for (let i = 6; i >= 0; i--) {
-                  const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
-                  const ds = d.toISOString().split('T')[0];
-                  const cost = (reports||[]).filter(r=>r.date===ds).reduce((sum,r)=>
-                    sum+(r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0)
-                       +(r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0)
-                       +(r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0)
-                       +(r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0)
-                       +(r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0),0);
-                  days.push({ label:`${d.getMonth()+1}/${d.getDate()}`, cost, isToday: i===0 });
-                }
-                return days;
-              })();
-              const vals = chartData.map(d=>d.cost);
-              const maxV = Math.max(...vals, 1);
-              const fmtK = n => n>=10000?`¥${Math.round(n/10000)}万`:`¥${formatCurrency(n)}`;
-              const last = vals[vals.length-1]||0;
-              const first = vals[0]||0;
-              const pct = first>0?((last-first)/first*100):0;
-              const isUp = last>=first;
-              const avg = vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
-              const maxDay = vals.indexOf(Math.max(...vals));
+              const WASTE_COLORS = ['#d97706','#65a30d','#7c3aed','#0891b2','#dc2626','#f472b6'];
+              // 全レポートから産廃を種類別に集計
+              const wasteByType = {};
+              (reports||[]).forEach(r=>(r.wasteItems||[]).forEach(w=>{
+                wasteByType[w.material] = (wasteByType[w.material]||0)+(w.amount||0);
+              }));
+              const wasteEntries = Object.entries(wasteByType).sort((a,b)=>b[1]-a[1]);
+              const wasteTotal = wasteEntries.reduce((s,[,v])=>s+v, 0);
+              const maxWaste = wasteEntries[0]?.[1]||1;
+              const typeCount = wasteEntries.length;
+              if (typeCount === 0) return null;
 
-              // ミニ縦棒（ヘッダー用 72x28）
-              const MiniBar = () => {
-                const bw = 6, gap = 3, mH = 28;
-                return (
-                  <svg width="72" height={mH} style={{ flexShrink:0 }}>
-                    {chartData.map((d,i) => {
-                      const h = maxV > 0 ? Math.max((d.cost/maxV)*(mH-4), d.cost>0?2:0) : 0;
-                      const x = i*(bw+gap);
-                      const isLast = i===chartData.length-1;
-                      const color = isLast ? '#3b82f6' : i===maxDay ? '#60a5fa' : '#1e3a5f';
-                      return <rect key={i} x={x} y={mH-h} width={bw} height={h} rx="1.5" fill={color} opacity={isLast?1:0.7} />;
-                    })}
-                  </svg>
-                );
-              };
-
-              // フル縦棒（展開用）
-              const FullBar = () => {
-                const fH = 80, bw = 22, gap = 8;
-                const totalW = chartData.length*(bw+gap)-gap;
-                return (
-                  <svg viewBox={`0 0 ${totalW} ${fH+20}`} style={{ width:'100%', height:'88px' }} preserveAspectRatio="xMidYMid meet">
-                    {chartData.map((d,i) => {
-                      const h = maxV > 0 ? Math.max((d.cost/maxV)*fH, d.cost>0?3:0) : 0;
-                      const x = i*(bw+gap);
-                      const isLast = i===chartData.length-1;
-                      const isMax = i===maxDay && d.cost>0;
-                      const color = isLast ? '#3b82f6' : isMax ? '#60a5fa' : '#1e3a5f';
-                      return (
-                        <g key={i}>
-                          <rect x={x} y={fH-h} width={bw} height={h} rx="3" fill={color} opacity={isLast?1:0.8}/>
-                          {isLast && h>0 && (
-                            <rect x={x} y={fH-h} width={bw} height={Math.min(h,6)} rx="3" fill="#60a5fa" opacity="0.6"/>
-                          )}
-                          <text x={x+bw/2} y={fH+12} textAnchor="middle" fontSize="8" fill={d.isToday?'#60a5fa':'#374151'}>{d.label}</text>
-                          {d.cost>0 && (
-                            <text x={x+bw/2} y={fH-h-4} textAnchor="middle" fontSize="7" fill={isLast?'#60a5fa':isMax?'#9ca3af':'#374151'}>
-                              {Math.round(d.cost/10000)}万
-                            </text>
-                          )}
-                        </g>
-                      );
-                    })}
-                  </svg>
-                );
-              };
+              // ドーナツ計算
+              const R=16, CX=22, CY=22, CIRC=2*Math.PI*R;
+              let offset = 0;
+              const donutSlices = wasteEntries.map(([name,val],i)=>{
+                const dash = (val/wasteTotal)*CIRC;
+                const s = { name, val, color:WASTE_COLORS[i%WASTE_COLORS.length], dash, offset };
+                offset += dash;
+                return s;
+              });
 
               return (
                 <div className="overflow-hidden mb-4" style={card}>
-                  <button onClick={() => setChartOpen(!chartOpen)}
-                    style={{ width:'100%', padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
+                  <button onClick={()=>setWasteOpen(!wasteOpen)}
+                    style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
                       <div>
-                        <p className="logio-lbl" style={{ marginBottom:'2px' }}>原価推移 / COST TREND</p>
-                        <div style={{ display:'flex', alignItems:'baseline', gap:'8px' }}>
-                          <span style={{ fontSize:'18px', fontWeight:700, color:'white', fontVariantNumeric:'tabular-nums' }}>{fmtK(last)}</span>
-                          {first>0 && <span style={{ fontSize:'11px', fontWeight:600, color:isUp?'#3b82f6':'#ef4444' }}>{isUp?'↑':'↓'} {Math.abs(pct).toFixed(1)}%</span>}
+                        <p className="logio-lbl" style={{ marginBottom:'3px' }}>産廃処分費 / WASTE DISPOSAL</p>
+                        <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
+                          <span style={{ fontSize:'20px', fontWeight:700, color:'white', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
+                          <span style={{ fontSize:'10px', color:'#4B5563' }}>{typeCount}種類</span>
                         </div>
                       </div>
-                      <MiniBar />
+                      {/* ミニドーナツ */}
+                      <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink:0 }}>
+                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="#0f172a" strokeWidth="8"/>
+                        {donutSlices.map((s,i)=>(
+                          <circle key={i} cx={CX} cy={CY} r={R} fill="none"
+                            stroke={s.color} strokeWidth="8"
+                            strokeDasharray={`${s.dash} ${CIRC-s.dash}`}
+                            strokeDashoffset={-(s.offset-CIRC/4)}
+                            transform={`rotate(-90 ${CX} ${CY})`}/>
+                        ))}
+                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="white">{typeCount}種</text>
+                      </svg>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${chartOpen?'rotate-180':''}`}/>
+                    <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${wasteOpen?'rotate-180':''}`}/>
                   </button>
-                  <div className={`finance-detail ${chartOpen?'open':''}`}>
-                    <div style={{ padding:'8px 16px 16px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
-                      <FullBar />
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px', paddingTop:'10px', borderTop:'1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>最高</div><div style={{ fontSize:'13px', fontWeight:700, color:'#22c55e' }}>{fmtK(maxV)}</div></div>
-                        <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>本日</div><div style={{ fontSize:'13px', fontWeight:700, color:'#60a5fa' }}>{fmtK(last)}</div></div>
-                        <div style={{ textAlign:'center' }}><div style={{ fontSize:'9px', color:'#4B5563', marginBottom:'3px' }}>平均/日</div><div style={{ fontSize:'13px', fontWeight:700, color:'white' }}>{fmtK(avg)}</div></div>
+                  <div className={`finance-detail ${wasteOpen?'open':''}`}>
+                    <div style={{ padding:'4px 14px 16px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                        {wasteEntries.map(([name,val],i)=>{
+                          const color = WASTE_COLORS[i%WASTE_COLORS.length];
+                          const pct = Math.round((val/maxWaste)*100);
+                          return (
+                            <div key={name}>
+                              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
+                                <span style={{ fontSize:'11px', color, fontWeight:'600' }}>{name}</span>
+                                <span style={{ fontSize:'11px', color:'white', fontWeight:'700' }}>¥{formatCurrency(val)}</span>
+                              </div>
+                              <div style={{ height:'5px', background:'#0f172a', borderRadius:'3px' }}>
+                                <div style={{ height:'5px', width:`${pct}%`, background:color, borderRadius:'3px', transition:'width 0.4s ease' }}/>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -2132,7 +2105,8 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
         </div>
       </div>
 
-      <div className="pdf-container bg-black p-6 overflow-x-auto" style={{ minWidth: '1100px' }}>
+      <div className="bg-black" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div className="pdf-container bg-black p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto' }}>
         <div style={{ width: '1100px', margin: '0 auto' }}>
           <div className="text-center mb-3">
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
@@ -2287,6 +2261,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

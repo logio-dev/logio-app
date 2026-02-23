@@ -550,7 +550,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         .logio-activity-dot { position:absolute; left:0; top:6px; width:7px; height:7px; border-radius:50%; background:#3B82F6; border:2px solid #000; }
       `}</style>
 
-      <div className="max-w-2xl mx-auto px-4 py-5" style={{ flex:1, paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="max-w-2xl mx-auto px-4 py-5" style={{ flex:1, paddingBottom: 'calc(90px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -597,17 +597,18 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             {/* 粗利・粗利率（折りたたみ・元通り） */}
             <div className="overflow-hidden mb-4" style={card}>
               <button onClick={() => setFinanceOpen(!financeOpen)}
-                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-white/[0.01] transition-colors">
-                <div className="flex items-baseline gap-8">
+                className="w-full flex items-center justify-between text-left hover:bg-white/[0.01] transition-colors"
+                style={{ padding:'20px 18px' }}>
+                <div className="flex items-baseline gap-9">
                   <div>
-                    <p className="logio-lbl mb-1">粗利</p>
-                    <p className="logio-val-lg" style={{ color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>¥{formatCurrency(totals.grossProfit)}</p>
+                    <p className="logio-lbl mb-1.5">粗利</p>
+                    <p style={{ fontSize:'28px', fontWeight:700, color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>¥{formatCurrency(totals.grossProfit)}</p>
                   </div>
                   <div>
-                    <p className="logio-lbl mb-1">粗利率</p>
-                    <div className="flex items-center gap-1.5">
-                      <p className="logio-val-lg text-white">{totals.grossProfitRateContract}%</p>
-                      <TrendingUp className="w-4 h-4" style={{ color: '#34D399' }} />
+                    <p className="logio-lbl mb-1.5">粗利率</p>
+                    <div className="flex items-center gap-2">
+                      <p style={{ fontSize:'28px', fontWeight:700, color:'white' }}>{totals.grossProfitRateContract}%</p>
+                      <TrendingUp className="w-5 h-5" style={{ color: '#34D399' }} />
                     </div>
                   </div>
                 </div>
@@ -626,23 +627,23 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
             {/* 原価率・工期 */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="px-4 py-4" style={card}>
+              <div className="px-5 py-5" style={card}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="logio-lbl">原価率</p>
                   <span className="font-medium px-1.5 py-0.5 rounded" style={{ fontSize: '10px', background: costBarBg, color: costBarColor }}>{costStatus}</span>
                 </div>
-                <p className="text-white font-bold tabular-nums mb-2" style={{ fontSize: '20px' }}>{costRatioFixed}%</p>
-                <div className="logio-progress-track h-1.5">
+                <p className="text-white font-bold tabular-nums mb-3" style={{ fontSize: '26px' }}>{costRatioFixed}%</p>
+                <div className="logio-progress-track" style={{ height:'6px' }}>
                   <div className="logio-progress-bar h-full" style={{ width: `${Math.min(costRatio,100)}%`, backgroundColor: costBarColor }} />
                 </div>
               </div>
-              <div className="px-4 py-4" style={card}>
+              <div className="px-5 py-5" style={card}>
                 <div className="flex items-center justify-between mb-2">
                   <p className="logio-lbl">工期</p>
                   <span className="font-medium text-gray-400" style={{ fontSize: '10px' }}>{remainDays !== null ? `残${remainDays}日` : '未設定'}</span>
                 </div>
-                <p className="text-white font-bold tabular-nums mb-2" style={{ fontSize: '20px' }}>{Math.round(progressPercent)}%</p>
-                <div className="logio-progress-track h-1.5">
+                <p className="text-white font-bold tabular-nums mb-3" style={{ fontSize: '26px' }}>{Math.round(progressPercent)}%</p>
+                <div className="logio-progress-track" style={{ height:'6px' }}>
                   <div className="logio-progress-bar h-full" style={{ width: `${progressPercent}%`, backgroundColor: progressPercent >= 90 ? '#F59E0B' : '#3B82F6' }} />
                 </div>
               </div>
@@ -770,26 +771,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               );
             })()}
 
-            {/* ナビボタン */}
-            <div className="grid grid-cols-4 gap-2 mb-6">
-              <button onClick={() => onNavigate('input')}
-                className="logio-nav-btn flex flex-col items-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">
-                <Plus className="w-5 h-5" />
-                <span className="font-semibold" style={{ fontSize: '11px' }}>日報入力</span>
-              </button>
-              {[
-                { id:'list', icon:FileText, label:'日報一覧' },
-                { id:'analysis', icon:BarChart3, label:'原価分析' },
-                { id:'settings', icon:Settings, label:'設定' },
-              ].map(({ id, icon:Icon, label }) => (
-                <button key={id} onClick={() => onNavigate(id)}
-                  className="logio-nav-btn flex flex-col items-center gap-2 py-4 rounded-xl transition-colors text-gray-400 hover:text-white"
-                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium" style={{ fontSize: '11px' }}>{label}</span>
-                </button>
-              ))}
-            </div>
           </>
         )}
 
@@ -807,6 +788,33 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             </button>
           </div>
         )}
+      </div>
+
+      {/* ボトム固定ナビ */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: '42rem',
+        background: '#0a0a0a', borderTop: '1px solid rgba(255,255,255,0.07)',
+        padding: `10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,
+        zIndex: 30, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px'
+      }}>
+        <button onClick={() => onNavigate('input')}
+          className="logio-nav-btn flex flex-col items-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">
+          <Plus className="w-5 h-5" />
+          <span className="font-semibold" style={{ fontSize: '11px' }}>日報入力</span>
+        </button>
+        {[
+          { id:'list', icon:FileText, label:'日報一覧' },
+          { id:'analysis', icon:BarChart3, label:'原価分析' },
+          { id:'settings', icon:Settings, label:'設定' },
+        ].map(({ id, icon:Icon, label }) => (
+          <button key={id} onClick={() => onNavigate(id)}
+            className="logio-nav-btn flex flex-col items-center gap-1.5 py-3 rounded-xl transition-colors text-gray-400 hover:text-white"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <Icon className="w-5 h-5" />
+            <span className="font-medium" style={{ fontSize: '11px' }}>{label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

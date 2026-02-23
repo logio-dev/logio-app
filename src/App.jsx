@@ -702,7 +702,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                     </div>
                     <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${wasteOpen?'rotate-180':''}`}/>
                   </button>
-                  <div className={`finance-detail ${wasteOpen?'open':''}`}>
+                  <div style={{ display: wasteOpen ? 'block' : 'none', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
                     <div style={{ padding:'4px 14px 16px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
                       <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                         {wasteEntries.map(([name,val],i)=>{

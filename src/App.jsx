@@ -2125,7 +2125,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const emptyRows = MAX_ROWS - displayReports.length;
 
   return (
-    <div className="min-h-screen bg-black" style={{ overflowX:"auto" }}>
+    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'#000', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
         .pdf-container { font-family: 'Noto Sans JP', sans-serif; }

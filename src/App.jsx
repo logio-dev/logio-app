@@ -2125,7 +2125,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const emptyRows = MAX_ROWS - displayReports.length;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black" style={{ overflowX:"auto" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
         .pdf-container { font-family: 'Noto Sans JP', sans-serif; }
@@ -2165,23 +2165,8 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
         </div>
       </div>
 
-      <div style={{ width: '100%', overflowX: 'hidden' }}>
-        <style>{`
-          .pdf-scale-wrap {
-            width: 1100px;
-            transform-origin: top left;
-            transform: scale(calc(100vw / 1100));
-          }
-          @media (min-width: 1100px) {
-            .pdf-scale-wrap {
-              transform: none;
-              margin: 0 auto;
-            }
-          }
-        `}</style>
-        <div style={{ height: 0, paddingBottom: 'calc(100vw / 1100 * 100%)' }} className="pdf-height-placeholder"/>
-        <div className="pdf-scale-wrap">
-      <div className="pdf-container bg-black p-6" style={{ width: '1100px' }}>
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+      <div className="pdf-container bg-black p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto' }}>
         <div style={{ width: '1100px' }}>
           <div className="text-center mb-3">
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
@@ -2337,7 +2322,6 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
           </div>
         </div>
       </div>
-        </div>{/* pdf-scale-wrap */}
       </div>
     </div>
   );

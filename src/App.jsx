@@ -1141,7 +1141,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     </p>
   );
 
-  const inputCard = { background:'rgba(59,130,246,0.04)', border:'1px dashed rgba(59,130,246,0.25)', borderRadius:'12px', padding:'14px', marginBottom:'20px' };
+  const mkCard = (color) => ({
+    background: `linear-gradient(#050505,#050505) padding-box, linear-gradient(135deg,${color}) border-box`,
+    border: '1.5px solid transparent',
+    borderRadius: '12px', padding: '14px', marginBottom: '20px'
+  });
+  const inputCard        = mkCard('#3b82f6,#6366f1');   // blue→indigo  施工/自社
+  const inputCardCyan    = mkCard('#22d3ee,#3b82f6');   // cyan→blue    外注
+  const inputCardAmber   = mkCard('#f59e0b,#f97316');   // amber→orange 車両/重機
+  const inputCardGreen   = mkCard('#34d399,#22d3ee');   // green→cyan   産廃
+  const inputCardRose    = mkCard('#f43f5e,#f59e0b');   // rose→amber   スクラップ
   const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit' };
   const inpTxt = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'10px', fontWeight:'700', color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' };
@@ -1294,7 +1303,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               amount={`¥${formatCurrency(o.amount)}`}
               onDel={()=>setWorkDetails({...workDetails,outsourcingLabor:workDetails.outsourcingLabor.filter((_,j)=>j!==i)})} />
           ))}
-          <div style={inputCard}>
+          <div style={inputCardCyan}>
             <div style={grid2}>
               <div><label style={inpLbl}>会社名</label><select value={oForm.company} onChange={e=>setOForm({...oForm,company:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.outsourcingCompanies.map(c=><option key={c}>{c}</option>)}</select></div>
               <div><label style={inpLbl}>人数</label><input type="number" min="1" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
@@ -1319,7 +1328,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               amount={`¥${formatCurrency(v.amount)}`}
               onDel={()=>setWorkDetails({...workDetails,vehicles:workDetails.vehicles.filter((_,j)=>j!==i)})} />
           ))}
-          <div style={inputCard}>
+          <div style={inputCardAmber}>
             <div style={grid2}>
               <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:''})} style={inpSel}><option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></div>
               <div><label style={inpLbl}>車番</label><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} style={inpSel}><option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></div>
@@ -1337,7 +1346,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               amount={`¥${formatCurrency(m.unitPrice)}`}
               onDel={()=>setWorkDetails({...workDetails,machinery:workDetails.machinery.filter((_,j)=>j!==i)})} />
           ))}
-          <div style={inputCard}>
+          <div style={inputCardAmber}>
             <div style={grid2}>
               <div><label style={inpLbl}>機種</label><select value={mForm.type} onChange={e=>setMForm({...mForm,type:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.heavyMachinery.map(m=><option key={m}>{m}</option>)}</select></div>
               <div><label style={inpLbl}>単価</label><input type="number" value={mForm.price} onChange={e=>setMForm({...mForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
@@ -1363,7 +1372,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               amount={`¥${formatCurrency(w.amount)}`}
               onDel={()=>setWasteItems(wasteItems.filter((_,j)=>j!==i))} />
           ))}
-          <div style={inputCard}>
+          <div style={inputCardGreen}>
             <div style={grid2}>
               <div><label style={inpLbl}>種類</label><select value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></div>
               <div><label style={inpLbl}>処分先</label><select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} style={inpSel}><option value="">選択</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></div>
@@ -1386,7 +1395,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
               amount={`¥${formatCurrency(s.unitPrice)}`} amountColor="#4ade80"
               onDel={()=>setScrapItems(scrapItems.filter((_,j)=>j!==i))} />
           ))}
-          <div style={inputCard}>
+          <div style={inputCardRose}>
             <div style={grid2}>
               <div><label style={inpLbl}>種類</label><select value={scrapForm.type} onChange={e=>setScrapForm({...scrapForm,type:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.scrapTypes.map(t=><option key={t}>{t}</option>)}</select></div>
               <div><label style={inpLbl}>買取業者</label><select value={scrapForm.buyer} onChange={e=>setScrapForm({...scrapForm,buyer:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.buyers.map(b=><option key={b}>{b}</option>)}</select></div>
@@ -2156,8 +2165,23 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
         </div>
       </div>
 
-      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', display:'flex', justifyContent:'center' }}>
-      <div className="pdf-container bg-black p-6" style={{ minWidth: '1100px', width: '1100px' }}>
+      <div style={{ width: '100%', overflowX: 'hidden' }}>
+        <style>{`
+          .pdf-scale-wrap {
+            width: 1100px;
+            transform-origin: top left;
+            transform: scale(calc(100vw / 1100));
+          }
+          @media (min-width: 1100px) {
+            .pdf-scale-wrap {
+              transform: none;
+              margin: 0 auto;
+            }
+          }
+        `}</style>
+        <div style={{ height: 0, paddingBottom: 'calc(100vw / 1100 * 100%)' }} className="pdf-height-placeholder"/>
+        <div className="pdf-scale-wrap">
+      <div className="pdf-container bg-black p-6" style={{ width: '1100px' }}>
         <div style={{ width: '1100px' }}>
           <div className="text-center mb-3">
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
@@ -2313,6 +2337,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
           </div>
         </div>
       </div>
+        </div>{/* pdf-scale-wrap */}
       </div>
     </div>
   );

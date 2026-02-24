@@ -1757,6 +1757,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
 // ========== ★ ExportPage（スプシ改善: 契約処分先改行 + セクション追加） ==========
 function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   const [gasUrl, setGasUrl] = useState('');
+  const [gasMonthlyUrl, setGasMonthlyUrl] = useState('');
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [lastExport, setLastExport] = useState('');
@@ -1766,8 +1767,10 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   useEffect(() => {
     const loadSettings = async () => {
       const gasUrlResult = await window.storage.get('logio-gas-url');
+      const gasMonthlyUrlResult = await window.storage.get('logio-gas-monthly-url');
       const lastResult = await window.storage.get('logio-last-export');
       if (gasUrlResult?.value) setGasUrl(gasUrlResult.value);
+      if (gasMonthlyUrlResult?.value) setGasMonthlyUrl(gasMonthlyUrlResult.value);
       if (lastResult?.value) setLastExport(lastResult.value);
     };
     loadSettings();
@@ -1775,13 +1778,14 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 
   const handleSaveSettings = async () => {
     if (gasUrl) await window.storage.set('logio-gas-url', gasUrl);
+    if (gasMonthlyUrl) await window.storage.set('logio-gas-monthly-url', gasMonthlyUrl);
     setExportStatus('✅ 設定を保存しました');
     setTimeout(() => setExportStatus(''), 3000);
   };
 
-  // ★ スプシ改善版エクスポート（契約処分先改行 + 追加費用セクション）
   const handleExportMonthlyReport = async () => {
-    if (!gasUrl) { setExportStatus('❌ GAS URLを入力してください'); return; }
+    const targetUrl = gasMonthlyUrl || gasUrl;
+    if (!targetUrl) { setExportStatus('❌ GAS URLを入力してください'); return; }
     if (!selectedSite) { setExportStatus('❌ 現場を選択してください'); return; }
 
     setExporting(true);
@@ -1791,7 +1795,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       const siteData = {
         siteName: selectedSite,
         projectNumber: projectInfo.projectNumber || '',
-        projectName: projectInfo.projectName || '',
+        workType: projectInfo.workType || '',
         client: projectInfo.client || '',
         workLocation: projectInfo.workLocation || '',
         salesPerson: projectInfo.salesPerson || '',
@@ -1806,10 +1810,10 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
         materialsCost: projectInfo.materialsCost || 0,
       };
 
-      await fetch(gasUrl, {
+      await fetch(targetUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'updateMonthlyReport', siteData, reportData: reports }),
+        body: JSON.stringify({ action: 'updateMonthlyReport', siteData, reportData: reports, monthlySpreadsheetUrl: gasMonthlyUrl || null }),
         mode: 'no-cors'
       });
 
@@ -1835,7 +1839,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       const siteData = {
         siteName: selectedSite,
         projectNumber: projectInfo.projectNumber || '',
-        projectName: projectInfo.projectName || '',
+        workType: projectInfo.workType || '',
         client: projectInfo.client || '',
         workLocation: projectInfo.workLocation || '',
         salesPerson: projectInfo.salesPerson || '',
@@ -1891,9 +1895,12 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         <div className="mb-4">
-          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">GAS URL <span className="text-red-500">*必須</span></label>
+          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">日報用 GAS URL <span className="text-red-500">*必須</span></label>
           <input type="text" value={gasUrl} onChange={(e) => setGasUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
-            className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-3" />
+            className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-4" />
+          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">月報用 GAS URL <span className="text-gray-600">（未入力の場合は日報用を使用）</span></label>
+          <input type="text" value={gasMonthlyUrl} onChange={(e) => setGasMonthlyUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
+            className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-green-500 mb-4" />
           <button onClick={handleSaveSettings} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
             <Save className="inline w-4 h-4 mr-2" />保存
           </button>

@@ -888,7 +888,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             </div>
           </div>
 
-          <Select label="プロジェクト名" labelEn="Project Name" options={MASTER_DATA.projectNames} value={projectInfo.projectName} onChange={(val) => setProjectInfo({...projectInfo, projectName: val})} />
+          <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={(val) => setProjectInfo({...projectInfo, workType: val})} />
           <TextInput label="発注者" labelEn="Client" value={projectInfo.client} onChange={(val) => setProjectInfo({...projectInfo, client: val})} placeholder="○○建設株式会社" />
           <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation} onChange={(val) => setProjectInfo({...projectInfo, workLocation: val})} placeholder="東京都渋谷区..." />
           <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson} onChange={(val) => setProjectInfo({...projectInfo, salesPerson: val})} />
@@ -2065,7 +2065,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const emptyRows = MAX_ROWS - displayReports.length;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black" style={{ overflowX:'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
         .pdf-container { font-family: 'Noto Sans JP', sans-serif; }
@@ -2105,9 +2105,9 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
         </div>
       </div>
 
-      <div className="bg-black" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-      <div className="pdf-container bg-black p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto' }}>
-        <div style={{ width: '1100px', margin: '0 auto' }}>
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+      <div className="pdf-container bg-black p-6" style={{ minWidth: '1100px', width: '1100px' }}>
+        <div style={{ width: '1100px' }}>
           <div className="text-center mb-3">
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
             <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
@@ -2116,7 +2116,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
           <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '320px 240px 240px 1fr' }}>
             <table className="pdf-header-table">
               <tbody>
-                {[['発注者', projectInfo.client], ['プロジェクト名', projectInfo.projectName], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
+                {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName||''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
                   <tr key={k}><th>{k}</th><td>{v || ''}</td></tr>
                 ))}
               </tbody>

@@ -559,7 +559,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         <div className="relative mb-5" ref={dropdownRef}>
           <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
             className="w-full px-4 py-3.5 flex items-center justify-between text-left"
-            style={card}>
+            style={{ ...card, background: 'linear-gradient(#0a0a0a, #0a0a0a) padding-box, linear-gradient(135deg, #3b82f6, #22d3ee, #6366f1) border-box', border: '1.5px solid transparent', borderRadius: '14px' }}>
             {selectedSite ? (
               <div className="flex items-center gap-3">
                 <div className="logio-status-dot" />

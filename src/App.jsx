@@ -106,7 +106,7 @@ const MASTER_DATA = {
     '4td': ['6994'], '4tc': ['2265', '11', '3214', '858', '8000', '4000', '5000', '8025', '88'],
     '8tc': ['7000'], '増td': ['22'], '10tc': ['181', '381']
   },
-  heavyMachinery: ['PC78US', 'PC138US', 'その他（フリー入力）'],
+  heavyMachinery: ['PC78US', 'PC138US'],
   workingHoursOptions: (() => {
     const options = [];
     for (let hours = 0; hours <= 24; hours++) {
@@ -2105,7 +2105,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
         </div>
       </div>
 
-      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', display:'flex', justifyContent:'center' }}>
       <div className="pdf-container bg-black p-6" style={{ minWidth: '1100px', width: '1100px' }}>
         <div style={{ width: '1100px' }}>
           <div className="text-center mb-3">

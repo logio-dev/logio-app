@@ -1415,44 +1415,88 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
 // ========== ReportListPage ==========
 function ReportListPage({ reports, onDelete, onNavigate }) {
-  const [filterMonth, setFilterMonth] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [openMonths, setOpenMonths] = useState({});
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
-  const [filterCategory, setFilterCategory] = useState('');
 
   const filteredReports = reports.filter(r => {
-    if (filterMonth && !r.date.startsWith(filterMonth)) return false;
     const category = r.workDetails?.workCategory || r.workCategory;
     if (filterCategory && category !== filterCategory) return false;
     return true;
   });
-  const months = [...new Set(reports.map(r => r.date.substring(0, 7)))].sort().reverse();
+
+  const months = [...new Set(filteredReports.map(r => r.date.substring(0, 7)))].sort().reverse();
+
+  // 最新月はデフォルトで開く
+  useEffect(() => {
+    if (months.length > 0) {
+      setOpenMonths({ [months[0]]: true });
+    }
+  }, [reports, filterCategory]);
+
+  const toggleMonth = (month) => setOpenMonths(prev => ({ ...prev, [month]: !prev[month] }));
+
+  const fmtMonth = (ym) => {
+    const [y, m] = ym.split('-');
+    return `${y}年${parseInt(m)}月`;
+  };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="mb-4">
         <button onClick={() => onNavigate('home')}
           className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <Select label="月" labelEn="Month" options={months} value={filterMonth} onChange={setFilterMonth} placeholder="全期間" />
+      <div className="mb-4">
         <Select label="作業区分" labelEn="Category" options={MASTER_DATA.workCategories} value={filterCategory} onChange={setFilterCategory} placeholder="全作業" />
       </div>
-      <p className="text-sm text-gray-600 mb-4">全 {filteredReports.length}件</p>
-      {filteredReports.sort((a, b) => new Date(b.date) - new Date(a.date)).map(report => (
-        <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} />
-      ))}
+      <p className="text-xs text-gray-600 mb-4">全 {filteredReports.length}件</p>
+
+      {months.map(month => {
+        const monthReports = filteredReports.filter(r => r.date.startsWith(month)).sort((a,b) => new Date(b.date)-new Date(a.date));
+        const isOpen = !!openMonths[month];
+        const monthCost = monthReports.reduce((sum, r) => sum +
+          (r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
+          (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
+          (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
+          (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
+          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
+
+        return (
+          <div key={month} className="mb-3">
+            {/* 月ヘッダー */}
+            <button onClick={() => toggleMonth(month)}
+              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#0f172a', border:'1px solid rgba(255,255,255,0.08)', borderRadius: isOpen ? '10px 10px 0 0' : '10px', cursor:'pointer' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+                <span style={{ fontSize:'14px', fontWeight:700, color:'white' }}>{fmtMonth(month)}</span>
+                <span style={{ fontSize:'11px', color:'#6B7280', background:'rgba(255,255,255,0.05)', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
+                {monthCost > 0 && <span style={{ fontSize:'11px', color:'#fbbf24', fontWeight:600 }}>¥{formatCurrency(monthCost)}</span>}
+              </div>
+              {isOpen ? <ChevronUp className="w-4 h-4 text-gray-500"/> : <ChevronDown className="w-4 h-4 text-gray-500"/>}
+            </button>
+            {/* 月内の日報リスト */}
+            {isOpen && (
+              <div style={{ border:'1px solid rgba(255,255,255,0.08)', borderTop:'none', borderRadius:'0 0 10px 10px', overflow:'hidden' }}>
+                {monthReports.map((report, idx) => (
+                  <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} isLast={idx === monthReports.length - 1} />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
       {filteredReports.length === 0 && <p className="text-center text-gray-400 py-12">該当する日報がありません</p>}
     </div>
   );
 }
 
-function ReportAccordion({ report, onDelete }) {
+function ReportAccordion({ report, onDelete, isLast }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="border border-white/[0.08] rounded-lg mb-3 overflow-hidden rgba(255,255,255,0.02)">
+    <div style={{ borderBottom: isLast && !isOpen ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
       <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-black/50 transition-colors">
         <div className="text-left flex-1">
           <div className="flex items-center gap-3 mb-1">
@@ -1560,13 +1604,12 @@ function ProjectPage({ projectInfo, onNavigate }) {
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
-      {projectInfo?.projectName && (
+      {(projectInfo?.workType || projectInfo?.projectName) && (
         <div className="mb-6 px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
-          <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.projectName}</div>
+          <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.workType || projectInfo.projectName}</div>
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
-      <div className="space-y-6">
         <div>
           <h2 className="text-xl font-semibold mb-4 text-blue-400">基本情報</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1659,9 +1702,9 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
-      {projectInfo?.projectName && (
+      {(projectInfo?.workType || projectInfo?.projectName) && (
         <div className="mb-6 px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
-          <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.projectName}</div>
+          <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.workType || projectInfo.projectName}</div>
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
@@ -2072,7 +2115,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const emptyRows = MAX_ROWS - displayReports.length;
 
   return (
-    <div className="min-h-screen bg-black" style={{ overflowX:'hidden' }}>
+    <div className="min-h-screen bg-black">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
         .pdf-container { font-family: 'Noto Sans JP', sans-serif; }

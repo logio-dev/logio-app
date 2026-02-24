@@ -1221,7 +1221,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
       {currentStep === 1 && (
         <div className="b-panel" style={{ padding:'20px 16px 100px' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
-          <div style={{ marginBottom:'20px', borderRadius:'10px', padding:'16px', border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.02)' }}>
+          <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}

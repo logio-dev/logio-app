@@ -1610,6 +1610,7 @@ function ProjectPage({ projectInfo, onNavigate }) {
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
+      <div className="space-y-6">
         <div>
           <h2 className="text-xl font-semibold mb-4 text-blue-400">基本情報</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1541,7 +1541,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
                 <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
                   <p className="text-xs font-semibold text-blue-400 mb-2">自社人工: {report.workDetails.inHouseWorkers.length}名</p>
                   {report.workDetails.inHouseWorkers.map((w, idx) => (
-                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {w.name} <span className="text-gray-500">{w.startTime}-{w.endTime}</span> <span className="text-yellow-400">¥{formatCurrency(w.amount)}</span></p>
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {w.name} <span className="text-gray-500">{w.start||w.startTime}-{w.end||w.endTime}</span> <span className="text-yellow-400">¥{formatCurrency(w.amount)}</span></p>
                   ))}
                 </div>
               )}
@@ -2257,8 +2257,8 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                 const scrap = r.scrapItems || [];
                 const wasteAndScrap = [...waste, ...scrap.map(s => ({ material: s.type, quantity: s.quantity, unit: s.unit, amount: Math.abs(s.amount), disposalSite: s.buyer, manifestNumber: '-' }))];
                 const maxSubRows = Math.max(1, workers.length, outsourcing.length, vehicles.length, machinery.length, wasteAndScrap.length);
-                const startTimes = workers.map(w => w.startTime).filter(Boolean).sort();
-                const endTimes = workers.map(w => w.endTime).filter(Boolean).sort().reverse();
+                const startTimes = workers.map(w => w.start || w.startTime).filter(Boolean).sort();
+                const endTimes = workers.map(w => w.end || w.endTime).filter(Boolean).sort().reverse();
                 return (
                   <Fragment key={r.id}>
                     {Array.from({ length: maxSubRows }, (_, subIdx) => (
@@ -2562,14 +2562,14 @@ export default function LOGIOApp() {
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
 
   return (
-    <div className="min-h-screen bg-black flex" style={{ overflowX:'hidden' }}>
+    <div className="min-h-screen bg-black flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       <div className="flex flex-col flex-1 bg-black">
         <Header showMenuButton onMenuClick={() => setSidebarOpen(true)} onCalendar={() => setShowCalendarModal(true)} onExport={() => handleNavigate('export')} onNotification={() => setShowNotificationModal(true)} notificationCount={(() => {
           const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
           return costRatio >= 70 ? 1 : 0;
         })()} />
-        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' }}>
+        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
           {currentPage === 'home' && (
             <HomePage
               sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite}

@@ -772,7 +772,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       {/* ボトム固定ナビ（現場選択後のみ表示） */}
       {selectedSite && (
       <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: '42rem',
         background: '#0a0a0a', borderTop: '1px solid rgba(255,255,255,0.07)',
         padding: `10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,

@@ -8,44 +8,43 @@ console.log('✅ LOGIO Phase5: Module loaded successfully');
 const SUPABASE_URL = 'https://ruomhthswdxylopkhmnh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
 
-const sb = {
-  async from(table) {
-    const base = `${SUPABASE_URL}/rest/v1/${table}`;
-    const headers = {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    };
-    return {
-      async select(filter = '') {
-        const url = filter ? `${base}?${filter}` : base;
-        const res = await fetch(url, { headers });
-        return res.json();
-      },
-      async insert(data) {
-        const res = await fetch(base, { method: 'POST', headers, body: JSON.stringify(data) });
-        return res.json();
-      },
-      async upsert(data, onConflict) {
-        const h = { ...headers, 'Prefer': `resolution=merge-duplicates,return=representation` };
-        const url = onConflict ? `${base}?on_conflict=${onConflict}` : base;
-        const res = await fetch(url, { method: 'POST', headers: h, body: JSON.stringify(data) });
-        return res.json();
-      },
-      async update(data, filter) {
-        const url = `${base}?${filter}`;
-        const res = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(data) });
-        return res.json();
-      },
-      async delete(filter) {
-        const url = `${base}?${filter}`;
-        const res = await fetch(url, { method: 'DELETE', headers });
-        return res.ok;
-      }
-    };
-  }
+const sbHeaders = {
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
 };
+
+function sb(table) {
+  const base = `${SUPABASE_URL}/rest/v1/${table}`;
+  return {
+    async select(filter = '') {
+      const url = filter ? `${base}?${filter}` : base;
+      const res = await fetch(url, { headers: sbHeaders });
+      return res.json();
+    },
+    async insert(data) {
+      const res = await fetch(base, { method: 'POST', headers: sbHeaders, body: JSON.stringify(data) });
+      return res.json();
+    },
+    async upsert(data, onConflict) {
+      const h = { ...sbHeaders, 'Prefer': 'resolution=merge-duplicates,return=representation' };
+      const url = onConflict ? `${base}?on_conflict=${onConflict}` : base;
+      const res = await fetch(url, { method: 'POST', headers: h, body: JSON.stringify(data) });
+      return res.json();
+    },
+    async update(data, filter) {
+      const url = `${base}?${filter}`;
+      const res = await fetch(url, { method: 'PATCH', headers: sbHeaders, body: JSON.stringify(data) });
+      return res.json();
+    },
+    async delete(filter) {
+      const url = `${base}?${filter}`;
+      const res = await fetch(url, { method: 'DELETE', headers: sbHeaders });
+      return res.ok;
+    }
+  };
+}
 
 // GAS URL等はlocalStorageに保存（端末ごと）
 if (typeof window !== 'undefined') {
@@ -2111,7 +2110,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
         // report.site_nameがある場合はそれを使う、なければreportから現場名を特定
         const siteName = report.siteName || report.site_name;
         if (siteName) {
-          const db = await sb.from('reports');
+          const db = sb('reports');
           const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
           if (Array.isArray(data) && data.length > 0) {
             setAllReports(data.map(r => ({
@@ -2408,7 +2407,7 @@ export default function LOGIOApp() {
 
   const loadSites = async () => {
     try {
-      const db = await sb.from('sites');
+      const db = sb('sites');
       const data = await db.select('order=created_at.asc');
       if (Array.isArray(data)) {
         const sitesWithNumbers = data.map(s => ({
@@ -2421,7 +2420,7 @@ export default function LOGIOApp() {
 
   const generateProjectNumber = async () => {
     const currentYear = new Date().getFullYear();
-    const db = await sb.from('project_info');
+    const db = sb('project_info');
     const data = await db.select('select=project_number');
     const allNums = Array.isArray(data) ? data.map(d => d.project_number).filter(Boolean) : [];
     const currentYearNumbers = allNums
@@ -2448,10 +2447,10 @@ export default function LOGIOApp() {
     try {
       const projectNumber = await generateProjectNumber();
       // sitesテーブルに追加
-      const siteDb = await sb.from('sites');
+      const siteDb = sb('sites');
       await siteDb.insert({ name: siteName, project_number: projectNumber, status: '進行中' });
       // project_infoテーブルに追加
-      const piDb = await sb.from('project_info');
+      const piDb = sb('project_info');
       await piDb.insert({
         site_name: siteName, project_number: projectNumber, work_type: '', client: '',
         work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '',
@@ -2474,11 +2473,11 @@ export default function LOGIOApp() {
 
   const handleDeleteSite = async (siteName) => {
     try {
-      const siteDb = await sb.from('sites');
+      const siteDb = sb('sites');
       await siteDb.delete(`name=eq.${encodeURIComponent(siteName)}`);
-      const piDb = await sb.from('project_info');
+      const piDb = sb('project_info');
       await piDb.delete(`site_name=eq.${encodeURIComponent(siteName)}`);
-      const rDb = await sb.from('reports');
+      const rDb = sb('reports');
       await rDb.delete(`site_name=eq.${encodeURIComponent(siteName)}`);
       setSites(prev => prev.filter(s => s.name !== siteName));
       if (selectedSite === siteName) setSelectedSite('');
@@ -2494,7 +2493,7 @@ export default function LOGIOApp() {
 
   const loadProjectInfo = async (siteName) => {
     try {
-      const db = await sb.from('project_info');
+      const db = sb('project_info');
       const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}`);
       if (Array.isArray(data) && data.length > 0) {
         const d = data[0];
@@ -2526,7 +2525,7 @@ export default function LOGIOApp() {
 
   const loadReports = async (siteName) => {
     try {
-      const db = await sb.from('reports');
+      const db = sb('reports');
       const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
       if (Array.isArray(data)) {
         setReports(data.map(r => ({
@@ -2541,7 +2540,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      const db = await sb.from('project_info');
+      const db = sb('project_info');
       await db.upsert({
         site_name: selectedSite,
         project_number: projectInfo.projectNumber || '',
@@ -2565,7 +2564,7 @@ export default function LOGIOApp() {
         updated_at: new Date().toISOString()
       }, 'site_name');
       // sitesテーブルのproject_numberも更新
-      const siteDb = await sb.from('sites');
+      const siteDb = sb('sites');
       await siteDb.update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');
@@ -2577,7 +2576,7 @@ export default function LOGIOApp() {
   const handleSaveReport = async (reportData) => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      const db = await sb.from('reports');
+      const db = sb('reports');
       const inserted = await db.insert({
         site_name: selectedSite,
         date: reportData.date,
@@ -2597,7 +2596,7 @@ export default function LOGIOApp() {
   const handleDeleteReport = async (reportId) => {
     if (!confirm('この日報を削除しますか？')) return;
     try {
-      const db = await sb.from('reports');
+      const db = sb('reports');
       await db.delete(`id=eq.${reportId}`);
       setReports(prev => prev.filter(r => r.id !== reportId));
       alert('✅ 日報を削除しました');

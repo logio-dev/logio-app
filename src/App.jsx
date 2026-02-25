@@ -4,32 +4,60 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 
 console.log('✅ LOGIO Phase5: Module loaded successfully');
 
-// ========== localStorage ラッパー ==========
+// ========== Supabase設定 ==========
+const SUPABASE_URL = 'https://ruomhthswdxylopkhmnh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
+
+const sb = {
+  async from(table) {
+    const base = `${SUPABASE_URL}/rest/v1/${table}`;
+    const headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    };
+    return {
+      async select(filter = '') {
+        const url = filter ? `${base}?${filter}` : base;
+        const res = await fetch(url, { headers });
+        return res.json();
+      },
+      async insert(data) {
+        const res = await fetch(base, { method: 'POST', headers, body: JSON.stringify(data) });
+        return res.json();
+      },
+      async upsert(data, onConflict) {
+        const h = { ...headers, 'Prefer': `resolution=merge-duplicates,return=representation` };
+        const url = onConflict ? `${base}?on_conflict=${onConflict}` : base;
+        const res = await fetch(url, { method: 'POST', headers: h, body: JSON.stringify(data) });
+        return res.json();
+      },
+      async update(data, filter) {
+        const url = `${base}?${filter}`;
+        const res = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(data) });
+        return res.json();
+      },
+      async delete(filter) {
+        const url = `${base}?${filter}`;
+        const res = await fetch(url, { method: 'DELETE', headers });
+        return res.ok;
+      }
+    };
+  }
+};
+
+// GAS URL等はlocalStorageに保存（端末ごと）
 if (typeof window !== 'undefined') {
   window.storage = {
     async get(key) {
       try {
         const value = localStorage.getItem(key);
-        return value ? { key, value, shared: false } : null;
-      } catch (error) { return null; }
+        return value ? { key, value } : null;
+      } catch { return null; }
     },
     async set(key, value) {
-      try {
-        localStorage.setItem(key, value);
-        return { key, value, shared: false };
-      } catch (error) { return null; }
-    },
-    async delete(key) {
-      try {
-        localStorage.removeItem(key);
-        return { key, deleted: true, shared: false };
-      } catch (error) { return { key, deleted: false, shared: false }; }
-    },
-    async list(prefix) {
-      try {
-        const keys = Object.keys(localStorage).filter(k => !prefix || k.startsWith(prefix));
-        return { keys, prefix, shared: false };
-      } catch (error) { return { keys: [], prefix, shared: false }; }
+      try { localStorage.setItem(key, value); return { key, value }; } catch { return null; }
     }
   };
 }
@@ -1604,7 +1632,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
 }
 
 // ========== ProjectPage ==========
-function ProjectPage({ projectInfo, onNavigate }) {
+function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
@@ -1613,10 +1641,11 @@ function ProjectPage({ projectInfo, onNavigate }) {
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
-      {(projectInfo?.workType || projectInfo?.projectName) && (
+      {(selectedSite || projectInfo?.workType || projectInfo?.projectName) && (
         <div className="mb-6 px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
-          <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.workType || projectInfo.projectName}</div>
-          {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
+          <div className="text-white text-lg font-bold leading-relaxed mb-2">{selectedSite || projectInfo?.workType || projectInfo?.projectName}</div>
+          {projectInfo?.workType && selectedSite && <div className="text-gray-500 text-xs mb-1">{projectInfo.workType}</div>}
+          {projectInfo?.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
       <div className="space-y-6">
@@ -2079,19 +2108,22 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   useEffect(() => {
     const loadAllReports = async () => {
       try {
-        const sitesList = await window.storage.get('logio-sites');
-        if (sitesList?.value) {
-          const sites = JSON.parse(sitesList.value);
-          for (const site of sites) {
-            const stored = await window.storage.get(`logio-reports-${site.name}`);
-            if (stored?.value) {
-              const reports = JSON.parse(stored.value);
-              if (reports.some(r => r.id === report.id)) {
-                setAllReports(reports.sort((a, b) => new Date(a.date) - new Date(b.date)));
-                break;
-              }
-            }
+        // report.site_nameがある場合はそれを使う、なければreportから現場名を特定
+        const siteName = report.siteName || report.site_name;
+        if (siteName) {
+          const db = await sb.from('reports');
+          const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
+          if (Array.isArray(data) && data.length > 0) {
+            setAllReports(data.map(r => ({
+              id: r.id, date: r.date, weather: r.weather, recorder: r.recorder,
+              workDetails: r.work_details || {}, wasteItems: r.waste_items || [],
+              scrapItems: r.scrap_items || [], createdAt: r.created_at
+            })));
+          } else {
+            setAllReports([report]);
           }
+        } else {
+          setAllReports([report]);
         }
       } catch (error) { setAllReports([report]); }
       setLoading(false);
@@ -2331,18 +2363,21 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
 
-  // iOSズーム防止：viewport maximum-scale=1 をJSからセット
+  // iOSズーム防止：PDF以外はzoom無効、PDF時はピンチズーム許可
   useEffect(() => {
     const vp = document.querySelector('meta[name="viewport"]');
+    const content = currentPage === 'pdf'
+      ? 'width=device-width, initial-scale=1'
+      : 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
     if (vp) {
-      vp.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+      vp.setAttribute('content', content);
     } else {
       const meta = document.createElement('meta');
       meta.name = 'viewport';
-      meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+      meta.content = content;
       document.head.appendChild(meta);
     }
-  }, []);
+  }, [currentPage]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
@@ -2373,40 +2408,24 @@ export default function LOGIOApp() {
 
   const loadSites = async () => {
     try {
-      const stored = await window.storage.get('logio-sites');
-      if (stored?.value) {
-        const loadedSites = JSON.parse(stored.value);
-        const sitesWithNumbers = await Promise.all(
-          loadedSites.map(async (site) => {
-            try {
-              const projectStored = await window.storage.get(`logio-project-${site.name}`);
-              if (projectStored?.value) {
-                const projectData = JSON.parse(projectStored.value);
-                return { ...site, projectNumber: projectData.projectNumber || '' };
-              }
-            } catch (error) {}
-            return { ...site, projectNumber: '' };
-          })
-        );
+      const db = await sb.from('sites');
+      const data = await db.select('order=created_at.asc');
+      if (Array.isArray(data)) {
+        const sitesWithNumbers = data.map(s => ({
+          name: s.name, createdAt: s.created_at, status: s.status, projectNumber: s.project_number || ''
+        }));
         setSites(sitesWithNumbers);
       }
-    } catch (error) { console.log('初回起動'); }
+    } catch (error) { console.log('loadSites error:', error); }
   };
 
   const generateProjectNumber = async () => {
     const currentYear = new Date().getFullYear();
-    const allProjectNumbers = [];
-    for (const site of sites) {
-      try {
-        const stored = await window.storage.get(`logio-project-${site.name}`);
-        if (stored?.value) {
-          const projectData = JSON.parse(stored.value);
-          if (projectData.projectNumber) allProjectNumbers.push(projectData.projectNumber);
-        }
-      } catch (error) {}
-    }
-    const currentYearNumbers = allProjectNumbers
-      .filter(num => num.startsWith(currentYear + '-'))
+    const db = await sb.from('project_info');
+    const data = await db.select('select=project_number');
+    const allNums = Array.isArray(data) ? data.map(d => d.project_number).filter(Boolean) : [];
+    const currentYearNumbers = allNums
+      .filter(num => num && num.startsWith(currentYear + '-'))
       .map(num => { const parts = num.split('-'); return parts.length === 2 ? parseInt(parts[1], 10) : 0; })
       .filter(num => !isNaN(num));
     const maxNumber = currentYearNumbers.length > 0 ? Math.max(...currentYearNumbers) : 0;
@@ -2428,30 +2447,40 @@ export default function LOGIOApp() {
   const handleAddSite = async (siteName) => {
     try {
       const projectNumber = await generateProjectNumber();
-      const newSite = { name: siteName, createdAt: new Date().toISOString(), status: '進行中', projectNumber };
-      const updatedSites = [...sites, newSite];
-      setSites(updatedSites);
-      await window.storage.set('logio-sites', JSON.stringify(updatedSites));
+      // sitesテーブルに追加
+      const siteDb = await sb.from('sites');
+      await siteDb.insert({ name: siteName, project_number: projectNumber, status: '進行中' });
+      // project_infoテーブルに追加
+      const piDb = await sb.from('project_info');
+      await piDb.insert({
+        site_name: siteName, project_number: projectNumber, work_type: '', client: '',
+        work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '',
+        contract_amount: 0, additional_amount: 0, status: '進行中',
+        discharger: '', transport_company: '', contracted_disposal_sites: [],
+        transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: []
+      });
       const initialProjectInfo = {
-        projectId: '', projectNumber, projectName: siteName, client: '', workLocation: '',
+        projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '',
         salesPerson: '', siteManager: '', startDate: '', endDate: '',
         contractAmount: '', additionalAmount: '', status: '進行中',
-        discharger: '', contractedDisposalSites: [],
-        transferCost: '', leaseCost: '', materialsCost: ''
+        discharger: '', transportCompany: '', contractedDisposalSites: [],
+        transferCost: '', leaseCost: '', materialsCost: '', expenses: []
       };
-      await window.storage.set(`logio-project-${siteName}`, JSON.stringify(initialProjectInfo));
+      setSites(prev => [...prev, { name: siteName, projectNumber, status: '進行中' }]);
       setSelectedSite(siteName); setProjectInfo(initialProjectInfo);
       alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
-    } catch (error) { alert('❌ 現場の追加に失敗しました'); }
+    } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); }
   };
 
   const handleDeleteSite = async (siteName) => {
     try {
-      const updatedSites = sites.filter(s => s.name !== siteName);
-      setSites(updatedSites);
-      await window.storage.set('logio-sites', JSON.stringify(updatedSites));
-      await window.storage.delete(`logio-project-${siteName}`);
-      await window.storage.delete(`logio-reports-${siteName}`);
+      const siteDb = await sb.from('sites');
+      await siteDb.delete(`name=eq.${encodeURIComponent(siteName)}`);
+      const piDb = await sb.from('project_info');
+      await piDb.delete(`site_name=eq.${encodeURIComponent(siteName)}`);
+      const rDb = await sb.from('reports');
+      await rDb.delete(`site_name=eq.${encodeURIComponent(siteName)}`);
+      setSites(prev => prev.filter(s => s.name !== siteName));
       if (selectedSite === siteName) setSelectedSite('');
       alert(`✅ 現場「${siteName}」を削除しました`);
     } catch (error) { alert('❌ 現場の削除に失敗しました'); }
@@ -2465,56 +2494,112 @@ export default function LOGIOApp() {
 
   const loadProjectInfo = async (siteName) => {
     try {
-      const stored = await window.storage.get(`logio-project-${siteName}`);
-      if (stored?.value) setProjectInfo(JSON.parse(stored.value));
-      else setProjectInfo({
-        projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
-        salesPerson: '', siteManager: '', startDate: '', endDate: '',
-        contractAmount: '', additionalAmount: '', status: '進行中',
-        discharger: '', contractedDisposalSites: [],
-        transferCost: '', leaseCost: '', materialsCost: ''
-      });
-    } catch (error) {}
+      const db = await sb.from('project_info');
+      const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}`);
+      if (Array.isArray(data) && data.length > 0) {
+        const d = data[0];
+        setProjectInfo({
+          projectId: d.id || '', projectNumber: d.project_number || '',
+          projectName: siteName, workType: d.work_type || '',
+          client: d.client || '', workLocation: d.work_location || '',
+          salesPerson: d.sales_person || '', siteManager: d.site_manager || '',
+          startDate: d.start_date || '', endDate: d.end_date || '',
+          contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '',
+          status: d.status || '進行中', discharger: d.discharger || '',
+          transportCompany: d.transport_company || '',
+          contractedDisposalSites: d.contracted_disposal_sites || [],
+          transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '',
+          materialsCost: d.materials_cost || '', expenses: d.expenses || [],
+          completionDate: d.completion_date || ''
+        });
+      } else {
+        setProjectInfo({
+          projectId: '', projectNumber: '', projectName: siteName, workType: '', client: '', workLocation: '',
+          salesPerson: '', siteManager: '', startDate: '', endDate: '',
+          contractAmount: '', additionalAmount: '', status: '進行中',
+          discharger: '', transportCompany: '', contractedDisposalSites: [],
+          transferCost: '', leaseCost: '', materialsCost: '', expenses: []
+        });
+      }
+    } catch (error) { console.error('loadProjectInfo error:', error); }
   };
 
   const loadReports = async (siteName) => {
     try {
-      const stored = await window.storage.get(`logio-reports-${siteName}`);
-      setReports(stored?.value ? JSON.parse(stored.value) : []);
+      const db = await sb.from('reports');
+      const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
+      if (Array.isArray(data)) {
+        setReports(data.map(r => ({
+          id: r.id, date: r.date, weather: r.weather, recorder: r.recorder,
+          workDetails: r.work_details || {}, wasteItems: r.waste_items || [],
+          scrapItems: r.scrap_items || [], createdAt: r.created_at
+        })));
+      } else setReports([]);
     } catch (error) { setReports([]); }
   };
 
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      const updatedInfo = { ...projectInfo, projectId: projectInfo.projectId || generateId('P'), updatedAt: new Date().toISOString() };
-      await window.storage.set(`logio-project-${selectedSite}`, JSON.stringify(updatedInfo));
-      setProjectInfo(updatedInfo);
+      const db = await sb.from('project_info');
+      await db.upsert({
+        site_name: selectedSite,
+        project_number: projectInfo.projectNumber || '',
+        work_type: projectInfo.workType || '',
+        client: projectInfo.client || '',
+        work_location: projectInfo.workLocation || '',
+        sales_person: projectInfo.salesPerson || '',
+        site_manager: projectInfo.siteManager || '',
+        start_date: projectInfo.startDate || '',
+        end_date: projectInfo.endDate || '',
+        contract_amount: parseFloat(projectInfo.contractAmount) || 0,
+        additional_amount: parseFloat(projectInfo.additionalAmount) || 0,
+        status: projectInfo.status || '進行中',
+        discharger: projectInfo.discharger || '',
+        transport_company: projectInfo.transportCompany || '',
+        contracted_disposal_sites: projectInfo.contractedDisposalSites || [],
+        transfer_cost: parseFloat(projectInfo.transferCost) || 0,
+        lease_cost: parseFloat(projectInfo.leaseCost) || 0,
+        materials_cost: parseFloat(projectInfo.materialsCost) || 0,
+        expenses: projectInfo.expenses || [],
+        updated_at: new Date().toISOString()
+      }, 'site_name');
+      // sitesテーブルのproject_numberも更新
+      const siteDb = await sb.from('sites');
+      await siteDb.update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
+      setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
       setCurrentPage('home');
-    } catch (error) { alert('❌ 保存に失敗しました'); }
+    } catch (error) { console.error(error); alert('❌ 保存に失敗しました'); }
   };
 
   const handleSaveReport = async (reportData) => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      const newReport = { id: Date.now(), reportId: generateId('R'), projectId: projectInfo.projectId || generateId('P'), ...reportData, createdAt: new Date().toISOString() };
-      const updatedReports = [...reports, newReport];
-      setReports(updatedReports);
-      await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
+      const db = await sb.from('reports');
+      const inserted = await db.insert({
+        site_name: selectedSite,
+        date: reportData.date,
+        weather: reportData.weather || '',
+        recorder: reportData.recorder || '',
+        work_details: reportData.workDetails || {},
+        waste_items: reportData.wasteItems || [],
+        scrap_items: reportData.scrapItems || []
+      });
+      await loadReports(selectedSite);
       alert('✅ 日報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
       setCurrentPage('home');
-    } catch (error) { alert('❌ 保存に失敗しました'); }
+    } catch (error) { console.error(error); alert('❌ 保存に失敗しました'); }
   };
 
   const handleDeleteReport = async (reportId) => {
     if (!confirm('この日報を削除しますか？')) return;
     try {
-      const updatedReports = reports.filter(r => r.id !== reportId);
-      setReports(updatedReports);
-      await window.storage.set(`logio-reports-${selectedSite}`, JSON.stringify(updatedReports));
+      const db = await sb.from('reports');
+      await db.delete(`id=eq.${reportId}`);
+      setReports(prev => prev.filter(r => r.id !== reportId));
       alert('✅ 日報を削除しました');
     } catch (error) { alert('❌ 削除に失敗しました'); }
   };
@@ -2586,7 +2671,7 @@ export default function LOGIOApp() {
           {currentPage === 'input' && <ReportInputPage onSave={handleSaveReport} onNavigate={setCurrentPage} projectInfo={projectInfo} />}
           {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} />}
           {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
-          {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} onNavigate={setCurrentPage} />}
+          {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
           {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
           {currentPage === 'pdf' && selectedReport && <ReportPDFPage report={selectedReport} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
         </main>

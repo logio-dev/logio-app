@@ -772,7 +772,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       {/* ボトム固定ナビ（現場選択後のみ表示） */}
       {selectedSite && (
       <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        position: 'fixed', bottom: 0, left: 0, right: 0,
         width: '100%', maxWidth: '42rem',
         background: '#0a0a0a', borderTop: '1px solid rgba(255,255,255,0.07)',
         padding: `10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,
@@ -1415,7 +1415,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {scrapItems.map((s,i)=>(
             <ItemCard key={i} avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80" avatarText={s.type.charAt(0)}
               name={s.type} meta={`${s.quantity}${s.unit}　${s.buyer}`}
-              amount={`¥${formatCurrency(s.unitPrice)}`} amountColor="#4ade80"
+              amount={`¥${formatCurrency(Math.abs(s.amount))}`} amountColor="#4ade80"
               onDel={()=>setScrapItems(scrapItems.filter((_,j)=>j!==i))} />
           ))}
           <div style={inputCardRose}>
@@ -1463,7 +1463,7 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
   // 最新月はデフォルトで開く
   useEffect(() => {
     if (months.length > 0) {
-      setOpenMonths({ [months[0]]: true });
+      setOpenMonths({});
     }
   }, [reports, filterCategory]);
 

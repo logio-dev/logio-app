@@ -754,8 +754,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         )}
 
         {!selectedSite && sites.length === 0 && (
-          <div className="flex flex-col items-center justify-center" style={{ minHeight: '60vh' }}>
-            <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '32px' }}>
+          <div className="flex flex-col items-center justify-center" style={{ minHeight: '20vh', marginTop: '16px' }}>
+            <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '16px' }}>
               現場が登録されていません
             </p>
             <button onClick={() => onNavigate('settings')}

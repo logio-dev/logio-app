@@ -5,14 +5,13 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 console.log('✅ LOGIO Phase5: Module loaded successfully');
 
 // ========== Supabase設定 ==========
-const SUPABASE_URL = 'https://ruomhthswdxylopkhmnh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
-
 function sb(table) {
-  const base = SUPABASE_URL + '/rest/v1/' + table;
+  const _url = 'https://ruomhthswdxylopkhmnh.supabase.co';
+  const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
+  const base = _url + '/rest/v1/' + table;
   const h = {
-    'apikey': SUPABASE_ANON_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'apikey': _key,
+    'Authorization': 'Bearer ' + _key,
     'Content-Type': 'application/json',
     'Prefer': 'return=representation'
   };

@@ -8,39 +8,36 @@ console.log('✅ LOGIO Phase5: Module loaded successfully');
 const SUPABASE_URL = 'https://ruomhthswdxylopkhmnh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
 
-const sbHeaders = {
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json',
-  'Prefer': 'return=representation'
-};
-
 function sb(table) {
-  const base = `${SUPABASE_URL}/rest/v1/${table}`;
+  const base = SUPABASE_URL + '/rest/v1/' + table;
+  const h = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
   return {
-    async select(filter = '') {
-      const url = filter ? `${base}?${filter}` : base;
-      const res = await fetch(url, { headers: sbHeaders });
+    async select(filter) {
+      const url = filter ? (base + '?' + filter) : base;
+      const res = await fetch(url, { headers: h });
       return res.json();
     },
     async insert(data) {
-      const res = await fetch(base, { method: 'POST', headers: sbHeaders, body: JSON.stringify(data) });
+      const res = await fetch(base, { method: 'POST', headers: h, body: JSON.stringify(data) });
       return res.json();
     },
     async upsert(data, onConflict) {
-      const h = { ...sbHeaders, 'Prefer': 'resolution=merge-duplicates,return=representation' };
-      const url = onConflict ? `${base}?on_conflict=${onConflict}` : base;
-      const res = await fetch(url, { method: 'POST', headers: h, body: JSON.stringify(data) });
+      const h2 = Object.assign({}, h, { 'Prefer': 'resolution=merge-duplicates,return=representation' });
+      const url = onConflict ? (base + '?on_conflict=' + onConflict) : base;
+      const res = await fetch(url, { method: 'POST', headers: h2, body: JSON.stringify(data) });
       return res.json();
     },
     async update(data, filter) {
-      const url = `${base}?${filter}`;
-      const res = await fetch(url, { method: 'PATCH', headers: sbHeaders, body: JSON.stringify(data) });
+      const res = await fetch(base + '?' + filter, { method: 'PATCH', headers: h, body: JSON.stringify(data) });
       return res.json();
     },
     async delete(filter) {
-      const url = `${base}?${filter}`;
-      const res = await fetch(url, { method: 'DELETE', headers: sbHeaders });
+      const res = await fetch(base + '?' + filter, { method: 'DELETE', headers: h });
       return res.ok;
     }
   };

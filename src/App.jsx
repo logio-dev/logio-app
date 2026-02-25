@@ -2357,6 +2357,9 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
 // ========== メインApp ==========
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState('home');
 
   // iOSズーム防止：PDF以外はzoom無効、PDF時はピンチズーム許可
   useEffect(() => {
@@ -2373,9 +2376,6 @@ export default function LOGIOApp() {
       document.head.appendChild(meta);
     }
   }, [currentPage]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [currentPage, setCurrentPage] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);

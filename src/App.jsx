@@ -118,7 +118,18 @@ const MASTER_DATA = {
   projectNames: ['内装解体', 'スケルトン解体', '建物解体', '外装解体', '外構解体', 'アスベスト除去', '設備解体', '躯体解体'],
   salesPersons: ['間野', '八ツ田', '木嶋', '西', '鈴木', '原', '二宮'],
   employees: ['五十嵐悠哉', '折田優作', '稲葉正輝', '井ケ田浩寿', '大野勝也', '石森達也', '一村琢磨', '間野昂平'],
-  inHouseWorkers: ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也'],
+  inHouseWorkers: ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也', '小峯朋宏', '松橋信行', '浅見勇弥', '石田竜二', '田南功紀', '尾崎奈帆', '古山慎祐', '増岡利幸', '森繁信'],
+  inHouseWorkersByDept: {
+    '工事1課': ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也'],
+    '環境課': ['小峯朋宏', '松橋信行', '浅見勇弥', '石田竜二', '田南功紀', '尾崎奈帆', '古山慎祐', '増岡利幸', '森繁信']
+  },
+  disposalSiteUnitPrices: {
+    '入間緑化': {
+      '廃プラ': 13000, '木くず': 3500, '断熱材': 7000, 'がら陶': 22000,
+      '石膏ボード': 22000, 'コンクリートがら': 22000, '金属くず': 1000,
+      '繊維くず': 1300, '非飛散性アスベスト（運搬費含む）': 35000
+    }
+  },
   outsourcingCompanies: ['TCY興業', 'ALTEQ', '山田興業', '川田工業', 'マルカイ工業', 'MM興業'],
   weather: ['晴', '曇', '雨', '雪'],
   workCategories: ['解体', '清掃', '積込', '搬出'],
@@ -140,7 +151,7 @@ const MASTER_DATA = {
     }
     return options;
   })(),
-  wasteTypes: ['混合廃棄物', '木くず', '廃プラ', 'がら陶', 'コンクリートがら', '金属くず', '石膏ボード', 'ガラス'],
+  wasteTypes: ['混合廃棄物', '木くず', '廃プラ', 'がら陶', 'コンクリートがら', '金属くず', '石膏ボード', 'ガラス', '断熱材', '繊維くず', '非飛散性アスベスト（運搬費含む）'],
   disposalSites: ['木村建材', '二光産業', 'ギプロ', 'ウムヴェルト', '日栄興産', '戸部組', 'リバー', 'ワイエムエコフューチャー', '東和アークス', 'ヤマゼン', '入間緑化', '石坂産業'],
   scrapTypes: ['鉄くず', '銅線', 'アルミ', 'ステンレス', '真鍮'],
   buyers: ['小林金属', '高橋金属', 'ナンセイスチール', '服部金属', 'サンビーム', '光田産業', '青木商店', '長沼商事'],
@@ -1308,7 +1319,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           ))}
           <div style={inputCard}>
             <div style={grid2}>
-              <div><label style={inpLbl}>氏名</label><select value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.inHouseWorkers.map(n=><option key={n}>{n}</option>)}</select></div>
+              <div><label style={inpLbl}>氏名</label><select value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})} style={inpSel}><option value="">選択</option>{Object.entries(MASTER_DATA.inHouseWorkersByDept).map(([dept,members])=><optgroup key={dept} label={dept}>{members.map(n=><option key={n}>{n}</option>)}</optgroup>)}</select></div>
               <div><label style={inpLbl}>区分</label><ShiftBtns value={wForm.shift} onChange={v=>setWForm({...wForm,shift:v})} /></div>
             </div>
             <div style={grid2}>
@@ -1399,8 +1410,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           ))}
           <div style={inputCardGreen}>
             <div style={grid2}>
-              <div><label style={inpLbl}>種類</label><select value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></div>
-              <div><label style={inpLbl}>処分先</label><select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} style={inpSel}><option value="">選択</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></div>
+              <div><label style={inpLbl}>種類</label><select value={wasteForm.type} onChange={e=>{const t=e.target.value;const prices=MASTER_DATA.disposalSiteUnitPrices[wasteForm.disposal]||{};const auto=t&&prices[t]?String(prices[t]):wasteForm.price;setWasteForm({...wasteForm,type:t,price:auto});}} style={inpSel}><option value="">選択</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></div>
+              <div><label style={inpLbl}>処分先</label><select value={wasteForm.disposal} onChange={e=>{const d=e.target.value;const prices=MASTER_DATA.disposalSiteUnitPrices[d]||{};const auto=wasteForm.type&&prices[wasteForm.type]?String(prices[wasteForm.type]):wasteForm.price;setWasteForm({...wasteForm,disposal:d,price:auto});}} style={inpSel}><option value="">選択</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></div>
             </div>
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
@@ -1574,7 +1585,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
                 <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
                   <p className="text-xs font-semibold text-blue-400 mb-2">外注人工: {report.workDetails.outsourcingLabor.length}件</p>
                   {report.workDetails.outsourcingLabor.map((o, idx) => (
-                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {o.company} <span className="text-gray-500">{o.workers}人</span> <span className="text-yellow-400">¥{formatCurrency(o.amount)}</span></p>
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {o.company} <span className="text-gray-500">{o.count || o.workers}人</span> <span className="text-yellow-400">¥{formatCurrency(o.amount)}</span></p>
                   ))}
                 </div>
               )}
@@ -2132,7 +2143,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
 
   const totalInHouseWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.inHouseWorkers?.length || 0), 0);
   const totalInHouseCost = allReports.reduce((sum, r) => sum + (r.workDetails?.inHouseWorkers || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
-  const totalOutsourcingWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (o.workers || 0), 0), 0);
+  const totalOutsourcingWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (parseInt(o.count || o.workers) || 0), 0), 0);
   const totalOutsourcingCost = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (o.amount || 0), 0), 0);
   const totalVehicleCost = allReports.reduce((sum, r) => sum + (r.workDetails?.vehicles || []).reduce((s, v) => s + (v.amount || 0), 0), 0);
   const totalMachineryCost = allReports.reduce((sum, r) => sum + (r.workDetails?.machinery || []).reduce((s, m) => s + (m.unitPrice || 0), 0), 0);
@@ -2205,7 +2216,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
           <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '320px 240px 240px 1fr' }}>
             <table className="pdf-header-table">
               <tbody>
-                {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName||''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
+                {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName || report.site_name || ''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
                   <tr key={k}><th>{k}</th><td>{v || ''}</td></tr>
                 ))}
               </tbody>
@@ -2306,7 +2317,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                         )}
                         <td className="text-[8px]">{workers[subIdx]?.name || ''}</td>
                         <td className="text-right text-[8px]">{workers[subIdx] ? `¥${formatCurrency(workers[subIdx].amount)}` : ''}</td>
-                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${outsourcing[subIdx].workers}人` : ''}</td>
+                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${outsourcing[subIdx].count || outsourcing[subIdx].workers || ''}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
                         <td className="text-center text-[8px]">{vehicles[subIdx]?.type || ''}</td>
                         <td className="text-center text-[8px]">{vehicles[subIdx]?.number || ''}</td>
@@ -2527,7 +2538,7 @@ export default function LOGIOApp() {
       const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
       if (Array.isArray(data)) {
         setReports(data.map(r => ({
-          id: r.id, date: r.date, weather: r.weather, recorder: r.recorder,
+          id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder,
           workDetails: r.work_details || {}, wasteItems: r.waste_items || [],
           scrapItems: r.scrap_items || [], createdAt: r.created_at
         })));

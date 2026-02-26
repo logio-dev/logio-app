@@ -775,6 +775,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: 'calc(100% - 2rem)', maxWidth: '40rem',
         background: '#0a0a0a', borderTop: '1px solid rgba(255,255,255,0.07)',
+        borderLeft: '1px solid rgba(255,255,255,0.07)', borderRight: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: '12px 12px 0 0',
         padding: `10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,
         zIndex: 30, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px'
       }}>

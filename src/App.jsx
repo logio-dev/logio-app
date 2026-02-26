@@ -213,41 +213,25 @@ const getDayOfWeek = (dateStr) => {
   return days[new Date(dateStr).getDay()];
 };
 
-// ========== グラデーション矢印コンポーネント ==========
+// ========== ブルーglow矢印コンポーネント ==========
 function GradChevron({ open = false, size = 16 }) {
-  const id = React.useId ? React.useId() : ('gc' + Math.random().toString(36).slice(2));
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
       style={{
         flexShrink: 0,
         transition: 'transform 0.2s ease',
         transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-        filter: 'drop-shadow(0 0 4px rgba(99,102,241,0.6))',
+        filter: 'drop-shadow(0 0 4px rgba(59,130,246,0.8))',
       }}>
-      <defs>
-        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stopColor="#3b82f6"/>
-          <stop offset="50%"  stopColor="#22d3ee"/>
-          <stop offset="100%" stopColor="#6366f1"/>
-        </linearGradient>
-      </defs>
-      <polyline points="6 9 12 15 18 9" stroke={`url(#${id})`} strokeWidth="2.8" strokeLinecap="round" fill="none"/>
+      <polyline points="6 9 12 15 18 9" stroke="#3b82f6" strokeWidth="2.8" strokeLinecap="round" fill="none"/>
     </svg>
   );
 }
 function GradChevronUp({ size = 16 }) {
-  const id = React.useId ? React.useId() : ('gcu' + Math.random().toString(36).slice(2));
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      style={{ flexShrink:0, filter:'drop-shadow(0 0 4px rgba(99,102,241,0.6))' }}>
-      <defs>
-        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stopColor="#3b82f6"/>
-          <stop offset="50%"  stopColor="#22d3ee"/>
-          <stop offset="100%" stopColor="#6366f1"/>
-        </linearGradient>
-      </defs>
-      <polyline points="18 15 12 9 6 15" stroke={`url(#${id})`} strokeWidth="2.8" strokeLinecap="round" fill="none"/>
+      style={{ flexShrink:0, filter:'drop-shadow(0 0 4px rgba(59,130,246,0.8))' }}>
+      <polyline points="18 15 12 9 6 15" stroke="#3b82f6" strokeWidth="2.8" strokeLinecap="round" fill="none"/>
     </svg>
   );
 }
@@ -327,7 +311,7 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
-        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark' }}
         required={required}>
         <option value="">{placeholder}</option>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -888,203 +872,273 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 }
 
 // ========== ProjectSettingsPage ==========
-function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate }) {
+function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate, onSelectSite }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
-  const [showSiteList, setShowSiteList] = useState(false);
+  // アコーディオン: 開いているカードのsite.name
+  const [openCard, setOpenCard] = useState(selectedSite || null);
+  // 各現場ごとのexpenseForm
   const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
 
   const handleAddSite = () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
-    onAddSite(newSiteName);
+    onAddSite(newSiteName.trim());
     setNewSiteName(''); setShowAddSite(false);
   };
 
   const handleDeleteSite = (siteName) => {
     if (!confirm(`現場「${siteName}」を削除しますか？\n関連するプロジェクト情報と日報もすべて削除されます。`)) return;
     onDeleteSite(siteName);
+    if (openCard === siteName) setOpenCard(null);
   };
 
   const toggleDisposalSite = (site) => {
-    const currentSites = projectInfo.contractedDisposalSites || [];
-    setProjectInfo({
-      ...projectInfo,
-      contractedDisposalSites: currentSites.includes(site)
-        ? currentSites.filter(s => s !== site)
-        : [...currentSites, site]
-    });
+    const cur = projectInfo.contractedDisposalSites || [];
+    setProjectInfo({ ...projectInfo, contractedDisposalSites: cur.includes(site) ? cur.filter(s=>s!==site) : [...cur, site] });
   };
 
   const addExpense = () => {
     if (!expenseForm.name || !expenseForm.amount) return;
-    const expenses = projectInfo.expenses || [];
-    setProjectInfo({ ...projectInfo, expenses: [...expenses, { name: expenseForm.name, amount: parseFloat(expenseForm.amount) }] });
+    setProjectInfo({ ...projectInfo, expenses: [...(projectInfo.expenses||[]), { name: expenseForm.name, amount: parseFloat(expenseForm.amount) }] });
     setExpenseForm({ name: '', amount: '' });
   };
-  const removeExpense = (i) => {
-    const expenses = (projectInfo.expenses || []).filter((_, idx) => idx !== i);
-    setProjectInfo({ ...projectInfo, expenses });
+  const removeExpense = (i) => setProjectInfo({ ...projectInfo, expenses: (projectInfo.expenses||[]).filter((_,idx)=>idx!==i) });
+
+  // 案Dアバター: 年 / 番号 ネオン
+  const SiteAvatar = ({ pjNo }) => {
+    const parts = (pjNo||'').split('-');
+    const year = parts[0] || '';
+    const num  = parts[1] || '';
+    if (!year && !num) return (
+      <div style={{ width:52, height:48, borderRadius:11, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.03)', border:'1px dashed rgba(255,255,255,0.1)', fontSize:9, fontWeight:700, color:'#374151', textAlign:'center', lineHeight:1.4 }}>未採<br/>番</div>
+    );
+    return (
+      <div style={{ width:52, height:48, borderRadius:11, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#000', border:'1px solid rgba(99,102,241,0.3)', boxShadow:'0 0 12px rgba(99,102,241,0.08) inset', gap:2, padding:4 }}>
+        <span style={{ fontSize:8, fontWeight:700, color:'#6366f1', letterSpacing:'.04em', lineHeight:1, textShadow:'0 0 6px rgba(99,102,241,0.8)' }}>{year}</span>
+        <div style={{ width:28, height:1, background:'rgba(99,102,241,0.3)' }}/>
+        <span style={{ fontSize:14, fontWeight:900, color:'#a5b4fc', lineHeight:1, letterSpacing:'-.02em', textShadow:'0 0 8px rgba(99,102,241,0.7)' }}>{num||'---'}</span>
+      </div>
+    );
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 bg-black min-h-screen text-white">
-      <div className="mb-4">
+    <div style={{ background:'#000', minHeight:'100vh', color:'white' }}>
+      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'24px 16px 80px' }}>
+
+        {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
-          className="px-4 py-2 rounded-lg transition-colors font-medium text-sm flex items-center gap-2"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}>
+          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:24 }}>
           <X className="w-4 h-4" />閉じる
         </button>
-      </div>
-      <SectionHeader title="現場管理 / Site Management" />
-      {!showAddSite ? (
-        <button onClick={() => setShowAddSite(true)}
-          className="w-full mb-4 px-4 py-3 text-white text-base font-bold transition-colors flex items-center justify-center gap-2 rounded-lg"
-          style={{ background: 'rgba(59,130,246,0.8)' }}>
-          <Plus className="w-5 h-5" />新規現場を追加
-        </button>
-      ) : (
-        <div className="mb-4 p-4 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">新規現場名</label>
-          <input type="text" value={newSiteName} onChange={(e) => setNewSiteName(e.target.value)}
-            placeholder="例: 渋谷〇〇ビル解体工事"
-            className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none mb-3 rounded-lg"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }} />
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={handleAddSite} className="px-4 py-3 text-white font-bold transition-colors rounded-lg" style={{ background: 'rgba(59,130,246,0.8)' }}>追加</button>
-            <button onClick={() => { setShowAddSite(false); setNewSiteName(''); }}
-              className="px-4 py-3 font-bold transition-colors rounded-lg" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}>キャンセル</button>
-          </div>
+
+        {/* タイトル */}
+        <div style={{ marginBottom:24 }}>
+          <div style={{ fontSize:20, fontWeight:800, letterSpacing:'-.02em' }}>現場管理</div>
+          <div style={{ fontSize:10, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>Site Management</div>
         </div>
-      )}
-      {sites.length > 0 && (
-        <div className="mb-8">
-          <button onClick={() => setShowSiteList(!showSiteList)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg mb-2 transition-colors"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">登録済み現場 ({sites.length})</p>
-            <GradChevron open={showSiteList} size={16}/>
+
+        {/* 新規追加ボタン / フォーム */}
+        {!showAddSite ? (
+          <button onClick={() => setShowAddSite(true)}
+            style={{ width:'100%', padding:'13px 16px', borderRadius:12, border:'1.5px dashed rgba(59,130,246,0.4)', background:'rgba(59,130,246,0.04)', color:'#60a5fa', fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:24 }}>
+            <Plus className="w-4 h-4" />新規現場を追加
           </button>
-          {showSiteList && (
-            <div className="space-y-2">
-              {sites.map((site, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <span className="text-white text-base font-medium">{site.name}</span>
-                  <button onClick={() => handleDeleteSite(site.name)}
-                    className="px-3 py-1 text-sm font-bold transition-colors rounded-lg" style={{ background: 'rgba(239,68,68,0.2)', color: '#F87171' }}>削除</button>
+        ) : (
+          <div style={{ marginBottom:24, padding:16, borderRadius:12, border:'1.5px solid rgba(59,130,246,0.35)', background:'rgba(59,130,246,0.04)' }}>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:8 }}>新規現場名 / Site Name</label>
+            <input type="text" value={newSiteName} onChange={e=>setNewSiteName(e.target.value)}
+              onKeyDown={e=>e.key==='Enter'&&handleAddSite()}
+              placeholder="例: 渋谷〇〇ビル解体工事"
+              style={{ width:'100%', padding:'12px 14px', background:'#000', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box' }} />
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              <button onClick={handleAddSite} style={{ padding:12, background:'#2563EB', border:'none', color:'white', borderRadius:9, fontSize:14, fontWeight:700, cursor:'pointer' }}>追加する</button>
+              <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
+            </div>
+          </div>
+        )}
+
+        {/* セクションラベル */}
+        {sites.length > 0 && (
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+            <span style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.1em', whiteSpace:'nowrap' }}>登録済み現場</span>
+            <span style={{ fontSize:10, fontWeight:700, color:'#4B5563', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)', padding:'2px 8px', borderRadius:99 }}>{sites.length}件</span>
+            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.06)' }}/>
+          </div>
+        )}
+
+        {/* アコーディオンカード */}
+        {sites.map((site) => {
+          const isOpen = openCard === site.name;
+          const pjNo = site.projectNumber || (site.projectInfo && site.projectInfo.projectNumber) || '';
+          // このカードが選択中現場かどうか
+          const isSelected = selectedSite === site.name;
+          // 開いているカードのprojectInfo = 選択中現場なら親のprojectInfo, それ以外はsite内のデータ
+          const cardInfo = isSelected ? projectInfo : (site.projectInfo || {
+            workType:'', client:'', workLocation:'', salesPerson:'', siteManager:'',
+            startDate:'', endDate:'', contractAmount:'', additionalAmount:'',
+            transferCost:'', leaseCost:'', materialsCost:'', status:'', discharger:'',
+            transportCompany:'', contractedDisposalSites:[], expenses:[], projectNumber: pjNo
+          });
+          const setCardInfo = isSelected
+            ? setProjectInfo
+            : (val) => { /* 非選択現場は保存時に別途処理 */ };
+
+          return (
+            <div key={site.name} style={{
+              borderRadius:14, marginBottom:10, overflow:'hidden',
+              border: isOpen ? '1.5px solid transparent' : '1.5px solid rgba(255,255,255,0.07)',
+              background: isOpen
+                ? 'linear-gradient(#050505,#050505) padding-box, linear-gradient(135deg,#3b82f6,#22d3ee,#6366f1) border-box'
+                : 'rgba(255,255,255,0.02)',
+            }}>
+              {/* カードヘッダー */}
+              <button onClick={() => {
+                  if (!isSelected && !isOpen) onSelectSite && onSelectSite(site.name);
+                  setOpenCard(isOpen ? null : site.name);
+                }}
+                style={{ width:'100%', padding:'13px 14px', display:'flex', alignItems:'center', gap:12, background:'none', border:'none', cursor:'pointer', textAlign:'left' }}>
+                <SiteAvatar pjNo={pjNo || cardInfo.projectNumber} />
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:15, fontWeight:700, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
+                  <div style={{ fontSize:11, color:'#4B5563', marginTop:2 }}>
+                    {pjNo || cardInfo.projectNumber || '番号未設定'}{cardInfo.status ? ` · ${cardInfo.status}` : ''}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      {selectedSite && (
-        <>
-          <SectionHeader title={`プロジェクト情報編集 (${selectedSite})`} />
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">工事番号 / PROJECT NO.</label>
-            <div className="px-4 py-4 rounded-md" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="text-white text-base font-semibold tabular-nums">{projectInfo.projectNumber || '未設定'}</div>
-              <p className="text-xs text-gray-600 mt-1">※ 自動採番（編集不可）</p>
-            </div>
-          </div>
-          <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={(val) => setProjectInfo({...projectInfo, workType: val})} />
-          <TextInput label="発注者" labelEn="Client" value={projectInfo.client} onChange={(val) => setProjectInfo({...projectInfo, client: val})} placeholder="○○建設株式会社" />
-          <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation} onChange={(val) => setProjectInfo({...projectInfo, workLocation: val})} placeholder="東京都渋谷区..." />
-          <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson} onChange={(val) => setProjectInfo({...projectInfo, salesPerson: val})} />
-          <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager} onChange={(val) => setProjectInfo({...projectInfo, siteManager: val})} />
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">工期開始 / Start</label>
-              <input type="date" value={projectInfo.startDate} onChange={(e) => setProjectInfo({...projectInfo, startDate: e.target.value})}
-                className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', colorScheme: 'dark' }} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">工期終了 / End</label>
-              <input type="date" value={projectInfo.endDate} onChange={(e) => setProjectInfo({...projectInfo, endDate: e.target.value})}
-                className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', colorScheme: 'dark' }} />
-            </div>
-          </div>
-          <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount} onChange={(val) => setProjectInfo({...projectInfo, contractAmount: val})} placeholder="5000000" />
-          <TextInput label="追加金額（税抜）" labelEn="Additional Amount" type="number" value={projectInfo.additionalAmount} onChange={(val) => setProjectInfo({...projectInfo, additionalAmount: val})} placeholder="0" />
-          <div className="mb-2 mt-6">
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider pb-2 border-b border-white/[0.06]">固定費 / Fixed Costs</p>
-          </div>
-          <TextInput label="回送費" labelEn="Transfer Cost" type="number" value={projectInfo.transferCost || ''} onChange={(val) => setProjectInfo({...projectInfo, transferCost: val})} placeholder="0" />
-          <TextInput label="リース費" labelEn="Lease Cost" type="number" value={projectInfo.leaseCost || ''} onChange={(val) => setProjectInfo({...projectInfo, leaseCost: val})} placeholder="0" />
-          <TextInput label="資材費" labelEn="Materials Cost" type="number" value={projectInfo.materialsCost || ''} onChange={(val) => setProjectInfo({...projectInfo, materialsCost: val})} placeholder="0" />
-          <div className="mb-2 mt-6">
-            <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider pb-2 border-b border-white/[0.06]">経費 / Expenses</p>
-          </div>
-          <div className="mb-4" style={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-              <colgroup><col style={{width:'45%'}}/><col style={{width:'35%'}}/><col style={{width:'20%'}}/></colgroup>
-              <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                  {['項目名','金額',''].map((h,i) => (
-                    <th key={i} style={{ padding: '7px 10px', fontSize: '9px', fontWeight: '600', color: '#4B5563', letterSpacing: '0.04em', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(projectInfo.expenses || []).map((exp, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <td style={{ padding: '8px 10px', fontSize: '12px', color: 'rgba(255,255,255,0.85)' }}>{exp.name}</td>
-                    <td style={{ padding: '8px 10px', fontSize: '12px', color: '#FCD34D', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>¥{formatCurrency(exp.amount)}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <button onClick={() => removeExpense(i)} style={{ width: '24px', height: '24px', borderRadius: '4px', border: 'none', cursor: 'pointer', background: 'rgba(239,68,68,0.12)', color: '#F87171', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>✕</button>
-                    </td>
-                  </tr>
-                ))}
-                <tr style={{ background: 'rgba(59,130,246,0.04)', borderTop: '1px solid rgba(59,130,246,0.2)' }}>
-                  <td style={{ padding: '6px 8px' }}>
-                    <input type="text" value={expenseForm.name} onChange={e => setExpenseForm({...expenseForm, name: e.target.value})}
-                      placeholder="例: 交通費" className="w-full bg-black text-white border border-white/10 rounded px-2 py-2 outline-none focus:border-blue-500" style={{fontSize:'16px'}} />
-                  </td>
-                  <td style={{ padding: '6px 8px' }}>
-                    <input type="number" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})}
-                      placeholder="金額" className="w-full bg-black text-white border border-white/10 rounded px-2 py-2 outline-none focus:border-blue-500" style={{fontSize:'16px'}} />
-                  </td>
-                  <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                    <button onClick={addExpense} disabled={!expenseForm.name || !expenseForm.amount}
-                      style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', cursor: (!expenseForm.name || !expenseForm.amount) ? 'not-allowed' : 'pointer', background: (!expenseForm.name || !expenseForm.amount) ? 'rgba(255,255,255,0.04)' : '#2563EB', color: (!expenseForm.name || !expenseForm.amount) ? '#374151' : 'white', fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>+</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status} onChange={(val) => setProjectInfo({...projectInfo, status: val})} />
-          <TextInput label="排出事業者" labelEn="Discharger" value={projectInfo.discharger || ''} onChange={(val) => setProjectInfo({...projectInfo, discharger: val})} placeholder="株式会社LOGIO" required />
-          <TextInput label="運搬会社" labelEn="Transport Company" value={projectInfo.transportCompany || ''} onChange={(val) => setProjectInfo({...projectInfo, transportCompany: val})} placeholder="〇〇運送株式会社" />
-          <div className="mb-6">
-            <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-3">
-              契約処分先 / Contracted Disposal Sites <span className="text-red-500">*</span>
-            </label>
-            <div className="rounded-lg p-4 border border-white/[0.08] space-y-2 max-h-80 overflow-y-auto" style={{ background: 'rgba(255,255,255,0.02)' }}>
-              {MASTER_DATA.disposalSites.map((site) => {
-                const isSelected = (projectInfo.contractedDisposalSites || []).includes(site);
-                return (
-                  <button key={site} type="button" onClick={() => toggleDisposalSite(site)}
-                    className={`w-full px-4 py-3 text-left text-sm rounded-md transition-colors flex items-center gap-3 ${
-                      isSelected ? 'bg-blue-600 text-white' : 'bg-black text-gray-300 hover:bg-gray-700'
-                    }`}>
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-white bg-white' : 'border-gray-500'}`}>
-                      {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                {isSelected && (
+                  <span style={{ fontSize:9, fontWeight:700, padding:'3px 7px', borderRadius:99, background:'rgba(34,197,94,0.12)', color:'#4ade80', border:'1px solid rgba(34,197,94,0.2)', flexShrink:0 }}>選択中</span>
+                )}
+                <GradChevron open={isOpen} size={16}/>
+              </button>
+
+              {/* 展開コンテンツ */}
+              {isOpen && (
+                <div style={{ padding:'0 14px 16px', borderTop:'1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ paddingTop:16 }}>
+                    {/* 工事番号（読み取り専用） */}
+                    <div style={{ marginBottom:14 }}>
+                      <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
+                      <div style={{ padding:'10px 12px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:8, fontSize:14, color:'#4B5563' }}>
+                        {cardInfo.projectNumber || pjNo || '未採番'}　<span style={{ fontSize:10 }}>※ 自動採番（編集不可）</span>
+                      </div>
                     </div>
-                    <span className="flex-1">{site}</span>
-                  </button>
-                );
-              })}
+
+                    {isSelected ? (
+                      <>
+                        <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={v=>setProjectInfo({...projectInfo,workType:v})} />
+                        <TextInput label="発注者" labelEn="Client" value={projectInfo.client||''} onChange={v=>setProjectInfo({...projectInfo,client:v})} placeholder="○○建設株式会社" />
+                        <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation||''} onChange={v=>setProjectInfo({...projectInfo,workLocation:v})} placeholder="東京都渋谷区..." />
+                        <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson||''} onChange={v=>setProjectInfo({...projectInfo,salesPerson:v})} />
+                        <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager||''} onChange={v=>setProjectInfo({...projectInfo,siteManager:v})} />
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:24 }}>
+                          <div>
+                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
+                            <input type="date" value={projectInfo.startDate||''} onChange={e=>setProjectInfo({...projectInfo,startDate:e.target.value})}
+                              style={{ width:'100%', padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                          </div>
+                          <div>
+                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期終了</label>
+                            <input type="date" value={projectInfo.endDate||''} onChange={e=>setProjectInfo({...projectInfo,endDate:e.target.value})}
+                              style={{ width:'100%', padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                          </div>
+                        </div>
+                        <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
+                        <TextInput label="追加金額（税抜）" labelEn="Additional" type="number" value={projectInfo.additionalAmount||''} onChange={v=>setProjectInfo({...projectInfo,additionalAmount:v})} placeholder="0" />
+                        <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16 }}>固定費 / Fixed Costs</div>
+                        <TextInput label="回送費" labelEn="Transfer" type="number" value={projectInfo.transferCost||''} onChange={v=>setProjectInfo({...projectInfo,transferCost:v})} placeholder="0" />
+                        <TextInput label="リース費" labelEn="Lease" type="number" value={projectInfo.leaseCost||''} onChange={v=>setProjectInfo({...projectInfo,leaseCost:v})} placeholder="0" />
+                        <TextInput label="資材費" labelEn="Materials" type="number" value={projectInfo.materialsCost||''} onChange={v=>setProjectInfo({...projectInfo,materialsCost:v})} placeholder="0" />
+                        <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16, marginTop:8 }}>経費 / Expenses</div>
+                        <div style={{ marginBottom:16, border:'1px solid rgba(255,255,255,0.06)', borderRadius:8, overflow:'hidden' }}>
+                          <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+                            <colgroup><col style={{width:'45%'}}/><col style={{width:'35%'}}/><col style={{width:'20%'}}/></colgroup>
+                            <thead>
+                              <tr style={{ background:'rgba(255,255,255,0.03)' }}>
+                                {['項目名','金額',''].map((h,i)=>(
+                                  <th key={i} style={{ padding:'7px 10px', fontSize:9, fontWeight:600, color:'#4B5563', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(projectInfo.expenses||[]).map((exp,i)=>(
+                                <tr key={i} style={{ borderBottom:'1px solid rgba(255,255,255,0.03)' }}>
+                                  <td style={{ padding:'8px 10px', fontSize:12, color:'rgba(255,255,255,0.85)' }}>{exp.name}</td>
+                                  <td style={{ padding:'8px 10px', fontSize:12, color:'#FCD34D', textAlign:'right', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(exp.amount)}</td>
+                                  <td style={{ padding:'8px 10px', textAlign:'center' }}>
+                                    <button onClick={()=>removeExpense(i)} style={{ width:24, height:24, borderRadius:4, border:'none', cursor:'pointer', background:'rgba(239,68,68,0.12)', color:'#F87171', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>✕</button>
+                                  </td>
+                                </tr>
+                              ))}
+                              <tr style={{ background:'rgba(59,130,246,0.04)', borderTop:'1px solid rgba(59,130,246,0.2)' }}>
+                                <td style={{ padding:'6px 8px' }}><input type="text" value={expenseForm.name} onChange={e=>setExpenseForm({...expenseForm,name:e.target.value})} placeholder="例: 交通費" style={{ width:'100%', background:'#000', color:'white', border:'1px solid rgba(255,255,255,0.1)', borderRadius:6, padding:'6px 8px', fontSize:14, outline:'none', boxSizing:'border-box' }} /></td>
+                                <td style={{ padding:'6px 8px' }}><input type="number" value={expenseForm.amount} onChange={e=>setExpenseForm({...expenseForm,amount:e.target.value})} placeholder="金額" style={{ width:'100%', background:'#000', color:'white', border:'1px solid rgba(255,255,255,0.1)', borderRadius:6, padding:'6px 8px', fontSize:14, outline:'none', boxSizing:'border-box' }} /></td>
+                                <td style={{ padding:'6px 8px', textAlign:'center' }}>
+                                  <button onClick={addExpense} disabled={!expenseForm.name||!expenseForm.amount} style={{ width:28, height:28, borderRadius:6, border:'none', cursor:(!expenseForm.name||!expenseForm.amount)?'not-allowed':'pointer', background:(!expenseForm.name||!expenseForm.amount)?'rgba(255,255,255,0.04)':'#2563EB', color:(!expenseForm.name||!expenseForm.amount)?'#374151':'white', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>+</button>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status||''} onChange={v=>setProjectInfo({...projectInfo,status:v})} />
+                        <TextInput label="排出事業者" labelEn="Discharger" value={projectInfo.discharger||''} onChange={v=>setProjectInfo({...projectInfo,discharger:v})} placeholder="株式会社LOGIO" />
+                        <TextInput label="運搬会社" labelEn="Transport" value={projectInfo.transportCompany||''} onChange={v=>setProjectInfo({...projectInfo,transportCompany:v})} placeholder="〇〇運送株式会社" />
+                        <div style={{ marginBottom:16 }}>
+                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:8 }}>契約処分先 / Disposal Sites</label>
+                          <div style={{ borderRadius:10, padding:12, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.02)', maxHeight:240, overflowY:'auto', display:'flex', flexDirection:'column', gap:6 }}>
+                            {MASTER_DATA.disposalSites.map(s=>{
+                              const sel=(projectInfo.contractedDisposalSites||[]).includes(s);
+                              return (
+                                <button key={s} onClick={()=>toggleDisposalSite(s)}
+                                  style={{ padding:'10px 12px', borderRadius:8, background:sel?'rgba(37,99,235,0.8)':'#000', border:`1px solid ${sel?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.07)'}`, color:sel?'white':'#9CA3AF', fontSize:13, fontWeight:sel?700:400, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:10 }}>
+                                  <div style={{ width:18, height:18, borderRadius:5, border:`2px solid ${sel?'white':'#4B5563'}`, background:sel?'white':'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                                    {sel && <Check className="w-3 h-3" style={{ color:'#2563EB' }} />}
+                                  </div>
+                                  {s}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {(projectInfo.contractedDisposalSites||[]).length>0 && <p style={{ fontSize:11, color:'#4B5563', marginTop:6 }}>選択済み: {projectInfo.contractedDisposalSites.length}件</p>}
+                        </div>
+                        {/* 保存・削除 */}
+                        <div style={{ display:'flex', gap:8, marginTop:8 }}>
+                          <button onClick={onSave} style={{ flex:3, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'white', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                            <Save className="w-4 h-4" />保存
+                          </button>
+                          <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, padding:'13px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
+                        </div>
+                      </>
+                    ) : (
+                      /* 非選択現場：基本情報のみ表示 + 「この現場を選択して編集」ボタン */
+                      <div>
+                        <div style={{ padding:'12px 14px', background:'rgba(255,255,255,0.02)', borderRadius:9, marginBottom:14, fontSize:13, color:'#6B7280', lineHeight:1.6 }}>
+                          {cardInfo.workType && <div>工事種別：{cardInfo.workType}</div>}
+                          {cardInfo.client && <div>発注者：{cardInfo.client}</div>}
+                          {cardInfo.status && <div>ステータス：{cardInfo.status}</div>}
+                          {!cardInfo.workType && !cardInfo.client && <span style={{ color:'#374151' }}>プロジェクト情報未設定</span>}
+                        </div>
+                        <div style={{ display:'flex', gap:8 }}>
+                          <button onClick={()=>{ onSelectSite && onSelectSite(site.name); setOpenCard(site.name); }}
+                            style={{ flex:3, padding:'12px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'white', borderRadius:9, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                            この現場を選択して編集
+                          </button>
+                          <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, padding:'12px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:9, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            {projectInfo.contractedDisposalSites?.length > 0 && (
-              <p className="text-xs text-gray-400 mt-2">選択済み: {projectInfo.contractedDisposalSites.length}件</p>
-            )}
+          );
+        })}
+
+        {sites.length === 0 && (
+          <div style={{ textAlign:'center', padding:'40px 0', color:'#374151', fontSize:13 }}>
+            現場が登録されていません
           </div>
-          <Button onClick={onSave} icon={Save}>プロジェクト情報を保存</Button>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -1195,7 +1249,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
   const inputCardAmber = mkCard('#f59e0b,#f97316');
   const inputCardGreen = mkCard('#34d399,#22d3ee');
   const inputCardRose  = mkCard('#f43f5e,#f59e0b');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', colorScheme:'dark' };
   const inpTxt = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'10px', fontWeight:'700', color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
@@ -1295,7 +1349,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}
-                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', colorScheme:'dark' }} />
+                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', colorScheme:'dark', boxSizing:'border-box' }} />
             </div>
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>天候 <span style={{color:'#f87171'}}>*</span></label>
@@ -1419,7 +1473,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
           {workDetails.vehicles.map((v,i)=>(
             <ItemCard key={i}
               avatarBg="rgba(245,158,11,0.12)" avatarColor="#fbbf24"
-              avatarText={v.type.charAt(0)}
+              avatarText={v.type.slice(0,3)}
               name={v.type} meta={v.number}
               amount={`¥${formatCurrency(v.amount)}`}
               onDel={()=>setWorkDetails({...workDetails,vehicles:workDetails.vehicles.filter((_,j)=>j!==i)})} />
@@ -2467,7 +2521,7 @@ export default function LOGIOApp() {
               currentUserId={currentUser?.userId}
             />
           )}
-          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} />}
+          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} onSelectSite={setSelectedSite} />}
           {currentPage === 'input' && (
             <ReportInputPage
               onSave={handleSaveReport}

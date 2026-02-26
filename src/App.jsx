@@ -42,20 +42,60 @@ function sb(table) {
   };
 }
 
-// GAS URL等はlocalStorageに保存（端末ごと）
 if (typeof window !== 'undefined') {
   window.storage = {
     async get(key) {
-      try {
-        const value = localStorage.getItem(key);
-        return value ? { key, value } : null;
-      } catch { return null; }
+      try { const value = localStorage.getItem(key); return value ? { key, value } : null; } catch { return null; }
     },
     async set(key, value) {
       try { localStorage.setItem(key, value); return { key, value }; } catch { return null; }
     }
   };
 }
+
+// ========== ★ site_locks ヘルパー ==========
+// Supabaseで以下のテーブルを作成してください:
+// CREATE TABLE site_locks (
+//   id uuid default gen_random_uuid() primary key,
+//   site_name text not null unique,
+//   user_name text not null,
+//   updated_at timestamptz default now()
+// );
+const siteLocks = {
+  async acquire(siteName, userName) {
+    try {
+      const db = sb('site_locks');
+      const existing = await db.select(`site_name=eq.${encodeURIComponent(siteName)}`);
+      if (Array.isArray(existing) && existing.length > 0) {
+        const lock = existing[0];
+        // 自分のロックなら更新して続行
+        if (lock.user_name === userName) {
+          await db.update({ updated_at: new Date().toISOString() }, `site_name=eq.${encodeURIComponent(siteName)}`);
+          return { ok: true, lockedBy: null };
+        }
+        // 他人のロック → ブロック
+        return { ok: false, lockedBy: lock.user_name };
+      }
+      await db.insert({ site_name: siteName, user_name: userName, updated_at: new Date().toISOString() });
+      return { ok: true, lockedBy: null };
+    } catch(e) {
+      console.error('lock acquire error:', e);
+      return { ok: true, lockedBy: null }; // エラー時は通す
+    }
+  },
+  async release(siteName, userName) {
+    try {
+      await sb('site_locks').delete(`site_name=eq.${encodeURIComponent(siteName)}&user_name=eq.${encodeURIComponent(userName)}`);
+    } catch(e) { console.error('lock release error:', e); }
+  },
+  async check(siteName) {
+    try {
+      const data = await sb('site_locks').select(`site_name=eq.${encodeURIComponent(siteName)}`);
+      if (Array.isArray(data) && data.length > 0) return data[0].user_name;
+      return null;
+    } catch(e) { return null; }
+  }
+};
 
 // ========== LOGIOロゴ ==========
 function LOGIOLogo({ className = "", size = "md", animated = false }) {
@@ -163,7 +203,6 @@ const VEHICLE_UNIT_PRICES = {
   '4tc': 15000, '8tc': 20000, '増td': 20000, '10tc': 20000
 };
 
-// ========== 共通ユーティリティ ==========
 const generateId = (prefix) => {
   if (crypto?.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -174,16 +213,15 @@ const getDayOfWeek = (dateStr) => {
   return days[new Date(dateStr).getDay()];
 };
 
-// ========== 共通コンポーネント ==========
-
-// ★ ヘッダー（fixed固定・ロゴ中央）
-function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onNotification, notificationCount = 0 }) {
+// ========== ★ Header（リロードアイコン追加）==========
+function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onNotification, onReload, reloading = false, notificationCount = 0 }) {
   return (
     <header className="bg-black" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
       borderBottom: '1px solid rgba(255,255,255,0.06)',
       paddingTop: 'env(safe-area-inset-top, 0px)',
     }}>
+      <style>{`@keyframes logio-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
       <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', height:'52px', paddingLeft:'16px', paddingRight:'16px' }}>
         {/* 左：ハンバーガー */}
         <div style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)' }}>
@@ -200,8 +238,19 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
         </div>
         {/* 中央：ロゴ */}
         <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'white', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
-        {/* 右：アイコン3つ */}
+        {/* 右：アイコン4つ（リロード追加）*/}
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
+          {/* ★ リロード */}
+          <button onClick={onReload} title="最新データに更新"
+            style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
+            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ animation: reloading ? 'logio-spin 0.6s linear infinite' : 'none' }}>
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </button>
           {/* カレンダー */}
           <button onClick={onCalendar} title="工期確認" style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
             onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
@@ -219,7 +268,7 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
               <span style={{ position:'absolute', top:'4px', right:'4px', width:'8px', height:'8px', borderRadius:'50%', background:'#ef4444', border:'1.5px solid #000' }} />
             )}
           </button>
-          {/* Activity → Export */}
+          {/* Export */}
           <button onClick={onExport} title="エクスポート" style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
             onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
             onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
@@ -490,9 +539,8 @@ function LoginPage({ onLogin }) {
   );
 }
 
-// ========== ★ HomePage（DashboardSample.jsx完全準拠） ==========
-// ========== ★ HomePage（DashboardSample完全準拠・最近の日報折りたたみ） ==========
-function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports }) {
+// ========== HomePage ==========
+function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId }) {
   const [financeOpen, setFinanceOpen] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
   const [wasteOpen, setWasteOpen] = useState(false);
@@ -507,7 +555,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
     if (siteDropdownOpen) { document.addEventListener('mousedown', handleClickOutside); return () => document.removeEventListener('mousedown', handleClickOutside); }
   }, [siteDropdownOpen]);
 
-  // 原価率
   const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
   const costRatioFixed = costRatio.toFixed(1);
   let costBarColor = "#3B82F6";
@@ -516,7 +563,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   if (costRatio >= 85) { costBarColor = "#EF4444"; costBarBg = "rgba(239,68,68,0.12)"; costStatus = "危険"; }
   else if (costRatio >= 70) { costBarColor = "#F59E0B"; costBarBg = "rgba(245,158,11,0.12)"; costStatus = "注意"; }
 
-  // 工期
   const today = new Date(); today.setHours(0,0,0,0);
   const start = projectInfo?.startDate ? new Date(projectInfo.startDate) : null;
   const end = projectInfo?.endDate ? new Date(projectInfo.endDate) : null;
@@ -525,49 +571,19 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const remainDays = end ? Math.max(0, Math.ceil((end - today) / 86400000)) : null;
   const progressPercent = Math.min(100, (elapsedDays / totalDays) * 100);
 
-  // 日別コスト（直近7日）
-  const getDailyCosts = () => {
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const dayReports = (reports || []).filter(r => r.date === dateStr);
-      const cost = dayReports.reduce((sum, r) => sum +
-        (r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
-        (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
-        (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
-        (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
-        (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
-      days.push({ cost, label: ['日','月','火','水','木','金','土'][d.getDay()] });
-    }
-    return days;
-  };
-  const dailyData = getDailyCosts();
-  const maxCost = Math.max(...dailyData.map(d=>d.cost), 1);
-
-  // 最近の日報
-  const recentReports = [...(reports||[])].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3).map(r => ({
-    date: r.date,
-    workCategory: r.workDetails?.workCategory || '',
-    workContent: r.workDetails?.workContent || '',
-    cost: (r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
-          (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
-          (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
-          (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
-          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0)
-  }));
-
   const selectedSiteData = sites.find(s => s.name === selectedSite);
   const projectNumber = selectedSiteData?.projectNumber || projectInfo?.projectNumber || '';
 
   const card = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', transition: 'border-color 0.15s ease' };
+
+  // ★ ナビの maxWidth をコンテンツ(max-w-2xl=672px)と統一
+  const NAV_MAX_W = '672px';
 
   return (
     <div className="bg-black text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        /* iOSズーム防止: input/selectは必ず16px以上 */
         input, select, textarea { font-size: 16px !important; }
         .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
         .finance-detail.open { grid-template-rows: 1fr; }
@@ -581,19 +597,16 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         .logio-lbl { font-size: 11px; font-weight: 500; color: #6B7280; letter-spacing: 0.04em; }
         .logio-val-lg { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
         .logio-val-md { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
-        .logio-mini-bar { background: rgba(59,130,246,0.6); border-radius: 2px 2px 0 0; min-height: 2px; }
-        .logio-activity-line { position:relative; padding-left:20px; }
-        .logio-activity-line::before { content:''; position:absolute; left:3px; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.06); }
-        .logio-activity-dot { position:absolute; left:0; top:6px; width:7px; height:7px; border-radius:50%; background:#3B82F6; border:2px solid #000; }
       `}</style>
 
-      <div className="max-w-2xl mx-auto px-4 py-5" style={{ flex:1, paddingBottom: 'calc(90px + env(safe-area-inset-bottom, 0px))' }}>
+      {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
+      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(90px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
           <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
             className="w-full px-4 py-3.5 flex items-center justify-between text-left"
-            style={{ ...card, background: 'linear-gradient(#0a0a0a, #0a0a0a) padding-box, linear-gradient(135deg, #3b82f6, #22d3ee, #6366f1) border-box', border: '1.5px solid transparent', borderRadius: '14px' }}>
+            style={{ background: 'linear-gradient(#0a0a0a, #0a0a0a) padding-box, linear-gradient(135deg, #3b82f6, #22d3ee, #6366f1) border-box', border: '1.5px solid transparent', borderRadius: '14px' }}>
             {selectedSite ? (
               <div className="flex items-center gap-3">
                 <div className="logio-status-dot" />
@@ -629,9 +642,26 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           )}
         </div>
 
+        {/* ★ ロックバナー（自分以外が入力中の場合） */}
+        {selectedSite && lockStatus && lockStatus !== currentUserId && (
+          <div style={{
+            display:'flex', alignItems:'center', gap:'10px',
+            padding:'10px 14px', marginBottom:'12px',
+            background:'rgba(245,158,11,0.08)',
+            border:'1px solid rgba(245,158,11,0.25)',
+            borderRadius:'10px',
+          }}>
+            <span style={{ fontSize:'18px', flexShrink:0 }}>🔒</span>
+            <div>
+              <p style={{ fontSize:'12px', fontWeight:700, color:'#f59e0b' }}>入力中: {lockStatus}</p>
+              <p style={{ fontSize:'10px', color:'#6b7280', marginTop:'1px' }}>閲覧は可能ですが、日報入力は完了後にお試しください</p>
+            </div>
+          </div>
+        )}
+
         {selectedSite && (
           <>
-            {/* 粗利・粗利率（折りたたみ・元通り） */}
+            {/* 粗利・粗利率（折りたたみ） */}
             <div className="overflow-hidden mb-4" style={card}>
               <button onClick={() => setFinanceOpen(!financeOpen)}
                 className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-white/[0.01] transition-colors">
@@ -685,10 +715,9 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               </div>
             </div>
 
-            {/* 産廃処分費カード（ドーナツ＋横棒） */}
+            {/* 産廃処分費カード */}
             {(() => {
               const WASTE_COLORS = ['#d97706','#65a30d','#7c3aed','#0891b2','#dc2626','#f472b6'];
-              // 全レポートから産廃を種類別に集計
               const wasteByType = {};
               (reports||[]).forEach(r=>(r.wasteItems||[]).forEach(w=>{
                 wasteByType[w.material] = (wasteByType[w.material]||0)+(w.amount||0);
@@ -699,7 +728,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               const typeCount = wasteEntries.length;
               if (typeCount === 0) return null;
 
-              // ドーナツ計算
               const R=16, CX=22, CY=22, CIRC=2*Math.PI*R;
               let offset = 0;
               const donutSlices = wasteEntries.map(([name,val],i)=>{
@@ -721,7 +749,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                           <span style={{ fontSize:'10px', color:'#4B5563' }}>{typeCount}種類</span>
                         </div>
                       </div>
-                      {/* ミニドーナツ */}
                       <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink:0 }}>
                         <circle cx={CX} cy={CY} r={R} fill="none" stroke="#0f172a" strokeWidth="8"/>
                         {donutSlices.map((s,i)=>(
@@ -737,7 +764,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                     <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${wasteOpen?'rotate-180':''}`}/>
                   </button>
                   <div style={{ display: wasteOpen ? 'block' : 'none', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
-                    <div style={{ padding:'4px 14px 16px', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+                    <div style={{ padding:'4px 14px 16px' }}>
                       <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                         {wasteEntries.map(([name,val],i)=>{
                           const color = WASTE_COLORS[i%WASTE_COLORS.length];
@@ -760,62 +787,66 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 </div>
               );
             })()}
-
           </>
         )}
 
         {!selectedSite && sites.length === 0 && (
           <div className="flex flex-col items-center justify-center" style={{ minHeight: '20vh', marginTop: '16px' }}>
-            <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '16px' }}>
-              現場が登録されていません
-            </p>
+            <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '16px' }}>現場が登録されていません</p>
             <button onClick={() => onNavigate('settings')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: '#1e2d4a', border: 'none', color: 'rgba(255,255,255,0.85)', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.02em', transition: 'all 0.2s' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: '#1e2d4a', border: 'none', color: 'rgba(255,255,255,0.85)', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
               onMouseEnter={e => e.currentTarget.style.background = '#263a5e'}
               onMouseLeave={e => e.currentTarget.style.background = '#1e2d4a'}>
-              <span style={{ fontSize: '15px' }}>＋</span>
-              現場を追加する
+              <span style={{ fontSize: '15px' }}>＋</span>現場を追加する
             </button>
           </div>
         )}
       </div>
 
-      {/* ボトム固定ナビ（現場選択後のみ表示） */}
+      {/* ★ ボトム固定ナビ（maxWidth を NAV_MAX_W=672px でコンテンツと完全一致）*/}
       {selectedSite && (
-      <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: 'calc(100% - 2rem)', maxWidth: '40rem',
-        background: '#0a0a0a', borderTop: '1px solid rgba(255,255,255,0.07)',
-        borderLeft: '1px solid rgba(255,255,255,0.07)', borderRight: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: '12px 12px 0 0',
-        padding: `10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,
-        zIndex: 30, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px'
-      }}>
-        <button onClick={() => onNavigate('input')}
-          className="logio-nav-btn flex flex-col items-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">
-          <Plus className="w-5 h-5" />
-          <span className="font-semibold" style={{ fontSize: '11px' }}>日報入力</span>
-        </button>
-        {[
-          { id:'list', icon:FileText, label:'日報一覧' },
-          { id:'analysis', icon:BarChart3, label:'原価分析' },
-          { id:'settings', icon:Settings, label:'設定' },
-        ].map(({ id, icon:Icon, label }) => (
-          <button key={id} onClick={() => onNavigate(id)}
-            className="logio-nav-btn flex flex-col items-center gap-1.5 py-3 rounded-xl transition-colors text-gray-400 hover:text-white"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <Icon className="w-5 h-5" />
-            <span className="font-medium" style={{ fontSize: '11px' }}>{label}</span>
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: NAV_MAX_W,           // ★ max-w-2xl と同じ 672px
+          padding: `10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,  // ★ px-4 と同じ 16px
+          background: '#0a0a0a',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          borderLeft: '1px solid rgba(255,255,255,0.07)',
+          borderRight: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: '12px 12px 0 0',
+          zIndex: 30,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4,1fr)',
+          gap: '8px',
+        }}>
+          <button onClick={() => onNavigate('input')}
+            className="logio-nav-btn flex flex-col items-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">
+            <Plus className="w-5 h-5" />
+            <span className="font-semibold" style={{ fontSize: '11px' }}>日報入力</span>
           </button>
-        ))}
-      </div>
+          {[
+            { id:'list',     icon:FileText,  label:'日報一覧' },
+            { id:'analysis', icon:BarChart3, label:'原価分析' },
+            { id:'settings', icon:Settings,  label:'設定' },
+          ].map(({ id, icon:Icon, label }) => (
+            <button key={id} onClick={() => onNavigate(id)}
+              className="logio-nav-btn flex flex-col items-center gap-1.5 py-3 rounded-xl transition-colors text-gray-400 hover:text-white"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <Icon className="w-5 h-5" />
+              <span className="font-medium" style={{ fontSize: '11px' }}>{label}</span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-
-// ========== ★ ProjectSettingsPage ==========
+// ========== ProjectSettingsPage ==========
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
@@ -844,7 +875,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
     });
   };
 
-  // ★ 経費の追加・削除
   const addExpense = () => {
     if (!expenseForm.name || !expenseForm.amount) return;
     const expenses = projectInfo.expenses || [];
@@ -865,9 +895,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
-
       <SectionHeader title="現場管理 / Site Management" />
-
       {!showAddSite ? (
         <button onClick={() => setShowAddSite(true)}
           className="w-full mb-4 px-4 py-3 text-white text-base font-bold transition-colors flex items-center justify-center gap-2 rounded-lg"
@@ -888,8 +916,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           </div>
         </div>
       )}
-
-      {/* ★ 登録済み現場 - デフォルト折りたたみ */}
       {sites.length > 0 && (
         <div className="mb-8">
           <button onClick={() => setShowSiteList(!showSiteList)}
@@ -911,25 +937,21 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           )}
         </div>
       )}
-
       {selectedSite && (
         <>
           <SectionHeader title={`プロジェクト情報編集 (${selectedSite})`} />
-
           <div className="mb-6">
             <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">工事番号 / PROJECT NO.</label>
-            <div className="px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
+            <div className="px-4 py-4 rounded-md" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="text-white text-base font-semibold tabular-nums">{projectInfo.projectNumber || '未設定'}</div>
               <p className="text-xs text-gray-600 mt-1">※ 自動採番（編集不可）</p>
             </div>
           </div>
-
           <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={(val) => setProjectInfo({...projectInfo, workType: val})} />
           <TextInput label="発注者" labelEn="Client" value={projectInfo.client} onChange={(val) => setProjectInfo({...projectInfo, client: val})} placeholder="○○建設株式会社" />
           <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation} onChange={(val) => setProjectInfo({...projectInfo, workLocation: val})} placeholder="東京都渋谷区..." />
           <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson} onChange={(val) => setProjectInfo({...projectInfo, salesPerson: val})} />
           <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager} onChange={(val) => setProjectInfo({...projectInfo, siteManager: val})} />
-
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">工期開始 / Start</label>
@@ -944,19 +966,14 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                 style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', colorScheme: 'dark' }} />
             </div>
           </div>
-
           <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount} onChange={(val) => setProjectInfo({...projectInfo, contractAmount: val})} placeholder="5000000" />
           <TextInput label="追加金額（税抜）" labelEn="Additional Amount" type="number" value={projectInfo.additionalAmount} onChange={(val) => setProjectInfo({...projectInfo, additionalAmount: val})} placeholder="0" />
-
-          {/* 固定費 */}
           <div className="mb-2 mt-6">
             <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider pb-2 border-b border-white/[0.06]">固定費 / Fixed Costs</p>
           </div>
           <TextInput label="回送費" labelEn="Transfer Cost" type="number" value={projectInfo.transferCost || ''} onChange={(val) => setProjectInfo({...projectInfo, transferCost: val})} placeholder="0" />
           <TextInput label="リース費" labelEn="Lease Cost" type="number" value={projectInfo.leaseCost || ''} onChange={(val) => setProjectInfo({...projectInfo, leaseCost: val})} placeholder="0" />
           <TextInput label="資材費" labelEn="Materials Cost" type="number" value={projectInfo.materialsCost || ''} onChange={(val) => setProjectInfo({...projectInfo, materialsCost: val})} placeholder="0" />
-
-          {/* ★ 経費セクション */}
           <div className="mb-2 mt-6">
             <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider pb-2 border-b border-white/[0.06]">経費 / Expenses</p>
           </div>
@@ -980,7 +997,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                     </td>
                   </tr>
                 ))}
-                {/* 入力行 */}
                 <tr style={{ background: 'rgba(59,130,246,0.04)', borderTop: '1px solid rgba(59,130,246,0.2)' }}>
                   <td style={{ padding: '6px 8px' }}>
                     <input type="text" value={expenseForm.name} onChange={e => setExpenseForm({...expenseForm, name: e.target.value})}
@@ -998,17 +1014,14 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               </tbody>
             </table>
           </div>
-
           <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status} onChange={(val) => setProjectInfo({...projectInfo, status: val})} />
           <TextInput label="排出事業者" labelEn="Discharger" value={projectInfo.discharger || ''} onChange={(val) => setProjectInfo({...projectInfo, discharger: val})} placeholder="株式会社LOGIO" required />
           <TextInput label="運搬会社" labelEn="Transport Company" value={projectInfo.transportCompany || ''} onChange={(val) => setProjectInfo({...projectInfo, transportCompany: val})} placeholder="〇〇運送株式会社" />
-
-          {/* 契約処分先 チェックボックス */}
           <div className="mb-6">
             <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-3">
               契約処分先 / Contracted Disposal Sites <span className="text-red-500">*</span>
             </label>
-            <div className="rgba(255,255,255,0.02) rounded-lg p-4 border border-white/[0.08] space-y-2 max-h-80 overflow-y-auto">
+            <div className="rounded-lg p-4 border border-white/[0.08] space-y-2 max-h-80 overflow-y-auto" style={{ background: 'rgba(255,255,255,0.02)' }}>
               {MASTER_DATA.disposalSites.map((site) => {
                 const isSelected = (projectInfo.contractedDisposalSites || []).includes(site);
                 return (
@@ -1028,7 +1041,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               <p className="text-xs text-gray-400 mt-2">選択済み: {projectInfo.contractedDisposalSites.length}件</p>
             )}
           </div>
-
           <Button onClick={onSave} icon={Save}>プロジェクト情報を保存</Button>
         </>
       )}
@@ -1037,35 +1049,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 }
 
 // ========== ReportInputPage ==========
-// 共通テーブルコンポーネント
-const RowTable = ({ headers, widths, children }) => (
-  <div style={{ overflowX:'auto', WebkitOverflowScrolling:'touch', border:'1px solid #1a1a1a', borderRadius:'10px', marginBottom:'4px', scrollbarWidth:'none' }}>
-    <table style={{ width:'100%', minWidth: widths.reduce((s,w)=>s+parseInt(w),0)+'px', borderCollapse:'collapse', tableLayout:'fixed' }}>
-      <colgroup>{widths.map((w,i) => <col key={i} style={{width:w}} />)}</colgroup>
-      <thead>
-        <tr style={{ background:'#0f172a' }}>
-          {headers.map((h,i) => (
-            <th key={i} style={{ padding:'9px 8px', fontSize:'9px', fontWeight:'700', color:'#60a5fa', letterSpacing:'0.06em', textAlign:'center', borderBottom:'1px solid #1e3a5f', whiteSpace:'nowrap' }}>{h}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>{children}</tbody>
-    </table>
-  </div>
-);
-const RTd = ({ children, center, right, money, input }) => (
-  <td style={{ padding: input ? '6px 5px' : '10px 6px', fontSize: '12px', color: money ? '#FCD34D' : 'rgba(255,255,255,0.85)', textAlign: center ? 'center' : right ? 'right' : 'left', borderBottom: '1px solid rgba(255,255,255,0.03)', fontVariantNumeric: money ? 'tabular-nums' : 'normal' }}>{children}</td>
-);
-const rSel = "w-full bg-black text-white border border-white/10 rounded px-1 py-2 outline-none focus:border-blue-500";
-const rInp = "w-full bg-black text-white border border-white/10 rounded px-1 py-2 outline-none focus:border-blue-500";
-const rStyle = { fontSize: '16px' };
-// タップ領域を大きくしたボタン
-const AddRowBtn = ({ onClick, disabled }) => (
-  <button onClick={onClick} disabled={disabled} style={{ width:'36px', height:'36px', borderRadius:'7px', border:'none', cursor: disabled?'not-allowed':'pointer', background: disabled?'rgba(255,255,255,0.04)':'#2563EB', color: disabled?'#374151':'white', fontSize:'18px', fontWeight:'700', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>+</button>
-);
-const DelRowBtn = ({ onClick }) => (
-  <button onClick={onClick} style={{ width:'32px', height:'32px', borderRadius:'6px', border:'none', cursor:'pointer', background:'rgba(239,68,68,0.12)', color:'#F87171', fontSize:'13px', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>✕</button>
-);
 const SubTotal = ({ label, value }) => value > 0 ? (
   <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 4px 14px', alignItems:'center' }}>
     <span style={{ fontSize:'10px', color:'#4B5563' }}>{label}小計</span>
@@ -1073,32 +1056,50 @@ const SubTotal = ({ label, value }) => value > 0 ? (
   </div>
 ) : <div style={{marginBottom:'14px'}} />;
 
-
-function ReportInputPage({ onSave, onNavigate, projectInfo }) {
+function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [report, setReport] = useState({ date: new Date().toISOString().split('T')[0], weather: '', recorder: '', customRecorder: '' });
   const [workDetails, setWorkDetails] = useState({ workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], costItems: [] });
-  const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
+  // ★ 半日追加
+  const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, inHouseHalfDay: 12500, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
   const [wasteItems, setWasteItems] = useState([]);
   const [scrapItems, setScrapItems] = useState([]);
-  const [wForm, setWForm] = useState({ name:'', start:'', end:'', shift:'daytime' });
+  // ★ dept追加
+  const [wForm, setWForm] = useState({ name:'', start:'', end:'', shift:'daytime', dept:'k1' });
   const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime' });
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
   const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'' });
   const [scrapForm, setScrapForm] = useState({ type:'', buyer:'', qty:'', unit:'kg', price:'' });
+  // ★ 課タブ
+  const [currentDept, setCurrentDept] = useState('k1');
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [currentStep]);
 
-  const handleCancel = () => { if (confirm('入力内容を破棄してホーム画面に戻りますか？')) onNavigate('home'); };
+  // ★ キャンセル時にロック解放
+  const handleCancel = async () => {
+    if (confirm('入力内容を破棄してホーム画面に戻りますか？')) {
+      if (onReleaseLock) await onReleaseLock();
+      onNavigate('home');
+    }
+  };
+
   const isStep1Valid = () => report.date && report.recorder;
   const handleSave = async () => { onSave({ ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems }); };
 
+  // ★ シフト別単価（半日追加）
+  const getShiftAmount = (shift) => {
+    if (shift === 'nighttime') return unitPrices.inHouseNighttime;
+    if (shift === 'nightLoading') return unitPrices.inHouseNightLoading;
+    if (shift === 'halfDay') return unitPrices.inHouseHalfDay;
+    return unitPrices.inHouseDaytime;
+  };
+
   const addWorker = () => {
     if (!wForm.name||!wForm.start||!wForm.end) return;
-    const amount = wForm.shift==='nighttime'?unitPrices.inHouseNighttime:wForm.shift==='nightLoading'?unitPrices.inHouseNightLoading:unitPrices.inHouseDaytime;
+    const amount = getShiftAmount(wForm.shift);
     setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm,amount}]});
-    setWForm({name:'',start:'',end:'',shift:'daytime'});
+    setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
   };
   const addOutsource = () => {
     if (!oForm.company||!oForm.count) return;
@@ -1129,8 +1130,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     setScrapForm({type:'',buyer:'',qty:'',unit:'kg',price:''});
   };
 
-  const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':'日勤';
-  const shiftColor = s => s==='nighttime'?'#8B5CF6':s==='nightLoading'?'#6366F1':'#3B82F6';
+  const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':s==='halfDay'?'半日':'日勤';
+  const shiftColor = s => s==='nighttime'?'#8B5CF6':s==='nightLoading'?'#6366F1':s==='halfDay'?'#F59E0B':'#3B82F6';
 
   const StepDots = () => (
     <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'8px', padding:'14px 0 10px' }}>
@@ -1138,65 +1139,32 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         <div key={i} style={{
           width: '8px', height: '8px', borderRadius: '50%',
           background: i < currentStep ? '#22c55e' : i === currentStep ? '#3b82f6' : '#1f2937',
-          transition: 'all 0.3s ease',
-          flexShrink: 0,
+          transition: 'all 0.3s ease', flexShrink: 0,
         }} />
       ))}
     </div>
   );
 
-  // 固定フッター
-  const Footer = ({ onBack, onNext, nextLabel='次へ →', nextColor='#2563eb', disabled=false }) => (
-    <div style={{
-      position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)',
-      width:'100%', maxWidth:'672px',
-      background:'rgba(0,0,0,0.92)', backdropFilter:'blur(20px)',
-      borderTop:'1px solid rgba(255,255,255,0.05)',
-      padding:'10px 16px',
-      paddingBottom:'calc(10px + env(safe-area-inset-bottom, 0px))',
-      display:'flex', gap:'10px', zIndex:39
-    }}>
-      {onBack && (
-        <button onClick={onBack} style={{ flex:1, padding:'14px', background:'#0a0a0a', border:'1px solid #1a1a1a', color:'#6b7280', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>← 戻る</button>
-      )}
-      <button onClick={onNext} disabled={disabled} style={{
-        flex:2, padding:'14px',
-        background: disabled ? '#1f2937' : nextColor,
-        color: disabled ? '#4b5563' : 'white',
-        border:'none', borderRadius:'10px', fontSize:'15px', fontWeight:700,
-        cursor: disabled ? 'not-allowed' : 'pointer'
-      }}>{nextLabel}</button>
-    </div>
-  );
-
-  // セクションラベル
-  const SecLabel = ({ ja, en }) => (
-    <p style={{ fontSize:'10px', fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'8px', display:'flex', alignItems:'center', gap:'6px' }}>
-      {ja} <span style={{ color:'#374151', fontWeight:600 }}>/ {en}</span>
-      <span style={{ flex:1, height:'1px', background:'#0f0f0f', marginLeft:'4px' }} />
-    </p>
-  );
-
   const mkCard = (color) => ({
     background: `linear-gradient(#050505,#050505) padding-box, linear-gradient(135deg,${color}) border-box`,
-    border: '1.5px solid transparent',
-    borderRadius: '12px', padding: '14px', marginBottom: '20px'
+    border: '1.5px solid transparent', borderRadius: '12px', padding: '14px', marginBottom: '20px'
   });
-  const inputCard        = mkCard('#3b82f6,#6366f1');   // blue→indigo  施工/自社
-  const inputCardCyan    = mkCard('#22d3ee,#3b82f6');   // cyan→blue    外注
-  const inputCardAmber   = mkCard('#f59e0b,#f97316');   // amber→orange 車両/重機
-  const inputCardGreen   = mkCard('#34d399,#22d3ee');   // green→cyan   産廃
-  const inputCardRose    = mkCard('#f43f5e,#f59e0b');   // rose→amber   スクラップ
+  const inputCard      = mkCard('#3b82f6,#6366f1');
+  const inputCardCyan  = mkCard('#22d3ee,#3b82f6');
+  const inputCardAmber = mkCard('#f59e0b,#f97316');
+  const inputCardGreen = mkCard('#34d399,#22d3ee');
+  const inputCardRose  = mkCard('#f43f5e,#f59e0b');
   const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit' };
   const inpTxt = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'10px', fontWeight:'700', color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
 
+  // ★ ItemCard: アバターは常に1文字
   const ItemCard = ({ avatarBg, avatarColor, avatarText, name, meta, amount, amountColor, onDel }) => (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'12px', marginBottom:'8px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:'10px', minWidth:0 }}>
-        <div style={{ width:'34px', height:'34px', borderRadius:'9px', background:avatarBg, color:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'11px', fontWeight:'700', flexShrink:0 }}>{avatarText}</div>
+        <div style={{ width:'34px', height:'34px', borderRadius:'9px', background:avatarBg, color:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700', flexShrink:0, fontFamily:'sans-serif' }}>{avatarText}</div>
         <div style={{ minWidth:0 }}>
           <div style={{ fontSize:'13px', fontWeight:'600', color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{name}</div>
           <div style={{ fontSize:'11px', color:'#4B5563', marginTop:'2px' }} dangerouslySetInnerHTML={{__html: meta}} />
@@ -1209,10 +1177,38 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
     </div>
   );
 
-  const ShiftBtns = ({ value, onChange }) => (
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px' }}>
-      {[['daytime','日勤','#3b82f6'],['nighttime','夜間','#8b5cf6'],['nightLoading','夜積','#6366f1']].map(([v,label,color])=>(
-        <button key={v} onClick={()=>onChange(v)} style={{ padding:'11px 4px', borderRadius:'9px', border:`1px solid ${value===v?color:'#1f2937'}`, background: value===v?`${color}20`:'#0d0d0d', color: value===v?color:'#4B5563', fontSize:'12px', fontWeight:'600', cursor:'pointer', transition:'all 0.15s' }}>{label}</button>
+  // ★ シフトボタン: 4択（半日追加）
+  const ShiftBtns4 = ({ value, onChange }) => (
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'5px' }}>
+      {[
+        ['daytime',     '日勤',   '#3b82f6'],
+        ['nighttime',   '夜間',   '#8b5cf6'],
+        ['nightLoading','夜積',   '#6366f1'],
+        ['halfDay',     '半日 ×½','#f59e0b'],
+      ].map(([v,label,color])=>(
+        <button key={v} onClick={()=>onChange(v)} style={{
+          padding:'10px 2px', borderRadius:'9px',
+          border:`1px solid ${value===v?color:'#1f2937'}`,
+          background: value===v?`${color}20`:'#0d0d0d',
+          color: value===v?color:'#4B5563',
+          fontSize:'11px', fontWeight:'600', cursor:'pointer', transition:'all 0.15s', lineHeight:1.3
+        }}>{label}</button>
+      ))}
+    </div>
+  );
+
+  // ★ 課タブ（人数表記なし）
+  const DeptTabs = ({ value, onChange }) => (
+    <div style={{ display:'flex', gap:'4px', marginBottom:'10px', background:'#0a0a0a', borderRadius:'10px', padding:'4px', border:'1px solid #1f2937' }}>
+      {[['k1','工事1課'],['ek','環境課']].map(([d,label])=>(
+        <button key={d} onClick={()=>onChange(d)}
+          style={{
+            flex:1, padding:'8px 4px', borderRadius:'7px', border:'none',
+            fontFamily:'inherit', fontSize:'12px', fontWeight:'700',
+            cursor:'pointer', transition:'all .15s', textAlign:'center',
+            background: value===d ? (d==='k1'?'rgba(59,130,246,0.12)':'rgba(34,197,94,0.1)') : 'transparent',
+            color: value===d ? (d==='k1'?'#3b82f6':'#22c55e') : '#4B5563'
+          }}>{label}</button>
       ))}
     </div>
   );
@@ -1239,10 +1235,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
 
   return (
     <div style={{ background:'#000', minHeight:'100vh', overflowX:'hidden' }}>
-      <style>{`
-        @keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .b-panel { animation: fadeUpIn 0.22s ease; }
-      `}</style>
+      <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;}`}</style>
 
       {/* ヘッダー */}
       <div style={{ position:'sticky', top:0, zIndex:50, background:'rgba(0,0,0,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px 0' }}>
@@ -1253,7 +1246,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         <StepDots />
       </div>
 
-      {/* ===== Step 1 ===== */}
+      {/* Step 1 */}
       {currentStep === 1 && (
         <div className="b-panel" style={{ padding:'20px 16px 100px' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
@@ -1282,13 +1275,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         </div>
       )}
 
-      {/* ===== Step 2 ===== */}
+      {/* Step 2 */}
       {currentStep === 2 && (
         <div className="b-panel" style={{ padding:'20px 16px 100px' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
-          <div style={{ ...inputCard }}>
+          <div style={inputCard}>
             <div style={{ marginBottom:'10px' }}>
               <label style={inpLbl}>区分</label>
               <select value={workDetails.workCategory} onChange={e=>setWorkDetails({...workDetails,workCategory:e.target.value})} style={inpSel}>
@@ -1312,21 +1305,42 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 自社人工 */}
           <SectionLabel ja="自社人工" en="In-House Labor" />
           {workDetails.inHouseWorkers.map((w,i)=>(
-            <ItemCard key={i} avatarBg={`${shiftColor(w.shift)}20`} avatarColor={shiftColor(w.shift)} avatarText={w.name.charAt(0)}
-              name={w.name} meta={`${w.start} → ${w.end}　<span style="color:${shiftColor(w.shift)}">${shiftLabel(w.shift)}</span>`}
+            <ItemCard key={i}
+              avatarBg={`${shiftColor(w.shift)}20`} avatarColor={shiftColor(w.shift)}
+              avatarText={w.name.charAt(0)}
+              name={w.name}
+              meta={`${w.start} → ${w.end}　<span style="color:${shiftColor(w.shift)}">${shiftLabel(w.shift)}</span>　<span style="font-size:9px;color:${w.dept==='k1'?'#3b82f6':'#22c55e'};background:${w.dept==='k1'?'rgba(59,130,246,0.1)':'rgba(34,197,94,0.1)'};padding:1px 5px;border-radius:4px">${w.dept==='k1'?'工事1課':'環境課'}</span>`}
               amount={`¥${formatCurrency(w.amount)}`}
               onDel={()=>setWorkDetails({...workDetails,inHouseWorkers:workDetails.inHouseWorkers.filter((_,j)=>j!==i)})} />
           ))}
           <div style={inputCard}>
-            <div style={grid2}>
-              <div><label style={inpLbl}>氏名</label><select value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})} style={inpSel}><option value="">選択</option>{Object.entries(MASTER_DATA.inHouseWorkersByDept).map(([dept,members])=><optgroup key={dept} label={dept}>{members.map(n=><option key={n}>{n}</option>)}</optgroup>)}</select></div>
-              <div><label style={inpLbl}>区分</label><ShiftBtns value={wForm.shift} onChange={v=>setWForm({...wForm,shift:v})} /></div>
+            {/* ★ 課タブ（人数なし）*/}
+            <div style={{ marginBottom:'10px' }}>
+              <label style={inpLbl}>課 / Department</label>
+              <DeptTabs value={currentDept} onChange={(d)=>{
+                setCurrentDept(d);
+                setWForm(prev => ({...prev, name:'', dept:d}));
+              }} />
+            </div>
+            <div style={{ marginBottom:'10px' }}>
+              <label style={inpLbl}>氏名</label>
+              <select value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})} style={inpSel}>
+                <option value="">選択してください</option>
+                {(MASTER_DATA.inHouseWorkersByDept[currentDept==='k1'?'工事1課':'環境課']||[]).map(n=><option key={n}>{n}</option>)}
+              </select>
+            </div>
+            {/* ★ シフト4択 */}
+            <div style={{ marginBottom:'10px' }}>
+              <label style={inpLbl}>区分 / Shift</label>
+              <ShiftBtns4 value={wForm.shift} onChange={v=>setWForm({...wForm,shift:v})} />
             </div>
             <div style={grid2}>
               <div><label style={inpLbl}>開始</label><select value={wForm.start} onChange={e=>setWForm({...wForm,start:e.target.value})} style={inpSel}><option value="">--:--</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t}>{t}</option>)}</select></div>
               <div><label style={inpLbl}>終了</label><select value={wForm.end} onChange={e=>setWForm({...wForm,end:e.target.value})} style={inpSel}><option value="">--:--</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t}>{t}</option>)}</select></div>
             </div>
-            <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>¥{formatCurrency(wForm.shift==='nighttime'?unitPrices.inHouseNighttime:wForm.shift==='nightLoading'?unitPrices.inHouseNightLoading:unitPrices.inHouseDaytime)}</div>
+            <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>
+              適用単価: ¥{formatCurrency(getShiftAmount(wForm.shift))}
+            </div>
             <AddBtn onClick={addWorker} disabled={!wForm.name||!wForm.start||!wForm.end} />
           </div>
           {workDetails.inHouseWorkers.length>0 && <SubTotal label="自社人工" value={workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0)} />}
@@ -1334,8 +1348,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 外注人工 */}
           <SectionLabel ja="外注人工" en="Outsourcing" />
           {workDetails.outsourcingLabor.map((o,i)=>(
-            <ItemCard key={i} avatarBg="rgba(245,158,11,0.12)" avatarColor="#fbbf24" avatarText="外"
-              name={o.company} meta={`${o.count}人　<span style="color:${shiftColor(o.shift)}">${shiftLabel(o.shift)}</span>`}
+            <ItemCard key={i}
+              avatarBg="rgba(34,211,238,0.12)" avatarColor="#22d3ee"
+              avatarText={o.company.charAt(0)}
+              name={o.company}
+              meta={`${o.count}人　<span style="color:${shiftColor(o.shift)}">${shiftLabel(o.shift)}</span>`}
               amount={`¥${formatCurrency(o.amount)}`}
               onDel={()=>setWorkDetails({...workDetails,outsourcingLabor:workDetails.outsourcingLabor.filter((_,j)=>j!==i)})} />
           ))}
@@ -1359,7 +1376,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 車両 */}
           <SectionLabel ja="車両" en="Vehicles" />
           {workDetails.vehicles.map((v,i)=>(
-            <ItemCard key={i} avatarBg="rgba(245,158,11,0.12)" avatarColor="#fbbf24" avatarText={v.type.slice(0,2)}
+            <ItemCard key={i}
+              avatarBg="rgba(245,158,11,0.12)" avatarColor="#fbbf24"
+              avatarText={v.type.charAt(0)}
               name={v.type} meta={v.number}
               amount={`¥${formatCurrency(v.amount)}`}
               onDel={()=>setWorkDetails({...workDetails,vehicles:workDetails.vehicles.filter((_,j)=>j!==i)})} />
@@ -1377,7 +1396,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 重機 */}
           <SectionLabel ja="重機" en="Machinery" />
           {workDetails.machinery.map((m,i)=>(
-            <ItemCard key={i} avatarBg="rgba(99,102,241,0.12)" avatarColor="#818cf8" avatarText="機"
+            <ItemCard key={i}
+              avatarBg="rgba(99,102,241,0.12)" avatarColor="#818cf8"
+              avatarText="機"
               name={m.type} meta=""
               amount={`¥${formatCurrency(m.unitPrice)}`}
               onDel={()=>setWorkDetails({...workDetails,machinery:workDetails.machinery.filter((_,j)=>j!==i)})} />
@@ -1395,7 +1416,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
         </div>
       )}
 
-      {/* ===== Step 3 ===== */}
+      {/* Step 3 */}
       {currentStep === 3 && (
         <div className="b-panel" style={{ padding:'20px 16px 100px' }}>
           <p style={{ fontSize:'12px', color:'#4B5563', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
@@ -1403,7 +1424,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* 産廃 */}
           <SectionLabel ja="産廃処分費" en="Waste Disposal" />
           {wasteItems.map((w,i)=>(
-            <ItemCard key={i} avatarBg="rgba(245,158,11,0.12)" avatarColor="#fbbf24" avatarText="廃"
+            <ItemCard key={i}
+              avatarBg="rgba(245,158,11,0.12)" avatarColor="#fbbf24"
+              avatarText="廃"
               name={w.material} meta={`${w.quantity}${w.unit}　${w.disposalSite}　<span style="color:#4B5563">${w.manifestNumber}</span>`}
               amount={`¥${formatCurrency(w.amount)}`}
               onDel={()=>setWasteItems(wasteItems.filter((_,j)=>j!==i))} />
@@ -1426,7 +1449,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
           {/* スクラップ */}
           <SectionLabel ja="スクラップ売上" en="Scrap Revenue" />
           {scrapItems.map((s,i)=>(
-            <ItemCard key={i} avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80" avatarText={s.type.charAt(0)}
+            <ItemCard key={i}
+              avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80"
+              avatarText={s.type.charAt(0)}
               name={s.type} meta={`${s.quantity}${s.unit}　${s.buyer}`}
               amount={`¥${formatCurrency(Math.abs(s.amount))}`} amountColor="#4ade80"
               onDel={()=>setScrapItems(scrapItems.filter((_,j)=>j!==i))} />
@@ -1457,12 +1482,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo }) {
   );
 }
 
-
 // ========== ReportListPage ==========
 function ReportListPage({ reports, onDelete, onNavigate }) {
   const [filterCategory, setFilterCategory] = useState('');
   const [openMonths, setOpenMonths] = useState({});
-
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
 
   const filteredReports = reports.filter(r => {
@@ -1470,28 +1493,15 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
     if (filterCategory && category !== filterCategory) return false;
     return true;
   });
-
   const months = [...new Set(filteredReports.map(r => r.date.substring(0, 7)))].sort().reverse();
-
-  // 最新月はデフォルトで開く
-  useEffect(() => {
-    if (months.length > 0) {
-      setOpenMonths({});
-    }
-  }, [reports, filterCategory]);
-
+  useEffect(() => { if (months.length > 0) setOpenMonths({}); }, [reports, filterCategory]);
   const toggleMonth = (month) => setOpenMonths(prev => ({ ...prev, [month]: !prev[month] }));
-
-  const fmtMonth = (ym) => {
-    const [y, m] = ym.split('-');
-    return `${y}年${parseInt(m)}月`;
-  };
+  const fmtMonth = (ym) => { const [y, m] = ym.split('-'); return `${y}年${parseInt(m)}月`; };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')}
-          className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -1499,7 +1509,6 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
         <Select label="作業区分" labelEn="Category" options={MASTER_DATA.workCategories} value={filterCategory} onChange={setFilterCategory} placeholder="全作業" />
       </div>
       <p className="text-xs text-gray-600 mb-4">全 {filteredReports.length}件</p>
-
       {months.map(month => {
         const monthReports = filteredReports.filter(r => r.date.startsWith(month)).sort((a,b) => new Date(b.date)-new Date(a.date));
         const isOpen = !!openMonths[month];
@@ -1509,10 +1518,8 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
           (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
           (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
           (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
-
         return (
           <div key={month} className="mb-3">
-            {/* 月ヘッダー */}
             <button onClick={() => toggleMonth(month)}
               style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#0f172a', border:'1px solid rgba(255,255,255,0.08)', borderRadius: isOpen ? '10px 10px 0 0' : '10px', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
@@ -1522,7 +1529,6 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
               </div>
               {isOpen ? <ChevronUp className="w-4 h-4 text-gray-500"/> : <ChevronDown className="w-4 h-4 text-gray-500"/>}
             </button>
-            {/* 月内の日報リスト */}
             {isOpen && (
               <div style={{ border:'1px solid rgba(255,255,255,0.08)', borderTop:'none', borderRadius:'0 0 10px 10px', overflow:'hidden' }}>
                 {monthReports.map((report, idx) => (
@@ -1574,7 +1580,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
             <div className="mb-4">
               <p className="text-xs font-semibold text-gray-400 uppercase mb-3">原価明細</p>
               {report.workDetails.inHouseWorkers?.length > 0 && (
-                <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
+                <div className="mb-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
                   <p className="text-xs font-semibold text-blue-400 mb-2">自社人工: {report.workDetails.inHouseWorkers.length}名</p>
                   {report.workDetails.inHouseWorkers.map((w, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {w.name} <span className="text-gray-500">{w.start||w.startTime}-{w.end||w.endTime}</span> <span className="text-yellow-400">¥{formatCurrency(w.amount)}</span></p>
@@ -1582,7 +1588,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
                 </div>
               )}
               {report.workDetails.outsourcingLabor?.length > 0 && (
-                <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
+                <div className="mb-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
                   <p className="text-xs font-semibold text-blue-400 mb-2">外注人工: {report.workDetails.outsourcingLabor.length}件</p>
                   {report.workDetails.outsourcingLabor.map((o, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {o.company} <span className="text-gray-500">{o.count || o.workers}人</span> <span className="text-yellow-400">¥{formatCurrency(o.amount)}</span></p>
@@ -1590,7 +1596,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
                 </div>
               )}
               {report.workDetails.vehicles?.length > 0 && (
-                <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
+                <div className="mb-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
                   <p className="text-xs font-semibold text-blue-400 mb-2">車両: {report.workDetails.vehicles.length}台</p>
                   {report.workDetails.vehicles.map((v, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {v.type} <span className="text-gray-500">({v.number})</span> <span className="text-yellow-400">¥{formatCurrency(v.amount)}</span></p>
@@ -1598,7 +1604,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
                 </div>
               )}
               {report.workDetails.machinery?.length > 0 && (
-                <div className="mb-3 rgba(255,255,255,0.02) rounded p-2">
+                <div className="mb-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
                   <p className="text-xs font-semibold text-blue-400 mb-2">重機: {report.workDetails.machinery.length}台</p>
                   {report.workDetails.machinery.map((m, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {m.type} <span className="text-yellow-400">¥{formatCurrency(m.unitPrice)}</span></p>
@@ -1608,7 +1614,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
             </div>
           )}
           {report.wasteItems?.length > 0 && (
-            <div className="mb-4 rgba(255,255,255,0.02) rounded p-2">
+            <div className="mb-4 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
               <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount,0))}</p>
               {report.wasteItems.map((waste, idx) => (
                 <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
@@ -1619,7 +1625,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
             </div>
           )}
           {report.scrapItems?.length > 0 && (
-            <div className="mb-4 rgba(255,255,255,0.02) rounded p-2">
+            <div className="mb-4 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
               <p className="text-xs font-semibold text-green-400 mb-2">スクラップ: {report.scrapItems.length}件 / ¥{formatCurrency(Math.abs(report.scrapItems.reduce((s,sc)=>s+sc.amount,0)))}</p>
               {report.scrapItems.map((scrap, idx) => (
                 <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {scrap.type} <span className="text-gray-500">{scrap.quantity}{scrap.unit}</span> - {scrap.buyer}</p>
@@ -1650,7 +1656,7 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
         </button>
       </div>
       {(selectedSite || projectInfo?.workType || projectInfo?.projectName) && (
-        <div className="mb-6 px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
+        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
           <div className="text-white text-lg font-bold leading-relaxed mb-2">{selectedSite || projectInfo?.workType || projectInfo?.projectName}</div>
           {projectInfo?.workType && selectedSite && <div className="text-gray-500 text-xs mb-1">{projectInfo.workType}</div>}
           {projectInfo?.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
@@ -1717,7 +1723,6 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     }
     r.wasteItems?.forEach(w => costByCategory['産廃費'] += w.amount || 0);
   });
-  // 追加費用項目
   if (projectInfo?.transferCost) costByCategory['回送費'] = parseFloat(projectInfo.transferCost) || 0;
   if (projectInfo?.leaseCost) costByCategory['リース費'] = parseFloat(projectInfo.leaseCost) || 0;
   if (projectInfo?.materialsCost) costByCategory['資材費'] = parseFloat(projectInfo.materialsCost) || 0;
@@ -1738,7 +1743,6 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     r.wasteItems?.forEach(w => monthlyData[month] += w.amount || 0);
   });
   const barData = Object.keys(monthlyData).sort().map(month => ({ month: month.substring(5), cost: Math.round(monthlyData[month] / 10000) }));
-
   const costRatio = totals.totalRevenue > 0 ? ((totals.accumulatedCost / totals.totalRevenue) * 100).toFixed(1) : '0.0';
   const costRatioNum = parseFloat(costRatio);
 
@@ -1750,14 +1754,14 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         </button>
       </div>
       {(projectInfo?.workType || projectInfo?.projectName) && (
-        <div className="mb-6 px-4 py-4 rgba(255,255,255,0.02) border border-white/[0.06] rounded-md">
+        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
           <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.workType || projectInfo.projectName}</div>
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
       <div className="mb-6">
         <SectionHeader title="財務サマリー / Financial Summary" />
-        <div className="rgba(255,255,255,0.02) rounded-md p-5 space-y-3">
+        <div className="rounded-md p-5 space-y-3" style={{ background: 'rgba(255,255,255,0.02)' }}>
           {[
             { label: '売上 / Revenue', value: totals.totalRevenue, color: 'text-white' },
             { label: '原価 / Cost', value: totals.accumulatedCost, color: 'text-red-400/80' },
@@ -1778,7 +1782,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           </div>
         </div>
       </div>
-      <div className="mb-6 rgba(255,255,255,0.02) rounded-md p-5">
+      <div className="mb-6 rounded-md p-5" style={{ background: 'rgba(255,255,255,0.02)' }}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1">原価率 / Cost Ratio</p>
@@ -1794,7 +1798,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       </div>
       <SectionHeader title="原価構成比 / Cost Structure" />
       {pieData.length > 0 ? (
-        <div className="rgba(255,255,255,0.02) rounded-md p-5 mb-6">
+        <div className="rounded-md p-5 mb-6" style={{ background: 'rgba(255,255,255,0.02)' }}>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
@@ -1820,12 +1824,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           </div>
         </div>
       ) : (
-        <div className="rgba(255,255,255,0.02) rounded-md p-8"><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+        <div className="rounded-md p-8" style={{ background: 'rgba(255,255,255,0.02)' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
       )}
       <div className="mt-8">
         <SectionHeader title="月別原価推移 / Monthly Trend" />
         {barData.length > 0 ? (
-          <div className="rgba(255,255,255,0.02) rounded-md p-5">
+          <div className="rounded-md p-5" style={{ background: 'rgba(255,255,255,0.02)' }}>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={barData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -1837,23 +1841,21 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="rgba(255,255,255,0.02) rounded-md p-8"><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+          <div className="rounded-md p-8" style={{ background: 'rgba(255,255,255,0.02)' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
         )}
       </div>
     </div>
   );
 }
 
-// ========== ★ ExportPage（スプシ改善: 契約処分先改行 + セクション追加） ==========
+// ========== ExportPage ==========
 function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   const [gasUrl, setGasUrl] = useState('');
   const [gasMonthlyUrl, setGasMonthlyUrl] = useState('');
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [lastExport, setLastExport] = useState('');
-
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
-
   useEffect(() => {
     const loadSettings = async () => {
       const gasUrlResult = await window.storage.get('logio-gas-url');
@@ -1877,99 +1879,30 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
     const targetUrl = gasMonthlyUrl || gasUrl;
     if (!targetUrl) { setExportStatus('❌ GAS URLを入力してください'); return; }
     if (!selectedSite) { setExportStatus('❌ 現場を選択してください'); return; }
-
-    setExporting(true);
-    setExportStatus('📤 月報を更新中...');
-
+    setExporting(true); setExportStatus('📤 月報を更新中...');
     try {
-      const siteData = {
-        siteName: selectedSite,
-        projectNumber: projectInfo.projectNumber || '',
-        workType: projectInfo.workType || '',
-        client: projectInfo.client || '',
-        workLocation: projectInfo.workLocation || '',
-        salesPerson: projectInfo.salesPerson || '',
-        siteManager: projectInfo.siteManager || '',
-        startDate: projectInfo.startDate || '',
-        endDate: projectInfo.endDate || '',
-        contractAmount: projectInfo.contractAmount || 0,
-        additionalAmount: projectInfo.additionalAmount || 0,
-        status: projectInfo.status || '',
-        transferCost: projectInfo.transferCost || 0,
-        leaseCost: projectInfo.leaseCost || 0,
-        materialsCost: projectInfo.materialsCost || 0,
-      };
-
-      await fetch(targetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'updateMonthlyReport', siteData, reportData: reports, monthlySpreadsheetUrl: gasMonthlyUrl || null }),
-        mode: 'no-cors'
-      });
-
+      const siteData = { siteName: selectedSite, projectNumber: projectInfo.projectNumber || '', workType: projectInfo.workType || '', client: projectInfo.client || '', workLocation: projectInfo.workLocation || '', salesPerson: projectInfo.salesPerson || '', siteManager: projectInfo.siteManager || '', startDate: projectInfo.startDate || '', endDate: projectInfo.endDate || '', contractAmount: projectInfo.contractAmount || 0, additionalAmount: projectInfo.additionalAmount || 0, status: projectInfo.status || '', transferCost: projectInfo.transferCost || 0, leaseCost: projectInfo.leaseCost || 0, materialsCost: projectInfo.materialsCost || 0 };
+      await fetch(targetUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'updateMonthlyReport', siteData, reportData: reports, monthlySpreadsheetUrl: gasMonthlyUrl || null }), mode: 'no-cors' });
       const now = new Date().toLocaleString('ja-JP');
       setExportStatus(`✅ 月報を更新しました！（${now}）`);
-    } catch (error) {
-      setExportStatus('❌ 月報更新に失敗しました: ' + error.message);
-    } finally {
-      setExporting(false);
-      setTimeout(() => setExportStatus(''), 8000);
-    }
+    } catch (error) { setExportStatus('❌ 月報更新に失敗しました: ' + error.message); }
+    finally { setExporting(false); setTimeout(() => setExportStatus(''), 8000); }
   };
 
   const handleExportWorkReport = async () => {
     if (!gasUrl) { setExportStatus('❌ GAS URLを入力してください'); return; }
     if (!selectedSite) { setExportStatus('❌ 現場を選択してください'); return; }
     if (reports.length === 0) { setExportStatus('❌ 日報データがありません'); return; }
-
-    setExporting(true);
-    setExportStatus('📤 解体作業日報をスプレッドシートに作成中...');
-
+    setExporting(true); setExportStatus('📤 解体作業日報をスプレッドシートに作成中...');
     try {
-      const siteData = {
-        siteName: selectedSite,
-        projectNumber: projectInfo.projectNumber || '',
-        workType: projectInfo.workType || '',
-        client: projectInfo.client || '',
-        workLocation: projectInfo.workLocation || '',
-        salesPerson: projectInfo.salesPerson || '',
-        siteManager: projectInfo.siteManager || '',
-        startDate: projectInfo.startDate || '',
-        endDate: projectInfo.endDate || '',
-        contractAmount: projectInfo.contractAmount || 0,
-        additionalAmount: projectInfo.additionalAmount || 0,
-        status: projectInfo.status || '',
-        discharger: projectInfo.discharger || '',
-        transportCompany: projectInfo.transportCompany || '',
-        contractedDisposalSites: projectInfo.contractedDisposalSites || [],
-        transferCost: projectInfo.transferCost || 0,
-        leaseCost: projectInfo.leaseCost || 0,
-        materialsCost: projectInfo.materialsCost || 0,
-      };
-
-      const payload = {
-        action: 'exportWorkReport',
-        siteData,
-        reportData: reports,
-      };
-
-      await fetch(gasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        mode: 'no-cors'
-      });
-
+      const siteData = { siteName: selectedSite, projectNumber: projectInfo.projectNumber || '', workType: projectInfo.workType || '', client: projectInfo.client || '', workLocation: projectInfo.workLocation || '', salesPerson: projectInfo.salesPerson || '', siteManager: projectInfo.siteManager || '', startDate: projectInfo.startDate || '', endDate: projectInfo.endDate || '', contractAmount: projectInfo.contractAmount || 0, additionalAmount: projectInfo.additionalAmount || 0, status: projectInfo.status || '', discharger: projectInfo.discharger || '', transportCompany: projectInfo.transportCompany || '', contractedDisposalSites: projectInfo.contractedDisposalSites || [], transferCost: projectInfo.transferCost || 0, leaseCost: projectInfo.leaseCost || 0, materialsCost: projectInfo.materialsCost || 0 };
+      await fetch(gasUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'exportWorkReport', siteData, reportData: reports }), mode: 'no-cors' });
       const now = new Date().toLocaleString('ja-JP');
       setLastExport(now);
       await window.storage.set('logio-last-export', now);
       setExportStatus(`✅ 解体作業日報をスプレッドシートに作成しました！（${now}）\n日報データ: ${reports.length}件`);
-    } catch (error) {
-      setExportStatus('❌ エクスポートに失敗しました: ' + error.message);
-    } finally {
-      setExporting(false);
-      setTimeout(() => setExportStatus(''), 8000);
-    }
+    } catch (error) { setExportStatus('❌ エクスポートに失敗しました: ' + error.message); }
+    finally { setExporting(false); setTimeout(() => setExportStatus(''), 8000); }
   };
 
   return (
@@ -1981,14 +1914,13 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       </div>
       <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
       <p className="text-gray-400 text-sm mb-8">解体作業日報をGoogle スプレッドシートに出力</p>
-
-      <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
+      <div className="border rounded-lg p-6 mb-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         <div className="mb-4">
           <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">日報用 GAS URL <span className="text-red-500">*必須</span></label>
           <input type="text" value={gasUrl} onChange={(e) => setGasUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
             className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-4" />
-          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">月報用 GAS URL <span className="text-gray-600">（未入力の場合は日報用を使用）</span></label>
+          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">月報用 GAS URL</label>
           <input type="text" value={gasMonthlyUrl} onChange={(e) => setGasMonthlyUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
             className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-green-500 mb-4" />
           <button onClick={handleSaveSettings} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
@@ -1996,108 +1928,31 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
           </button>
         </div>
       </div>
-
-      {/* ★ エクスポートデータプレビュー（スプシ改善確認用） */}
-      {selectedSite && (
-        <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4">エクスポートデータ確認</h2>
-
-          {/* 基本情報 */}
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">基本情報</p>
-          <div className="space-y-2 mb-4">
-            {[
-              ['現場', selectedSite],
-              ['PROJECT NO.', projectInfo.projectNumber || '未設定'],
-              ['発注者', projectInfo.client || '-'],
-              ['工期', `${projectInfo.startDate || '-'} ～ ${projectInfo.endDate || '-'}`],
-            ].map(([label, val]) => (
-              <div key={label} className="flex justify-between py-1 border-b border-white/[0.06]">
-                <span className="text-xs text-gray-500">{label}</span>
-                <span className="text-xs text-white">{val}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* 契約処分先（改行プレビュー） */}
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">契約処分先（スプシ内改行）</p>
-          <div className="bg-black/60 rounded p-3 mb-4">
-            {(projectInfo.contractedDisposalSites || []).length > 0 ? (
-              <div className="space-y-1">
-                {(projectInfo.contractedDisposalSites || []).map((site, i) => (
-                  <p key={i} className="text-xs text-gray-300">↵ {site}</p>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-600">未設定</p>
-            )}
-          </div>
-
-          {/* 追加費用セクション */}
-          {(projectInfo.transferCost || projectInfo.leaseCost || projectInfo.materialsCost) && (
-            <>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">追加費用セクション（スプシ新規追加）</p>
-              <div className="space-y-2 mb-4">
-                {[
-                  ['回送費', projectInfo.transferCost],
-                  ['リース費', projectInfo.leaseCost],
-                  ['資材費', projectInfo.materialsCost],
-                ].filter(([, v]) => v).map(([label, val]) => (
-                  <div key={label} className="flex justify-between py-1 border-b border-white/[0.06]">
-                    <span className="text-xs text-gray-500">{label}</span>
-                    <span className="text-xs text-white">¥{formatCurrency(parseFloat(val))}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between py-1">
-                  <span className="text-xs font-semibold text-gray-400">追加費用合計</span>
-                  <span className="text-xs font-semibold text-blue-400">
-                    ¥{formatCurrency((parseFloat(projectInfo.transferCost)||0) + (parseFloat(projectInfo.leaseCost)||0) + (parseFloat(projectInfo.materialsCost)||0))}
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="text-xs text-gray-500">日報データ: {reports.length}件</div>
-        </div>
-      )}
-
-      <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
+      <div className="border rounded-lg p-6 mb-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
         <h2 className="text-xl font-semibold text-white mb-2">月報</h2>
-        <p className="text-gray-400 text-sm mb-4">全現場の月報シートにこの現場の情報を反映します。PROJECT NO.をキーに更新・追加されます。</p>
+        <p className="text-gray-400 text-sm mb-4">全現場の月報シートにこの現場の情報を反映します。</p>
         <button onClick={handleExportMonthlyReport} disabled={exporting || !gasUrl || !selectedSite}
-          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${
-            exporting || !gasUrl || !selectedSite ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-green-700 text-white hover:bg-green-600'
-          }`}>
-          <FileText className="w-5 h-5" />
-          {exporting ? '更新中...' : '月報を更新'}
+          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${exporting || !gasUrl || !selectedSite ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-green-700 text-white hover:bg-green-600'}`}>
+          <FileText className="w-5 h-5" />{exporting ? '更新中...' : '月報を更新'}
         </button>
       </div>
-
-      <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6 mb-6">
+      <div className="border rounded-lg p-6 mb-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
         <h2 className="text-xl font-semibold text-white mb-2">解体作業日報</h2>
         <p className="text-gray-400 text-sm mb-4">LOGIO仕様の解体作業日報をスプレッドシートに自動生成します</p>
         <button onClick={handleExportWorkReport} disabled={exporting || !gasUrl || !selectedSite}
-          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${
-            exporting || !gasUrl || !selectedSite ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}>
-          <FileText className="w-5 h-5" />
-          {exporting ? '作成中...' : '解体作業日報をスプシに作成'}
+          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${exporting || !gasUrl || !selectedSite ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+          <FileText className="w-5 h-5" />{exporting ? '作成中...' : '解体作業日報をスプシに作成'}
         </button>
         {exportStatus && (
-          <div className={`mt-4 p-3 rounded-lg text-sm whitespace-pre-line ${
-            exportStatus.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-800' :
-            exportStatus.startsWith('❌') ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-blue-900/30 text-blue-400 border border-blue-800'
-          }`}>{exportStatus}</div>
+          <div className={`mt-4 p-3 rounded-lg text-sm whitespace-pre-line ${exportStatus.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-800' : exportStatus.startsWith('❌') ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-blue-900/30 text-blue-400 border border-blue-800'}`}>{exportStatus}</div>
         )}
       </div>
-
-      <div className="rgba(255,255,255,0.02) border border-white/[0.06] rounded-lg p-6">
+      <div className="border rounded-lg p-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
         <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
         <div className="space-y-3 text-sm">
           {[['最終エクスポート', lastExport || '未実行'], ['現場', selectedSite || '未選択'], ['日報データ', `${reports.length}件`]].map(([label, val]) => (
             <div key={label} className="flex justify-between py-2 border-b border-white/[0.06] last:border-b-0">
-              <span className="text-gray-400">{label}</span>
-              <span className="text-white font-medium">{val}</span>
+              <span className="text-gray-400">{label}</span><span className="text-white font-medium">{val}</span>
             </div>
           ))}
         </div>
@@ -2110,29 +1965,17 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const [allReports, setAllReports] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
-
   useEffect(() => {
     const loadAllReports = async () => {
       try {
-        // report.site_nameがある場合はそれを使う、なければreportから現場名を特定
         const siteName = report.siteName || report.site_name;
         if (siteName) {
-          const db = sb('reports');
-          const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
+          const data = await sb('reports').select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
           if (Array.isArray(data) && data.length > 0) {
-            setAllReports(data.map(r => ({
-              id: r.id, date: r.date, weather: r.weather, recorder: r.recorder,
-              workDetails: r.work_details || {}, wasteItems: r.waste_items || [],
-              scrapItems: r.scrap_items || [], createdAt: r.created_at
-            })));
-          } else {
-            setAllReports([report]);
-          }
-        } else {
-          setAllReports([report]);
-        }
+            setAllReports(data.map(r => ({ id: r.id, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at })));
+          } else { setAllReports([report]); }
+        } else { setAllReports([report]); }
       } catch (error) { setAllReports([report]); }
       setLoading(false);
     };
@@ -2151,15 +1994,11 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
   const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalWasteCost
-    + (parseFloat(projectInfo.transferCost) || 0)
-    + (parseFloat(projectInfo.leaseCost) || 0)
-    + (parseFloat(projectInfo.materialsCost) || 0)
+    + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const grossProfit = totalRevenue - totalCost + totalScrapRevenue;
-
   const fmtDate = (dateStr) => { if (!dateStr) return ''; const p = dateStr.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
   const fmtDay = (dateStr) => { if (!dateStr) return ''; return ['日','月','火','水','木','金','土'][new Date(dateStr).getDay()]; };
-
   const MAX_ROWS = 20;
   const displayReports = allReports.slice(0, MAX_ROWS);
   const emptyRows = MAX_ROWS - displayReports.length;
@@ -2183,16 +2022,9 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
         .result-table td { color: #F3F4F6; text-align: right; background: #0a0a0a; font-variant-numeric: tabular-nums; }
         @media print {
           .no-print { display: none !important; }
-          body, html { margin: 0 !important; padding: 0 !important; background: white !important; }
           @page { size: A3 landscape; margin: 8mm; }
-          .pdf-container { background: white !important; color: black !important; padding: 0 !important; }
-          .pdf-title { color: black !important; border-color: black !important; }
-          .pdf-table th, .pdf-table td, .pdf-header-table th, .pdf-header-table td, .result-table th, .result-table td { border-color: #000 !important; color: #000 !important; }
-          .pdf-table th, .pdf-header-table th, .result-table th { background: #f0f0f0 !important; color: #333 !important; }
-          .pdf-table td, .pdf-header-table td, .result-table td { background: white !important; }
         }
       `}</style>
-
       <div className="no-print bg-black border-b border-white/[0.06] p-4 flex items-center justify-between sticky top-0 z-50">
         <button onClick={() => onNavigate('list')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <ChevronLeft className="w-4 h-4" />日報一覧に戻る
@@ -2204,7 +2036,6 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
           </button>
         </div>
       </div>
-
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
       <div className="pdf-container bg-black p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto' }}>
         <div style={{ width: '1100px' }}>
@@ -2212,7 +2043,6 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
             <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
           </div>
-
           <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '320px 240px 240px 1fr' }}>
             <table className="pdf-header-table">
               <tbody>
@@ -2224,13 +2054,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
             <table className="pdf-header-table">
               <tbody>
                 <tr><th>排出事業者</th><td>{projectInfo.discharger || ''}</td></tr>
-                {/* ★ 契約処分先: 改行区切りで表示 */}
-                <tr>
-                  <th>契約処分先</th>
-                  <td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
-                    {(projectInfo.contractedDisposalSites || []).join('\n')}
-                  </td>
-                </tr>
+                <tr><th>契約処分先</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{(projectInfo.contractedDisposalSites || []).join('\n')}</td></tr>
                 <tr><th>PROJECT NO.</th><td>{projectInfo.projectNumber || ''}</td></tr>
                 <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>
               </tbody>
@@ -2241,9 +2065,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
               <table className="result-table">
                 <tbody>
                   {[
-                    ['見積金額', totalRevenue],
-                    ['原価金額', totalCost],
-                    ['外注金額', totalOutsourcingCost],
+                    ['見積金額', totalRevenue], ['原価金額', totalCost], ['外注金額', totalOutsourcingCost],
                     ['追加金額', parseFloat(projectInfo.additionalAmount) || 0],
                     ...(projectInfo.transferCost ? [['回送費', parseFloat(projectInfo.transferCost)]] : []),
                     ...(projectInfo.leaseCost ? [['リース費', parseFloat(projectInfo.leaseCost)]] : []),
@@ -2261,22 +2083,14 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
               </table>
             </div>
           </div>
-
           <table className="pdf-table">
             <thead>
               <tr>
-                <th rowSpan="2" style={{ width: '30px' }}>日数</th>
-                <th rowSpan="2" style={{ width: '55px' }}>日付</th>
-                <th rowSpan="2" style={{ width: '20px' }}>曜</th>
-                <th rowSpan="2" style={{ width: '20px' }}>天候</th>
-                <th rowSpan="2" style={{ width: '25px' }}>区分</th>
-                <th rowSpan="2" style={{ minWidth: '120px' }}>施工内容</th>
-                <th colSpan="2">作業時間</th>
-                <th colSpan="2">自社人工</th>
-                <th colSpan="2">外注人工</th>
-                <th colSpan="2">車両</th>
-                <th rowSpan="2" style={{ width: '50px' }}>重機</th>
-                <th colSpan="5">産廃・スクラップ</th>
+                <th rowSpan="2" style={{ width: '30px' }}>日数</th><th rowSpan="2" style={{ width: '55px' }}>日付</th>
+                <th rowSpan="2" style={{ width: '20px' }}>曜</th><th rowSpan="2" style={{ width: '20px' }}>天候</th>
+                <th rowSpan="2" style={{ width: '25px' }}>区分</th><th rowSpan="2" style={{ minWidth: '120px' }}>施工内容</th>
+                <th colSpan="2">作業時間</th><th colSpan="2">自社人工</th><th colSpan="2">外注人工</th>
+                <th colSpan="2">車両</th><th rowSpan="2" style={{ width: '50px' }}>重機</th><th colSpan="5">産廃・スクラップ</th>
               </tr>
               <tr>
                 <th style={{ width: '35px' }}>開始</th><th style={{ width: '35px' }}>終了</th>
@@ -2353,7 +2167,6 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
               </tr>
             </tbody>
           </table>
-
           <div className="mt-2 flex justify-end">
             <div className="border border-white/[0.08] bg-black px-6 py-2 flex items-center gap-4">
               <span className="text-gray-400 text-xs font-bold">原価合計</span>
@@ -2373,22 +2186,6 @@ export default function LOGIOApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
-
-  // iOSズーム防止：PDF以外はzoom無効、PDF時はピンチズーム許可
-  useEffect(() => {
-    const vp = document.querySelector('meta[name="viewport"]');
-    const content = currentPage === 'pdf'
-      ? 'width=device-width, initial-scale=1'
-      : 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
-    if (vp) {
-      vp.setAttribute('content', content);
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = 'viewport';
-      meta.content = content;
-      document.head.appendChild(meta);
-    }
-  }, [currentPage]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -2401,10 +2198,19 @@ export default function LOGIOApp() {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
     contractAmount: '', additionalAmount: '', status: '進行中',
-    discharger: '', contractedDisposalSites: [],
-    transferCost: '', leaseCost: '', materialsCost: ''
+    discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: ''
   });
   const [reports, setReports] = useState([]);
+  // ★ 追加 state
+  const [reloading, setReloading] = useState(false);
+  const [lockStatus, setLockStatus] = useState(null);
+
+  useEffect(() => {
+    const vp = document.querySelector('meta[name="viewport"]');
+    const content = currentPage === 'pdf' ? 'width=device-width, initial-scale=1' : 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+    if (vp) vp.setAttribute('content', content);
+    else { const meta = document.createElement('meta'); meta.name='viewport'; meta.content=content; document.head.appendChild(meta); }
+  }, [currentPage]);
 
   useEffect(() => {
     if (!showSplash) return;
@@ -2416,165 +2222,99 @@ export default function LOGIOApp() {
 
   const loadSites = async () => {
     try {
-      const db = sb('sites');
-      const data = await db.select('order=created_at.asc');
-      if (Array.isArray(data)) {
-        const sitesWithNumbers = data.map(s => ({
-          name: s.name, createdAt: s.created_at, status: s.status, projectNumber: s.project_number || ''
-        }));
-        setSites(sitesWithNumbers);
-      }
+      const data = await sb('sites').select('order=created_at.asc');
+      if (Array.isArray(data)) setSites(data.map(s => ({ name: s.name, createdAt: s.created_at, status: s.status, projectNumber: s.project_number || '' })));
     } catch (error) { console.log('loadSites error:', error); }
   };
 
   const generateProjectNumber = async () => {
     const currentYear = new Date().getFullYear();
-    const db = sb('project_info');
-    const data = await db.select('select=project_number');
+    const data = await sb('project_info').select('select=project_number');
     const allNums = Array.isArray(data) ? data.map(d => d.project_number).filter(Boolean) : [];
-    const currentYearNumbers = allNums
-      .filter(num => num && num.startsWith(currentYear + '-'))
-      .map(num => { const parts = num.split('-'); return parts.length === 2 ? parseInt(parts[1], 10) : 0; })
-      .filter(num => !isNaN(num));
-    const maxNumber = currentYearNumbers.length > 0 ? Math.max(...currentYearNumbers) : 0;
-    return `${currentYear}-${(maxNumber + 1).toString().padStart(3, '0')}`;
+    const nums = allNums.filter(num => num && num.startsWith(currentYear + '-')).map(num => { const parts = num.split('-'); return parts.length === 2 ? parseInt(parts[1], 10) : 0; }).filter(num => !isNaN(num));
+    return `${currentYear}-${(Math.max(...nums, 0) + 1).toString().padStart(3, '0')}`;
   };
 
-  const handleLogin = (user) => {
-    setCurrentUser(user); setIsLoggedIn(true);
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  };
-
+  const handleLogin = (user) => { setCurrentUser(user); setIsLoggedIn(true); window.scrollTo({ top: 0, behavior: 'instant' }); };
   const handleLogout = () => {
     if (confirm('ログアウトしますか？')) {
-      setIsLoggedIn(false); setCurrentUser(null); setSelectedSite(''); setSidebarOpen(false);
+      if (selectedSite && currentUser) siteLocks.release(selectedSite, currentUser.userId);
+      setIsLoggedIn(false); setCurrentUser(null); setSelectedSite(''); setSidebarOpen(false); setLockStatus(null);
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
+  };
+
+  // ★ リロード
+  const handleReload = async () => {
+    if (reloading) return;
+    setReloading(true);
+    try {
+      await loadSites();
+      if (selectedSite) {
+        await loadProjectInfo(selectedSite);
+        await loadReports(selectedSite);
+        const locker = await siteLocks.check(selectedSite);
+        setLockStatus(locker);
+      }
+    } catch(e) { console.error(e); }
+    setTimeout(() => setReloading(false), 600);
   };
 
   const handleAddSite = async (siteName) => {
     try {
       const projectNumber = await generateProjectNumber();
-      // sitesテーブルに追加
-      const siteDb = sb('sites');
-      await siteDb.insert({ name: siteName, project_number: projectNumber, status: '進行中' });
-      // project_infoテーブルに追加
-      const piDb = sb('project_info');
-      await piDb.insert({
-        site_name: siteName, project_number: projectNumber, work_type: '', client: '',
-        work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '',
-        contract_amount: 0, additional_amount: 0, status: '進行中',
-        discharger: '', transport_company: '', contracted_disposal_sites: [],
-        transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: []
-      });
-      const initialProjectInfo = {
-        projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '',
-        salesPerson: '', siteManager: '', startDate: '', endDate: '',
-        contractAmount: '', additionalAmount: '', status: '進行中',
-        discharger: '', transportCompany: '', contractedDisposalSites: [],
-        transferCost: '', leaseCost: '', materialsCost: '', expenses: []
-      };
+      await sb('sites').insert({ name: siteName, project_number: projectNumber, status: '進行中' });
+      await sb('project_info').insert({ site_name: siteName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
       setSites(prev => [...prev, { name: siteName, projectNumber, status: '進行中' }]);
-      setSelectedSite(siteName); setProjectInfo(initialProjectInfo);
+      setSelectedSite(siteName);
+      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [] });
       alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); }
   };
 
   const handleDeleteSite = async (siteName) => {
     try {
-      const siteDb = sb('sites');
-      await siteDb.delete(`name=eq.${encodeURIComponent(siteName)}`);
-      const piDb = sb('project_info');
-      await piDb.delete(`site_name=eq.${encodeURIComponent(siteName)}`);
-      const rDb = sb('reports');
-      await rDb.delete(`site_name=eq.${encodeURIComponent(siteName)}`);
+      await sb('sites').delete(`name=eq.${encodeURIComponent(siteName)}`);
+      await sb('project_info').delete(`site_name=eq.${encodeURIComponent(siteName)}`);
+      await sb('reports').delete(`site_name=eq.${encodeURIComponent(siteName)}`);
       setSites(prev => prev.filter(s => s.name !== siteName));
-      if (selectedSite === siteName) setSelectedSite('');
+      if (selectedSite === siteName) { setSelectedSite(''); setLockStatus(null); }
       alert(`✅ 現場「${siteName}」を削除しました`);
     } catch (error) { alert('❌ 現場の削除に失敗しました'); }
   };
 
+  // ★ 現場選択時にロック状態確認
   const handleSelectSite = async (siteName) => {
     setSelectedSite(siteName);
     await loadProjectInfo(siteName);
     await loadReports(siteName);
+    const locker = await siteLocks.check(siteName);
+    setLockStatus(locker);
   };
 
   const loadProjectInfo = async (siteName) => {
     try {
-      const db = sb('project_info');
-      const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}`);
+      const data = await sb('project_info').select(`site_name=eq.${encodeURIComponent(siteName)}`);
       if (Array.isArray(data) && data.length > 0) {
         const d = data[0];
-        setProjectInfo({
-          projectId: d.id || '', projectNumber: d.project_number || '',
-          projectName: siteName, workType: d.work_type || '',
-          client: d.client || '', workLocation: d.work_location || '',
-          salesPerson: d.sales_person || '', siteManager: d.site_manager || '',
-          startDate: d.start_date || '', endDate: d.end_date || '',
-          contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '',
-          status: d.status || '進行中', discharger: d.discharger || '',
-          transportCompany: d.transport_company || '',
-          contractedDisposalSites: d.contracted_disposal_sites || [],
-          transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '',
-          materialsCost: d.materials_cost || '', expenses: d.expenses || [],
-          completionDate: d.completion_date || ''
-        });
-      } else {
-        setProjectInfo({
-          projectId: '', projectNumber: '', projectName: siteName, workType: '', client: '', workLocation: '',
-          salesPerson: '', siteManager: '', startDate: '', endDate: '',
-          contractAmount: '', additionalAmount: '', status: '進行中',
-          discharger: '', transportCompany: '', contractedDisposalSites: [],
-          transferCost: '', leaseCost: '', materialsCost: '', expenses: []
-        });
+        setProjectInfo({ projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || '', completionDate: d.completion_date || '' });
       }
     } catch (error) { console.error('loadProjectInfo error:', error); }
   };
 
   const loadReports = async (siteName) => {
     try {
-      const db = sb('reports');
-      const data = await db.select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
-      if (Array.isArray(data)) {
-        setReports(data.map(r => ({
-          id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder,
-          workDetails: r.work_details || {}, wasteItems: r.waste_items || [],
-          scrapItems: r.scrap_items || [], createdAt: r.created_at
-        })));
-      } else setReports([]);
+      const data = await sb('reports').select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
+      if (Array.isArray(data)) setReports(data.map(r => ({ id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at })));
+      else setReports([]);
     } catch (error) { setReports([]); }
   };
 
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      const db = sb('project_info');
-      await db.upsert({
-        site_name: selectedSite,
-        project_number: projectInfo.projectNumber || '',
-        work_type: projectInfo.workType || '',
-        client: projectInfo.client || '',
-        work_location: projectInfo.workLocation || '',
-        sales_person: projectInfo.salesPerson || '',
-        site_manager: projectInfo.siteManager || '',
-        start_date: projectInfo.startDate || '',
-        end_date: projectInfo.endDate || '',
-        contract_amount: parseFloat(projectInfo.contractAmount) || 0,
-        additional_amount: parseFloat(projectInfo.additionalAmount) || 0,
-        status: projectInfo.status || '進行中',
-        discharger: projectInfo.discharger || '',
-        transport_company: projectInfo.transportCompany || '',
-        contracted_disposal_sites: projectInfo.contractedDisposalSites || [],
-        transfer_cost: parseFloat(projectInfo.transferCost) || 0,
-        lease_cost: parseFloat(projectInfo.leaseCost) || 0,
-        materials_cost: parseFloat(projectInfo.materialsCost) || 0,
-        expenses: projectInfo.expenses || [],
-        updated_at: new Date().toISOString()
-      }, 'site_name');
-      // sitesテーブルのproject_numberも更新
-      const siteDb = sb('sites');
-      await siteDb.update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.discharger || '', transport_company: projectInfo.transportCompany || '', contracted_disposal_sites: projectInfo.contractedDisposalSites || [], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], updated_at: new Date().toISOString() }, 'site_name');
+      await sb('sites').update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -2582,19 +2322,14 @@ export default function LOGIOApp() {
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました'); }
   };
 
+  // ★ 保存後にロック解放
   const handleSaveReport = async (reportData) => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      const db = sb('reports');
-      const inserted = await db.insert({
-        site_name: selectedSite,
-        date: reportData.date,
-        weather: reportData.weather || '',
-        recorder: reportData.recorder || '',
-        work_details: reportData.workDetails || {},
-        waste_items: reportData.wasteItems || [],
-        scrap_items: reportData.scrapItems || []
-      });
+      await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
+      const userName = currentUser?.userId || 'unknown';
+      await siteLocks.release(selectedSite, userName);
+      setLockStatus(null);
       await loadReports(selectedSite);
       alert('✅ 日報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -2605,8 +2340,7 @@ export default function LOGIOApp() {
   const handleDeleteReport = async (reportId) => {
     if (!confirm('この日報を削除しますか？')) return;
     try {
-      const db = sb('reports');
-      await db.delete(`id=eq.${reportId}`);
+      await sb('reports').delete(`id=eq.${reportId}`);
       setReports(prev => prev.filter(r => r.id !== reportId));
       alert('✅ 日報を削除しました');
     } catch (error) { alert('❌ 削除に失敗しました'); }
@@ -2614,8 +2348,7 @@ export default function LOGIOApp() {
 
   const calculateTotals = () => {
     const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-    let accumulatedCost = 0;
-    let accumulatedScrap = 0;
+    let accumulatedCost = 0, accumulatedScrap = 0;
     reports.forEach(report => {
       if (report.workDetails) {
         report.workDetails.inHouseWorkers?.forEach(w => accumulatedCost += w.amount || 0);
@@ -2626,21 +2359,28 @@ export default function LOGIOApp() {
       report.wasteItems?.forEach(w => accumulatedCost += w.amount || 0);
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
     });
-    // ★ 追加費用も原価に含める
-    accumulatedCost += (parseFloat(projectInfo.transferCost) || 0);
-    accumulatedCost += (parseFloat(projectInfo.leaseCost) || 0);
-    accumulatedCost += (parseFloat(projectInfo.materialsCost) || 0);
-
+    accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0);
     const grossProfit = totalRevenue - accumulatedCost + accumulatedScrap;
-    const grossProfitRateContract = totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0';
-    const grossProfitRateWithScrap = (totalRevenue + accumulatedScrap) > 0 ? (grossProfit / (totalRevenue + accumulatedScrap) * 100).toFixed(1) : '0.0';
-    return { totalRevenue, accumulatedCost, accumulatedScrap, grossProfit, grossProfitRateContract, grossProfitRateWithScrap };
+    return { totalRevenue, accumulatedCost, accumulatedScrap, grossProfit, grossProfitRateContract: totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0', grossProfitRateWithScrap: (totalRevenue + accumulatedScrap) > 0 ? (grossProfit / (totalRevenue + accumulatedScrap) * 100).toFixed(1) : '0.0' };
   };
 
+  // ★ handleNavigate: 日報入力時にロック取得
   const handleNavigate = (page) => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     if (page === 'settings') { setShowPasswordModal(true); setPassword(''); }
-    else setCurrentPage(page);
+    else if (page === 'input') {
+      (async () => {
+        if (!selectedSite) return;
+        const userName = currentUser?.userId || 'unknown';
+        const result = await siteLocks.acquire(selectedSite, userName);
+        if (!result.ok) {
+          alert(`🔒 現在「${result.lockedBy}」が入力中です。\n入力が完了するまでお待ちください。`);
+          return;
+        }
+        setLockStatus(userName);
+        setCurrentPage('input');
+      })();
+    } else { setCurrentPage(page); }
   };
 
   const handlePasswordSubmit = () => {
@@ -2654,29 +2394,47 @@ export default function LOGIOApp() {
   if (showSplash) return <SplashScreen />;
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
 
+  // ★ ロック解放関数（ReportInputPage に渡す）
+  const releaseLock = async () => {
+    const userName = currentUser?.userId || 'unknown';
+    await siteLocks.release(selectedSite, userName);
+    setLockStatus(null);
+  };
+
   return (
     <div className="min-h-screen bg-black flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       <div className="flex flex-col flex-1 bg-black">
-        <Header showMenuButton onMenuClick={() => setSidebarOpen(true)} onCalendar={() => setShowCalendarModal(true)} onExport={() => handleNavigate('export')} onNotification={() => setShowNotificationModal(true)} notificationCount={(() => {
-          const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
-          return costRatio >= 70 ? 1 : 0;
-        })()} />
+        <Header
+          showMenuButton onMenuClick={() => setSidebarOpen(true)}
+          onCalendar={() => setShowCalendarModal(true)}
+          onExport={() => handleNavigate('export')}
+          onNotification={() => setShowNotificationModal(true)}
+          onReload={handleReload}
+          reloading={reloading}
+          notificationCount={(() => {
+            const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+            return costRatio >= 70 ? 1 : 0;
+          })()}
+        />
         <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
           {currentPage === 'home' && (
             <HomePage
               sites={sites} selectedSite={selectedSite} onSelectSite={handleSelectSite}
               onNavigate={handleNavigate} totals={totals} projectInfo={projectInfo} reports={reports}
+              lockStatus={lockStatus}
+              currentUserId={currentUser?.userId}
             />
           )}
-          {currentPage === 'settings' && (
-            <ProjectSettingsPage
-              sites={sites} selectedSite={selectedSite} projectInfo={projectInfo}
-              setProjectInfo={setProjectInfo} onSave={handleSaveProject}
-              onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage}
+          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} />}
+          {currentPage === 'input' && (
+            <ReportInputPage
+              onSave={handleSaveReport}
+              onNavigate={setCurrentPage}
+              projectInfo={projectInfo}
+              onReleaseLock={releaseLock}
             />
           )}
-          {currentPage === 'input' && <ReportInputPage onSave={handleSaveReport} onNavigate={setCurrentPage} projectInfo={projectInfo} />}
           {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} />}
           {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
           {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
@@ -2684,6 +2442,8 @@ export default function LOGIOApp() {
           {currentPage === 'pdf' && selectedReport && <ReportPDFPage report={selectedReport} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
         </main>
       </div>
+
+      {/* パスワードモーダル */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
           <div className="bg-black p-6 max-w-md w-full rounded-lg border border-white/[0.08]">
@@ -2709,17 +2469,14 @@ export default function LOGIOApp() {
         const progressPercent = totalDays > 0 ? Math.min(100, (elapsedDays / totalDays) * 100) : 0;
         const barColor = progressPercent >= 90 ? '#f59e0b' : '#3b82f6';
         return (
-          <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50" onClick={() => setShowCalendarModal(false)}
-            style={{ backdropFilter:'blur(4px)' }}>
+          <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50" onClick={() => setShowCalendarModal(false)} style={{ backdropFilter:'blur(4px)' }}>
             <div onClick={e => e.stopPropagation()}
               style={{ background:'#0a0a0a', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 24px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
-              {/* ハンドル */}
               <div style={{ width:'36px', height:'4px', background:'rgba(255,255,255,0.15)', borderRadius:'2px', margin:'0 auto 24px' }} />
               <p style={{ fontSize:'11px', fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'16px' }}>工期 / Schedule</p>
               {selectedSite ? (
                 <>
                   <p style={{ fontSize:'16px', fontWeight:700, color:'white', marginBottom:'20px' }}>{selectedSite}</p>
-                  {/* 日付 */}
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'20px' }}>
                     {[['開始日', projectInfo?.startDate], ['終了日', projectInfo?.endDate]].map(([label, val]) => (
                       <div key={label} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px', padding:'14px' }}>
@@ -2728,18 +2485,15 @@ export default function LOGIOApp() {
                       </div>
                     ))}
                   </div>
-                  {/* 進捗バー */}
                   <div style={{ marginBottom:'16px' }}>
                     <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'8px' }}>
                       <span style={{ fontSize:'12px', color:'#6B7280' }}>経過 {elapsedDays}日 / 全{totalDays}日</span>
-                      <span style={{ fontSize:'12px', fontWeight:700, color: remainDays === 0 ? '#ef4444' : remainDays !== null && remainDays <= 7 ? '#f59e0b' : '#6B7280' }}>
-                        {remainDays !== null ? `残 ${remainDays}日` : '未設定'}
-                      </span>
+                      <span style={{ fontSize:'12px', fontWeight:700, color: remainDays === 0 ? '#ef4444' : remainDays !== null && remainDays <= 7 ? '#f59e0b' : '#6B7280' }}>{remainDays !== null ? `残 ${remainDays}日` : '未設定'}</span>
                     </div>
                     <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:'99px', height:'6px', overflow:'hidden' }}>
                       <div style={{ width:`${progressPercent}%`, height:'100%', background:barColor, borderRadius:'99px', transition:'width 0.6s ease' }} />
                     </div>
-                    <p style={{ fontSize:'24px', fontWeight:800, color:'white', marginTop:'12px', tabularNums:true }}>{Math.round(progressPercent)}%</p>
+                    <p style={{ fontSize:'24px', fontWeight:800, color:'white', marginTop:'12px' }}>{Math.round(progressPercent)}%</p>
                   </div>
                 </>
               ) : (
@@ -2758,17 +2512,12 @@ export default function LOGIOApp() {
       {showNotificationModal && (() => {
         const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
         const alerts = [];
-        if (costRatio >= 85)
-          alerts.push({ level:'danger', icon:'🚨', title:'原価率が危険水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 85%以下` });
-        else if (costRatio >= 70)
-          alerts.push({ level:'warn', icon:'⚠️', title:'原価率が注意水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 70%以下` });
-
+        if (costRatio >= 85) alerts.push({ level:'danger', icon:'🚨', title:'原価率が危険水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 85%以下` });
+        else if (costRatio >= 70) alerts.push({ level:'warn', icon:'⚠️', title:'原価率が注意水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 70%以下` });
         const levelColor = { danger:'#ef4444', warn:'#f59e0b' };
         const levelBg = { danger:'rgba(239,68,68,0.08)', warn:'rgba(245,158,11,0.08)' };
-
         return (
-          <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50" onClick={() => setShowNotificationModal(false)}
-            style={{ backdropFilter:'blur(4px)' }}>
+          <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50" onClick={() => setShowNotificationModal(false)} style={{ backdropFilter:'blur(4px)' }}>
             <div onClick={e => e.stopPropagation()}
               style={{ background:'#0a0a0a', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 24px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
               <div style={{ width:'36px', height:'4px', background:'rgba(255,255,255,0.15)', borderRadius:'2px', margin:'0 auto 24px' }} />

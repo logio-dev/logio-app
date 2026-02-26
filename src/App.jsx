@@ -192,7 +192,7 @@ const MASTER_DATA = {
     return options;
   })(),
   wasteTypes: ['混合廃棄物', '木くず', '廃プラ', 'がら陶', 'コンクリートがら', '金属くず', '石膏ボード', 'ガラス', '断熱材', '繊維くず', '非飛散性アスベスト（運搬費含む）'],
-  disposalSites: ['木村建材', '二光産業', 'ギプロ', 'ウムヴェルト', '日栄興産', '戸部組', 'リバー', 'ワイエムエコフューチャー', '東和アークス', 'ヤマゼン', '入間緑化', '石坂産業'],
+  disposalSites: ['木村建材', '二光産業', 'ギプロ', 'ウムヴェルト', '日栄興産', '戸部組', 'リバー', 'ワイエムエコフューチャー', '東和アークス', 'ヤマゼン', '入間緑化', '石坂産業', 'フルハシEPO'],
   scrapTypes: ['鉄くず', '銅線', 'アルミ', 'ステンレス', '真鍮'],
   buyers: ['小林金属', '高橋金属', 'ナンセイスチール', '服部金属', 'サンビーム', '光田産業', '青木商店', '長沼商事'],
   statuses: ['進行中', '完了', '中断']
@@ -212,6 +212,45 @@ const getDayOfWeek = (dateStr) => {
   const days = ['日', '月', '火', '水', '木', '金', '土'];
   return days[new Date(dateStr).getDay()];
 };
+
+// ========== グラデーション矢印コンポーネント ==========
+function GradChevron({ open = false, size = 16 }) {
+  const id = React.useId ? React.useId() : ('gc' + Math.random().toString(36).slice(2));
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      style={{
+        flexShrink: 0,
+        transition: 'transform 0.2s ease',
+        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+        filter: 'drop-shadow(0 0 4px rgba(99,102,241,0.6))',
+      }}>
+      <defs>
+        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stopColor="#3b82f6"/>
+          <stop offset="50%"  stopColor="#22d3ee"/>
+          <stop offset="100%" stopColor="#6366f1"/>
+        </linearGradient>
+      </defs>
+      <polyline points="6 9 12 15 18 9" stroke={`url(#${id})`} strokeWidth="2.8" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+function GradChevronUp({ size = 16 }) {
+  const id = React.useId ? React.useId() : ('gcu' + Math.random().toString(36).slice(2));
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      style={{ flexShrink:0, filter:'drop-shadow(0 0 4px rgba(99,102,241,0.6))' }}>
+      <defs>
+        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stopColor="#3b82f6"/>
+          <stop offset="50%"  stopColor="#22d3ee"/>
+          <stop offset="100%" stopColor="#6366f1"/>
+        </linearGradient>
+      </defs>
+      <polyline points="18 15 12 9 6 15" stroke={`url(#${id})`} strokeWidth="2.8" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
 
 // ========== ★ Header（リロードアイコン追加）==========
 function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onNotification, onReload, reloading = false, notificationCount = 0 }) {
@@ -325,7 +364,9 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
         ) : (
           <div className="text-gray-500 text-base">{placeholder}</div>
         )}
-        <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span style={{position:'absolute',right:'12px',top:'50%',transform:'translateY(-50%)'}}>
+          <GradChevron open={isOpen} size={18}/>
+        </span>
       </button>
       {isOpen && (
         <div className="absolute left-0 right-0 z-50 mt-1 rounded-lg shadow-xl max-h-80 overflow-y-auto"
@@ -618,7 +659,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             ) : (
               <span className="text-gray-500" style={{ fontSize: '14px' }}>現場を選択してください</span>
             )}
-            <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${siteDropdownOpen ? 'rotate-180' : ''}`} />
+            <GradChevron open={siteDropdownOpen} size={16}/>
           </button>
           {siteDropdownOpen && (
             <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-xl overflow-hidden"
@@ -678,7 +719,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                     </div>
                   </div>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${financeOpen ? 'rotate-180' : ''}`} />
+                <GradChevron open={financeOpen} size={16}/>
               </button>
               <div className={`finance-detail ${financeOpen ? 'open' : ''}`}>
                 <div>
@@ -761,7 +802,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                         <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="white">{typeCount}種</text>
                       </svg>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${wasteOpen?'rotate-180':''}`}/>
+                    <GradChevron open={wasteOpen} size={16}/>
                   </button>
                   <div style={{ display: wasteOpen ? 'block' : 'none', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
                     <div style={{ padding:'4px 14px 16px' }}>
@@ -922,7 +963,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             className="w-full flex items-center justify-between px-3 py-2 rounded-lg mb-2 transition-colors"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">登録済み現場 ({sites.length})</p>
-            <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${showSiteList ? 'rotate-180' : ''}`} />
+            <GradChevron open={showSiteList} size={16}/>
           </button>
           {showSiteList && (
             <div className="space-y-2">
@@ -1527,7 +1568,7 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
                 <span style={{ fontSize:'11px', color:'#6B7280', background:'rgba(255,255,255,0.05)', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
                 {monthCost > 0 && <span style={{ fontSize:'11px', color:'#fbbf24', fontWeight:600 }}>¥{formatCurrency(monthCost)}</span>}
               </div>
-              {isOpen ? <ChevronUp className="w-4 h-4 text-gray-500"/> : <ChevronDown className="w-4 h-4 text-gray-500"/>}
+              {isOpen ? <GradChevronUp size={16}/> : <GradChevron open={false} size={16}/>}
             </button>
             {isOpen && (
               <div style={{ border:'1px solid rgba(255,255,255,0.08)', borderTop:'none', borderRadius:'0 0 10px 10px', overflow:'hidden' }}>
@@ -1568,7 +1609,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
             })()}
           </div>
         </div>
-        <span className="text-gray-400 ml-4">{isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}</span>
+        <span className="ml-4">{isOpen ? <GradChevronUp size={18}/> : <GradChevron open={false} size={18}/>}</span>
       </button>
       {isOpen && (
         <div className="px-4 py-4 bg-black/30 border-t border-white/[0.08]">

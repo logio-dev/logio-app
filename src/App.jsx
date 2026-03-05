@@ -565,7 +565,7 @@ function LoginPage({ onLogin }) {
 }
 
 // ========== HomePage ==========
-function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId }) {
+function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId, sitesReady }) {
   const [financeOpen, setFinanceOpen] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
   const [wasteOpen, setWasteOpen] = useState(false);
@@ -629,6 +629,12 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
+          {!sitesReady ? (
+            <div style={{ width:'100%', padding:'14px 16px', borderRadius:14, background:'rgba(255,255,255,0.03)', border:'1.5px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:'rgba(255,255,255,0.1)', flexShrink:0 }}/>
+              <div style={{ height:14, width:140, borderRadius:6, background:'rgba(255,255,255,0.06)' }}/>
+            </div>
+          ) : (
           <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
             className="w-full px-4 py-3.5 flex items-center justify-between text-left"
             style={{ background: 'linear-gradient(#0a0a0a, #0a0a0a) padding-box, linear-gradient(135deg, #3b82f6, #22d3ee, #6366f1) border-box', border: '1.5px solid transparent', borderRadius: '14px' }}>
@@ -645,6 +651,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             )}
             <GradChevron open={siteDropdownOpen} size={16}/>
           </button>
+          )}
           {siteDropdownOpen && (
             <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-xl overflow-hidden"
               style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -665,6 +672,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               ))}
             </div>
           )}
+          {/* sitesReady条件の閉じ */}
         </div>
 
         {/* ★ ロックバナー（自分以外が入力中の場合） */}
@@ -815,7 +823,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           </>
         )}
 
-        {!selectedSite && sites.length === 0 && (
+        {!selectedSite && sitesReady && sites.length === 0 && (
           <div className="flex flex-col items-center justify-center" style={{ minHeight: '20vh', marginTop: '16px' }}>
             <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '16px' }}>現場が登録されていません</p>
             <button onClick={() => onNavigate('settings')}
@@ -1242,14 +1250,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
 
   const mkCard = (color) => ({
     background: `linear-gradient(#050505,#050505) padding-box, linear-gradient(135deg,${color}) border-box`,
-    border: '1.5px solid transparent', borderRadius: '12px', padding: '14px', marginBottom: '20px'
+    border: '1.5px solid transparent', borderRadius: '12px', padding: '14px', marginBottom: '20px', overflow: 'hidden'
   });
   const inputCard      = mkCard('#3b82f6,#6366f1');
   const inputCardCyan  = mkCard('#22d3ee,#3b82f6');
   const inputCardAmber = mkCard('#f59e0b,#f97316');
   const inputCardGreen = mkCard('#34d399,#22d3ee');
   const inputCardRose  = mkCard('#f43f5e,#f59e0b');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', colorScheme:'dark' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', colorScheme:'dark', boxSizing:'border-box' };
   const inpTxt = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'10px', fontWeight:'700', color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
@@ -1314,8 +1322,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
 
   const SectionLabel = ({ ja, en }) => (
     <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'10px' }}>
-      <span style={{ fontSize:'10px', fontWeight:'700', color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'#374151'}}>/ {en}</span></span>
-      <span style={{ flex:1, height:'1px', background:'#111' }} />
+      <span style={{ fontSize:'10px', fontWeight:'700', color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'#6B7280'}}>/ {en}</span></span>
+      <span style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.08)' }} />
     </div>
   );
 
@@ -2299,6 +2307,7 @@ export default function LOGIOApp() {
   // ★ 追加 state
   const [reloading, setReloading] = useState(false);
   const [lockStatus, setLockStatus] = useState(null);
+  const [sitesReady, setSitesReady] = useState(false);
 
   useEffect(() => {
     const vp = document.querySelector('meta[name="viewport"]');
@@ -2320,6 +2329,7 @@ export default function LOGIOApp() {
       const data = await sb('sites').select('order=created_at.asc');
       if (Array.isArray(data)) setSites(data.map(s => ({ name: s.name, createdAt: s.created_at, status: s.status, projectNumber: s.project_number || '' })));
     } catch (error) { console.log('loadSites error:', error); }
+    setSitesReady(true);
   };
 
   const generateProjectNumber = async () => {
@@ -2519,6 +2529,7 @@ export default function LOGIOApp() {
               onNavigate={handleNavigate} totals={totals} projectInfo={projectInfo} reports={reports}
               lockStatus={lockStatus}
               currentUserId={currentUser?.userId}
+              sitesReady={sitesReady}
             />
           )}
           {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} onSelectSite={setSelectedSite} />}

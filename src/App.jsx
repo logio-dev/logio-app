@@ -891,8 +891,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
   const handleAddSite = () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
-    onAddSite(newSiteName.trim());
+    const name = newSiteName.trim();
+    onAddSite(name);
     setNewSiteName(''); setShowAddSite(false);
+    // 追加後に自動でカードを開く（少し待ってから）
+    setTimeout(() => { setOpenCard(name); onSelectSite && onSelectSite(name); }, 300);
   };
 
   const handleDeleteSite = (siteName) => {
@@ -1052,10 +1055,36 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
                         <TextInput label="追加金額（税抜）" labelEn="Additional" type="number" value={projectInfo.additionalAmount||''} onChange={v=>setProjectInfo({...projectInfo,additionalAmount:v})} placeholder="0" />
-                        <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16 }}>固定費 / Fixed Costs</div>
-                        <TextInput label="回送費" labelEn="Transfer" type="number" value={projectInfo.transferCost||''} onChange={v=>setProjectInfo({...projectInfo,transferCost:v})} placeholder="0" />
-                        <TextInput label="リース費" labelEn="Lease" type="number" value={projectInfo.leaseCost||''} onChange={v=>setProjectInfo({...projectInfo,leaseCost:v})} placeholder="0" />
-                        <TextInput label="資材費" labelEn="Materials" type="number" value={projectInfo.materialsCost||''} onChange={v=>setProjectInfo({...projectInfo,materialsCost:v})} placeholder="0" />
+                        <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16 }}>外注費 / Outsourcing Costs</div>
+                        {/* 外注費：東リース＋手入力プルダウン */}
+                        <div style={{ marginBottom:16 }}>
+                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>回送費 / Transfer</label>
+                          <input type="number" value={projectInfo.transferCost||''} onChange={v=>setProjectInfo({...projectInfo,transferCost:v.target.value})} placeholder="0" style={{ width:'100%', padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                        </div>
+                        <div style={{ marginBottom:16 }}>
+                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>リース費 / Lease</label>
+                          <div style={{ display:'flex', gap:8 }}>
+                            <select value={['東リース',''].includes(projectInfo.leaseCostVendor||'') ? (projectInfo.leaseCostVendor||'') : '__custom__'}
+                              onChange={e=>{
+                                if(e.target.value==='__custom__') setProjectInfo({...projectInfo,leaseCostVendor:'__custom__'});
+                                else setProjectInfo({...projectInfo,leaseCostVendor:e.target.value});
+                              }}
+                              style={{ flex:'0 0 120px', padding:'11px 8px', background:'#000', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:14, outline:'none', colorScheme:'dark', boxSizing:'border-box' }}>
+                              <option value="">業者選択</option>
+                              <option value="東リース">東リース</option>
+                              <option value="__custom__">手入力...</option>
+                            </select>
+                            {(projectInfo.leaseCostVendor==='__custom__') && (
+                              <input type="text" value={projectInfo.leaseCostVendorCustom||''} onChange={e=>setProjectInfo({...projectInfo,leaseCostVendorCustom:e.target.value})} placeholder="業者名を入力" style={{ flex:1, padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(59,130,246,0.3)', color:'white', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box' }} />
+                            )}
+                            <input type="number" value={projectInfo.leaseCost||''} onChange={e=>setProjectInfo({...projectInfo,leaseCost:e.target.value})} placeholder="金額" style={{ flex:1, padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                          </div>
+                        </div>
+                        <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16, marginTop:8 }}>販管費 / SG&A Costs</div>
+                        <div style={{ marginBottom:16 }}>
+                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>資材費 / Materials</label>
+                          <input type="number" value={projectInfo.materialsCost||''} onChange={v=>setProjectInfo({...projectInfo,materialsCost:v.target.value})} placeholder="0" style={{ width:'100%', padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                        </div>
                         <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16, marginTop:8 }}>経費 / Expenses</div>
                         <div style={{ marginBottom:16, border:'1px solid rgba(255,255,255,0.06)', borderRadius:8, overflow:'hidden' }}>
                           <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
@@ -1159,19 +1188,35 @@ const SubTotal = ({ label, value }) => value > 0 ? (
   </div>
 ) : <div style={{marginBottom:'14px'}} />;
 
-function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
+function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editReport, onUpdate }) {
+  const isEditMode = !!editReport;
   const [currentStep, setCurrentStep] = useState(1);
-  const [report, setReport] = useState({ date: new Date().toISOString().split('T')[0], weather: '', recorder: '', customRecorder: '' });
-  const [workDetails, setWorkDetails] = useState({ workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], costItems: [] });
+  const [report, setReport] = useState(
+    isEditMode
+      ? { date: editReport.date, weather: editReport.weather, recorder: editReport.recorder, customRecorder: '' }
+      : { date: new Date().toISOString().split('T')[0], weather: '', recorder: '', customRecorder: '' }
+  );
+  const [workDetails, setWorkDetails] = useState(
+    isEditMode ? (editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], transportItems:[], costItems:[] })
+    : { workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], transportItems: [], costItems: [] }
+  );
+  const [wasteItems, setWasteItems] = useState(isEditMode ? (editReport.wasteItems || []) : []);
+  const [scrapItems, setScrapItems] = useState(isEditMode ? (editReport.scrapItems || []) : []);
   // ★ 半日追加
   const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, inHouseHalfDay: 12500, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
-  const [wasteItems, setWasteItems] = useState([]);
-  const [scrapItems, setScrapItems] = useState([]);
   // ★ dept追加
   const [wForm, setWForm] = useState({ name:'', start:'', end:'', shift:'daytime', dept:'k1' });
   const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime' });
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
+  const [tForm, setTForm] = useState({ company:'', shift:'', count:1, price:'', isOverride:false });
+
+  // 運搬費単価マスター
+  const TRANSPORT_PRICES = {
+    '環境課':              { day:20000, night:30000 },
+    'ワイエムエコフューチャー': { day:22000, night:32000 },
+  };
+  const TRANSPORT_COMPANIES = ['環境課','ワイエムエコフューチャー'];
   const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'' });
   const [scrapForm, setScrapForm] = useState({ type:'', buyer:'', qty:'', unit:'kg', price:'' });
   // ★ 課タブ
@@ -1188,7 +1233,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
   };
 
   const isStep1Valid = () => report.date && report.recorder;
-  const handleSave = async () => { onSave({ ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems }); };
+  const handleSave = async () => {
+    const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems };
+    if (isEditMode && onUpdate) {
+      onUpdate(editReport.id, data);
+    } else {
+      onSave(data);
+    }
+  };
 
   // ★ シフト別単価（半日追加）
   const getShiftAmount = (shift) => {
@@ -1220,8 +1272,20 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
     setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)}]});
     setMForm({type:'',price:''});
   };
+  const addTransport = () => {
+    const prices = TRANSPORT_PRICES[tForm.company];
+    let unitPrice = 0;
+    if (tForm.isOverride) { unitPrice = parseFloat(tForm.price)||0; }
+    else if (prices && tForm.shift) { unitPrice = tForm.shift==='day' ? prices.day : prices.night; }
+    if (!tForm.company || !unitPrice) return;
+    const count = parseInt(tForm.count)||1;
+    const amount = unitPrice * count;
+    const shiftLabel = tForm.isOverride ? '例外' : (tForm.shift==='day'?'昼':'夜');
+    setWorkDetails({...workDetails, transportItems:[...(workDetails.transportItems||[]),{company:tForm.company,shift:shiftLabel,count,unitPrice,amount}]});
+    setTForm({company:'',shift:'',count:1,price:'',isOverride:false});
+  };
   const addWaste = () => {
-    if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.manifest) return;
+    if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price) return;
     const qty=parseFloat(wasteForm.qty), price=parseFloat(wasteForm.price);
     setWasteItems([...wasteItems,{material:wasteForm.type,disposalSite:wasteForm.disposal,quantity:qty,unit:wasteForm.unit,unitPrice:price,amount:qty*price,manifestNumber:wasteForm.manifest}]);
     setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:''});
@@ -1343,7 +1407,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
       {/* ヘッダー */}
       <div style={{ position:'sticky', top:0, zIndex:50, background:'rgba(0,0,0,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px 0' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-          <span style={{ fontSize:'17px', fontWeight:700 }}>日報入力</span>
+          <span style={{ fontSize:'17px', fontWeight:700 }}>{isEditMode ? '✏️ 日報を編集' : '日報入力'}</span>
           <button onClick={handleCancel} style={{ color:'#4b5563', background:'none', border:'none', cursor:'pointer', fontSize:'22px', lineHeight:1, padding:'4px' }}>×</button>
         </div>
         <StepDots />
@@ -1515,6 +1579,89 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
           </div>
           {workDetails.machinery.length>0 && <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />}
 
+          {/* 運搬費 */}
+          <SectionLabel ja="運搬費" en="Transport" />
+          {(workDetails.transportItems||[]).map((t,i)=>(
+            <ItemCard key={i}
+              avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80"
+              avatarText={t.company.slice(0,3)}
+              name={t.company}
+              meta={`${t.shift}　${t.count}台`}
+              amount={`¥${formatCurrency(t.amount)}`}
+              onDel={()=>setWorkDetails({...workDetails,transportItems:(workDetails.transportItems||[]).filter((_,j)=>j!==i)})} />
+          ))}
+          <div style={{...inputCardGreen}}>
+            {/* 会社名 テキスト入力 */}
+            <div style={{marginBottom:8}}>
+              <label style={inpLbl}>会社名</label>
+              <input type="text" value={tForm.company} onChange={e=>setTForm({...tForm,company:e.target.value,shift:'',price:''})}
+                placeholder="会社名を入力" style={inpTxt} />
+            </div>
+            {/* クイック選択 */}
+            <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
+              {TRANSPORT_COMPANIES.map(c=>(
+                <button key={c} onClick={()=>setTForm({...tForm,company:c,shift:'',price:'',isOverride:false})}
+                  style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${tForm.company===c?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:tForm.company===c?'rgba(34,197,94,0.12)':'rgba(255,255,255,0.02)',color:tForm.company===c?'#4ade80':'#6B7280',fontSize:11,fontWeight:tForm.company===c?700:600,cursor:'pointer',fontFamily:'inherit'}}>
+                  {c}
+                </button>
+              ))}
+            </div>
+            {/* 昼/夜シフト */}
+            <div style={{...grid2,marginBottom:10}}>
+              {[['day','昼'],['night','夜']].map(([v,label])=>{
+                const prices = TRANSPORT_PRICES[tForm.company];
+                const price = prices ? (v==='day'?prices.day:prices.night) : null;
+                const sel = !tForm.isOverride && tForm.shift===v;
+                return (
+                  <button key={v} onClick={()=>setTForm({...tForm,shift:v,isOverride:false})}
+                    style={{padding:'10px 6px',borderRadius:9,border:`1px solid ${sel?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:sel?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.02)',color:sel?'#4ade80':'#6B7280',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                    <div style={{fontSize:13,fontWeight:800,marginBottom:2}}>{label}</div>
+                    <div style={{fontSize:10,fontFamily:'monospace',color:sel?'#4ade80':'#374151'}}>{price?`¥${formatCurrency(price)}`:'—'}</div>
+                  </button>
+                );
+              })}
+            </div>
+            {/* 台数 */}
+            <div style={{marginBottom:8}}>
+              <label style={inpLbl}>台数</label>
+              <input type="number" value={tForm.count} onChange={e=>setTForm({...tForm,count:e.target.value})} min="1" placeholder="1" style={inpTxt} />
+            </div>
+            {/* 遠方・例外 金額上書き */}
+            <div style={{marginBottom:10}}>
+              <button onClick={()=>setTForm({...tForm,isOverride:!tForm.isOverride,shift:''})}
+                style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>
+                <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${tForm.isOverride?'#6366f1':'#374151'}`,background:tForm.isOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'white',flexShrink:0}}>
+                  {tForm.isOverride?'✓':''}
+                </div>
+                <span style={{fontSize:11,color:tForm.isOverride?'#a5b4fc':'#4B5563'}}>遠方・例外あり（金額を手入力）</span>
+              </button>
+              {tForm.isOverride && (
+                <input type="number" value={tForm.price} onChange={e=>setTForm({...tForm,price:e.target.value})}
+                  placeholder="合計金額を入力" style={{...inpTxt,marginTop:6,borderColor:'rgba(99,102,241,0.3)'}} />
+              )}
+            </div>
+            {/* 合計プレビュー */}
+            {(() => {
+              const prices = TRANSPORT_PRICES[tForm.company];
+              const count = parseInt(tForm.count)||1;
+              let total = 0;
+              if (tForm.isOverride) total = (parseFloat(tForm.price)||0)*count;
+              else if (prices && tForm.shift) total = (tForm.shift==='day'?prices.day:prices.night)*count;
+              return total > 0 ? (
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',borderRadius:8,background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.15)',marginBottom:8}}>
+                  <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>合計金額</span>
+                  <span style={{fontSize:15,fontWeight:800,color:'#4ade80',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(total)}</span>
+                </div>
+              ) : null;
+            })()}
+            <AddBtn onClick={addTransport} disabled={!tForm.company||(tForm.isOverride?!tForm.price:!tForm.shift)} />
+            <div style={{marginTop:10,padding:'10px 12px',borderRadius:9,background:'rgba(99,102,241,0.05)',border:'1px solid rgba(99,102,241,0.15)',fontSize:11,color:'#6B7280',lineHeight:1.7}}>
+              <span style={{color:'#a5b4fc',fontWeight:700,fontSize:10,display:'block',marginBottom:3,fontFamily:'monospace',letterSpacing:'.04em'}}>人工として計上する場合</span>
+              半日以上拘束した場合は自社人工または外注人工セクションに入力してください（職長判断）。
+            </div>
+          </div>
+          {(workDetails.transportItems||[]).length>0 && <SubTotal label="運搬費" value={(workDetails.transportItems||[]).reduce((s,t)=>s+t.amount,0)} />}
+
           <BFooter onBack={()=>setCurrentStep(1)} onNext={()=>setCurrentStep(3)} nextLabel="次へ →" />
         </div>
       )}
@@ -1544,8 +1691,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
               <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={inpSel}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>単価</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
-            <div style={{ marginBottom:'10px' }}><label style={inpLbl}>マニフェスト No.</label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
-            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.manifest} />
+            <div style={{ marginBottom:'10px' }}><label style={inpLbl}>マニフェスト No. <span style={{color:'#4B5563',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
+            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price} />
           </div>
           {wasteItems.length>0 && <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount,0)} />}
 
@@ -1578,7 +1725,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
           </div>
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}
 
-          <BFooter onBack={()=>setCurrentStep(2)} onNext={handleSave} nextLabel="保存する ✓" nextColor="#16a34a" />
+          <BFooter onBack={()=>setCurrentStep(2)} onNext={handleSave} nextLabel={isEditMode ? "更新する ✓" : "保存する ✓"} nextColor="#16a34a" />
         </div>
       )}
     </div>
@@ -1586,7 +1733,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock }) {
 }
 
 // ========== ReportListPage ==========
-function ReportListPage({ reports, onDelete, onNavigate }) {
+function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   const [filterCategory, setFilterCategory] = useState('');
   const [openMonths, setOpenMonths] = useState({});
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
@@ -1620,6 +1767,7 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
           (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
           (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
           (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
+          (r.workDetails?.transportItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
           (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
         return (
           <div key={month} className="mb-3">
@@ -1635,7 +1783,7 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
             {isOpen && (
               <div style={{ border:'1px solid rgba(255,255,255,0.08)', borderTop:'none', borderRadius:'0 0 10px 10px', overflow:'hidden' }}>
                 {monthReports.map((report, idx) => (
-                  <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} isLast={idx === monthReports.length - 1} />
+                  <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} onEdit={() => onEdit(report)} isLast={idx === monthReports.length - 1} />
                 ))}
               </div>
             )}
@@ -1647,7 +1795,7 @@ function ReportListPage({ reports, onDelete, onNavigate }) {
   );
 }
 
-function ReportAccordion({ report, onDelete, isLast }) {
+function ReportAccordion({ report, onDelete, onEdit, isLast }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div style={{ borderBottom: isLast && !isOpen ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
@@ -1666,6 +1814,7 @@ function ReportAccordion({ report, onDelete, isLast }) {
                 (report.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
                 (report.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
                 (report.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
+                (report.workDetails?.transportItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
                 (report.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0);
               return totalCost > 0 && <span className="text-yellow-400 font-semibold">¥{formatCurrency(totalCost)}</span>;
             })()}
@@ -1714,6 +1863,14 @@ function ReportAccordion({ report, onDelete, isLast }) {
                   ))}
                 </div>
               )}
+              {report.workDetails.transportItems?.length > 0 && (
+                <div className="mb-3 rounded p-2" style={{ background: 'rgba(34,197,94,0.03)', border:'1px solid rgba(34,197,94,0.1)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{color:'#4ade80'}}>運搬費: {report.workDetails.transportItems.length}件 / ¥{formatCurrency(report.workDetails.transportItems.reduce((s,t)=>s+(t.amount||0),0))}</p>
+                  {report.workDetails.transportItems.map((t, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {t.company} <span className="text-gray-500">{t.shift} {t.count}台</span> <span className="text-yellow-400">¥{formatCurrency(t.amount)}</span></p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {report.wasteItems?.length > 0 && (
@@ -1735,10 +1892,15 @@ function ReportAccordion({ report, onDelete, isLast }) {
               ))}
             </div>
           )}
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-3 gap-2">
             <button onClick={() => { if (window.__navigatePDF) window.__navigatePDF(report); }}
-              className="py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-2">
-              <FileText className="w-4 h-4" />PDF出力
+              className="py-3 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-1">
+              <FileText className="w-4 h-4" />PDF
+            </button>
+            <button onClick={() => onEdit && onEdit(report)}
+              className="py-3 px-2 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-1"
+              style={{ background:'rgba(245,158,11,0.15)', border:'1px solid rgba(245,158,11,0.3)', color:'#fbbf24' }}>
+              ✏️ 編集
             </button>
             <Button variant="danger" onClick={onDelete} icon={Trash2}>削除</Button>
           </div>
@@ -1823,6 +1985,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       r.workDetails.outsourcingLabor?.forEach(o => costByCategory['人工費'] += o.amount || 0);
       r.workDetails.vehicles?.forEach(v => costByCategory['車両費'] += v.amount || 0);
       r.workDetails.machinery?.forEach(m => costByCategory['重機費'] += m.unitPrice || 0);
+      r.workDetails.transportItems?.forEach(t => costByCategory['運搬費'] = (costByCategory['運搬費']||0) + (t.amount || 0));
     }
     r.wasteItems?.forEach(w => costByCategory['産廃費'] += w.amount || 0);
   });
@@ -1842,6 +2005,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       r.workDetails.outsourcingLabor?.forEach(o => monthlyData[month] += o.amount || 0);
       r.workDetails.vehicles?.forEach(v => monthlyData[month] += v.amount || 0);
       r.workDetails.machinery?.forEach(m => monthlyData[month] += m.unitPrice || 0);
+      r.workDetails.transportItems?.forEach(t => monthlyData[month] += t.amount || 0);
     }
     r.wasteItems?.forEach(w => monthlyData[month] += w.amount || 0);
   });
@@ -2094,9 +2258,10 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const totalVehicleCost = allReports.reduce((sum, r) => sum + (r.workDetails?.vehicles || []).reduce((s, v) => s + (v.amount || 0), 0), 0);
   const totalMachineryCost = allReports.reduce((sum, r) => sum + (r.workDetails?.machinery || []).reduce((s, m) => s + (m.unitPrice || 0), 0), 0);
   const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
+  const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.transportItems || []).reduce((s, t) => s + (t.amount || 0), 0), 0);
   const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-  const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalWasteCost
+  const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalTransportCost + totalWasteCost
     + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const grossProfit = totalRevenue - totalCost + totalScrapRevenue;
@@ -2210,10 +2375,11 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                 const outsourcing = r.workDetails?.outsourcingLabor || [];
                 const vehicles = r.workDetails?.vehicles || [];
                 const machinery = r.workDetails?.machinery || [];
+                const transport = r.workDetails?.transportItems || [];
                 const waste = r.wasteItems || [];
                 const scrap = r.scrapItems || [];
                 const wasteAndScrap = [...waste, ...scrap.map(s => ({ material: s.type, quantity: s.quantity, unit: s.unit, amount: Math.abs(s.amount), disposalSite: s.buyer, manifestNumber: '-' }))];
-                const maxSubRows = Math.max(1, workers.length, outsourcing.length, vehicles.length, machinery.length, wasteAndScrap.length);
+                const maxSubRows = Math.max(1, workers.length, outsourcing.length, vehicles.length, machinery.length, transport.length, wasteAndScrap.length);
                 const startTimes = workers.map(w => w.start || w.startTime).filter(Boolean).sort();
                 const endTimes = workers.map(w => w.end || w.endTime).filter(Boolean).sort().reverse();
                 return (
@@ -2241,9 +2407,9 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                         <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>
                         <td className="text-[8px]">{wasteAndScrap[subIdx]?.material || ''}</td>
                         <td className="text-right text-[8px]">{wasteAndScrap[subIdx] ? `${wasteAndScrap[subIdx].quantity}${wasteAndScrap[subIdx].unit}` : ''}</td>
-                        <td className="text-right text-[8px]">{wasteAndScrap[subIdx] ? `¥${formatCurrency(wasteAndScrap[subIdx].amount)}` : ''}</td>
-                        <td className="text-[8px]">{wasteAndScrap[subIdx]?.disposalSite || ''}</td>
-                        <td className="text-[8px]">{wasteAndScrap[subIdx]?.manifestNumber || ''}</td>
+                        <td className="text-right text-[8px]" style={wasteAndScrap[subIdx]?.manifestNumber==='-'?{color:'#ef4444'}:{}}>{wasteAndScrap[subIdx] ? `¥${formatCurrency(wasteAndScrap[subIdx].amount)}` : ''}</td>
+                        <td className="text-[8px]" style={wasteAndScrap[subIdx]?.manifestNumber==='-'?{color:'#ef4444'}:{}}>{wasteAndScrap[subIdx]?.disposalSite || ''}</td>
+                        <td className="text-[8px]">{wasteAndScrap[subIdx]?.manifestNumber==='-'?'スクラップ':(wasteAndScrap[subIdx]?.manifestNumber || '')}</td>
                       </tr>
                     ))}
                   </Fragment>
@@ -2276,6 +2442,76 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
               <span className="text-white text-lg font-black tabular-nums">¥{formatCurrency(totalCost)}</span>
             </div>
           </div>
+
+          {/* 外注費・販管費テーブル */}
+          {(() => {
+            // 全日報から外注費・販管費を集約
+            const outItems = [];
+            const sgaItems = [];
+            allReports.forEach(r => {
+              (r.workDetails?.transportItems||[]).forEach(t => {
+                const existing = outItems.find(o => o.name===t.company && o.shift===t.shift);
+                if (existing) { existing.days=(existing.days||0)+t.count; existing.amount+=t.amount; }
+                else outItems.push({ name:t.company, days:t.count, amount:t.amount });
+              });
+            });
+            // projectInfo の外注費・販管費
+            if (projectInfo.transferCost) outItems.push({ name:'回送費', days:null, amount:parseFloat(projectInfo.transferCost)||0 });
+            if (projectInfo.leaseCost) {
+              const vendor = projectInfo.leaseCostVendor==='__custom__' ? (projectInfo.leaseCostVendorCustom||'リース') : (projectInfo.leaseCostVendor||'リース費');
+              outItems.push({ name:vendor, days:null, amount:parseFloat(projectInfo.leaseCost)||0 });
+            }
+            // expenses を販管費へ
+            (projectInfo.expenses||[]).forEach(e => sgaItems.push({ name:e.name, days:null, amount:parseFloat(e.amount)||0 }));
+            if (projectInfo.materialsCost) sgaItems.push({ name:'資材費', days:null, amount:parseFloat(projectInfo.materialsCost)||0 });
+
+            const outTotal = outItems.reduce((s,i)=>s+i.amount,0);
+            const sgaTotal = sgaItems.reduce((s,i)=>s+i.amount,0);
+            if (outItems.length===0 && sgaItems.length===0) return null;
+            const maxRows = Math.max(outItems.length, sgaItems.length, 1);
+            return (
+              <div className="mt-6">
+                <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid rgba(255,255,255,0.15)', fontSize:'9px', tableLayout:'fixed' }}>
+                  <colgroup>
+                    <col style={{width:'35%'}}/><col style={{width:'10%'}}/><col style={{width:'20%'}}/>
+                    <col style={{width:'35%'}}/><col style={{width:'10%'}}/><col style={{width:'20%'}}/>
+                  </colgroup>
+                  <thead>
+                    <tr style={{ background:'rgba(255,255,255,0.06)' }}>
+                      <th colSpan="3" style={{ padding:'5px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.15)', borderRight:'2px solid rgba(255,255,255,0.3)' }}>外注費・リース・道具・機材・経費・その他</th>
+                      <th colSpan="3" style={{ padding:'5px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.15)' }}>販管費・外注経費・その他</th>
+                    </tr>
+                    <tr style={{ background:'rgba(255,255,255,0.03)' }}>
+                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'1px solid rgba(255,255,255,0.1)' }}>項目</th>
+                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'1px solid rgba(255,255,255,0.1)' }}>日</th>
+                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'2px solid rgba(255,255,255,0.3)' }}>金額</th>
+                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'1px solid rgba(255,255,255,0.1)' }}>項目</th>
+                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'1px solid rgba(255,255,255,0.1)' }}>日</th>
+                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>金額</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({length:maxRows},(_,i)=>(
+                      <tr key={i} style={{ borderBottom:'1px dashed rgba(255,255,255,0.07)' }}>
+                        <td style={{ padding:'4px 6px', borderRight:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>{outItems[i]?.name||''}</td>
+                        <td style={{ padding:'4px 6px', borderRight:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>{outItems[i]?.days!=null?outItems[i].days:''}</td>
+                        <td style={{ padding:'4px 6px', borderRight:'2px solid rgba(255,255,255,0.2)', textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{outItems[i]?`${formatCurrency(outItems[i].amount)}`:''}</td>
+                        <td style={{ padding:'4px 6px', borderRight:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>{sgaItems[i]?.name||''}</td>
+                        <td style={{ padding:'4px 6px', borderRight:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>{sgaItems[i]?.days!=null?sgaItems[i].days:''}</td>
+                        <td style={{ padding:'4px 6px', textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{sgaItems[i]?`${formatCurrency(sgaItems[i].amount)}`:''}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ background:'rgba(255,255,255,0.04)', borderTop:'1px solid rgba(255,255,255,0.15)' }}>
+                      <td colSpan="2" style={{ padding:'5px 6px', textAlign:'center', fontWeight:700, fontSize:'8px', borderRight:'1px solid rgba(255,255,255,0.1)' }}>合計金額</td>
+                      <td style={{ padding:'5px 6px', textAlign:'right', fontWeight:700, fontVariantNumeric:'tabular-nums', borderRight:'2px solid rgba(255,255,255,0.3)' }}>{formatCurrency(outTotal)} 円</td>
+                      <td colSpan="2" style={{ padding:'5px 6px', textAlign:'center', fontWeight:700, fontSize:'8px', borderRight:'1px solid rgba(255,255,255,0.1)' }}>合計金額</td>
+                      <td style={{ padding:'5px 6px', textAlign:'right', fontWeight:700, fontVariantNumeric:'tabular-nums' }}>{formatCurrency(sgaTotal)} 円</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
       </div>
       </div>
@@ -2295,6 +2531,7 @@ export default function LOGIOApp() {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [password, setPassword] = useState('');
   const [selectedReport, setSelectedReport] = useState(null);
+  const [editingReport, setEditingReport] = useState(null);
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState('');
   const [projectInfo, setProjectInfo] = useState({
@@ -2442,6 +2679,16 @@ export default function LOGIOApp() {
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました'); }
   };
 
+  const handleUpdateReport = async (reportId, reportData) => {
+    try {
+      await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
+      await loadReports(selectedSite);
+      setEditingReport(null);
+      alert('✅ 日報を更新しました');
+      setCurrentPage('list');
+    } catch (error) { console.error(error); alert('❌ 更新に失敗しました'); }
+  };
+
   const handleDeleteReport = async (reportId) => {
     if (!confirm('この日報を削除しますか？')) return;
     try {
@@ -2460,6 +2707,7 @@ export default function LOGIOApp() {
         report.workDetails.outsourcingLabor?.forEach(o => accumulatedCost += o.amount || 0);
         report.workDetails.vehicles?.forEach(v => accumulatedCost += v.amount || 0);
         report.workDetails.machinery?.forEach(m => accumulatedCost += m.unitPrice || 0);
+        report.workDetails.transportItems?.forEach(t => accumulatedCost += t.amount || 0);
       }
       report.wasteItems?.forEach(w => accumulatedCost += w.amount || 0);
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
@@ -2495,6 +2743,7 @@ export default function LOGIOApp() {
 
   const totals = calculateTotals();
   window.__navigatePDF = (report) => { setSelectedReport(report); setCurrentPage('pdf'); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  window.__navigateEdit = (report) => { setEditingReport(report); setCurrentPage('edit'); window.scrollTo({ top: 0, behavior: 'instant' }); };
 
   if (showSplash) return <SplashScreen />;
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
@@ -2539,9 +2788,11 @@ export default function LOGIOApp() {
               onNavigate={setCurrentPage}
               projectInfo={projectInfo}
               onReleaseLock={releaseLock}
+              editReport={editingReport}
+              onUpdate={handleUpdateReport}
             />
           )}
-          {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} />}
+          {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}
           {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
           {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
           {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}

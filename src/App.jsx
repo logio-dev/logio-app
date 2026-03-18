@@ -157,10 +157,10 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
 const MASTER_DATA = {
   projectNames: ['内装解体', 'スケルトン解体', '建物解体', '外装解体', '外構解体', 'アスベスト除去', '設備解体', '躯体解体'],
   salesPersons: ['間野', '八ツ田', '木嶋', '西', '鈴木', '原', '二宮'],
-  employees: ['五十嵐悠哉', '折田優作', '稲葉正輝', '井ケ田浩寿', '大野勝也', '石森達也', '一村琢磨', '間野昂平'],
-  inHouseWorkers: ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也', '小峯朋宏', '松橋信行', '浅見勇弥', '石田竜二', '田南功紀', '尾崎奈帆', '古山慎祐', '増岡利幸', '森繁信'],
+  employees: ['五十嵐悠哉', '折田優作', '稲葉正輝', '井ケ田浩寿', '大野勝也', '石森達也', '一村琢磨', '間野昂平', '西貴大', '二宮翼'],
+  inHouseWorkers: ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也', '小峯朋宏', '松橋信行', '浅見勇弥', '石田竜二', '田南功紀', '尾崎奈帆', '古山慎祐', '増岡利幸', '森繁信', '西貴大', '二宮翼'],
   inHouseWorkersByDept: {
-    '工事1課': ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也'],
+    '工事1課': ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也', '西貴大', '二宮翼'],
     '環境課': ['小峯朋宏', '松橋信行', '浅見勇弥', '石田竜二', '田南功紀', '尾崎奈帆', '古山慎祐', '増岡利幸', '森繁信']
   },
   disposalSiteUnitPrices: {
@@ -989,7 +989,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             workType:'', client:'', workLocation:'', salesPerson:'', siteManager:'',
             startDate:'', endDate:'', contractAmount:'', additionalAmount:'',
             transferCost:'', leaseCost:'', materialsCost:'', status:'', discharger:'',
-            transportCompany:'', contractedDisposalSites:[], expenses:[], projectNumber: pjNo
+            transportCompany:'', contractedDisposalSites:[], expenses:[], projectNumber: pjNo,
+            outsourcingItems:[], sgaItems:[]
           });
           const setCardInfo = isSelected
             ? setProjectInfo
@@ -1055,36 +1056,126 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
                         <TextInput label="追加金額（税抜）" labelEn="Additional" type="number" value={projectInfo.additionalAmount||''} onChange={v=>setProjectInfo({...projectInfo,additionalAmount:v})} placeholder="0" />
-                        <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16 }}>外注費 / Outsourcing Costs</div>
-                        {/* 外注費：東リース＋手入力プルダウン */}
-                        <div style={{ marginBottom:16 }}>
-                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>回送費 / Transfer</label>
-                          <input type="number" value={projectInfo.transferCost||''} onChange={v=>setProjectInfo({...projectInfo,transferCost:v.target.value})} placeholder="0" style={{ width:'100%', padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                        <div style={{ fontSize:10, fontWeight:700, color:'#60a5fa', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(59,130,246,0.2)', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+                          <div style={{width:16,height:2,borderRadius:99,background:'linear-gradient(90deg,#3b82f6,#22d3ee)'}}/>
+                          外注費 / Outsourcing Costs
                         </div>
-                        <div style={{ marginBottom:16 }}>
-                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>リース費 / Lease</label>
-                          <div style={{ display:'flex', gap:8 }}>
-                            <select value={['東リース',''].includes(projectInfo.leaseCostVendor||'') ? (projectInfo.leaseCostVendor||'') : '__custom__'}
-                              onChange={e=>{
-                                if(e.target.value==='__custom__') setProjectInfo({...projectInfo,leaseCostVendor:'__custom__'});
-                                else setProjectInfo({...projectInfo,leaseCostVendor:e.target.value});
-                              }}
-                              style={{ flex:'0 0 120px', padding:'11px 8px', background:'#000', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:14, outline:'none', colorScheme:'dark', boxSizing:'border-box' }}>
-                              <option value="">業者選択</option>
-                              <option value="東リース">東リース</option>
-                              <option value="__custom__">手入力...</option>
-                            </select>
-                            {(projectInfo.leaseCostVendor==='__custom__') && (
-                              <input type="text" value={projectInfo.leaseCostVendorCustom||''} onChange={e=>setProjectInfo({...projectInfo,leaseCostVendorCustom:e.target.value})} placeholder="業者名を入力" style={{ flex:1, padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(59,130,246,0.3)', color:'white', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box' }} />
-                            )}
-                            <input type="number" value={projectInfo.leaseCost||''} onChange={e=>setProjectInfo({...projectInfo,leaseCost:e.target.value})} placeholder="金額" style={{ flex:1, padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                        {/* 外注費リスト */}
+                        {(projectInfo.outsourcingItems||[]).map((item,i)=>(
+                          <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.12)'}}>
+                            <div style={{width:34,height:34,borderRadius:8,background:'rgba(59,130,246,0.15)',color:'#60a5fa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{item.name.slice(0,3)}</div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                              <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
+                            </div>
+                            <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
+                            <button onClick={()=>setProjectInfo({...projectInfo,outsourcingItems:(projectInfo.outsourcingItems||[]).filter((_,j)=>j!==i)})} style={{width:22,height:22,borderRadius:6,border:'none',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:10,flexShrink:0}}>✕</button>
                           </div>
+                        ))}
+                        {(projectInfo.outsourcingItems||[]).length>0 && (
+                          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(59,130,246,0.1)',marginBottom:10}}>
+                            <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>外注費 小計</span>
+                            <span style={{fontSize:14,fontWeight:800,color:'#60a5fa',fontVariantNumeric:'tabular-nums'}}> ¥{formatCurrency((projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                          </div>
+                        )}
+                        {/* 外注費 入力フォーム */}
+                        {(()=>{
+                          const OUT_QUICK = ['東リース','アクティオ','パノラマ','集塵機','ペッカー','発電機','高所作業車','コンプレッサー','ハンドクラッシャー','油圧ユニット','ミニユンボ','回送費','アスベスト分析費'];
+                          const outName = projectInfo._outName||'';
+                          const outDays = projectInfo._outDays||'';
+                          const outAmt  = projectInfo._outAmt||'';
+                          return (
+                            <div style={{padding:'12px',borderRadius:10,background:'rgba(59,130,246,0.04)',border:'1px solid rgba(59,130,246,0.15)',marginBottom:16}}>
+                              <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
+                              <input type="text" value={outName} onChange={e=>setProjectInfo({...projectInfo,_outName:e.target.value})}
+                                placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
+                              <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
+                                {OUT_QUICK.map(q=>(
+                                  <button key={q} onClick={()=>setProjectInfo({...projectInfo,_outName:q})}
+                                    style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${outName===q?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.07)'}`,background:outName===q?'rgba(59,130,246,0.15)':'rgba(255,255,255,0.02)',color:outName===q?'#60a5fa':'#6B7280',fontSize:11,fontWeight:outName===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>
+                                    {q}
+                                  </button>
+                                ))}
+                              </div>
+                              <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:8,marginBottom:8}}>
+                                <div>
+                                  <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
+                                  <input type="number" value={outDays} onChange={e=>setProjectInfo({...projectInfo,_outDays:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px 10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
+                                </div>
+                                <div>
+                                  <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
+                                  <input type="number" value={outAmt} onChange={e=>setProjectInfo({...projectInfo,_outAmt:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px 10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
+                                </div>
+                              </div>
+                              <button disabled={!outName||!outAmt} onClick={()=>{
+                                const newItem={name:outName,days:outDays?parseInt(outDays):null,amount:parseFloat(outAmt)||0};
+                                setProjectInfo({...projectInfo,outsourcingItems:[...(projectInfo.outsourcingItems||[]),newItem],_outName:'',_outDays:'',_outAmt:''});
+                              }} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!outName||!outAmt)?'rgba(255,255,255,0.04)':'linear-gradient(135deg,#2563EB,#4f46e5)',color:(!outName||!outAmt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!outName||!outAmt)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6,opacity:(!outName||!outAmt)?0.4:1}}>
+                                ＋ 外注費を追加
+                              </button>
+                            </div>
+                          );
+                        })()}
+
+                        {/* 販管費 */}
+                        <div style={{ fontSize:10, fontWeight:700, color:'#fbbf24', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(245,158,11,0.2)', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+                          <div style={{width:16,height:2,borderRadius:99,background:'linear-gradient(90deg,#f59e0b,#f97316)'}}/>
+                          販管費 / SG&A Costs
                         </div>
-                        <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16, marginTop:8 }}>販管費 / SG&A Costs</div>
-                        <div style={{ marginBottom:16 }}>
-                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>資材費 / Materials</label>
-                          <input type="number" value={projectInfo.materialsCost||''} onChange={v=>setProjectInfo({...projectInfo,materialsCost:v.target.value})} placeholder="0" style={{ width:'100%', padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
-                        </div>
+                        {(projectInfo.sgaItems||[]).map((item,i)=>(
+                          <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.12)'}}>
+                            <div style={{width:34,height:34,borderRadius:8,background:'rgba(245,158,11,0.15)',color:'#fbbf24',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{item.name.slice(0,3)}</div>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                              <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
+                            </div>
+                            <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
+                            <button onClick={()=>setProjectInfo({...projectInfo,sgaItems:(projectInfo.sgaItems||[]).filter((_,j)=>j!==i)})} style={{width:22,height:22,borderRadius:6,border:'none',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:10,flexShrink:0}}>✕</button>
+                          </div>
+                        ))}
+                        {(projectInfo.sgaItems||[]).length>0 && (
+                          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(245,158,11,0.1)',marginBottom:10}}>
+                            <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>販管費 小計</span>
+                            <span style={{fontSize:14,fontWeight:800,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                          </div>
+                        )}
+                        {(()=>{
+                          const SGA_QUICK = ['道具代','交通費','パーキング代','外注経費'];
+                          const sgaName = projectInfo._sgaName||'';
+                          const sgaDays = projectInfo._sgaDays||'';
+                          const sgaAmt  = projectInfo._sgaAmt||'';
+                          return (
+                            <div style={{padding:'12px',borderRadius:10,background:'rgba(245,158,11,0.04)',border:'1px solid rgba(245,158,11,0.15)',marginBottom:16}}>
+                              <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
+                              <input type="text" value={sgaName} onChange={e=>setProjectInfo({...projectInfo,_sgaName:e.target.value})}
+                                placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
+                              <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
+                                {SGA_QUICK.map(q=>(
+                                  <button key={q} onClick={()=>setProjectInfo({...projectInfo,_sgaName:q})}
+                                    style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${sgaName===q?'rgba(245,158,11,0.5)':'rgba(255,255,255,0.07)'}`,background:sgaName===q?'rgba(245,158,11,0.15)':'rgba(255,255,255,0.02)',color:sgaName===q?'#fbbf24':'#6B7280',fontSize:11,fontWeight:sgaName===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>
+                                    {q}
+                                  </button>
+                                ))}
+                              </div>
+                              <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:8,marginBottom:8}}>
+                                <div>
+                                  <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
+                                  <input type="number" value={sgaDays} onChange={e=>setProjectInfo({...projectInfo,_sgaDays:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px 10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
+                                </div>
+                                <div>
+                                  <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
+                                  <input type="number" value={sgaAmt} onChange={e=>setProjectInfo({...projectInfo,_sgaAmt:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px 10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
+                                </div>
+                              </div>
+                              <button disabled={!sgaName||!sgaAmt} onClick={()=>{
+                                const newItem={name:sgaName,days:sgaDays?parseInt(sgaDays):null,amount:parseFloat(sgaAmt)||0};
+                                setProjectInfo({...projectInfo,sgaItems:[...(projectInfo.sgaItems||[]),newItem],_sgaName:'',_sgaDays:'',_sgaAmt:''});
+                              }} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!sgaName||!sgaAmt)?'rgba(255,255,255,0.04)':'linear-gradient(135deg,#d97706,#f97316)',color:(!sgaName||!sgaAmt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!sgaName||!sgaAmt)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6,opacity:(!sgaName||!sgaAmt)?0.4:1}}>
+                                ＋ 販管費を追加
+                              </button>
+                            </div>
+                          );
+                        })()}
                         <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16, marginTop:8 }}>経費 / Expenses</div>
                         <div style={{ marginBottom:16, border:'1px solid rgba(255,255,255,0.06)', borderRadius:8, overflow:'hidden' }}>
                           <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
@@ -1339,7 +1430,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:'8px', flexShrink:0 }}>
         <span style={{ fontSize:'13px', fontWeight:'700', color: amountColor||'#60a5fa', whiteSpace:'nowrap' }}>{amount}</span>
-        <button onClick={onDel} style={{ width:'24px', height:'24px', borderRadius:'50%', background:'rgba(239,68,68,0.1)', border:'none', color:'#ef4444', fontSize:'13px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+        <button onClick={onDel} style={{ width:'32px', height:'32px', borderRadius:'8px', background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.25)', color:'#f87171', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontWeight:700 }}>✕</button>
       </div>
     </div>
   );
@@ -1407,8 +1498,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       {/* ヘッダー */}
       <div style={{ position:'sticky', top:0, zIndex:50, background:'rgba(0,0,0,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px 0' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-          <span style={{ fontSize:'17px', fontWeight:700 }}>{isEditMode ? '✏️ 日報を編集' : '日報入力'}</span>
-          <button onClick={handleCancel} style={{ color:'#4b5563', background:'none', border:'none', cursor:'pointer', fontSize:'22px', lineHeight:1, padding:'4px' }}>×</button>
+          <span style={{ fontSize:'17px', fontWeight:700 }}>{isEditMode ? '日報を編集' : '日報入力'}</span>
+          <button onClick={handleCancel}
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:8, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+            <X style={{width:13,height:13}}/> キャンセル
+          </button>
         </div>
         <StepDots />
       </div>
@@ -1801,12 +1895,21 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
     <div style={{ borderBottom: isLast && !isOpen ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
       <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-black/50 transition-colors">
         <div className="text-left flex-1">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-3 mb-1 flex-wrap">
             <span className="text-lg font-bold text-white">{report.date}</span>
             <span className="text-sm text-gray-400">({getDayOfWeek(report.date)})</span>
             <span className="text-sm text-blue-400">{report.weather}</span>
+            {/* 記入者＋更新日時 */}
+            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'#6B7280', fontFamily:'monospace', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)', padding:'2px 7px', borderRadius:99 }}>
+              {report.updatedBy || report.recorder || ''}
+              {report.updatedAt && (
+                <span style={{ color:'#374151' }}>
+                  {' · '}{new Date(report.updatedAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+                </span>
+              )}
+            </span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm flex-wrap">
             <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded text-xs font-medium">{report.workDetails?.workCategory || report.workCategory}</span>
             {(() => {
               const totalCost =
@@ -1900,7 +2003,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             <button onClick={() => onEdit && onEdit(report)}
               className="py-3 px-2 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-1"
               style={{ background:'rgba(245,158,11,0.15)', border:'1px solid rgba(245,158,11,0.3)', color:'#fbbf24' }}>
-              ✏️ 編集
+              編集
             </button>
             <Button variant="danger" onClick={onDelete} icon={Trash2}>削除</Button>
           </div>
@@ -2327,18 +2430,69 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                 <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>
               </tbody>
             </table>
-            <div></div>
+            <div>
+              {/* 外注費・販管費テーブル */}
+              {(()=>{
+                const outItems = [
+                  ...(allReports.flatMap(r => (r.workDetails?.transportItems||[]).map(t=>({name:t.company,days:t.count,amount:t.amount})))),
+                  ...(projectInfo.outsourcingItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}))
+                ];
+                const sgaItems2 = (projectInfo.sgaItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
+                if(outItems.length===0 && sgaItems2.length===0) return null;
+                const maxRows = Math.max(outItems.length, sgaItems2.length);
+                const outTotal = outItems.reduce((s,i)=>s+i.amount,0);
+                const sgaTotal = sgaItems2.reduce((s,i)=>s+i.amount,0);
+                return (
+                  <table className="pdf-header-table" style={{fontSize:'8px'}}>
+                    <thead>
+                      <tr style={{background:'#111827'}}>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#60a5fa',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>外注費</th>
+                      </tr>
+                      <tr style={{background:'#111827'}}>
+                        <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {outItems.map((it,i)=>(
+                        <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{formatCurrency(it.amount)}</td></tr>
+                      ))}
+                      <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.03)'}}>
+                        <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
+                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(outTotal)}</td>
+                      </tr>
+                    </tbody>
+                    <thead>
+                      <tr style={{background:'#111827'}}>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#fbbf24',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>販管費</th>
+                      </tr>
+                      <tr style={{background:'#111827'}}>
+                        <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sgaItems2.map((it,i)=>(
+                        <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{formatCurrency(it.amount)}</td></tr>
+                      ))}
+                      <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.03)'}}>
+                        <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
+                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(sgaTotal)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
             <div>
               <div className="text-center py-1 font-bold text-[10px] tracking-widest bg-yellow-500/20 text-yellow-400 border border-gray-600">【　収　支　結　果　】</div>
               <table className="result-table">
                 <tbody>
                   {[
-                    ['見積金額', totalRevenue], ['原価金額', totalCost], ['外注金額', totalOutsourcingCost],
+                    ['見積金額', totalRevenue],
+                    ['原価金額', totalCost],
+                    ['外注人工', totalOutsourcingCost],
                     ['追加金額', parseFloat(projectInfo.additionalAmount) || 0],
-                    ...(projectInfo.transferCost ? [['回送費', parseFloat(projectInfo.transferCost)]] : []),
-                    ...(projectInfo.leaseCost ? [['リース費', parseFloat(projectInfo.leaseCost)]] : []),
-                    ...(projectInfo.materialsCost ? [['資材費', parseFloat(projectInfo.materialsCost)]] : []),
-                    ...(projectInfo.expenses || []).map(e => [e.name, parseFloat(e.amount) || 0]),
+                    ...(projectInfo.outsourcingItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
+                    ...(projectInfo.sgaItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
                     ['金属売上', totalScrapRevenue],
                   ].map(([label, val]) => (
                     <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
@@ -2442,76 +2596,6 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
               <span className="text-white text-lg font-black tabular-nums">¥{formatCurrency(totalCost)}</span>
             </div>
           </div>
-
-          {/* 外注費・販管費テーブル */}
-          {(() => {
-            // 全日報から外注費・販管費を集約
-            const outItems = [];
-            const sgaItems = [];
-            allReports.forEach(r => {
-              (r.workDetails?.transportItems||[]).forEach(t => {
-                const existing = outItems.find(o => o.name===t.company && o.shift===t.shift);
-                if (existing) { existing.days=(existing.days||0)+t.count; existing.amount+=t.amount; }
-                else outItems.push({ name:t.company, days:t.count, amount:t.amount });
-              });
-            });
-            // projectInfo の外注費・販管費
-            if (projectInfo.transferCost) outItems.push({ name:'回送費', days:null, amount:parseFloat(projectInfo.transferCost)||0 });
-            if (projectInfo.leaseCost) {
-              const vendor = projectInfo.leaseCostVendor==='__custom__' ? (projectInfo.leaseCostVendorCustom||'リース') : (projectInfo.leaseCostVendor||'リース費');
-              outItems.push({ name:vendor, days:null, amount:parseFloat(projectInfo.leaseCost)||0 });
-            }
-            // expenses を販管費へ
-            (projectInfo.expenses||[]).forEach(e => sgaItems.push({ name:e.name, days:null, amount:parseFloat(e.amount)||0 }));
-            if (projectInfo.materialsCost) sgaItems.push({ name:'資材費', days:null, amount:parseFloat(projectInfo.materialsCost)||0 });
-
-            const outTotal = outItems.reduce((s,i)=>s+i.amount,0);
-            const sgaTotal = sgaItems.reduce((s,i)=>s+i.amount,0);
-            if (outItems.length===0 && sgaItems.length===0) return null;
-            const maxRows = Math.max(outItems.length, sgaItems.length, 1);
-            return (
-              <div className="mt-6">
-                <table style={{ width:'100%', borderCollapse:'collapse', border:'1px solid rgba(255,255,255,0.15)', fontSize:'9px', tableLayout:'fixed' }}>
-                  <colgroup>
-                    <col style={{width:'35%'}}/><col style={{width:'10%'}}/><col style={{width:'20%'}}/>
-                    <col style={{width:'35%'}}/><col style={{width:'10%'}}/><col style={{width:'20%'}}/>
-                  </colgroup>
-                  <thead>
-                    <tr style={{ background:'rgba(255,255,255,0.06)' }}>
-                      <th colSpan="3" style={{ padding:'5px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.15)', borderRight:'2px solid rgba(255,255,255,0.3)' }}>外注費・リース・道具・機材・経費・その他</th>
-                      <th colSpan="3" style={{ padding:'5px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.15)' }}>販管費・外注経費・その他</th>
-                    </tr>
-                    <tr style={{ background:'rgba(255,255,255,0.03)' }}>
-                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'1px solid rgba(255,255,255,0.1)' }}>項目</th>
-                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'1px solid rgba(255,255,255,0.1)' }}>日</th>
-                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'2px solid rgba(255,255,255,0.3)' }}>金額</th>
-                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'1px solid rgba(255,255,255,0.1)' }}>項目</th>
-                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)', borderRight:'1px solid rgba(255,255,255,0.1)' }}>日</th>
-                      <th style={{ padding:'4px 6px', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>金額</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({length:maxRows},(_,i)=>(
-                      <tr key={i} style={{ borderBottom:'1px dashed rgba(255,255,255,0.07)' }}>
-                        <td style={{ padding:'4px 6px', borderRight:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>{outItems[i]?.name||''}</td>
-                        <td style={{ padding:'4px 6px', borderRight:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>{outItems[i]?.days!=null?outItems[i].days:''}</td>
-                        <td style={{ padding:'4px 6px', borderRight:'2px solid rgba(255,255,255,0.2)', textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{outItems[i]?`${formatCurrency(outItems[i].amount)}`:''}</td>
-                        <td style={{ padding:'4px 6px', borderRight:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>{sgaItems[i]?.name||''}</td>
-                        <td style={{ padding:'4px 6px', borderRight:'1px solid rgba(255,255,255,0.08)', textAlign:'center' }}>{sgaItems[i]?.days!=null?sgaItems[i].days:''}</td>
-                        <td style={{ padding:'4px 6px', textAlign:'right', fontVariantNumeric:'tabular-nums' }}>{sgaItems[i]?`${formatCurrency(sgaItems[i].amount)}`:''}</td>
-                      </tr>
-                    ))}
-                    <tr style={{ background:'rgba(255,255,255,0.04)', borderTop:'1px solid rgba(255,255,255,0.15)' }}>
-                      <td colSpan="2" style={{ padding:'5px 6px', textAlign:'center', fontWeight:700, fontSize:'8px', borderRight:'1px solid rgba(255,255,255,0.1)' }}>合計金額</td>
-                      <td style={{ padding:'5px 6px', textAlign:'right', fontWeight:700, fontVariantNumeric:'tabular-nums', borderRight:'2px solid rgba(255,255,255,0.3)' }}>{formatCurrency(outTotal)} 円</td>
-                      <td colSpan="2" style={{ padding:'5px 6px', textAlign:'center', fontWeight:700, fontSize:'8px', borderRight:'1px solid rgba(255,255,255,0.1)' }}>合計金額</td>
-                      <td style={{ padding:'5px 6px', textAlign:'right', fontWeight:700, fontVariantNumeric:'tabular-nums' }}>{formatCurrency(sgaTotal)} 円</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            );
-          })()}
         </div>
       </div>
       </div>
@@ -2538,7 +2622,8 @@ export default function LOGIOApp() {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
     contractAmount: '', additionalAmount: '', status: '進行中',
-    discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: ''
+    discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
+    outsourcingItems: [], sgaItems: []
   });
   const [reports, setReports] = useState([]);
   // ★ 追加 state
@@ -2609,7 +2694,7 @@ export default function LOGIOApp() {
       await sb('project_info').insert({ site_name: siteName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
       setSites(prev => [...prev, { name: siteName, projectNumber, status: '進行中' }]);
       setSelectedSite(siteName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [] });
+      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [] });
       alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); }
   };
@@ -2639,7 +2724,7 @@ export default function LOGIOApp() {
       const data = await sb('project_info').select(`site_name=eq.${encodeURIComponent(siteName)}`);
       if (Array.isArray(data) && data.length > 0) {
         const d = data[0];
-        setProjectInfo({ projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || '', completionDate: d.completion_date || '' });
+        setProjectInfo({ projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], completionDate: d.completion_date || '' });
       }
     } catch (error) { console.error('loadProjectInfo error:', error); }
   };
@@ -2647,7 +2732,7 @@ export default function LOGIOApp() {
   const loadReports = async (siteName) => {
     try {
       const data = await sb('reports').select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
-      if (Array.isArray(data)) setReports(data.map(r => ({ id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at })));
+      if (Array.isArray(data)) setReports(data.map(r => ({ id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at, updatedBy: r.updated_by || '', updatedAt: r.updated_at || r.created_at || '' })));
       else setReports([]);
     } catch (error) { setReports([]); }
   };
@@ -2655,7 +2740,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.discharger || '', transport_company: projectInfo.transportCompany || '', contracted_disposal_sites: projectInfo.contractedDisposalSites || [], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], updated_at: new Date().toISOString() }, 'site_name');
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.discharger || '', transport_company: projectInfo.transportCompany || '', contracted_disposal_sites: projectInfo.contractedDisposalSites || [], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], updated_at: new Date().toISOString() }, 'site_name');
       await sb('sites').update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');
@@ -2668,7 +2753,9 @@ export default function LOGIOApp() {
   const handleSaveReport = async (reportData) => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
+      const now = new Date().toISOString();
+      const updatedBy = reportData.recorder || currentUser?.userId || '';
+      await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
       const userName = currentUser?.userId || 'unknown';
       await siteLocks.release(selectedSite, userName);
       setLockStatus(null);
@@ -2681,7 +2768,9 @@ export default function LOGIOApp() {
 
   const handleUpdateReport = async (reportId, reportData) => {
     try {
-      await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
+      const now = new Date().toISOString();
+      const updatedBy = reportData.recorder || currentUser?.userId || '';
+      await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
       await loadReports(selectedSite);
       setEditingReport(null);
       alert('✅ 日報を更新しました');
@@ -2712,7 +2801,10 @@ export default function LOGIOApp() {
       report.wasteItems?.forEach(w => accumulatedCost += w.amount || 0);
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
     });
-    accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0);
+    accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
+      + (projectInfo.outsourcingItems || []).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
+      + (projectInfo.sgaItems || []).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
+      + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
     const grossProfit = totalRevenue - accumulatedCost + accumulatedScrap;
     return { totalRevenue, accumulatedCost, accumulatedScrap, grossProfit, grossProfitRateContract: totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0', grossProfitRateWithScrap: (totalRevenue + accumulatedScrap) > 0 ? (grossProfit / (totalRevenue + accumulatedScrap) * 100).toFixed(1) : '0.0' };
   };
@@ -2784,6 +2876,7 @@ export default function LOGIOApp() {
           {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} onSelectSite={setSelectedSite} />}
           {currentPage === 'input' && (
             <ReportInputPage
+              key={editingReport ? editingReport.id : 'new'}
               onSave={handleSaveReport}
               onNavigate={setCurrentPage}
               projectInfo={projectInfo}

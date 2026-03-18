@@ -2755,7 +2755,13 @@ export default function LOGIOApp() {
     try {
       const now = new Date().toISOString();
       const updatedBy = reportData.recorder || currentUser?.userId || '';
-      await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
+      // updated_by・updated_atカラムがない場合も保存できるよう try/catch で2段階対応
+      try {
+        await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
+      } catch(e) {
+        // カラムなしの場合はupdated_by・updated_atなしで再試行
+        await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
+      }
       const userName = currentUser?.userId || 'unknown';
       await siteLocks.release(selectedSite, userName);
       setLockStatus(null);
@@ -2763,19 +2769,23 @@ export default function LOGIOApp() {
       alert('✅ 日報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
       setCurrentPage('home');
-    } catch (error) { console.error(error); alert('❌ 保存に失敗しました'); }
+    } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + error.message); }
   };
 
   const handleUpdateReport = async (reportId, reportData) => {
     try {
       const now = new Date().toISOString();
       const updatedBy = reportData.recorder || currentUser?.userId || '';
-      await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
+      try {
+        await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
+      } catch(e) {
+        await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
+      }
       await loadReports(selectedSite);
       setEditingReport(null);
       alert('✅ 日報を更新しました');
       setCurrentPage('list');
-    } catch (error) { console.error(error); alert('❌ 更新に失敗しました'); }
+    } catch (error) { console.error(error); alert('❌ 更新に失敗しました: ' + error.message); }
   };
 
   const handleDeleteReport = async (reportId) => {

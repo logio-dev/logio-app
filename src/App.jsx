@@ -1288,8 +1288,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       : { date: new Date().toISOString().split('T')[0], weather: '', recorder: '', customRecorder: '' }
   );
   const [workDetails, setWorkDetails] = useState(
-    isEditMode ? (editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], transportItems:[], costItems:[] })
-    : { workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], transportItems: [], costItems: [] }
+    isEditMode ? (editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], envItems:[], extItems:[], costItems:[] })
+    : { workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], envItems: [], extItems: [], costItems: [] }
   );
   const [wasteItems, setWasteItems] = useState(isEditMode ? (editReport.wasteItems || []) : []);
   const [scrapItems, setScrapItems] = useState(isEditMode ? (editReport.scrapItems || []) : []);
@@ -1300,14 +1300,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime' });
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
-  const [tForm, setTForm] = useState({ company:'', shift:'', count:1, price:'', isOverride:false });
+  const [envForm, setEnvForm] = useState({ driver:'', shift:'', count:1, price:'', isOverride:false });
+  const [extForm, setExtForm] = useState({ shift:'', count:1, price:'', isOverride:false });
 
-  // 運搬費単価マスター
-  const TRANSPORT_PRICES = {
-    '環境課':              { day:20000, night:30000 },
-    'ワイエムエコフューチャー': { day:22000, night:32000 },
-  };
-  const TRANSPORT_COMPANIES = ['環境課','ワイエムエコフューチャー'];
+  const ENV_DRIVERS = ['小峯朋宏','松橋信行','浅見勇弥','石田竜二','古山慎祐','尾崎奈帆'];
+  const ENV_PRICES  = { day:20000, night:30000 };
+  const EXT_PRICES  = { day:22000, night:32000 };
   const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'' });
   const [scrapForm, setScrapForm] = useState({ type:'', buyer:'', qty:'', unit:'kg', price:'' });
   // ★ 課タブ
@@ -1363,17 +1361,26 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)}]});
     setMForm({type:'',price:''});
   };
-  const addTransport = () => {
-    const prices = TRANSPORT_PRICES[tForm.company];
+  const addEnv = () => {
+    if (!envForm.driver) return;
     let unitPrice = 0;
-    if (tForm.isOverride) { unitPrice = parseFloat(tForm.price)||0; }
-    else if (prices && tForm.shift) { unitPrice = tForm.shift==='day' ? prices.day : prices.night; }
-    if (!tForm.company || !unitPrice) return;
-    const count = parseInt(tForm.count)||1;
-    const amount = unitPrice * count;
-    const shiftLabel = tForm.isOverride ? '例外' : (tForm.shift==='day'?'昼':'夜');
-    setWorkDetails({...workDetails, transportItems:[...(workDetails.transportItems||[]),{company:tForm.company,shift:shiftLabel,count,unitPrice,amount}]});
-    setTForm({company:'',shift:'',count:1,price:'',isOverride:false});
+    if (envForm.isOverride) unitPrice = parseFloat(envForm.price)||0;
+    else if (envForm.shift) unitPrice = envForm.shift==='day' ? ENV_PRICES.day : ENV_PRICES.night;
+    if (!unitPrice) return;
+    const count = parseInt(envForm.count)||1;
+    const shiftLabel = envForm.isOverride ? '例外' : (envForm.shift==='day'?'昼':'夜');
+    setWorkDetails({...workDetails, envItems:[...(workDetails.envItems||[]),{driver:envForm.driver,shift:shiftLabel,count,unitPrice,amount:unitPrice*count}]});
+    setEnvForm({driver:'',shift:'',count:1,price:'',isOverride:false});
+  };
+  const addExt = () => {
+    let unitPrice = 0;
+    if (extForm.isOverride) unitPrice = parseFloat(extForm.price)||0;
+    else if (extForm.shift) unitPrice = extForm.shift==='day' ? EXT_PRICES.day : EXT_PRICES.night;
+    if (!unitPrice) return;
+    const count = parseInt(extForm.count)||1;
+    const shiftLabel = extForm.isOverride ? '例外' : (extForm.shift==='day'?'昼':'夜');
+    setWorkDetails({...workDetails, extItems:[...(workDetails.extItems||[]),{company:'ワイエムエコフューチャー',shift:shiftLabel,count,unitPrice,amount:unitPrice*count}]});
+    setExtForm({shift:'',count:1,price:'',isOverride:false});
   };
   const addWaste = () => {
     if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price) return;
@@ -1673,88 +1680,118 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
           {workDetails.machinery.length>0 && <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />}
 
-          {/* 運搬費 */}
-          <SectionLabel ja="運搬費" en="Transport" />
-          {(workDetails.transportItems||[]).map((t,i)=>(
+          {/* 環境課配車 */}
+          <SectionLabel ja="環境課配車" en="Env Transport" />
+          {(workDetails.envItems||[]).map((t,i)=>(
             <ItemCard key={i}
               avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80"
-              avatarText={t.company.slice(0,3)}
-              name={t.company}
+              avatarText={t.driver.slice(0,2)}
+              name={t.driver}
               meta={`${t.shift}　${t.count}台`}
               amount={`¥${formatCurrency(t.amount)}`}
-              onDel={()=>setWorkDetails({...workDetails,transportItems:(workDetails.transportItems||[]).filter((_,j)=>j!==i)})} />
+              onDel={()=>setWorkDetails({...workDetails,envItems:(workDetails.envItems||[]).filter((_,j)=>j!==i)})} />
           ))}
           <div style={{...inputCardGreen}}>
-            {/* 会社名 テキスト入力 */}
             <div style={{marginBottom:8}}>
-              <label style={inpLbl}>会社名</label>
-              <input type="text" value={tForm.company} onChange={e=>setTForm({...tForm,company:e.target.value,shift:'',price:''})}
-                placeholder="会社名を入力" style={inpTxt} />
+              <label style={inpLbl}>運転者</label>
+              <input type="text" value={envForm.driver} onChange={e=>setEnvForm({...envForm,driver:e.target.value})} placeholder="名前を入力" style={inpTxt} />
             </div>
-            {/* クイック選択 */}
             <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
-              {TRANSPORT_COMPANIES.map(c=>(
-                <button key={c} onClick={()=>setTForm({...tForm,company:c,shift:'',price:'',isOverride:false})}
-                  style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${tForm.company===c?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:tForm.company===c?'rgba(34,197,94,0.12)':'rgba(255,255,255,0.02)',color:tForm.company===c?'#4ade80':'#6B7280',fontSize:11,fontWeight:tForm.company===c?700:600,cursor:'pointer',fontFamily:'inherit'}}>
-                  {c}
+              {ENV_DRIVERS.map(d=>(
+                <button key={d} onClick={()=>setEnvForm({...envForm,driver:d})}
+                  style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${envForm.driver===d?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:envForm.driver===d?'rgba(34,197,94,0.12)':'rgba(255,255,255,0.02)',color:envForm.driver===d?'#4ade80':'#6B7280',fontSize:11,fontWeight:envForm.driver===d?700:600,cursor:'pointer',fontFamily:'inherit'}}>
+                  {d.slice(0,2)}
                 </button>
               ))}
             </div>
-            {/* 昼/夜シフト */}
             <div style={{...grid2,marginBottom:10}}>
-              {[['day','昼'],['night','夜']].map(([v,label])=>{
-                const prices = TRANSPORT_PRICES[tForm.company];
-                const price = prices ? (v==='day'?prices.day:prices.night) : null;
-                const sel = !tForm.isOverride && tForm.shift===v;
+              {[['day','昼',ENV_PRICES.day],['night','夜',ENV_PRICES.night]].map(([v,label,price])=>{
+                const sel = !envForm.isOverride && envForm.shift===v;
                 return (
-                  <button key={v} onClick={()=>setTForm({...tForm,shift:v,isOverride:false})}
+                  <button key={v} onClick={()=>setEnvForm({...envForm,shift:v,isOverride:false})}
                     style={{padding:'10px 6px',borderRadius:9,border:`1px solid ${sel?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:sel?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.02)',color:sel?'#4ade80':'#6B7280',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
                     <div style={{fontSize:13,fontWeight:800,marginBottom:2}}>{label}</div>
-                    <div style={{fontSize:10,fontFamily:'monospace',color:sel?'#4ade80':'#374151'}}>{price?`¥${formatCurrency(price)}`:'—'}</div>
+                    <div style={{fontSize:10,fontFamily:'monospace',color:sel?'#4ade80':'#374151'}}>¥{formatCurrency(price)}</div>
                   </button>
                 );
               })}
             </div>
-            {/* 台数 */}
             <div style={{marginBottom:8}}>
               <label style={inpLbl}>台数</label>
-              <input type="number" value={tForm.count} onChange={e=>setTForm({...tForm,count:e.target.value})} min="1" placeholder="1" style={inpTxt} />
+              <input type="number" value={envForm.count} onChange={e=>setEnvForm({...envForm,count:e.target.value})} min="1" placeholder="1" style={inpTxt} />
             </div>
-            {/* 遠方・例外 金額上書き */}
+            {(()=>{
+              const count = parseInt(envForm.count)||1;
+              const total = envForm.shift ? (envForm.shift==='day'?ENV_PRICES.day:ENV_PRICES.night)*count : 0;
+              return total>0 ? (<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',borderRadius:8,background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.15)',marginBottom:8}}>
+                <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>合計金額</span>
+                <span style={{fontSize:15,fontWeight:800,color:'#4ade80',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(total)}</span>
+              </div>) : null;
+            })()}
+            <AddBtn onClick={addEnv} disabled={!envForm.driver||!envForm.shift} />
+            <div style={{marginTop:10,padding:'10px 12px',borderRadius:9,background:'rgba(99,102,241,0.05)',border:'1px solid rgba(99,102,241,0.15)',fontSize:11,color:'#6B7280',lineHeight:1.7}}>
+              <span style={{color:'#a5b4fc',fontWeight:700,fontSize:10,display:'block',marginBottom:3,fontFamily:'monospace',letterSpacing:'.04em'}}>人工として計上する場合</span>
+              半日以上拘束した場合は自社人工セクション（環境課タブ）に入力してください（職長判断）。
+            </div>
+          </div>
+          {(workDetails.envItems||[]).length>0 && <SubTotal label="環境課配車" value={(workDetails.envItems||[]).reduce((s,t)=>s+t.amount,0)} />}
+
+          {/* 外部運搬（ワイエムエコフューチャー） */}
+          <SectionLabel ja="外部運搬" en="Ext Transport" />
+          {(workDetails.extItems||[]).map((t,i)=>(
+            <ItemCard key={i}
+              avatarBg="rgba(99,102,241,0.12)" avatarColor="#a5b4fc"
+              avatarText="ワイエ"
+              name={t.company}
+              meta={`${t.shift}　${t.count}台`}
+              amount={`¥${formatCurrency(t.amount)}`}
+              onDel={()=>setWorkDetails({...workDetails,extItems:(workDetails.extItems||[]).filter((_,j)=>j!==i)})} />
+          ))}
+          <div style={{...inputCardGreen}}>
+            <div style={{marginBottom:10,padding:'8px 12px',borderRadius:8,background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.2)'}}>
+              <span style={{fontSize:12,fontWeight:700,color:'#a5b4fc'}}>ワイエムエコフューチャー</span>
+              <span style={{fontSize:10,color:'#4B5563',marginLeft:8,fontFamily:'monospace'}}>昼¥22,000 / 夜¥32,000</span>
+            </div>
+            <div style={{...grid2,marginBottom:10}}>
+              {[['day','昼',EXT_PRICES.day],['night','夜',EXT_PRICES.night]].map(([v,label,price])=>{
+                const sel = !extForm.isOverride && extForm.shift===v;
+                return (
+                  <button key={v} onClick={()=>setExtForm({...extForm,shift:v,isOverride:false})}
+                    style={{padding:'10px 6px',borderRadius:9,border:`1px solid ${sel?'rgba(99,102,241,0.5)':'rgba(255,255,255,0.08)'}`,background:sel?'rgba(99,102,241,0.1)':'rgba(255,255,255,0.02)',color:sel?'#a5b4fc':'#6B7280',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                    <div style={{fontSize:13,fontWeight:800,marginBottom:2}}>{label}</div>
+                    <div style={{fontSize:10,fontFamily:'monospace',color:sel?'#a5b4fc':'#374151'}}>¥{formatCurrency(price)}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{marginBottom:8}}>
+              <label style={inpLbl}>台数</label>
+              <input type="number" value={extForm.count} onChange={e=>setExtForm({...extForm,count:e.target.value})} min="1" placeholder="1" style={inpTxt} />
+            </div>
             <div style={{marginBottom:10}}>
-              <button onClick={()=>setTForm({...tForm,isOverride:!tForm.isOverride,shift:''})}
+              <button onClick={()=>setExtForm({...extForm,isOverride:!extForm.isOverride,shift:''})}
                 style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>
-                <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${tForm.isOverride?'#6366f1':'#374151'}`,background:tForm.isOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'white',flexShrink:0}}>
-                  {tForm.isOverride?'✓':''}
+                <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${extForm.isOverride?'#6366f1':'#374151'}`,background:extForm.isOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'white',flexShrink:0}}>
+                  {extForm.isOverride?'✓':''}
                 </div>
-                <span style={{fontSize:11,color:tForm.isOverride?'#a5b4fc':'#4B5563'}}>遠方・例外あり（金額を手入力）</span>
+                <span style={{fontSize:11,color:extForm.isOverride?'#a5b4fc':'#4B5563'}}>遠方・例外あり（金額を手入力）</span>
               </button>
-              {tForm.isOverride && (
-                <input type="number" value={tForm.price} onChange={e=>setTForm({...tForm,price:e.target.value})}
+              {extForm.isOverride && (
+                <input type="number" value={extForm.price} onChange={e=>setExtForm({...extForm,price:e.target.value})}
                   placeholder="合計金額を入力" style={{...inpTxt,marginTop:6,borderColor:'rgba(99,102,241,0.3)'}} />
               )}
             </div>
-            {/* 合計プレビュー */}
-            {(() => {
-              const prices = TRANSPORT_PRICES[tForm.company];
-              const count = parseInt(tForm.count)||1;
-              let total = 0;
-              if (tForm.isOverride) total = (parseFloat(tForm.price)||0)*count;
-              else if (prices && tForm.shift) total = (tForm.shift==='day'?prices.day:prices.night)*count;
-              return total > 0 ? (
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',borderRadius:8,background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.15)',marginBottom:8}}>
-                  <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>合計金額</span>
-                  <span style={{fontSize:15,fontWeight:800,color:'#4ade80',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(total)}</span>
-                </div>
-              ) : null;
+            {(()=>{
+              const count = parseInt(extForm.count)||1;
+              let total = extForm.isOverride ? parseFloat(extForm.price)||0 : (extForm.shift?(extForm.shift==='day'?EXT_PRICES.day:EXT_PRICES.night)*count:0);
+              return total>0 ? (<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',borderRadius:8,background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.15)',marginBottom:8}}>
+                <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>合計金額</span>
+                <span style={{fontSize:15,fontWeight:800,color:'#a5b4fc',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(total)}</span>
+              </div>) : null;
             })()}
-            <AddBtn onClick={addTransport} disabled={!tForm.company||(tForm.isOverride?!tForm.price:!tForm.shift)} />
-            <div style={{marginTop:10,padding:'10px 12px',borderRadius:9,background:'rgba(99,102,241,0.05)',border:'1px solid rgba(99,102,241,0.15)',fontSize:11,color:'#6B7280',lineHeight:1.7}}>
-              <span style={{color:'#a5b4fc',fontWeight:700,fontSize:10,display:'block',marginBottom:3,fontFamily:'monospace',letterSpacing:'.04em'}}>人工として計上する場合</span>
-              半日以上拘束した場合は自社人工または外注人工セクションに入力してください（職長判断）。
-            </div>
+            <AddBtn onClick={addExt} disabled={extForm.isOverride?!extForm.price:!extForm.shift} />
           </div>
-          {(workDetails.transportItems||[]).length>0 && <SubTotal label="運搬費" value={(workDetails.transportItems||[]).reduce((s,t)=>s+t.amount,0)} />}
+          {(workDetails.extItems||[]).length>0 && <SubTotal label="外部運搬" value={(workDetails.extItems||[]).reduce((s,t)=>s+t.amount,0)} />}
 
           <BFooter onBack={()=>setCurrentStep(1)} onNext={()=>setCurrentStep(3)} nextLabel="次へ →" />
         </div>
@@ -1861,7 +1898,8 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
           (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
           (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
           (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
-          (r.workDetails?.transportItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
+          (r.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
+          (r.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
           (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
         return (
           <div key={month} className="mb-3">
@@ -1917,7 +1955,8 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
                 (report.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
                 (report.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
                 (report.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
-                (report.workDetails?.transportItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
+                (report.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
+                (report.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
                 (report.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0);
               return totalCost > 0 && <span className="text-yellow-400 font-semibold">¥{formatCurrency(totalCost)}</span>;
             })()}
@@ -1966,10 +2005,18 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
                   ))}
                 </div>
               )}
-              {report.workDetails.transportItems?.length > 0 && (
+              {(report.workDetails.envItems?.length > 0 || report.workDetails.extItems?.length > 0) && (
                 <div className="mb-3 rounded p-2" style={{ background: 'rgba(34,197,94,0.03)', border:'1px solid rgba(34,197,94,0.1)' }}>
-                  <p className="text-xs font-semibold mb-2" style={{color:'#4ade80'}}>運搬費: {report.workDetails.transportItems.length}件 / ¥{formatCurrency(report.workDetails.transportItems.reduce((s,t)=>s+(t.amount||0),0))}</p>
-                  {report.workDetails.transportItems.map((t, idx) => (
+                  <p className="text-xs font-semibold mb-2" style={{color:'#4ade80'}}>
+                    運搬: {(report.workDetails.envItems?.length||0)+(report.workDetails.extItems?.length||0)}件 / ¥{formatCurrency(
+                      (report.workDetails.envItems||[]).reduce((s,t)=>s+(t.amount||0),0)+
+                      (report.workDetails.extItems||[]).reduce((s,t)=>s+(t.amount||0),0)
+                    )}
+                  </p>
+                  {report.workDetails.envItems?.map((t, idx) => (
+                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {t.driver} <span className="text-gray-500">{t.shift} {t.count}台</span> <span className="text-yellow-400">¥{formatCurrency(t.amount)}</span></p>
+                  ))}
+                  {report.workDetails.extItems?.map((t, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {t.company} <span className="text-gray-500">{t.shift} {t.count}台</span> <span className="text-yellow-400">¥{formatCurrency(t.amount)}</span></p>
                   ))}
                 </div>
@@ -2088,7 +2135,8 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       r.workDetails.outsourcingLabor?.forEach(o => costByCategory['人工費'] += o.amount || 0);
       r.workDetails.vehicles?.forEach(v => costByCategory['車両費'] += v.amount || 0);
       r.workDetails.machinery?.forEach(m => costByCategory['重機費'] += m.unitPrice || 0);
-      r.workDetails.transportItems?.forEach(t => costByCategory['運搬費'] = (costByCategory['運搬費']||0) + (t.amount || 0));
+      r.workDetails.envItems?.forEach(t => costByCategory['環境課配車'] = (costByCategory['環境課配車']||0) + (t.amount || 0));
+      r.workDetails.extItems?.forEach(t => costByCategory['外部運搬'] = (costByCategory['外部運搬']||0) + (t.amount || 0));
     }
     r.wasteItems?.forEach(w => costByCategory['産廃費'] += w.amount || 0);
   });
@@ -2108,7 +2156,8 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       r.workDetails.outsourcingLabor?.forEach(o => monthlyData[month] += o.amount || 0);
       r.workDetails.vehicles?.forEach(v => monthlyData[month] += v.amount || 0);
       r.workDetails.machinery?.forEach(m => monthlyData[month] += m.unitPrice || 0);
-      r.workDetails.transportItems?.forEach(t => monthlyData[month] += t.amount || 0);
+      r.workDetails.envItems?.forEach(t => monthlyData[month] += t.amount || 0);
+      r.workDetails.extItems?.forEach(t => monthlyData[month] += t.amount || 0);
     }
     r.wasteItems?.forEach(w => monthlyData[month] += w.amount || 0);
   });
@@ -2361,7 +2410,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
   const totalVehicleCost = allReports.reduce((sum, r) => sum + (r.workDetails?.vehicles || []).reduce((s, v) => s + (v.amount || 0), 0), 0);
   const totalMachineryCost = allReports.reduce((sum, r) => sum + (r.workDetails?.machinery || []).reduce((s, m) => s + (m.unitPrice || 0), 0), 0);
   const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
-  const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.transportItems || []).reduce((s, t) => s + (t.amount || 0), 0), 0);
+  const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.envItems || []).reduce((s,t)=>s+(t.amount||0),0) + (r.workDetails?.extItems || []).reduce((s,t)=>s+(t.amount||0),0), 0);
   const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
   const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalTransportCost + totalWasteCost
@@ -2434,7 +2483,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
               {/* 外注費・販管費テーブル */}
               {(()=>{
                 const outItems = [
-                  ...(allReports.flatMap(r => (r.workDetails?.transportItems||[]).map(t=>({name:t.company,days:t.count,amount:t.amount})))),
+                  ...(allReports.flatMap(r => [...(r.workDetails?.envItems||[]).map(t=>({name:t.driver,days:t.count,amount:t.amount})), ...(r.workDetails?.extItems||[]).map(t=>({name:t.company,days:t.count,amount:t.amount}))])),
                   ...(projectInfo.outsourcingItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}))
                 ];
                 const sgaItems2 = (projectInfo.sgaItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
@@ -2529,7 +2578,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                 const outsourcing = r.workDetails?.outsourcingLabor || [];
                 const vehicles = r.workDetails?.vehicles || [];
                 const machinery = r.workDetails?.machinery || [];
-                const transport = r.workDetails?.transportItems || [];
+                const transport = [...(r.workDetails?.envItems||[]).map(t=>({...t,name:t.driver})), ...(r.workDetails?.extItems||[]).map(t=>({...t,name:t.company}))];
                 const waste = r.wasteItems || [];
                 const scrap = r.scrapItems || [];
                 const wasteAndScrap = [...waste, ...scrap.map(s => ({ material: s.type, quantity: s.quantity, unit: s.unit, amount: Math.abs(s.amount), disposalSite: s.buyer, manifestNumber: '-' }))];
@@ -2806,7 +2855,8 @@ export default function LOGIOApp() {
         report.workDetails.outsourcingLabor?.forEach(o => accumulatedCost += o.amount || 0);
         report.workDetails.vehicles?.forEach(v => accumulatedCost += v.amount || 0);
         report.workDetails.machinery?.forEach(m => accumulatedCost += m.unitPrice || 0);
-        report.workDetails.transportItems?.forEach(t => accumulatedCost += t.amount || 0);
+        report.workDetails.envItems?.forEach(t => accumulatedCost += t.amount || 0);
+        report.workDetails.extItems?.forEach(t => accumulatedCost += t.amount || 0);
       }
       report.wasteItems?.forEach(w => accumulatedCost += w.amount || 0);
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));

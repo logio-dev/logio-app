@@ -880,13 +880,13 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 }
 
 // ========== ProjectSettingsPage ==========
-function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onNavigate, onSelectSite }) {
+function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
-  // アコーディオン: 開いているカードのsite.name
   const [openCard, setOpenCard] = useState(selectedSite || null);
-  // 各現場ごとのexpenseForm
   const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
+  const [editingName, setEditingName] = useState(null); // 編集中のsite.name
+  const [editNameVal, setEditNameVal] = useState('');
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
 
   const handleAddSite = () => {
@@ -1012,7 +1012,27 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                 style={{ width:'100%', padding:'13px 14px', display:'flex', alignItems:'center', gap:12, background:'none', border:'none', cursor:'pointer', textAlign:'left' }}>
                 <SiteAvatar pjNo={pjNo || cardInfo.projectNumber} />
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:15, fontWeight:700, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
+                  {editingName === site.name ? (
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }} onClick={e=>e.stopPropagation()}>
+                      <input
+                        type="text" value={editNameVal}
+                        onChange={e=>setEditNameVal(e.target.value)}
+                        onKeyDown={e=>{ if(e.key==='Enter'){ onRenameSite(site.name,editNameVal); setEditingName(null); } if(e.key==='Escape') setEditingName(null); }}
+                        autoFocus
+                        style={{ flex:1, padding:'5px 8px', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(59,130,246,0.5)', borderRadius:7, color:'white', fontSize:14, fontWeight:700, outline:'none' }}
+                      />
+                      <button onClick={e=>{ e.stopPropagation(); onRenameSite(site.name,editNameVal); setEditingName(null); }}
+                        style={{ padding:'5px 10px', borderRadius:7, border:'none', background:'rgba(59,130,246,0.2)', color:'#60a5fa', fontSize:11, fontWeight:700, cursor:'pointer' }}>保存</button>
+                      <button onClick={e=>{ e.stopPropagation(); setEditingName(null); }}
+                        style={{ padding:'5px 8px', borderRadius:7, border:'none', background:'rgba(255,255,255,0.05)', color:'#6B7280', fontSize:11, cursor:'pointer' }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <div style={{ fontSize:15, fontWeight:700, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
+                      <button onClick={e=>{ e.stopPropagation(); setEditingName(site.name); setEditNameVal(site.name); }}
+                        style={{ padding:'3px 7px', borderRadius:6, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.04)', color:'#4B5563', fontSize:10, cursor:'pointer', flexShrink:0 }}>編集</button>
+                    </div>
+                  )}
                   <div style={{ fontSize:11, color:'#4B5563', marginTop:2 }}>
                     {pjNo || cardInfo.projectNumber || '番号未設定'}{cardInfo.status ? ` · ${cardInfo.status}` : ''}
                   </div>
@@ -1059,8 +1079,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         {/* ===== 経費3分類タブ ===== */}
                         {(()=>{
                           const activeTab = projectInfo._costTab||'out';
-                          const OUT_QUICK=['東リース','アクティオ','パノラマ','集塵機','ペッカー','発電機','高所作業車','コンプレッサー','ハンドクラッシャー','油圧ユニット','ミニユンボ','回送費','アスベスト分析費'];
-                          const SITE_QUICK=['道具代','現場パーキング代','資材費','消耗品'];
+                          const OUT_QUICK=['東リース','アクティオ','パノラマ','サンキョーテクノ','坪井','集塵機','ペッカー','発電機','高所作業車','コンプレッサー','ハンドクラッシャー','油圧ユニット','ミニユンボ','回送費','アスベスト分析費'];
+                          const SITE_QUICK=['道具代','パーキング代','資材費','消耗品'];
                           const SGA_QUICK=['営業交通費','ガソリン代','営業パーキング代','接待費'];
                           const renderItems=(items,delFn,color,bg,border)=>items.map((item,i)=>(
                             <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:bg,border:`1px solid ${border}`}}>
@@ -2729,6 +2749,22 @@ export default function LOGIOApp() {
     } catch (error) { alert('❌ 現場の削除に失敗しました'); }
   };
 
+  const handleRenameSite = async (oldName, newName) => {
+    if (!newName.trim() || newName.trim() === oldName) return;
+    const n = newName.trim();
+    try {
+      // sites テーブル更新
+      await sb('sites').update(`name=eq.${encodeURIComponent(oldName)}`, { name: n });
+      // project_info テーブル更新
+      await sb('project_info').update(`site_name=eq.${encodeURIComponent(oldName)}`, { site_name: n });
+      // reports テーブル更新
+      await sb('reports').update(`site_name=eq.${encodeURIComponent(oldName)}`, { site_name: n });
+      setSites(prev => prev.map(s => s.name === oldName ? { ...s, name: n } : s));
+      if (selectedSite === oldName) { setSelectedSite(n); }
+      alert(`✅ 現場名を「${n}」に変更しました`);
+    } catch (error) { console.error(error); alert('❌ 現場名の変更に失敗しました'); }
+  };
+
   // ★ 現場選択時にロック状態確認
   const handleSelectSite = async (siteName) => {
     setSelectedSite(siteName);
@@ -2904,7 +2940,7 @@ export default function LOGIOApp() {
               sitesReady={sitesReady}
             />
           )}
-          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onNavigate={setCurrentPage} onSelectSite={setSelectedSite} />}
+          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={setCurrentPage} onSelectSite={setSelectedSite} />}
           {currentPage === 'input' && (
             <ReportInputPage
               key={editingReport ? editingReport.id : 'new'}

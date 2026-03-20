@@ -1246,9 +1246,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   // ★ dept追加
   const [wForm, setWForm] = useState({ name:'', start:'', end:'', shift:'daytime', dept:'k1' });
   const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime' });
-  const [vForm, setVForm] = useState({ type:'', number:'', driver:'' });
+  const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
-  const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', haishiShift:'', haishiOverride:false, haishiPrice:'' });
+  const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'' });
   const [scrapForm, setScrapForm] = useState({ type:'', buyer:'', qty:'', unit:'kg', price:'' });
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
@@ -1327,7 +1327,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const addWaste = () => {
     if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price) return;
     const qty=parseFloat(wasteForm.qty), price=parseFloat(wasteForm.price);
-    // 配車費計算
     const ENV_P={day:20000,night:30000}, EXT_P={day:22000,night:32000};
     let haishiAmount=0;
     if(wasteForm.haisha==='env'&&wasteForm.haishiShift) haishiAmount=ENV_P[wasteForm.haishiShift];
@@ -1336,12 +1335,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       material:wasteForm.type, disposalSite:wasteForm.disposal,
       quantity:qty, unit:wasteForm.unit, unitPrice:price, amount:qty*price,
       manifestNumber:wasteForm.manifest,
-      haisha:wasteForm.haisha||'self',
+      haisha:wasteForm.haisha||'',
       driver:wasteForm.driver||'',
+      vType:wasteForm.vType||'',
+      vNumber:wasteForm.vNumber||'',
       haishiShift:wasteForm.haishiShift||'',
       haishiAmount,
     }]);
-    setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',haishiShift:'',haishiOverride:false,haishiPrice:''});
+    setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''});
   };
   const addScrap = () => {
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price) return;
@@ -1609,22 +1610,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCardAmber}>
             <div style={grid2}>
-              <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:'',driver:''})} style={inpSel}><option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></div>
+              <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:''})} style={inpSel}><option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></div>
               <div><label style={inpLbl}>車番</label><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} style={inpSel}><option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></div>
-            </div>
-            {/* 運転者（任意・環境課配車用） */}
-            <div style={{marginBottom:8}}>
-              <label style={inpLbl}>運転者 <span style={{color:'#374151',fontWeight:400}}>(任意)</span></label>
-              <input type="text" value={vForm.driver} onChange={e=>setVForm({...vForm,driver:e.target.value})}
-                placeholder="例: 小峯" style={inpTxt} />
-              <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:5}}>
-                {['小峯','松橋','浅見','石田','古山','尾崎'].map(d=>(
-                  <button key={d} onClick={()=>setVForm({...vForm,driver:d})}
-                    style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${vForm.driver===d?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:vForm.driver===d?'rgba(34,197,94,0.12)':'rgba(255,255,255,0.02)',color:vForm.driver===d?'#4ade80':'#6B7280',fontSize:11,fontWeight:vForm.driver===d?700:600,cursor:'pointer',fontFamily:'inherit'}}>
-                    {d}
-                  </button>
-                ))}
-              </div>
             </div>
             {vForm.type && <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>¥{formatCurrency(VEHICLE_UNIT_PRICES[vForm.type]||0)}</div>}
             <AddBtn onClick={addVehicle} disabled={!vForm.type||!vForm.number} />
@@ -1675,17 +1662,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               {/* 配車バッジ */}
               {w.haisha==='env' && (
                 <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderTop:'1px solid rgba(245,158,11,0.1)',background:'rgba(34,197,94,0.06)',fontSize:11,color:'#4ade80'}}>
-                  環境課配車 / {w.driver}　{w.haishiShift==='day'?'昼':'夜'}　¥{formatCurrency(w.haishiAmount)}
+                  環境課配車 / {w.driver}{w.vType?`　${w.vType}(${w.vNumber})`:''}{w.haishiShift?`　${w.haishiShift==='day'?'昼':'夜'}　¥${formatCurrency(w.haishiAmount)}`:''}
                 </div>
               )}
               {w.haisha==='ext' && (
                 <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderTop:'1px solid rgba(245,158,11,0.1)',background:'rgba(99,102,241,0.06)',fontSize:11,color:'#a5b4fc'}}>
                   ワイエム配車　{w.haishiShift?w.haishiShift==='day'?'昼':'夜':'例外'}　¥{formatCurrency(w.haishiAmount)}
-                </div>
-              )}
-              {w.haisha==='self' && (
-                <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderTop:'1px solid rgba(245,158,11,0.1)',background:'rgba(255,255,255,0.02)',fontSize:11,color:'#4B5563'}}>
-                  自社直接持込（車両費のみ）
                 </div>
               )}
             </div>
@@ -1703,14 +1685,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'#4B5563',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
 
             {/* 配車方法 */}
-            <label style={{...inpLbl,marginBottom:6}}>配車方法</label>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginBottom:10}}>
+            <label style={{...inpLbl,marginBottom:6}}>配車方法 <span style={{color:'#374151',fontWeight:400}}>(任意)</span></label>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
               {[
                 ['env','環境課配車','昼¥20,000\n夜¥30,000','rgba(34,197,94,0.15)','rgba(34,197,94,0.5)','#4ade80'],
                 ['ext','ワイエム配車','昼¥22,000\n夜¥32,000','rgba(99,102,241,0.15)','rgba(99,102,241,0.5)','#a5b4fc'],
-                ['self','自社直接持込','車両費のみ','rgba(255,255,255,0.08)','rgba(255,255,255,0.25)','#9CA3AF'],
               ].map(([v,label,price,bg,border,color])=>(
-                <button key={v} onClick={()=>setWasteForm({...wasteForm,haisha:v,driver:'',haishiShift:'',haishiOverride:false,haishiPrice:''})}
+                <button key={v} onClick={()=>setWasteForm({...wasteForm,haisha:wasteForm.haisha===v?'':v,driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''})}
                   style={{padding:'10px 4px',borderRadius:10,border:`1px solid ${wasteForm.haisha===v?border:'rgba(255,255,255,0.08)'}`,background:wasteForm.haisha===v?bg:'rgba(255,255,255,0.02)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .12s'}}>
                   <div style={{fontSize:11,fontWeight:700,color:wasteForm.haisha===v?color:'#6B7280',lineHeight:1.4}}>{label}</div>
                   <div style={{fontSize:9,fontFamily:'monospace',color:wasteForm.haisha===v?color:'#374151',marginTop:3,whiteSpace:'pre'}}>{price}</div>
@@ -1730,7 +1711,23 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     </button>
                   ))}
                 </div>
-                <input type="text" value={wasteForm.driver} onChange={e=>setWasteForm({...wasteForm,driver:e.target.value})} placeholder="その他：名前を入力" style={{...inpTxt,marginBottom:8}}/>
+                <input type="text" value={wasteForm.driver} onChange={e=>setWasteForm({...wasteForm,driver:e.target.value})} placeholder="その他：名前を入力" style={{...inpTxt,marginBottom:10}}/>
+                {/* 車両マスタ */}
+                <label style={{...inpLbl,marginBottom:6}}>使用車両</label>
+                <div style={{...grid2,marginBottom:10}}>
+                  <div>
+                    <label style={inpLbl}>車種</label>
+                    <select value={wasteForm.vType} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
+                      <option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={inpLbl}>車番</label>
+                    <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
+                      <option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
                 <label style={{...inpLbl,marginBottom:6}}>シフト</label>
                 <div style={grid2}>
                   {[['day','昼',20000],['night','夜',30000]].map(([v,label,price])=>(
@@ -1747,7 +1744,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             {/* ワイエム展開 */}
             {wasteForm.haisha==='ext' && (
               <div style={{padding:12,borderRadius:9,background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:10}}>
-                <div style={{marginBottom:8,padding:'6px 10px',borderRadius:7,background:'rgba(99,102,241,0.1)',fontSize:12,fontWeight:700,color:'#a5b4fc'}}>ワイエムエコフューチャー</div>
+                <div style={{marginBottom:10,padding:'6px 10px',borderRadius:7,background:'rgba(99,102,241,0.1)',fontSize:12,fontWeight:700,color:'#a5b4fc'}}>ワイエムエコフューチャー</div>
                 <label style={{...inpLbl,marginBottom:6}}>シフト</label>
                 <div style={{...grid2,marginBottom:8}}>
                   {[['day','昼',22000],['night','夜',32000]].map(([v,label,price])=>(
@@ -1769,14 +1766,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
             )}
 
-            {/* 自社展開 */}
-            {wasteForm.haisha==='self' && (
-              <div style={{padding:10,borderRadius:9,background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',marginBottom:10,fontSize:11,color:'#6B7280',lineHeight:1.7}}>
-                車両セクションで入力した車両が運搬費として計上されます。配車費は発生しません。
-              </div>
-            )}
-
-            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.haisha||(wasteForm.haisha==='env'&&(!wasteForm.driver||!wasteForm.haishiShift))||(wasteForm.haisha==='ext'&&!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
+            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||(wasteForm.haisha==='env'&&(!wasteForm.driver||!wasteForm.haishiShift))||(wasteForm.haisha==='ext'&&!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
           </div>
           {wasteItems.length>0 && (
             <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0)} />
@@ -2452,7 +2442,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                   <table className="pdf-header-table" style={{fontSize:'8px'}}>
                     <thead>
                       <tr style={{background:'#111827'}}>
-                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#60a5fa',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>外注費</th>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#60a5fa',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>現場外注費</th>
                       </tr>
                       <tr style={{background:'#111827'}}>
                         <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
@@ -2469,7 +2459,7 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                     </tbody>
                     <thead>
                       <tr style={{background:'#111827'}}>
-                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#fbbf24',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>販管費</th>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#4ade80',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>現場経費</th>
                       </tr>
                       <tr style={{background:'#111827'}}>
                         <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
@@ -2497,9 +2487,6 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                     ['原価金額', totalCost],
                     ['外注人工', totalOutsourcingCost],
                     ['追加金額', parseFloat(projectInfo.additionalAmount) || 0],
-                    ...(projectInfo.outsourcingItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
-                    ...(projectInfo.siteExpenseItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
-                    ...(projectInfo.siteExpenseItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
                     ['金属売上', totalScrapRevenue],
                   ].map(([label, val]) => (
                     <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
@@ -2551,12 +2538,11 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                   ...scrap.map(s=>({ material:s.type, quantity:s.quantity, unit:s.unit, amount:Math.abs(s.amount), disposalSite:s.buyer, manifestNumber:'-', haisha:'self', envDriver:'', extHaisha:false }))
                 ];
                 // 環境課配車行（自社人工列に括弧書きで追加）
-                const envRows = waste.filter(w=>w.haisha==='env').map(w=>({driver:w.driver,shift:w.haishiShift}));
+                const envRows = waste.filter(w=>w.haisha==='env').map(w=>({driver:w.driver,shift:w.haishiShift,vType:w.vType||'',vNumber:w.vNumber||''}));
                 const extRows = waste.filter(w=>w.haisha==='ext');
-                // 自社人工＋環境課配車を合わせた行
                 const allWorkers = [
                   ...workers,
-                  ...envRows.map(e=>({name:`(${e.driver})`, amount:0, isEnv:true})),
+                  ...envRows.map(e=>({name:`(${e.driver})`, amount:0, isEnv:true, vType:e.vType, vNumber:e.vNumber})),
                 ];
                 const maxSubRows = Math.max(1, allWorkers.length, outsourcing.length, vehicles.length, machinery.length, transport.length, wasteAndScrap.length);
                 const startTimes = workers.map(w => w.start || w.startTime).filter(Boolean).sort();
@@ -2581,8 +2567,8 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                         <td className="text-right text-[8px]">{allWorkers[subIdx]&&!allWorkers[subIdx].isEnv?`¥${formatCurrency(allWorkers[subIdx].amount)}`:''}</td>
                         <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${outsourcing[subIdx].count || outsourcing[subIdx].workers || ''}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
-                        <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (wasteAndScrap[subIdx]?.extHaisha ? '配車' : '')}</td>
-                        <td className="text-center text-[8px]">{vehicles[subIdx] ? `${vehicles[subIdx].number}` : (wasteAndScrap[subIdx]?.extHaisha ? 'ワイエム' : '')}</td>
+                        <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (allWorkers[subIdx]?.isEnv ? allWorkers[subIdx].vType : '') || (wasteAndScrap[subIdx]?.extHaisha ? '配車' : '')}</td>
+                        <td className="text-center text-[8px]">{vehicles[subIdx] ? `${vehicles[subIdx].number}` : (allWorkers[subIdx]?.isEnv ? allWorkers[subIdx].vNumber : '') || (wasteAndScrap[subIdx]?.extHaisha ? 'ワイエム' : '')}</td>
                         <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>
                         <td className="text-[8px]">{wasteAndScrap[subIdx]?.material || ''}</td>
                         <td className="text-right text-[8px]">{wasteAndScrap[subIdx] ? `${wasteAndScrap[subIdx].quantity}${wasteAndScrap[subIdx].unit}` : ''}</td>

@@ -990,7 +990,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             startDate:'', endDate:'', contractAmount:'', additionalAmount:'',
             transferCost:'', leaseCost:'', materialsCost:'', status:'', discharger:'',
             transportCompany:'', contractedDisposalSites:[], expenses:[], projectNumber: pjNo,
-            outsourcingItems:[], sgaItems:[]
+            outsourcingItems:[], sgaItems:[], siteExpenseItems:[]
           });
           const setCardInfo = isSelected
             ? setProjectInfo
@@ -1056,158 +1056,135 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
                         <TextInput label="追加金額（税抜）" labelEn="Additional" type="number" value={projectInfo.additionalAmount||''} onChange={v=>setProjectInfo({...projectInfo,additionalAmount:v})} placeholder="0" />
-                        <div style={{ fontSize:10, fontWeight:700, color:'#60a5fa', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(59,130,246,0.2)', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
-                          <div style={{width:16,height:2,borderRadius:99,background:'linear-gradient(90deg,#3b82f6,#22d3ee)'}}/>
-                          外注費 / Outsourcing Costs
-                        </div>
-                        {/* 外注費リスト */}
-                        {(projectInfo.outsourcingItems||[]).map((item,i)=>(
-                          <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.12)'}}>
-                            <div style={{width:34,height:34,borderRadius:8,background:'rgba(59,130,246,0.15)',color:'#60a5fa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{item.name.slice(0,3)}</div>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
-                              <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
-                            </div>
-                            <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
-                            <button onClick={()=>setProjectInfo({...projectInfo,outsourcingItems:(projectInfo.outsourcingItems||[]).filter((_,j)=>j!==i)})} style={{width:22,height:22,borderRadius:6,border:'none',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:10,flexShrink:0}}>✕</button>
-                          </div>
-                        ))}
-                        {(projectInfo.outsourcingItems||[]).length>0 && (
-                          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(59,130,246,0.1)',marginBottom:10}}>
-                            <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>外注費 小計</span>
-                            <span style={{fontSize:14,fontWeight:800,color:'#60a5fa',fontVariantNumeric:'tabular-nums'}}> ¥{formatCurrency((projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
-                          </div>
-                        )}
-                        {/* 外注費 入力フォーム */}
+                        {/* ===== 現場外注費 ===== */}
                         {(()=>{
-                          const OUT_QUICK = ['東リース','アクティオ','パノラマ','集塵機','ペッカー','発電機','高所作業車','コンプレッサー','ハンドクラッシャー','油圧ユニット','ミニユンボ','回送費','アスベスト分析費'];
-                          const outName = projectInfo._outName||'';
-                          const outDays = projectInfo._outDays||'';
-                          const outAmt  = projectInfo._outAmt||'';
-                          return (
-                            <div style={{padding:'12px',borderRadius:10,background:'rgba(59,130,246,0.04)',border:'1px solid rgba(59,130,246,0.15)',marginBottom:16}}>
+                          const color='#60a5fa', bg='rgba(59,130,246,0.15)', border='rgba(59,130,246,0.5)', grad='linear-gradient(135deg,#2563EB,#4f46e5)';
+                          const QUICK=['東リース','アクティオ','パノラマ','サンキョーテクノ','坪井','集塵機','ペッカー','発電機','高所作業車','コンプレッサー','ハンドクラッシャー','油圧ユニット','ミニユンボ','回送費','アスベスト分析費'];
+                          const name=projectInfo._outName||'', days=projectInfo._outDays||'', amt=projectInfo._outAmt||'';
+                          return (<>
+                            <div style={{fontSize:10,fontWeight:700,color,textTransform:'uppercase',letterSpacing:'.08em',padding:'8px 0',borderBottom:'1px solid rgba(59,130,246,0.2)',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+                              <div style={{width:16,height:2,borderRadius:99,background:'linear-gradient(90deg,#3b82f6,#22d3ee)'}}/>
+                              現場外注費 / Site Outsourcing <span style={{fontSize:9,color:'#374151',fontWeight:400,marginLeft:4}}>直接原価</span>
+                            </div>
+                            {(projectInfo.outsourcingItems||[]).map((item,i)=>(
+                              <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.12)'}}>
+                                <div style={{width:34,height:34,borderRadius:8,background:'rgba(59,130,246,0.15)',color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{item.name.slice(0,3)}</div>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                                  <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
+                                </div>
+                                <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
+                                <button onClick={()=>setProjectInfo({...projectInfo,outsourcingItems:(projectInfo.outsourcingItems||[]).filter((_,j)=>j!==i)})} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,fontWeight:700}}>✕</button>
+                              </div>
+                            ))}
+                            {(projectInfo.outsourcingItems||[]).length>0&&(<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(59,130,246,0.1)',marginBottom:10}}>
+                              <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span>
+                              <span style={{fontSize:14,fontWeight:800,color,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                            </div>)}
+                            <div style={{padding:12,borderRadius:10,background:'rgba(59,130,246,0.04)',border:'1px solid rgba(59,130,246,0.15)',marginBottom:16}}>
                               <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
-                              <input type="text" value={outName} onChange={e=>setProjectInfo({...projectInfo,_outName:e.target.value})}
-                                placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
+                              <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,_outName:e.target.value})} placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
                               <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
-                                {OUT_QUICK.map(q=>(
-                                  <button key={q} onClick={()=>setProjectInfo({...projectInfo,_outName:q})}
-                                    style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${outName===q?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.07)'}`,background:outName===q?'rgba(59,130,246,0.15)':'rgba(255,255,255,0.02)',color:outName===q?'#60a5fa':'#6B7280',fontSize:11,fontWeight:outName===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>
-                                    {q}
-                                  </button>
-                                ))}
+                                {QUICK.map(q=>(<button key={q} onClick={()=>setProjectInfo({...projectInfo,_outName:q})} style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${name===q?border:'rgba(255,255,255,0.07)'}`,background:name===q?bg:'rgba(255,255,255,0.02)',color:name===q?color:'#6B7280',fontSize:11,fontWeight:name===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>{q}</button>))}
                               </div>
                               <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:8,marginBottom:8}}>
-                                <div>
-                                  <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
-                                  <input type="number" value={outDays} onChange={e=>setProjectInfo({...projectInfo,_outDays:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px 10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
-                                </div>
-                                <div>
-                                  <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
-                                  <input type="number" value={outAmt} onChange={e=>setProjectInfo({...projectInfo,_outAmt:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px 10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
-                                </div>
+                                <div><label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
+                                <input type="number" value={days} onChange={e=>setProjectInfo({...projectInfo,_outDays:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/></div>
+                                <div><label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
+                                <input type="number" value={amt} onChange={e=>setProjectInfo({...projectInfo,_outAmt:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/></div>
                               </div>
-                              <button disabled={!outName||!outAmt} onClick={()=>{
-                                const newItem={name:outName,days:outDays?parseInt(outDays):null,amount:parseFloat(outAmt)||0};
-                                setProjectInfo({...projectInfo,outsourcingItems:[...(projectInfo.outsourcingItems||[]),newItem],_outName:'',_outDays:'',_outAmt:''});
-                              }} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!outName||!outAmt)?'rgba(255,255,255,0.04)':'linear-gradient(135deg,#2563EB,#4f46e5)',color:(!outName||!outAmt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!outName||!outAmt)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6,opacity:(!outName||!outAmt)?0.4:1}}>
-                                ＋ 外注費を追加
-                              </button>
+                              <button disabled={!name||!amt} onClick={()=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,outsourcingItems:[...(projectInfo.outsourcingItems||[]),ni],_outName:'',_outDays:'',_outAmt:''}); }} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!name||!amt)?'rgba(255,255,255,0.04)':grad,color:(!name||!amt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!name||!amt)?'not-allowed':'pointer',fontFamily:'inherit',opacity:(!name||!amt)?0.4:1}}>＋ 現場外注費を追加</button>
                             </div>
-                          );
+                          </>);
                         })()}
 
-                        {/* 販管費 */}
-                        <div style={{ fontSize:10, fontWeight:700, color:'#fbbf24', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(245,158,11,0.2)', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
-                          <div style={{width:16,height:2,borderRadius:99,background:'linear-gradient(90deg,#f59e0b,#f97316)'}}/>
-                          販管費 / SG&A Costs
-                        </div>
-                        {(projectInfo.sgaItems||[]).map((item,i)=>(
-                          <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.12)'}}>
-                            <div style={{width:34,height:34,borderRadius:8,background:'rgba(245,158,11,0.15)',color:'#fbbf24',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{item.name.slice(0,3)}</div>
-                            <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
-                              <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
-                            </div>
-                            <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
-                            <button onClick={()=>setProjectInfo({...projectInfo,sgaItems:(projectInfo.sgaItems||[]).filter((_,j)=>j!==i)})} style={{width:22,height:22,borderRadius:6,border:'none',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:10,flexShrink:0}}>✕</button>
-                          </div>
-                        ))}
-                        {(projectInfo.sgaItems||[]).length>0 && (
-                          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(245,158,11,0.1)',marginBottom:10}}>
-                            <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>販管費 小計</span>
-                            <span style={{fontSize:14,fontWeight:800,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
-                          </div>
-                        )}
+                        {/* ===== 現場経費 ===== */}
                         {(()=>{
-                          const SGA_QUICK = ['道具代','交通費','パーキング代','外注経費'];
-                          const sgaName = projectInfo._sgaName||'';
-                          const sgaDays = projectInfo._sgaDays||'';
-                          const sgaAmt  = projectInfo._sgaAmt||'';
-                          return (
-                            <div style={{padding:'12px',borderRadius:10,background:'rgba(245,158,11,0.04)',border:'1px solid rgba(245,158,11,0.15)',marginBottom:16}}>
+                          const color='#4ade80', bg='rgba(34,197,94,0.15)', border='rgba(34,197,94,0.5)', grad='linear-gradient(135deg,#16a34a,#22c55e)';
+                          const QUICK=['道具代','現場パーキング代','資材費','消耗品'];
+                          const name=projectInfo._siteExpName||'', days=projectInfo._siteExpDays||'', amt=projectInfo._siteExpAmt||'';
+                          return (<>
+                            <div style={{fontSize:10,fontWeight:700,color,textTransform:'uppercase',letterSpacing:'.08em',padding:'8px 0',borderBottom:'1px solid rgba(34,197,94,0.2)',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+                              <div style={{width:16,height:2,borderRadius:99,background:'linear-gradient(90deg,#22c55e,#34d399)'}}/>
+                              現場経費 / Site Expenses <span style={{fontSize:9,color:'#374151',fontWeight:400,marginLeft:4}}>直接原価</span>
+                            </div>
+                            {(projectInfo.siteExpenseItems||[]).map((item,i)=>(
+                              <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(34,197,94,0.05)',border:'1px solid rgba(34,197,94,0.12)'}}>
+                                <div style={{width:34,height:34,borderRadius:8,background:'rgba(34,197,94,0.15)',color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{item.name.slice(0,3)}</div>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                                  <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
+                                </div>
+                                <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
+                                <button onClick={()=>setProjectInfo({...projectInfo,siteExpenseItems:(projectInfo.siteExpenseItems||[]).filter((_,j)=>j!==i)})} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,fontWeight:700}}>✕</button>
+                              </div>
+                            ))}
+                            {(projectInfo.siteExpenseItems||[]).length>0&&(<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(34,197,94,0.1)',marginBottom:10}}>
+                              <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span>
+                              <span style={{fontSize:14,fontWeight:800,color,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.siteExpenseItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                            </div>)}
+                            <div style={{padding:12,borderRadius:10,background:'rgba(34,197,94,0.04)',border:'1px solid rgba(34,197,94,0.15)',marginBottom:16}}>
                               <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
-                              <input type="text" value={sgaName} onChange={e=>setProjectInfo({...projectInfo,_sgaName:e.target.value})}
-                                placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
+                              <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,_siteExpName:e.target.value})} placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
                               <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
-                                {SGA_QUICK.map(q=>(
-                                  <button key={q} onClick={()=>setProjectInfo({...projectInfo,_sgaName:q})}
-                                    style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${sgaName===q?'rgba(245,158,11,0.5)':'rgba(255,255,255,0.07)'}`,background:sgaName===q?'rgba(245,158,11,0.15)':'rgba(255,255,255,0.02)',color:sgaName===q?'#fbbf24':'#6B7280',fontSize:11,fontWeight:sgaName===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>
-                                    {q}
-                                  </button>
-                                ))}
+                                {QUICK.map(q=>(<button key={q} onClick={()=>setProjectInfo({...projectInfo,_siteExpName:q})} style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${name===q?border:'rgba(255,255,255,0.07)'}`,background:name===q?bg:'rgba(255,255,255,0.02)',color:name===q?color:'#6B7280',fontSize:11,fontWeight:name===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>{q}</button>))}
                               </div>
                               <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:8,marginBottom:8}}>
-                                <div>
-                                  <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
-                                  <input type="number" value={sgaDays} onChange={e=>setProjectInfo({...projectInfo,_sgaDays:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px 10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
-                                </div>
-                                <div>
-                                  <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
-                                  <input type="number" value={sgaAmt} onChange={e=>setProjectInfo({...projectInfo,_sgaAmt:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px 10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
-                                </div>
+                                <div><label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
+                                <input type="number" value={days} onChange={e=>setProjectInfo({...projectInfo,_siteExpDays:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/></div>
+                                <div><label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
+                                <input type="number" value={amt} onChange={e=>setProjectInfo({...projectInfo,_siteExpAmt:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/></div>
                               </div>
-                              <button disabled={!sgaName||!sgaAmt} onClick={()=>{
-                                const newItem={name:sgaName,days:sgaDays?parseInt(sgaDays):null,amount:parseFloat(sgaAmt)||0};
-                                setProjectInfo({...projectInfo,sgaItems:[...(projectInfo.sgaItems||[]),newItem],_sgaName:'',_sgaDays:'',_sgaAmt:''});
-                              }} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!sgaName||!sgaAmt)?'rgba(255,255,255,0.04)':'linear-gradient(135deg,#d97706,#f97316)',color:(!sgaName||!sgaAmt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!sgaName||!sgaAmt)?'not-allowed':'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6,opacity:(!sgaName||!sgaAmt)?0.4:1}}>
-                                ＋ 販管費を追加
-                              </button>
+                              <button disabled={!name||!amt} onClick={()=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,siteExpenseItems:[...(projectInfo.siteExpenseItems||[]),ni],_siteExpName:'',_siteExpDays:'',_siteExpAmt:''}); }} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!name||!amt)?'rgba(255,255,255,0.04)':grad,color:(!name||!amt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!name||!amt)?'not-allowed':'pointer',fontFamily:'inherit',opacity:(!name||!amt)?0.4:1}}>＋ 現場経費を追加</button>
                             </div>
-                          );
+                          </>);
                         })()}
-                        <div style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', padding:'8px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:16, marginTop:8 }}>経費 / Expenses</div>
-                        <div style={{ marginBottom:16, border:'1px solid rgba(255,255,255,0.06)', borderRadius:8, overflow:'hidden' }}>
-                          <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
-                            <colgroup><col style={{width:'45%'}}/><col style={{width:'35%'}}/><col style={{width:'20%'}}/></colgroup>
-                            <thead>
-                              <tr style={{ background:'rgba(255,255,255,0.03)' }}>
-                                {['項目名','金額',''].map((h,i)=>(
-                                  <th key={i} style={{ padding:'7px 10px', fontSize:9, fontWeight:600, color:'#4B5563', textAlign:'center', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>{h}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {(projectInfo.expenses||[]).map((exp,i)=>(
-                                <tr key={i} style={{ borderBottom:'1px solid rgba(255,255,255,0.03)' }}>
-                                  <td style={{ padding:'8px 10px', fontSize:12, color:'rgba(255,255,255,0.85)' }}>{exp.name}</td>
-                                  <td style={{ padding:'8px 10px', fontSize:12, color:'#FCD34D', textAlign:'right', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(exp.amount)}</td>
-                                  <td style={{ padding:'8px 10px', textAlign:'center' }}>
-                                    <button onClick={()=>removeExpense(i)} style={{ width:24, height:24, borderRadius:4, border:'none', cursor:'pointer', background:'rgba(239,68,68,0.12)', color:'#F87171', fontSize:12, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>✕</button>
-                                  </td>
-                                </tr>
-                              ))}
-                              <tr style={{ background:'rgba(59,130,246,0.04)', borderTop:'1px solid rgba(59,130,246,0.2)' }}>
-                                <td style={{ padding:'6px 8px' }}><input type="text" value={expenseForm.name} onChange={e=>setExpenseForm({...expenseForm,name:e.target.value})} placeholder="例: 交通費" style={{ width:'100%', background:'#000', color:'white', border:'1px solid rgba(255,255,255,0.1)', borderRadius:6, padding:'6px 8px', fontSize:14, outline:'none', boxSizing:'border-box' }} /></td>
-                                <td style={{ padding:'6px 8px' }}><input type="number" value={expenseForm.amount} onChange={e=>setExpenseForm({...expenseForm,amount:e.target.value})} placeholder="金額" style={{ width:'100%', background:'#000', color:'white', border:'1px solid rgba(255,255,255,0.1)', borderRadius:6, padding:'6px 8px', fontSize:14, outline:'none', boxSizing:'border-box' }} /></td>
-                                <td style={{ padding:'6px 8px', textAlign:'center' }}>
-                                  <button onClick={addExpense} disabled={!expenseForm.name||!expenseForm.amount} style={{ width:28, height:28, borderRadius:6, border:'none', cursor:(!expenseForm.name||!expenseForm.amount)?'not-allowed':'pointer', background:(!expenseForm.name||!expenseForm.amount)?'rgba(255,255,255,0.04)':'#2563EB', color:(!expenseForm.name||!expenseForm.amount)?'#374151':'white', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto' }}>+</button>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                        <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status||''} onChange={v=>setProjectInfo({...projectInfo,status:v})} />
+
+                        {/* ===== 販管費 ===== */}
+                        {(()=>{
+                          const color='#fbbf24', bg='rgba(245,158,11,0.15)', border='rgba(245,158,11,0.5)', grad='linear-gradient(135deg,#d97706,#f97316)';
+                          const QUICK=['営業交通費','ガソリン代','営業パーキング代','接待費'];
+                          const name=projectInfo._sgaName||'', days=projectInfo._sgaDays||'', amt=projectInfo._sgaAmt||'';
+                          return (<>
+                            <div style={{fontSize:10,fontWeight:700,color,textTransform:'uppercase',letterSpacing:'.08em',padding:'8px 0',borderBottom:'1px solid rgba(245,158,11,0.2)',marginBottom:8,display:'flex',alignItems:'center',gap:8}}>
+                              <div style={{width:16,height:2,borderRadius:99,background:'linear-gradient(90deg,#f59e0b,#f97316)'}}/>
+                              販管費 / SG&A
+                            </div>
+                            <div style={{display:'flex',alignItems:'center',gap:6,padding:'4px 10px',borderRadius:99,background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)',fontSize:10,fontWeight:700,color,marginBottom:12,width:'fit-content'}}>
+                              ⚠ 間接費 — 粗利には含まれません
+                            </div>
+                            {(projectInfo.sgaItems||[]).map((item,i)=>(
+                              <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(245,158,11,0.05)',border:'1px solid rgba(245,158,11,0.12)'}}>
+                                <div style={{width:34,height:34,borderRadius:8,background:'rgba(245,158,11,0.15)',color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{item.name.slice(0,3)}</div>
+                                <div style={{flex:1,minWidth:0}}>
+                                  <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                                  <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
+                                </div>
+                                <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
+                                <button onClick={()=>setProjectInfo({...projectInfo,sgaItems:(projectInfo.sgaItems||[]).filter((_,j)=>j!==i)})} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,fontWeight:700}}>✕</button>
+                              </div>
+                            ))}
+                            {(projectInfo.sgaItems||[]).length>0&&(<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(245,158,11,0.1)',marginBottom:10}}>
+                              <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span>
+                              <span style={{fontSize:14,fontWeight:800,color,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                            </div>)}
+                            <div style={{padding:12,borderRadius:10,background:'rgba(245,158,11,0.04)',border:'1px solid rgba(245,158,11,0.15)',marginBottom:16}}>
+                              <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
+                              <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,_sgaName:e.target.value})} placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
+                              <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
+                                {QUICK.map(q=>(<button key={q} onClick={()=>setProjectInfo({...projectInfo,_sgaName:q})} style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${name===q?border:'rgba(255,255,255,0.07)'}`,background:name===q?bg:'rgba(255,255,255,0.02)',color:name===q?color:'#6B7280',fontSize:11,fontWeight:name===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>{q}</button>))}
+                              </div>
+                              <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:8,marginBottom:8}}>
+                                <div><label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
+                                <input type="number" value={days} onChange={e=>setProjectInfo({...projectInfo,_sgaDays:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/></div>
+                                <div><label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
+                                <input type="number" value={amt} onChange={e=>setProjectInfo({...projectInfo,_sgaAmt:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/></div>
+                              </div>
+                              <button disabled={!name||!amt} onClick={()=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,sgaItems:[...(projectInfo.sgaItems||[]),ni],_sgaName:'',_sgaDays:'',_sgaAmt:''}); }} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!name||!amt)?'rgba(255,255,255,0.04)':grad,color:(!name||!amt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!name||!amt)?'not-allowed':'pointer',fontFamily:'inherit',opacity:(!name||!amt)?0.4:1}}>＋ 販管費を追加</button>
+                            </div>
+                          </>);
+                        })()}
+                                                <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status||''} onChange={v=>setProjectInfo({...projectInfo,status:v})} />
                         <TextInput label="排出事業者" labelEn="Discharger" value={projectInfo.discharger||''} onChange={v=>setProjectInfo({...projectInfo,discharger:v})} placeholder="株式会社LOGIO" />
                         <TextInput label="運搬会社" labelEn="Transport" value={projectInfo.transportCompany||''} onChange={v=>setProjectInfo({...projectInfo,transportCompany:v})} placeholder="〇〇運送株式会社" />
                         <div style={{ marginBottom:16 }}>
@@ -1298,15 +1275,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   // ★ dept追加
   const [wForm, setWForm] = useState({ name:'', start:'', end:'', shift:'daytime', dept:'k1' });
   const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime' });
-  const [vForm, setVForm] = useState({ type:'', number:'' });
+  const [vForm, setVForm] = useState({ type:'', number:'', driver:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
-  const [envForm, setEnvForm] = useState({ driver:'', shift:'', count:1, price:'', isOverride:false });
-  const [extForm, setExtForm] = useState({ shift:'', count:1, price:'', isOverride:false });
-
-  const ENV_DRIVERS = ['小峯朋宏','松橋信行','浅見勇弥','石田竜二','古山慎祐','尾崎奈帆'];
-  const ENV_PRICES  = { day:20000, night:30000 };
-  const EXT_PRICES  = { day:22000, night:32000 };
-  const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'' });
+  const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', haishiShift:'', haishiOverride:false, haishiPrice:'' });
   const [scrapForm, setScrapForm] = useState({ type:'', buyer:'', qty:'', unit:'kg', price:'' });
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
@@ -1354,7 +1325,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const addVehicle = () => {
     if (!vForm.type||!vForm.number) return;
     setWorkDetails({...workDetails, vehicles:[...workDetails.vehicles,{...vForm,amount:VEHICLE_UNIT_PRICES[vForm.type]||0}]});
-    setVForm({type:'',number:''});
+    setVForm({type:'',number:'',driver:''});
   };
   const addMachinery = () => {
     if (!mForm.type||!mForm.price) return;
@@ -1385,8 +1356,21 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const addWaste = () => {
     if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price) return;
     const qty=parseFloat(wasteForm.qty), price=parseFloat(wasteForm.price);
-    setWasteItems([...wasteItems,{material:wasteForm.type,disposalSite:wasteForm.disposal,quantity:qty,unit:wasteForm.unit,unitPrice:price,amount:qty*price,manifestNumber:wasteForm.manifest}]);
-    setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:''});
+    // 配車費計算
+    const ENV_P={day:20000,night:30000}, EXT_P={day:22000,night:32000};
+    let haishiAmount=0;
+    if(wasteForm.haisha==='env'&&wasteForm.haishiShift) haishiAmount=ENV_P[wasteForm.haishiShift];
+    else if(wasteForm.haisha==='ext') haishiAmount=wasteForm.haishiOverride?parseFloat(wasteForm.haishiPrice)||0:(wasteForm.haishiShift?EXT_P[wasteForm.haishiShift]:0);
+    setWasteItems([...wasteItems,{
+      material:wasteForm.type, disposalSite:wasteForm.disposal,
+      quantity:qty, unit:wasteForm.unit, unitPrice:price, amount:qty*price,
+      manifestNumber:wasteForm.manifest,
+      haisha:wasteForm.haisha||'self',
+      driver:wasteForm.driver||'',
+      haishiShift:wasteForm.haishiShift||'',
+      haishiAmount,
+    }]);
+    setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',haishiShift:'',haishiOverride:false,haishiPrice:''});
   };
   const addScrap = () => {
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price) return;
@@ -1647,14 +1631,29 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <ItemCard key={i}
               avatarBg="rgba(245,158,11,0.12)" avatarColor="#fbbf24"
               avatarText={v.type.slice(0,3)}
-              name={v.type} meta={v.number}
+              name={v.type}
+              meta={`${v.number}${v.driver ? `　(${v.driver})` : ''}`}
               amount={`¥${formatCurrency(v.amount)}`}
               onDel={()=>setWorkDetails({...workDetails,vehicles:workDetails.vehicles.filter((_,j)=>j!==i)})} />
           ))}
           <div style={inputCardAmber}>
             <div style={grid2}>
-              <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:''})} style={inpSel}><option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></div>
+              <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:'',driver:''})} style={inpSel}><option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></div>
               <div><label style={inpLbl}>車番</label><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} style={inpSel}><option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></div>
+            </div>
+            {/* 運転者（任意・環境課配車用） */}
+            <div style={{marginBottom:8}}>
+              <label style={inpLbl}>運転者 <span style={{color:'#374151',fontWeight:400}}>(任意)</span></label>
+              <input type="text" value={vForm.driver} onChange={e=>setVForm({...vForm,driver:e.target.value})}
+                placeholder="例: 小峯" style={inpTxt} />
+              <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:5}}>
+                {['小峯','松橋','浅見','石田','古山','尾崎'].map(d=>(
+                  <button key={d} onClick={()=>setVForm({...vForm,driver:d})}
+                    style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${vForm.driver===d?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:vForm.driver===d?'rgba(34,197,94,0.12)':'rgba(255,255,255,0.02)',color:vForm.driver===d?'#4ade80':'#6B7280',fontSize:11,fontWeight:vForm.driver===d?700:600,cursor:'pointer',fontFamily:'inherit'}}>
+                    {d}
+                  </button>
+                ))}
+              </div>
             </div>
             {vForm.type && <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>¥{formatCurrency(VEHICLE_UNIT_PRICES[vForm.type]||0)}</div>}
             <AddBtn onClick={addVehicle} disabled={!vForm.type||!vForm.number} />
@@ -1680,119 +1679,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
           {workDetails.machinery.length>0 && <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />}
 
-          {/* 環境課配車 */}
-          <SectionLabel ja="環境課配車" en="Env Transport" />
-          {(workDetails.envItems||[]).map((t,i)=>(
-            <ItemCard key={i}
-              avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80"
-              avatarText={t.driver.slice(0,2)}
-              name={t.driver}
-              meta={`${t.shift}　${t.count}台`}
-              amount={`¥${formatCurrency(t.amount)}`}
-              onDel={()=>setWorkDetails({...workDetails,envItems:(workDetails.envItems||[]).filter((_,j)=>j!==i)})} />
-          ))}
-          <div style={{...inputCardGreen}}>
-            <div style={{marginBottom:8}}>
-              <label style={inpLbl}>運転者</label>
-              <input type="text" value={envForm.driver} onChange={e=>setEnvForm({...envForm,driver:e.target.value})} placeholder="名前を入力" style={inpTxt} />
-            </div>
-            <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
-              {ENV_DRIVERS.map(d=>(
-                <button key={d} onClick={()=>setEnvForm({...envForm,driver:d})}
-                  style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${envForm.driver===d?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:envForm.driver===d?'rgba(34,197,94,0.12)':'rgba(255,255,255,0.02)',color:envForm.driver===d?'#4ade80':'#6B7280',fontSize:11,fontWeight:envForm.driver===d?700:600,cursor:'pointer',fontFamily:'inherit'}}>
-                  {d.slice(0,2)}
-                </button>
-              ))}
-            </div>
-            <div style={{...grid2,marginBottom:10}}>
-              {[['day','昼',ENV_PRICES.day],['night','夜',ENV_PRICES.night]].map(([v,label,price])=>{
-                const sel = !envForm.isOverride && envForm.shift===v;
-                return (
-                  <button key={v} onClick={()=>setEnvForm({...envForm,shift:v,isOverride:false})}
-                    style={{padding:'10px 6px',borderRadius:9,border:`1px solid ${sel?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:sel?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.02)',color:sel?'#4ade80':'#6B7280',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
-                    <div style={{fontSize:13,fontWeight:800,marginBottom:2}}>{label}</div>
-                    <div style={{fontSize:10,fontFamily:'monospace',color:sel?'#4ade80':'#374151'}}>¥{formatCurrency(price)}</div>
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{marginBottom:8}}>
-              <label style={inpLbl}>台数</label>
-              <input type="number" value={envForm.count} onChange={e=>setEnvForm({...envForm,count:e.target.value})} min="1" placeholder="1" style={inpTxt} />
-            </div>
-            {(()=>{
-              const count = parseInt(envForm.count)||1;
-              const total = envForm.shift ? (envForm.shift==='day'?ENV_PRICES.day:ENV_PRICES.night)*count : 0;
-              return total>0 ? (<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',borderRadius:8,background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.15)',marginBottom:8}}>
-                <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>合計金額</span>
-                <span style={{fontSize:15,fontWeight:800,color:'#4ade80',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(total)}</span>
-              </div>) : null;
-            })()}
-            <AddBtn onClick={addEnv} disabled={!envForm.driver||!envForm.shift} />
-            <div style={{marginTop:10,padding:'10px 12px',borderRadius:9,background:'rgba(99,102,241,0.05)',border:'1px solid rgba(99,102,241,0.15)',fontSize:11,color:'#6B7280',lineHeight:1.7}}>
-              <span style={{color:'#a5b4fc',fontWeight:700,fontSize:10,display:'block',marginBottom:3,fontFamily:'monospace',letterSpacing:'.04em'}}>人工として計上する場合</span>
-              半日以上拘束した場合は自社人工セクション（環境課タブ）に入力してください（職長判断）。
-            </div>
-          </div>
-          {(workDetails.envItems||[]).length>0 && <SubTotal label="環境課配車" value={(workDetails.envItems||[]).reduce((s,t)=>s+t.amount,0)} />}
-
-          {/* 外部運搬（ワイエムエコフューチャー） */}
-          <SectionLabel ja="外部運搬" en="Ext Transport" />
-          {(workDetails.extItems||[]).map((t,i)=>(
-            <ItemCard key={i}
-              avatarBg="rgba(99,102,241,0.12)" avatarColor="#a5b4fc"
-              avatarText="ワイエ"
-              name={t.company}
-              meta={`${t.shift}　${t.count}台`}
-              amount={`¥${formatCurrency(t.amount)}`}
-              onDel={()=>setWorkDetails({...workDetails,extItems:(workDetails.extItems||[]).filter((_,j)=>j!==i)})} />
-          ))}
-          <div style={{...inputCardGreen}}>
-            <div style={{marginBottom:10,padding:'8px 12px',borderRadius:8,background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.2)'}}>
-              <span style={{fontSize:12,fontWeight:700,color:'#a5b4fc'}}>ワイエムエコフューチャー</span>
-              <span style={{fontSize:10,color:'#4B5563',marginLeft:8,fontFamily:'monospace'}}>昼¥22,000 / 夜¥32,000</span>
-            </div>
-            <div style={{...grid2,marginBottom:10}}>
-              {[['day','昼',EXT_PRICES.day],['night','夜',EXT_PRICES.night]].map(([v,label,price])=>{
-                const sel = !extForm.isOverride && extForm.shift===v;
-                return (
-                  <button key={v} onClick={()=>setExtForm({...extForm,shift:v,isOverride:false})}
-                    style={{padding:'10px 6px',borderRadius:9,border:`1px solid ${sel?'rgba(99,102,241,0.5)':'rgba(255,255,255,0.08)'}`,background:sel?'rgba(99,102,241,0.1)':'rgba(255,255,255,0.02)',color:sel?'#a5b4fc':'#6B7280',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
-                    <div style={{fontSize:13,fontWeight:800,marginBottom:2}}>{label}</div>
-                    <div style={{fontSize:10,fontFamily:'monospace',color:sel?'#a5b4fc':'#374151'}}>¥{formatCurrency(price)}</div>
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{marginBottom:8}}>
-              <label style={inpLbl}>台数</label>
-              <input type="number" value={extForm.count} onChange={e=>setExtForm({...extForm,count:e.target.value})} min="1" placeholder="1" style={inpTxt} />
-            </div>
-            <div style={{marginBottom:10}}>
-              <button onClick={()=>setExtForm({...extForm,isOverride:!extForm.isOverride,shift:''})}
-                style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit'}}>
-                <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${extForm.isOverride?'#6366f1':'#374151'}`,background:extForm.isOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'white',flexShrink:0}}>
-                  {extForm.isOverride?'✓':''}
-                </div>
-                <span style={{fontSize:11,color:extForm.isOverride?'#a5b4fc':'#4B5563'}}>遠方・例外あり（金額を手入力）</span>
-              </button>
-              {extForm.isOverride && (
-                <input type="number" value={extForm.price} onChange={e=>setExtForm({...extForm,price:e.target.value})}
-                  placeholder="合計金額を入力" style={{...inpTxt,marginTop:6,borderColor:'rgba(99,102,241,0.3)'}} />
-              )}
-            </div>
-            {(()=>{
-              const count = parseInt(extForm.count)||1;
-              let total = extForm.isOverride ? parseFloat(extForm.price)||0 : (extForm.shift?(extForm.shift==='day'?EXT_PRICES.day:EXT_PRICES.night)*count:0);
-              return total>0 ? (<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',borderRadius:8,background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.15)',marginBottom:8}}>
-                <span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>合計金額</span>
-                <span style={{fontSize:15,fontWeight:800,color:'#a5b4fc',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(total)}</span>
-              </div>) : null;
-            })()}
-            <AddBtn onClick={addExt} disabled={extForm.isOverride?!extForm.price:!extForm.shift} />
-          </div>
-          {(workDetails.extItems||[]).length>0 && <SubTotal label="外部運搬" value={(workDetails.extItems||[]).reduce((s,t)=>s+t.amount,0)} />}
-
           <BFooter onBack={()=>setCurrentStep(1)} onNext={()=>setCurrentStep(3)} nextLabel="次へ →" />
         </div>
       )}
@@ -1805,12 +1691,33 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* 産廃 */}
           <SectionLabel ja="産廃処分費" en="Waste Disposal" />
           {wasteItems.map((w,i)=>(
-            <ItemCard key={i}
-              avatarBg="rgba(245,158,11,0.12)" avatarColor="#fbbf24"
-              avatarText="廃"
-              name={w.material} meta={`${w.quantity}${w.unit}　${w.disposalSite}　<span style="color:#4B5563">${w.manifestNumber}</span>`}
-              amount={`¥${formatCurrency(w.amount)}`}
-              onDel={()=>setWasteItems(wasteItems.filter((_,j)=>j!==i))} />
+            <div key={i} style={{borderRadius:11,marginBottom:6,background:'rgba(245,158,11,0.04)',border:'1px solid rgba(245,158,11,0.12)',overflow:'hidden'}}>
+              <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px'}}>
+                <div style={{width:36,height:36,borderRadius:9,background:'rgba(245,158,11,0.15)',color:'#fbbf24',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{w.material.slice(0,2)}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700}}>{w.material} → {w.disposalSite}</div>
+                  <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{w.quantity}{w.unit}　¥{formatCurrency(w.unitPrice)}/{w.unit}{w.manifestNumber?`　マニ:${w.manifestNumber}`:''}</div>
+                </div>
+                <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(w.amount)}</div>
+                <button onClick={()=>setWasteItems(wasteItems.filter((_,j)=>j!==i))} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
+              </div>
+              {/* 配車バッジ */}
+              {w.haisha==='env' && (
+                <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderTop:'1px solid rgba(245,158,11,0.1)',background:'rgba(34,197,94,0.06)',fontSize:11,color:'#4ade80'}}>
+                  環境課配車 / {w.driver}　{w.haishiShift==='day'?'昼':'夜'}　¥{formatCurrency(w.haishiAmount)}
+                </div>
+              )}
+              {w.haisha==='ext' && (
+                <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderTop:'1px solid rgba(245,158,11,0.1)',background:'rgba(99,102,241,0.06)',fontSize:11,color:'#a5b4fc'}}>
+                  ワイエム配車　{w.haishiShift?w.haishiShift==='day'?'昼':'夜':'例外'}　¥{formatCurrency(w.haishiAmount)}
+                </div>
+              )}
+              {w.haisha==='self' && (
+                <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderTop:'1px solid rgba(245,158,11,0.1)',background:'rgba(255,255,255,0.02)',fontSize:11,color:'#4B5563'}}>
+                  自社直接持込（車両費のみ）
+                </div>
+              )}
+            </div>
           ))}
           <div style={inputCardGreen}>
             <div style={grid2}>
@@ -1822,10 +1729,87 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={inpSel}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>単価</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
-            <div style={{ marginBottom:'10px' }}><label style={inpLbl}>マニフェスト No. <span style={{color:'#4B5563',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
-            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price} />
+            <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'#4B5563',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
+
+            {/* 配車方法 */}
+            <label style={{...inpLbl,marginBottom:6}}>配車方法</label>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginBottom:10}}>
+              {[
+                ['env','環境課配車','昼¥20,000\n夜¥30,000','rgba(34,197,94,0.15)','rgba(34,197,94,0.5)','#4ade80'],
+                ['ext','ワイエム配車','昼¥22,000\n夜¥32,000','rgba(99,102,241,0.15)','rgba(99,102,241,0.5)','#a5b4fc'],
+                ['self','自社直接持込','車両費のみ','rgba(255,255,255,0.08)','rgba(255,255,255,0.25)','#9CA3AF'],
+              ].map(([v,label,price,bg,border,color])=>(
+                <button key={v} onClick={()=>setWasteForm({...wasteForm,haisha:v,driver:'',haishiShift:'',haishiOverride:false,haishiPrice:''})}
+                  style={{padding:'10px 4px',borderRadius:10,border:`1px solid ${wasteForm.haisha===v?border:'rgba(255,255,255,0.08)'}`,background:wasteForm.haisha===v?bg:'rgba(255,255,255,0.02)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .12s'}}>
+                  <div style={{fontSize:11,fontWeight:700,color:wasteForm.haisha===v?color:'#6B7280',lineHeight:1.4}}>{label}</div>
+                  <div style={{fontSize:9,fontFamily:'monospace',color:wasteForm.haisha===v?color:'#374151',marginTop:3,whiteSpace:'pre'}}>{price}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* 環境課展開 */}
+            {wasteForm.haisha==='env' && (
+              <div style={{padding:12,borderRadius:9,background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.2)',marginBottom:10}}>
+                <label style={{...inpLbl,color:'#4ade80',marginBottom:6}}>運転者（環境課）</label>
+                <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:8}}>
+                  {['小峯朋宏','松橋信行','浅見勇弥','石田竜二','古山慎祐','尾崎奈帆'].map(d=>(
+                    <button key={d} onClick={()=>setWasteForm({...wasteForm,driver:d})}
+                      style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${wasteForm.driver===d?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.07)'}`,background:wasteForm.driver===d?'rgba(34,197,94,0.15)':'rgba(255,255,255,0.02)',color:wasteForm.driver===d?'#4ade80':'#6B7280',fontSize:11,fontWeight:wasteForm.driver===d?700:600,cursor:'pointer',fontFamily:'inherit'}}>
+                      {d.slice(0,2)}
+                    </button>
+                  ))}
+                </div>
+                <input type="text" value={wasteForm.driver} onChange={e=>setWasteForm({...wasteForm,driver:e.target.value})} placeholder="その他：名前を入力" style={{...inpTxt,marginBottom:8}}/>
+                <label style={{...inpLbl,marginBottom:6}}>シフト</label>
+                <div style={grid2}>
+                  {[['day','昼',20000],['night','夜',30000]].map(([v,label,price])=>(
+                    <button key={v} onClick={()=>setWasteForm({...wasteForm,haishiShift:v})}
+                      style={{padding:'10px',borderRadius:9,border:`1px solid ${wasteForm.haishiShift===v?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:wasteForm.haishiShift===v?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.02)',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                      <div style={{fontSize:13,fontWeight:800,color:wasteForm.haishiShift===v?'#4ade80':'#6B7280'}}>{label}</div>
+                      <div style={{fontSize:10,fontFamily:'monospace',color:wasteForm.haishiShift===v?'#4ade80':'#374151'}}>¥{formatCurrency(price)}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ワイエム展開 */}
+            {wasteForm.haisha==='ext' && (
+              <div style={{padding:12,borderRadius:9,background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:10}}>
+                <div style={{marginBottom:8,padding:'6px 10px',borderRadius:7,background:'rgba(99,102,241,0.1)',fontSize:12,fontWeight:700,color:'#a5b4fc'}}>ワイエムエコフューチャー</div>
+                <label style={{...inpLbl,marginBottom:6}}>シフト</label>
+                <div style={{...grid2,marginBottom:8}}>
+                  {[['day','昼',22000],['night','夜',32000]].map(([v,label,price])=>(
+                    <button key={v} onClick={()=>setWasteForm({...wasteForm,haishiShift:v,haishiOverride:false})}
+                      style={{padding:'10px',borderRadius:9,border:`1px solid ${!wasteForm.haishiOverride&&wasteForm.haishiShift===v?'rgba(99,102,241,0.5)':'rgba(255,255,255,0.08)'}`,background:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?'rgba(99,102,241,0.1)':'rgba(255,255,255,0.02)',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                      <div style={{fontSize:13,fontWeight:800,color:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?'#a5b4fc':'#6B7280'}}>{label}</div>
+                      <div style={{fontSize:10,fontFamily:'monospace',color:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?'#a5b4fc':'#374151'}}>¥{formatCurrency(price)}</div>
+                    </button>
+                  ))}
+                </div>
+                <button onClick={()=>setWasteForm({...wasteForm,haishiOverride:!wasteForm.haishiOverride,haishiShift:''})}
+                  style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',marginBottom:6}}>
+                  <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${wasteForm.haishiOverride?'#6366f1':'#374151'}`,background:wasteForm.haishiOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'white',flexShrink:0}}>{wasteForm.haishiOverride?'✓':''}</div>
+                  <span style={{fontSize:11,color:wasteForm.haishiOverride?'#a5b4fc':'#4B5563'}}>遠方・例外あり（金額を手入力）</span>
+                </button>
+                {wasteForm.haishiOverride && (
+                  <input type="number" value={wasteForm.haishiPrice} onChange={e=>setWasteForm({...wasteForm,haishiPrice:e.target.value})} placeholder="配車費を入力" style={{...inpTxt,borderColor:'rgba(99,102,241,0.3)'}}/>
+                )}
+              </div>
+            )}
+
+            {/* 自社展開 */}
+            {wasteForm.haisha==='self' && (
+              <div style={{padding:10,borderRadius:9,background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',marginBottom:10,fontSize:11,color:'#6B7280',lineHeight:1.7}}>
+                車両セクションで入力した車両が運搬費として計上されます。配車費は発生しません。
+              </div>
+            )}
+
+            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||!wasteForm.haisha||(wasteForm.haisha==='env'&&(!wasteForm.driver||!wasteForm.haishiShift))||(wasteForm.haisha==='ext'&&!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
           </div>
-          {wasteItems.length>0 && <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount,0)} />}
+          {wasteItems.length>0 && (
+            <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0)} />
+          )}
 
           {/* スクラップ */}
           <SectionLabel ja="スクラップ売上" en="Scrap Revenue" />
@@ -2484,7 +2468,9 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
               {(()=>{
                 const outItems = [
                   ...(allReports.flatMap(r => [...(r.workDetails?.envItems||[]).map(t=>({name:t.driver,days:t.count,amount:t.amount})), ...(r.workDetails?.extItems||[]).map(t=>({name:t.company,days:t.count,amount:t.amount}))])),
-                  ...(projectInfo.outsourcingItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}))
+                  ...(projectInfo.outsourcingItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0})),
+                  ...(projectInfo.siteExpenseItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0})),
+                  ...(projectInfo.siteExpenseItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}))
                 ];
                 const sgaItems2 = (projectInfo.sgaItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
                 if(outItems.length===0 && sgaItems2.length===0) return null;
@@ -2541,7 +2527,8 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                     ['外注人工', totalOutsourcingCost],
                     ['追加金額', parseFloat(projectInfo.additionalAmount) || 0],
                     ...(projectInfo.outsourcingItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
-                    ...(projectInfo.sgaItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
+                    ...(projectInfo.siteExpenseItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
+                    ...(projectInfo.siteExpenseItems||[]).map(i=>[i.name, parseFloat(i.amount)||0]),
                     ['金属売上', totalScrapRevenue],
                   ].map(([label, val]) => (
                     <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
@@ -2581,8 +2568,26 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                 const transport = [...(r.workDetails?.envItems||[]).map(t=>({...t,name:t.driver})), ...(r.workDetails?.extItems||[]).map(t=>({...t,name:t.company}))];
                 const waste = r.wasteItems || [];
                 const scrap = r.scrapItems || [];
-                const wasteAndScrap = [...waste, ...scrap.map(s => ({ material: s.type, quantity: s.quantity, unit: s.unit, amount: Math.abs(s.amount), disposalSite: s.buyer, manifestNumber: '-' }))];
-                const maxSubRows = Math.max(1, workers.length, outsourcing.length, vehicles.length, machinery.length, transport.length, wasteAndScrap.length);
+                const wasteAndScrap = [
+                  ...waste.map(w=>({
+                    material:w.material, quantity:w.quantity, unit:w.unit,
+                    amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'',
+                    // 配車情報
+                    haisha:w.haisha||'self',
+                    envDriver:w.haisha==='env'?w.driver:'',
+                    extHaisha:w.haisha==='ext',
+                  })),
+                  ...scrap.map(s=>({ material:s.type, quantity:s.quantity, unit:s.unit, amount:Math.abs(s.amount), disposalSite:s.buyer, manifestNumber:'-', haisha:'self', envDriver:'', extHaisha:false }))
+                ];
+                // 環境課配車行（自社人工列に括弧書きで追加）
+                const envRows = waste.filter(w=>w.haisha==='env').map(w=>({driver:w.driver,shift:w.haishiShift}));
+                const extRows = waste.filter(w=>w.haisha==='ext');
+                // 自社人工＋環境課配車を合わせた行
+                const allWorkers = [
+                  ...workers,
+                  ...envRows.map(e=>({name:`(${e.driver})`, amount:0, isEnv:true})),
+                ];
+                const maxSubRows = Math.max(1, allWorkers.length, outsourcing.length, vehicles.length, machinery.length, transport.length, wasteAndScrap.length);
                 const startTimes = workers.map(w => w.start || w.startTime).filter(Boolean).sort();
                 const endTimes = workers.map(w => w.end || w.endTime).filter(Boolean).sort().reverse();
                 return (
@@ -2601,12 +2606,12 @@ function ReportPDFPage({ report, projectInfo, onNavigate }) {
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{endTimes[0] || '-'}</td>
                           </>
                         )}
-                        <td className="text-[8px]">{workers[subIdx]?.name || ''}</td>
-                        <td className="text-right text-[8px]">{workers[subIdx] ? `¥${formatCurrency(workers[subIdx].amount)}` : ''}</td>
+                        <td className="text-[8px]" style={allWorkers[subIdx]?.isEnv?{color:'#6B7280'}:{}}>{allWorkers[subIdx]?.name||''}</td>
+                        <td className="text-right text-[8px]">{allWorkers[subIdx]&&!allWorkers[subIdx].isEnv?`¥${formatCurrency(allWorkers[subIdx].amount)}`:''}</td>
                         <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${outsourcing[subIdx].count || outsourcing[subIdx].workers || ''}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
-                        <td className="text-center text-[8px]">{vehicles[subIdx]?.type || ''}</td>
-                        <td className="text-center text-[8px]">{vehicles[subIdx]?.number || ''}</td>
+                        <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (wasteAndScrap[subIdx]?.extHaisha ? '配車' : '')}</td>
+                        <td className="text-center text-[8px]">{vehicles[subIdx] ? `${vehicles[subIdx].number}` : (wasteAndScrap[subIdx]?.extHaisha ? 'ワイエム' : '')}</td>
                         <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>
                         <td className="text-[8px]">{wasteAndScrap[subIdx]?.material || ''}</td>
                         <td className="text-right text-[8px]">{wasteAndScrap[subIdx] ? `${wasteAndScrap[subIdx].quantity}${wasteAndScrap[subIdx].unit}` : ''}</td>
@@ -2773,7 +2778,7 @@ export default function LOGIOApp() {
       const data = await sb('project_info').select(`site_name=eq.${encodeURIComponent(siteName)}`);
       if (Array.isArray(data) && data.length > 0) {
         const d = data[0];
-        setProjectInfo({ projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], completionDate: d.completion_date || '' });
+        setProjectInfo({ projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], completionDate: d.completion_date || '' });
       }
     } catch (error) { console.error('loadProjectInfo error:', error); }
   };
@@ -2789,7 +2794,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.discharger || '', transport_company: projectInfo.transportCompany || '', contracted_disposal_sites: projectInfo.contractedDisposalSites || [], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], updated_at: new Date().toISOString() }, 'site_name');
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.discharger || '', transport_company: projectInfo.transportCompany || '', contracted_disposal_sites: projectInfo.contractedDisposalSites || [], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], updated_at: new Date().toISOString() }, 'site_name');
       await sb('sites').update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');
@@ -2863,7 +2868,8 @@ export default function LOGIOApp() {
     });
     accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
       + (projectInfo.outsourcingItems || []).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
-      + (projectInfo.sgaItems || []).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
+      + (projectInfo.siteExpenseItems || []).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
+      // sgaItemsは販管費（間接費）なので粗利計算に含めない
       + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
     const grossProfit = totalRevenue - accumulatedCost + accumulatedScrap;
     return { totalRevenue, accumulatedCost, accumulatedScrap, grossProfit, grossProfitRateContract: totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0', grossProfitRateWithScrap: (totalRevenue + accumulatedScrap) > 0 ? (grossProfit / (totalRevenue + accumulatedScrap) * 100).toFixed(1) : '0.0' };
@@ -3063,4 +3069,112 @@ export default function LOGIOApp() {
       })()}
     </div>
   );
-}
+}                        {/* 経費3分類タブ */}
+                        {(()=>{
+                          const activeTab = projectInfo._costTab||'out';
+                          const OUT_QUICK=['東リース','アクティオ','パノラマ','集塵機','ペッカー','発電機','高所作業車','コンプレッサー','ハンドクラッシャー','油圧ユニット','ミニユンボ','回送費','アスベスト分析費'];
+                          const SITE_QUICK=['道具代','現場パーキング代','資材費','消耗品'];
+                          const SGA_QUICK=['営業交通費','ガソリン代','営業パーキング代','接待費'];
+                          const renderItems=(items,delFn,color,bg,border)=>items.map((item,i)=>(
+                            <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:bg,border:`1px solid ${border}`}}>
+                              <div style={{width:34,height:34,borderRadius:8,background:bg,color:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                                <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
+                              </div>
+                              <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
+                              <button onClick={()=>delFn(i)} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,fontWeight:700}}>✕</button>
+                            </div>
+                          ));
+                          const renderForm=(key,quick,color,grad,addFn)=>{
+                            const name=projectInfo[`_${key}Name`]||'', days=projectInfo[`_${key}Days`]||'', amt=projectInfo[`_${key}Amt`]||'';
+                            const rgb=key==='out'?'59,130,246':key==='site'?'34,197,94':'245,158,11';
+                            return (
+                              <div style={{padding:12,borderRadius:10,background:`rgba(${rgb},0.04)`,border:`1px solid rgba(${rgb},0.15)`,marginTop:8}}>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
+                                <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Name`]:e.target.value})}
+                                  placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
+                                <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
+                                  {quick.map(q=>(<button key={q} onClick={()=>setProjectInfo({...projectInfo,[`_${key}Name`]:q})}
+                                    style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${name===q?`rgba(${rgb},0.5)`:'rgba(255,255,255,0.07)'}`,background:name===q?`rgba(${rgb},0.15)`:'rgba(255,255,255,0.02)',color:name===q?color:'#6B7280',fontSize:11,fontWeight:name===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>{q}</button>))}
+                                </div>
+                                <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:8,marginBottom:8}}>
+                                  <div>
+                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
+                                    <input type="number" value={days} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Days`]:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
+                                  </div>
+                                  <div>
+                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
+                                    <input type="number" value={amt} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Amt`]:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
+                                  </div>
+                                </div>
+                                <button disabled={!name||!amt} onClick={()=>addFn(name,days,amt)}
+                                  style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!name||!amt)?'rgba(255,255,255,0.04)':grad,color:(!name||!amt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!name||!amt)?'not-allowed':'pointer',fontFamily:'inherit',opacity:(!name||!amt)?0.4:1}}>
+                                  ＋ 追加
+                                </button>
+                              </div>
+                            );
+                          };
+                          return (
+                            <div style={{marginBottom:16}}>
+                              {/* タブ */}
+                              <div style={{display:'flex',gap:4,background:'#0a0a0a',padding:4,borderRadius:11,border:'1px solid rgba(255,255,255,0.07)',marginBottom:12}}>
+                                {[['out','現場外注費','直接原価','#60a5fa','rgba(59,130,246,0.15)'],['site','現場経費','直接原価','#4ade80','rgba(34,197,94,0.15)'],['sga','販管費','間接費','#fbbf24','rgba(245,158,11,0.15)']].map(([k,label,sub,color,bg])=>(
+                                  <button key={k} onClick={()=>setProjectInfo({...projectInfo,_costTab:k})}
+                                    style={{flex:1,padding:'9px 4px',borderRadius:8,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:activeTab===k?bg:'transparent',color:activeTab===k?color:'#4B5563',fontFamily:'inherit',textAlign:'center',lineHeight:1.4}}>
+                                    {label}<br/><span style={{fontSize:9,fontWeight:400,color:activeTab===k?color:'#374151'}}>{sub}</span>
+                                  </button>
+                                ))}
+                              </div>
+
+                              {/* 現場外注費 */}
+                              {activeTab==='out' && (<>
+                                {renderItems(projectInfo.outsourcingItems||[],(i)=>setProjectInfo({...projectInfo,outsourcingItems:(projectInfo.outsourcingItems||[]).filter((_,j)=>j!==i)}),'#60a5fa','rgba(59,130,246,0.05)','rgba(59,130,246,0.12)')}
+                                {(projectInfo.outsourcingItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(59,130,246,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#60a5fa',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                                {renderForm('out',OUT_QUICK,'#60a5fa','linear-gradient(135deg,#2563EB,#4f46e5)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,outsourcingItems:[...(projectInfo.outsourcingItems||[]),ni],_outName:'',_outDays:'',_outAmt:''});})}
+                              </>)}
+
+                              {/* 現場経費 */}
+                              {activeTab==='site' && (<>
+                                {renderItems(projectInfo.siteExpenseItems||[],(i)=>setProjectInfo({...projectInfo,siteExpenseItems:(projectInfo.siteExpenseItems||[]).filter((_,j)=>j!==i)}),'#4ade80','rgba(34,197,94,0.05)','rgba(34,197,94,0.12)')}
+                                {(projectInfo.siteExpenseItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(34,197,94,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#4ade80',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.siteExpenseItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                                {renderForm('site',SITE_QUICK,'#4ade80','linear-gradient(135deg,#16a34a,#22c55e)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,siteExpenseItems:[...(projectInfo.siteExpenseItems||[]),ni],_siteName:'',_siteDays:'',_siteAmt:''});})}
+                              </>)}
+
+                              {/* 販管費 */}
+                              {activeTab==='sga' && (<>
+                                <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 10px',borderRadius:8,background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)',marginBottom:10,fontSize:10,color:'#fbbf24',fontWeight:700}}>
+                                  ⚠ 間接費 — 粗利には含まれません
+                                </div>
+                                {renderItems(projectInfo.sgaItems||[],(i)=>setProjectInfo({...projectInfo,sgaItems:(projectInfo.sgaItems||[]).filter((_,j)=>j!==i)}),'#fbbf24','rgba(245,158,11,0.05)','rgba(245,158,11,0.12)')}
+                                {(projectInfo.sgaItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(245,158,11,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                                {renderForm('sga',SGA_QUICK,'#fbbf24','linear-gradient(135deg,#d97706,#f97316)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,sgaItems:[...(projectInfo.sgaItems||[]),ni],_sgaName:'',_sgaDays:'',_sgaAmt:''});})}
+                              </>)}
+
+                              {/* コストサマリー */}
+                              <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)'}}>
+                                <div style={{fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8,fontFamily:'monospace'}}>コストサマリー</div>
+                                {[['現場外注費','直接原価',(projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#60a5fa'],['現場経費','直接原価',(projectInfo.siteExpenseItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#4ade80']].map(([label,sub,val,color])=>(
+                                  <div key={label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                                    <span style={{fontSize:11,color:'#9CA3AF'}}>{label} <span style={{fontSize:9,color:'#374151',fontFamily:'monospace'}}>{sub}</span></span>
+                                    <span style={{fontSize:13,fontWeight:700,color,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(val)}</span>
+                                  </div>
+                                ))}
+                                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0 0'}}>
+                                  <span style={{fontSize:12,fontWeight:700,color:'#9CA3AF'}}>直接原価 合計</span>
+                                  <span style={{fontSize:16,fontWeight:900,color:'white',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency([...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[])].reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                                </div>
+                                {(projectInfo.sgaItems||[]).length>0&&(
+                                  <div style={{marginTop:8,paddingTop:8,borderTop:'1px dashed rgba(255,255,255,0.05)'}}>
+                                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                                      <span style={{fontSize:11,color:'#6B7280'}}>販管費 <span style={{fontSize:9,color:'#374151',fontFamily:'monospace'}}>間接費・参考</span></span>
+                                      <span style={{fontSize:13,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                                    </div>
+                                    <div style={{fontSize:9,color:'#374151',marginTop:3,fontFamily:'monospace'}}>※ 粗利の計算には含まれません</div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        

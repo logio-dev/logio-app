@@ -18,7 +18,9 @@ function sb(table) {
   return {
     async select(filter) {
       const url = filter ? (base + '?' + filter) : base;
+      console.log('🔍 select URL:', url);
       const res = await fetch(url, { headers: h });
+      if (!res.ok) console.error('select error:', res.status, url);
       return res.json();
     },
     async insert(data) {
@@ -2903,7 +2905,11 @@ export default function LOGIOApp() {
   };
 
   const totals = calculateTotals();
-  window.__navigatePDF = (report) => { setSelectedReport(report); setCurrentPage('pdf'); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  window.__navigatePDF = async (report) => {
+    const siteName = report.siteName || report.site_name;
+    if (siteName) await loadProjectInfo(siteName);
+    setSelectedReport(report); setCurrentPage('pdf'); window.scrollTo({ top: 0, behavior: 'instant' });
+  };
   window.__navigateEdit = (report) => { setEditingReport(report); setCurrentPage('edit'); window.scrollTo({ top: 0, behavior: 'instant' }); };
 
   if (showSplash) return <SplashScreen />;

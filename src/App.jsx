@@ -2349,7 +2349,8 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 }
 
 // ========== ReportPDFPage ==========
-function ReportPDFPage({ report, projectInfo, onNavigate }) {
+function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
+  const projectInfo = report._projectInfo || propProjectInfo;
   const [allReports, setAllReports] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
@@ -2782,9 +2783,12 @@ export default function LOGIOApp() {
       const data = await sb('project_info').select(`site_name=eq.${encodeURIComponent(siteName)}`);
       if (Array.isArray(data) && data.length > 0) {
         const d = data[0];
-        setProjectInfo({ projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], completionDate: d.completion_date || '' });
+        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], completionDate: d.completion_date || '' };
+        setProjectInfo(info);
+        return info;
       }
     } catch (error) { console.error('loadProjectInfo error:', error); }
+    return null;
   };
 
   const loadReports = async (siteName) => {
@@ -2907,8 +2911,14 @@ export default function LOGIOApp() {
   const totals = calculateTotals();
   window.__navigatePDF = async (report) => {
     const siteName = report.siteName || report.site_name;
-    if (siteName) await loadProjectInfo(siteName);
-    setSelectedReport(report); setCurrentPage('pdf'); window.scrollTo({ top: 0, behavior: 'instant' });
+    let info = projectInfo;
+    if (siteName) {
+      const fetched = await loadProjectInfo(siteName);
+      if (fetched) info = fetched;
+    }
+    setSelectedReport({ ...report, _projectInfo: info });
+    setCurrentPage('pdf');
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
   window.__navigateEdit = (report) => { setEditingReport(report); setCurrentPage('edit'); window.scrollTo({ top: 0, behavior: 'instant' }); };
 

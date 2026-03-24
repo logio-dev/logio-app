@@ -839,45 +839,63 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         )}
       </div>
 
-      {/* ★ ボトム固定ナビ（maxWidth を NAV_MAX_W=672px でコンテンツと完全一致）*/}
-      {selectedSite && (
-        <div style={{
-          position: 'fixed',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '100%',
-          maxWidth: NAV_MAX_W,           // ★ max-w-2xl と同じ 672px
-          padding: `10px 16px calc(10px + env(safe-area-inset-bottom, 0px))`,  // ★ px-4 と同じ 16px
-          background: '#0a0a0a',
-          borderTop: '1px solid rgba(255,255,255,0.07)',
-          borderLeft: '1px solid rgba(255,255,255,0.07)',
-          borderRight: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: '12px 12px 0 0',
-          zIndex: 30,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4,1fr)',
-          gap: '8px',
-        }}>
-          <button onClick={() => onNavigate('input')}
-            className="logio-nav-btn flex flex-col items-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">
-            <Plus className="w-5 h-5" />
-            <span className="font-semibold" style={{ fontSize: '11px' }}>日報入力</span>
-          </button>
-          {[
-            { id:'list',     icon:FileText,  label:'日報一覧' },
-            { id:'analysis', icon:BarChart3, label:'原価分析' },
-            { id:'settings', icon:Settings,  label:'設定' },
-          ].map(({ id, icon:Icon, label }) => (
-            <button key={id} onClick={() => onNavigate(id)}
-              className="logio-nav-btn flex flex-col items-center gap-1.5 py-3 rounded-xl transition-colors text-gray-400 hover:text-white"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <Icon className="w-5 h-5" />
-              <span className="font-medium" style={{ fontSize: '11px' }}>{label}</span>
+      {/* ★ ボトム固定ナビ - Dock Style */}
+      {selectedSite && (() => {
+        const navDefs = [
+          { id:'home',     label:'HOME',     color:'#5b8db8', bg:'rgba(59,100,140,0.18)',  bd:'rgba(91,141,184,0.25)'  },
+          { id:'list',     label:'REPORTS',  color:'#4a8c6a', bg:'rgba(50,100,80,0.18)',   bd:'rgba(74,140,106,0.25)'  },
+          { id:'analysis', label:'ANALYSIS', color:'#b8863a', bg:'rgba(130,90,30,0.18)',   bd:'rgba(184,134,58,0.25)'  },
+          { id:'settings', label:'SETTINGS', color:'#8a6aaa', bg:'rgba(100,70,140,0.18)',  bd:'rgba(138,106,170,0.25)' },
+        ];
+        const allIds = ['home','list','input','analysis','settings'];
+        const activeIdx = allIds.indexOf(currentPage);
+        const NavIcon = ({id, stroke}) => {
+          if(id==='home') return <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{width:20,height:20}}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>;
+          if(id==='list') return <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{width:20,height:20}}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>;
+          if(id==='analysis') return <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{width:20,height:20}}><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>;
+          if(id==='settings') return <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{width:20,height:20}}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>;
+          return null;
+        };
+        const DockBtn = ({item, idx}) => {
+          const isActive = currentPage === item.id;
+          const diff = Math.abs(activeIdx - idx);
+          const ty = isActive ? -13 : diff===1 ? -6 : diff===2 ? -2 : 0;
+          const sc = isActive ? 1.12 : diff===1 ? 1.05 : diff===2 ? 1.02 : 1;
+          return (
+            <button onClick={() => onNavigate(item.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,width:58}}>
+              <div style={{width:42,height:42,borderRadius:13,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:14,background:isActive?item.bg:'rgba(255,255,255,0.03)',border:`1px solid ${isActive?item.bd:'rgba(255,255,255,0.05)'}`,boxShadow:isActive?'0 6px 20px rgba(0,0,0,0.5)':'none',transform:`translateY(${ty}px) scale(${sc})`,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1),background .25s,border-color .25s,box-shadow .25s'}}>
+                <NavIcon id={item.id} stroke={isActive?item.color:'rgba(255,255,255,0.22)'} />
+              </div>
+              <span style={{position:'absolute',bottom:1,fontSize:8,fontWeight:700,letterSpacing:'.05em',color:isActive?item.color:'rgba(255,255,255,0.16)',whiteSpace:'nowrap',fontFamily:'monospace',transition:'color .25s'}}>{item.label}</span>
+              {isActive && <div style={{position:'absolute',bottom:-1,left:'50%',transform:'translateX(-50%)',width:3,height:3,borderRadius:'50%',background:item.color}}/>}
             </button>
-          ))}
-        </div>
-      )}
+          );
+        };
+        const isFabActive = currentPage === 'input';
+        const fabDiff = Math.abs(activeIdx - 2);
+        const fabTy = isFabActive ? -15 : fabDiff===1 ? -6 : 0;
+        const fabSc = isFabActive ? 1.16 : fabDiff===1 ? 1.05 : 1;
+        return (
+          <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:NAV_MAX_W,padding:`0 16px calc(28px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'linear-gradient(to top,#000 55%,transparent)',zIndex:30,pointerEvents:'none'}}>
+            <div style={{display:'flex',alignItems:'flex-end',gap:2,background:'rgba(10,10,10,0.97)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:28,padding:'10px 10px',pointerEvents:'all',boxShadow:'0 20px 60px rgba(0,0,0,0.8)'}}>
+              <DockBtn item={navDefs[0]} idx={0} />
+              <DockBtn item={navDefs[1]} idx={1} />
+              {/* FAB */}
+              <button onClick={() => onNavigate('input')} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,width:62}}>
+                <div style={{width:48,height:48,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:11,background:isFabActive?'white':'rgba(225,225,225,0.88)',border:'none',boxShadow:isFabActive?'0 1px 0 rgba(255,255,255,0.8) inset,0 10px 28px rgba(0,0,0,0.65)':'0 1px 0 rgba(255,255,255,0.5) inset,0 6px 20px rgba(0,0,0,0.55)',transform:`translateY(${fabTy}px) scale(${fabSc})`,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1),background .25s,box-shadow .25s'}}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke={isFabActive?'#000':'#222'} strokeWidth="2.3" strokeLinecap="round" style={{width:22,height:22,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1)',transform:isFabActive?'rotate(45deg)':'none'}}>
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </div>
+                <span style={{position:'absolute',bottom:1,fontSize:8,fontWeight:700,letterSpacing:'.05em',color:isFabActive?'rgba(255,255,255,0.55)':'rgba(255,255,255,0.18)',whiteSpace:'nowrap',fontFamily:'monospace',transition:'color .25s'}}>INPUT</span>
+                {isFabActive && <div style={{position:'absolute',bottom:-1,left:'50%',transform:'translateX(-50%)',width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,0.5)'}}/>}
+              </button>
+              <DockBtn item={navDefs[2]} idx={3} />
+              <DockBtn item={navDefs[3]} idx={4} />
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

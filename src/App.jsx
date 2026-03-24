@@ -2452,15 +2452,13 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
             <div>
               {/* 外注費・販管費テーブル */}
               {(()=>{
-                const outItems = [
-                  ...(projectInfo.outsourcingItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0})),
-                  ...(projectInfo.siteExpenseItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0})),
-                ];
+                const outItems = (projectInfo.outsourcingItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
+                const siteExpItems = (projectInfo.siteExpenseItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
                 const sgaItems2 = (projectInfo.sgaItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
-                if(outItems.length===0 && sgaItems2.length===0) return null;
-                const maxRows = Math.max(outItems.length, sgaItems2.length);
+                if(outItems.length===0 && siteExpItems.length===0 && sgaItems2.length===0) return null;
+                const maxRows = Math.max(outItems.length, siteExpItems.length, 1);
                 const outTotal = outItems.reduce((s,i)=>s+i.amount,0);
-                const sgaTotal = sgaItems2.reduce((s,i)=>s+i.amount,0);
+                const siteExpTotal = siteExpItems.reduce((s,i)=>s+i.amount,0);
                 return (
                   <table className="pdf-header-table" style={{fontSize:'8px'}}>
                     <thead>
@@ -2489,12 +2487,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {sgaItems2.map((it,i)=>(
+                      {siteExpItems.map((it,i)=>(
                         <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{formatCurrency(it.amount)}</td></tr>
                       ))}
                       <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.03)'}}>
                         <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
-                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(sgaTotal)}</td>
+                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(siteExpTotal)}</td>
                       </tr>
                     </tbody>
                   </table>

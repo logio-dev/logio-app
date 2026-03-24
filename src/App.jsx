@@ -2385,6 +2385,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
   const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalTransportCost + totalWasteCost
     + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
+    + (projectInfo.outsourcingItems || []).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
+    + (projectInfo.siteExpenseItems || []).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const grossProfit = totalRevenue - totalCost + totalScrapRevenue;
   const fmtDate = (dateStr) => { if (!dateStr) return ''; const p = dateStr.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
@@ -2506,7 +2508,6 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   {[
                     ['見積金額', totalRevenue],
                     ['原価金額', totalCost],
-                    ['外注人工', totalOutsourcingCost],
                     ['追加金額', parseFloat(projectInfo.additionalAmount) || 0],
                     ['金属売上', totalScrapRevenue],
                   ].map(([label, val]) => (

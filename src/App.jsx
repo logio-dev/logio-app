@@ -1868,7 +1868,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
           (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
           (r.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
           (r.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
+          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0), 0);
         return (
           <div key={month} className="mb-3">
             <button onClick={() => toggleMonth(month)}
@@ -1925,7 +1925,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
                 (report.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
                 (report.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
                 (report.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-                (report.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0);
+                (report.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0);
               return totalCost > 0 && <span className="text-yellow-400 font-semibold">¥{formatCurrency(totalCost)}</span>;
             })()}
           </div>
@@ -1993,7 +1993,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
           )}
           {report.wasteItems?.length > 0 && (
             <div className="mb-4 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
-              <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount,0))}</p>
+              <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0))}</p>
               {report.wasteItems.map((waste, idx) => (
                 <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
                   <p>• {waste.material} <span className="text-gray-500">{waste.quantity}{waste.unit}</span> - {waste.disposalSite}</p>
@@ -2379,7 +2379,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const totalOutsourcingCost = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (o.amount || 0), 0), 0);
   const totalVehicleCost = allReports.reduce((sum, r) => sum + (r.workDetails?.vehicles || []).reduce((s, v) => s + (v.amount || 0), 0), 0);
   const totalMachineryCost = allReports.reduce((sum, r) => sum + (r.workDetails?.machinery || []).reduce((s, m) => s + (m.unitPrice || 0), 0), 0);
-  const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
+  const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0) + (w.haishiAmount || 0), 0), 0);
   const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.envItems || []).reduce((s,t)=>s+(t.amount||0),0) + (r.workDetails?.extItems || []).reduce((s,t)=>s+(t.amount||0),0), 0);
   const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
@@ -2872,7 +2872,7 @@ export default function LOGIOApp() {
         report.workDetails.envItems?.forEach(t => accumulatedCost += t.amount || 0);
         report.workDetails.extItems?.forEach(t => accumulatedCost += t.amount || 0);
       }
-      report.wasteItems?.forEach(w => accumulatedCost += w.amount || 0);
+      report.wasteItems?.forEach(w => accumulatedCost += (w.amount || 0) + (w.haishiAmount || 0));
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
     });
     accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)

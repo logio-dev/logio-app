@@ -2351,6 +2351,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 // ========== ReportPDFPage ==========
 function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const projectInfo = report._projectInfo || propProjectInfo;
+  console.log('📄 PDF projectInfo:', { siteExpenseItems: projectInfo?.siteExpenseItems, outsourcingItems: projectInfo?.outsourcingItems, _projectInfo: !!report._projectInfo });
   const [allReports, setAllReports] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);

@@ -27,8 +27,9 @@ function sb(table) {
     },
     async upsert(data, onConflict) {
       const h2 = Object.assign({}, h, { 'Prefer': 'resolution=merge-duplicates,return=representation' });
-      const url = onConflict ? (base + '?on_conflict=' + onConflict) : base;
+      const url = onConflict ? (base + '?on_conflict=' + encodeURIComponent(onConflict)) : base;
       const res = await fetch(url, { method: 'POST', headers: h2, body: JSON.stringify(data) });
+      if (!res.ok) { const err = await res.text(); console.error('upsert error:', res.status, err); }
       return res.json();
     },
     async update(data, filter) {

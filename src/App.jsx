@@ -2948,7 +2948,7 @@ export default function LOGIOApp() {
             const fabTy = isFabActive ? -15 : fabDiff===1 ? -6 : 0;
             const fabSc = isFabActive ? 1.16 : fabDiff===1 ? 1.05 : 1;
             return (
-              <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:NAV_MAX_W,padding:`0 16px calc(28px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'linear-gradient(to top,#000 55%,transparent)',zIndex:30,pointerEvents:'none'}}>
+              <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'672px',padding:`0 16px calc(28px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'linear-gradient(to top,#000 55%,transparent)',zIndex:30,pointerEvents:'none'}}>
                 <div style={{display:'flex',alignItems:'flex-end',gap:2,background:'rgba(10,10,10,0.97)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:28,padding:'10px 10px',pointerEvents:'all',boxShadow:'0 20px 60px rgba(0,0,0,0.8)'}}>
                   {renderDockBtn(navDefs[0], 0)}
                   {renderDockBtn(navDefs[1], 1)}

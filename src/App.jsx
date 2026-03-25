@@ -2934,7 +2934,7 @@ export default function LOGIOApp() {
               const ty = isActive ? -13 : diff===1 ? -6 : diff===2 ? -2 : 0;
               const sc = isActive ? 1.12 : diff===1 ? 1.05 : diff===2 ? 1.02 : 1;
               return (
-                <button key={item.id} onClick={() => handleNavigate(item.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,width:58}}>
+                <button key={item.id} onClick={() => handleNavigate(item.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
                   <div style={{width:42,height:42,borderRadius:13,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:14,background:isActive?item.bg:'rgba(255,255,255,0.03)',border:`1px solid ${isActive?item.bd:'rgba(255,255,255,0.05)'}`,boxShadow:isActive?'0 6px 20px rgba(0,0,0,0.5)':'none',transform:`translateY(${ty}px) scale(${sc})`,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1),background .25s,border-color .25s,box-shadow .25s'}}>
                     {dockIcon(item.id, isActive?item.color:'rgba(255,255,255,0.22)')}
                   </div>
@@ -2948,11 +2948,11 @@ export default function LOGIOApp() {
             const fabTy = isFabActive ? -15 : fabDiff===1 ? -6 : 0;
             const fabSc = isFabActive ? 1.16 : fabDiff===1 ? 1.05 : 1;
             return (
-              <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'672px',padding:`0 16px calc(28px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'linear-gradient(to top,#000 55%,transparent)',zIndex:30,pointerEvents:'none'}}>
-                <div style={{display:'flex',alignItems:'flex-end',gap:2,background:'rgba(10,10,10,0.97)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:28,padding:'10px 10px',pointerEvents:'all',boxShadow:'0 20px 60px rgba(0,0,0,0.8)'}}>
+              <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'672px',padding:`0 16px calc(20px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'linear-gradient(to top,#000 55%,transparent)',zIndex:30,pointerEvents:'none'}}>
+                <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'rgba(10,10,10,0.97)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 20px 60px rgba(0,0,0,0.8)'}}>
                   {renderDockBtn(navDefs[0], 0)}
                   {renderDockBtn(navDefs[1], 1)}
-                  <button onClick={() => handleNavigate('input')} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,width:58}}>
+                  <button onClick={() => handleNavigate('input')} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
                     <div style={{width:48,height:48,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:11,background:isFabActive?'white':'rgba(225,225,225,0.88)',border:'none',boxShadow:isFabActive?'0 1px 0 rgba(255,255,255,0.8) inset,0 10px 28px rgba(0,0,0,0.65)':'0 1px 0 rgba(255,255,255,0.5) inset,0 6px 20px rgba(0,0,0,0.55)',transform:`translateY(${fabTy}px) scale(${fabSc})`,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1),background .25s,box-shadow .25s'}}>
                       <svg viewBox="0 0 24 24" fill="none" stroke={isFabActive?'#000':'#222'} strokeWidth="2.3" strokeLinecap="round" style={{width:22,height:22,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1)',transform:isFabActive?'rotate(45deg)':'none'}}>
                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>

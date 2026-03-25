@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-console.log('✅ LOGIO Phase5: Module loaded successfully');
 
 // ========== Supabase設定 ==========
 function sb(table) {
@@ -18,7 +17,6 @@ function sb(table) {
   return {
     async select(filter) {
       const url = filter ? (base + '?' + filter) : base;
-      console.log('🔍 select URL:', url);
       const res = await fetch(url, { headers: h });
       if (!res.ok) console.error('select error:', res.status, url);
       return res.json();
@@ -628,7 +626,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -1809,7 +1807,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   const fmtMonth = (ym) => { const [y, m] = ym.split('-'); return `${y}年${parseInt(m)}月`; };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
       <div className="mb-4">
         <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
@@ -2330,7 +2328,6 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 // ========== ReportPDFPage ==========
 function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const projectInfo = report._projectInfo || propProjectInfo;
-  console.log('📄 PDF projectInfo:', { siteExpenseItems: projectInfo?.siteExpenseItems, outsourcingItems: projectInfo?.outsourcingItems, _projectInfo: !!report._projectInfo });
   const [allReports, setAllReports] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
@@ -2782,7 +2779,6 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      console.log('💾 保存データ確認:', { siteExpenseItems: projectInfo.siteExpenseItems, outsourcingItems: projectInfo.outsourcingItems });
       await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.discharger || '', transport_company: projectInfo.transportCompany || '', contracted_disposal_sites: projectInfo.contractedDisposalSites || [], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], updated_at: new Date().toISOString() }, 'site_name');
       await sb('sites').update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));

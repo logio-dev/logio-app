@@ -2949,7 +2949,7 @@ export default function LOGIOApp() {
             };
             const getTransform = (id, idx) => {
               const isActive = currentPage === id;
-              const isHover = hoverId === id;
+              const isHover = navHoverId === id;
               const diff = Math.abs(activeIdx - idx);
               const hoverDiff = navHoverId ? Math.abs(allIds.indexOf(navHoverId) - idx) : 99;
               if(isActive) return {ty:-13, sc:1.12};

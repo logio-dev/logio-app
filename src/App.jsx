@@ -1878,6 +1878,12 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
           </div>
           <div className="flex items-center gap-2 text-sm flex-wrap">
             <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded text-xs font-medium">{report.workDetails?.workCategory || report.workCategory}</span>
+            {report.wasteItems?.some(w=>w.haisha==='env') && (
+              <span style={{padding:'2px 7px',borderRadius:6,background:'rgba(34,197,94,0.08)',border:'1px solid rgba(34,197,94,0.2)',fontSize:10,fontWeight:700,color:'#4ade80'}}>環境課配車</span>
+            )}
+            {report.wasteItems?.some(w=>w.haisha==='ext') && (
+              <span style={{padding:'2px 7px',borderRadius:6,background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.2)',fontSize:10,fontWeight:700,color:'#a5b4fc'}}>ワイエム配車</span>
+            )}
             {(() => {
               const totalCost =
                 (report.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
@@ -1958,6 +1964,18 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
               {report.wasteItems.map((waste, idx) => (
                 <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
                   <p>• {waste.material} <span className="text-gray-500">{waste.quantity}{waste.unit}</span> - {waste.disposalSite}</p>
+                  {waste.haisha==='env' && (
+                    <div style={{display:'flex',alignItems:'center',gap:5,marginTop:4,padding:'3px 8px',borderRadius:6,background:'rgba(34,197,94,0.08)',border:'1px solid rgba(34,197,94,0.15)',width:'fit-content'}}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                      <span style={{fontSize:10,fontWeight:700,color:'#4ade80',fontFamily:'monospace'}}>環境課配車 / {waste.driver}{waste.vType?` ${waste.vType}(${waste.vNumber})`:''} {waste.haishiShift==='day'?'昼':'夜'} ¥{formatCurrency(waste.haishiAmount||0)}</span>
+                    </div>
+                  )}
+                  {waste.haisha==='ext' && (
+                    <div style={{display:'flex',alignItems:'center',gap:5,marginTop:4,padding:'3px 8px',borderRadius:6,background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.15)',width:'fit-content'}}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2.5" strokeLinecap="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                      <span style={{fontSize:10,fontWeight:700,color:'#a5b4fc',fontFamily:'monospace'}}>ワイエム配車 {waste.haishiShift==='day'?'昼':waste.haishiShift==='night'?'夜':'例外'} ¥{formatCurrency(waste.haishiAmount||0)}</span>
+                    </div>
+                  )}
                   {waste.manifestNumber && <p className="text-xs text-gray-500 ml-4">マニフェスト: {waste.manifestNumber}</p>}
                 </div>
               ))}
@@ -2911,12 +2929,12 @@ export default function LOGIOApp() {
         />
         <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
-          {selectedSite && ['home','list','analysis','settings'].includes(currentPage) && (() => {
+          {selectedSite && ['home','list','analysis'].includes(currentPage) && (() => {
             const navDefs = [
-              { id:'home',     label:'HOME',     color:'#5b8db8', bg:'rgba(59,100,140,0.18)',  bd:'rgba(91,141,184,0.25)'  },
-              { id:'list',     label:'REPORTS',  color:'#4a8c6a', bg:'rgba(50,100,80,0.18)',   bd:'rgba(74,140,106,0.25)'  },
-              { id:'analysis', label:'ANALYSIS', color:'#b8863a', bg:'rgba(130,90,30,0.18)',   bd:'rgba(184,134,58,0.25)'  },
-              { id:'settings', label:'SETTINGS', color:'#8a6aaa', bg:'rgba(100,70,140,0.18)',  bd:'rgba(138,106,170,0.25)' },
+              { id:'home',     label:'HOME',     color:'#7eb8d4', bg:'rgba(60,120,160,0.15)',  bd:'rgba(126,184,212,0.22)'  },
+              { id:'list',     label:'REPORTS',  color:'#6dbb8a', bg:'rgba(50,110,75,0.15)',   bd:'rgba(109,187,138,0.22)'  },
+              { id:'analysis', label:'ANALYSIS', color:'#c9973e', bg:'rgba(140,100,30,0.15)',   bd:'rgba(201,151,62,0.22)'  },
+              { id:'settings', label:'SETTINGS', color:'#a07cc5', bg:'rgba(110,75,155,0.15)',  bd:'rgba(160,124,197,0.22)' },
             ];
             const allIds = ['home','list','input','analysis','settings'];
             const activeIdx = allIds.indexOf(currentPage);

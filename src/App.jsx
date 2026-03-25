@@ -628,7 +628,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(90px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -2946,31 +2946,53 @@ export default function LOGIOApp() {
               if(id==='settings') return <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>;
               return null;
             };
+            const [hoverId, setHoverId] = useState(null);
+            const getTransform = (id, idx) => {
+              const isActive = currentPage === id;
+              const isHover = hoverId === id;
+              const diff = Math.abs(activeIdx - idx);
+              const hoverDiff = hoverId ? Math.abs(allIds.indexOf(hoverId) - idx) : 99;
+              if(isActive) return {ty:-13, sc:1.12};
+              if(isHover) return {ty:-13, sc:1.12};
+              if(hoverDiff===1) return {ty:-6, sc:1.05};
+              if(hoverDiff===2) return {ty:-2, sc:1.02};
+              if(diff===1) return {ty:-6, sc:1.05};
+              if(diff===2) return {ty:-2, sc:1.02};
+              return {ty:0, sc:1};
+            };
             const renderDockBtn = (item, idx) => {
               const isActive = currentPage === item.id;
-              const diff = Math.abs(activeIdx - idx);
-              const ty = isActive ? -13 : diff===1 ? -6 : diff===2 ? -2 : 0;
-              const sc = isActive ? 1.12 : diff===1 ? 1.05 : diff===2 ? 1.02 : 1;
+              const isHover = hoverId === item.id;
+              const {ty, sc} = getTransform(item.id, idx);
+              const showColor = isActive || isHover;
               return (
-                <button key={item.id} onClick={() => handleNavigate(item.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
-                  <div style={{width:42,height:42,borderRadius:13,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:14,background:isActive?item.bg:'rgba(255,255,255,0.03)',border:`1px solid ${isActive?item.bd:'rgba(255,255,255,0.05)'}`,boxShadow:isActive?'0 6px 20px rgba(0,0,0,0.5)':'none',transform:`translateY(${ty}px) scale(${sc})`,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1),background .25s,border-color .25s,box-shadow .25s'}}>
-                    {dockIcon(item.id, isActive?item.color:'rgba(255,255,255,0.22)')}
+                <button key={item.id}
+                  onClick={() => handleNavigate(item.id)}
+                  onMouseEnter={() => setHoverId(item.id)}
+                  onMouseLeave={() => setHoverId(null)}
+                  onTouchStart={() => setHoverId(item.id)}
+                  onTouchEnd={() => { setTimeout(()=>setHoverId(null), 300); }}
+                  style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
+                  <div style={{width:42,height:42,borderRadius:13,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:14,background:showColor?item.bg:'rgba(255,255,255,0.03)',border:`1px solid ${showColor?item.bd:'rgba(255,255,255,0.05)'}`,boxShadow:showColor?'0 6px 20px rgba(0,0,0,0.5)':'none',transform:`translateY(${ty}px) scale(${sc})`,transition:'transform .3s cubic-bezier(0.34,1.4,0.64,1),background .2s,border-color .2s,box-shadow .2s'}}>
+                    {dockIcon(item.id, showColor?item.color:'rgba(255,255,255,0.22)')}
                   </div>
-                  <span style={{position:'absolute',bottom:1,fontSize:8,fontWeight:700,letterSpacing:'.05em',color:isActive?item.color:'rgba(255,255,255,0.16)',whiteSpace:'nowrap',fontFamily:'monospace',transition:'color .25s'}}>{item.label}</span>
+                  <span style={{position:'absolute',bottom:1,fontSize:8,fontWeight:700,letterSpacing:'.05em',color:showColor?item.color:'rgba(255,255,255,0.16)',whiteSpace:'nowrap',fontFamily:'monospace',transition:'color .2s'}}>{item.label}</span>
                   {isActive && <div style={{position:'absolute',bottom:-1,left:'50%',transform:'translateX(-50%)',width:3,height:3,borderRadius:'50%',background:item.color}}/>}
                 </button>
               );
             };
             const isFabActive = currentPage === 'input';
+            const isFabHover = hoverId === 'input';
             const fabDiff = Math.abs(activeIdx - 2);
-            const fabTy = isFabActive ? -15 : fabDiff===1 ? -6 : 0;
-            const fabSc = isFabActive ? 1.16 : fabDiff===1 ? 1.05 : 1;
+            const fabHoverDiff = hoverId ? Math.abs(allIds.indexOf(hoverId) - 2) : 99;
+            const fabTy = (isFabActive||isFabHover) ? -15 : (fabHoverDiff===1||fabDiff===1) ? -6 : 0;
+            const fabSc = (isFabActive||isFabHover) ? 1.16 : (fabHoverDiff===1||fabDiff===1) ? 1.05 : 1;
             return (
-              <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'672px',padding:`0 16px calc(20px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',background:'linear-gradient(to top,#000 55%,transparent)',zIndex:30,pointerEvents:'none'}}>
+              <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'672px',padding:`0 16px calc(20px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:30,pointerEvents:'none'}}>
                 <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'rgba(10,10,10,0.97)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 20px 60px rgba(0,0,0,0.8)'}}>
                   {renderDockBtn(navDefs[0], 0)}
                   {renderDockBtn(navDefs[1], 1)}
-                  <button onClick={() => handleNavigate('input')} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
+                  <button onClick={() => handleNavigate('input')} onMouseEnter={()=>setHoverId('input')} onMouseLeave={()=>setHoverId(null)} onTouchStart={()=>setHoverId('input')} onTouchEnd={()=>{setTimeout(()=>setHoverId(null),300);}} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
                     <div style={{width:48,height:48,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:11,background:isFabActive?'white':'rgba(225,225,225,0.88)',border:'none',boxShadow:isFabActive?'0 1px 0 rgba(255,255,255,0.8) inset,0 10px 28px rgba(0,0,0,0.65)':'0 1px 0 rgba(255,255,255,0.5) inset,0 6px 20px rgba(0,0,0,0.55)',transform:`translateY(${fabTy}px) scale(${fabSc})`,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1),background .25s,box-shadow .25s'}}>
                       <svg viewBox="0 0 24 24" fill="none" stroke={isFabActive?'#000':'#222'} strokeWidth="2.3" strokeLinecap="round" style={{width:22,height:22,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1)',transform:isFabActive?'rotate(45deg)':'none'}}>
                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>

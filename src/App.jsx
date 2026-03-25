@@ -2631,6 +2631,7 @@ export default function LOGIOApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
+  const [navHoverId, setNavHoverId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -2946,12 +2947,11 @@ export default function LOGIOApp() {
               if(id==='settings') return <svg viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>;
               return null;
             };
-            const [hoverId, setHoverId] = useState(null);
             const getTransform = (id, idx) => {
               const isActive = currentPage === id;
               const isHover = hoverId === id;
               const diff = Math.abs(activeIdx - idx);
-              const hoverDiff = hoverId ? Math.abs(allIds.indexOf(hoverId) - idx) : 99;
+              const hoverDiff = navHoverId ? Math.abs(allIds.indexOf(navHoverId) - idx) : 99;
               if(isActive) return {ty:-13, sc:1.12};
               if(isHover) return {ty:-13, sc:1.12};
               if(hoverDiff===1) return {ty:-6, sc:1.05};
@@ -2962,16 +2962,16 @@ export default function LOGIOApp() {
             };
             const renderDockBtn = (item, idx) => {
               const isActive = currentPage === item.id;
-              const isHover = hoverId === item.id;
+              const isHover = navHoverId === item.id;
               const {ty, sc} = getTransform(item.id, idx);
               const showColor = isActive || isHover;
               return (
                 <button key={item.id}
                   onClick={() => handleNavigate(item.id)}
-                  onMouseEnter={() => setHoverId(item.id)}
-                  onMouseLeave={() => setHoverId(null)}
-                  onTouchStart={() => setHoverId(item.id)}
-                  onTouchEnd={() => { setTimeout(()=>setHoverId(null), 300); }}
+                  onMouseEnter={() => setNavHoverId(item.id)}
+                  onMouseLeave={() => setNavHoverId(null)}
+                  onTouchStart={() => setNavHoverId(item.id)}
+                  onTouchEnd={() => { setTimeout(()=>setNavHoverId(null), 300); }}
                   style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
                   <div style={{width:42,height:42,borderRadius:13,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:14,background:showColor?item.bg:'rgba(255,255,255,0.03)',border:`1px solid ${showColor?item.bd:'rgba(255,255,255,0.05)'}`,boxShadow:showColor?'0 6px 20px rgba(0,0,0,0.5)':'none',transform:`translateY(${ty}px) scale(${sc})`,transition:'transform .3s cubic-bezier(0.34,1.4,0.64,1),background .2s,border-color .2s,box-shadow .2s'}}>
                     {dockIcon(item.id, showColor?item.color:'rgba(255,255,255,0.22)')}
@@ -2982,9 +2982,9 @@ export default function LOGIOApp() {
               );
             };
             const isFabActive = currentPage === 'input';
-            const isFabHover = hoverId === 'input';
+            const isFabHover = navHoverId === 'input';
             const fabDiff = Math.abs(activeIdx - 2);
-            const fabHoverDiff = hoverId ? Math.abs(allIds.indexOf(hoverId) - 2) : 99;
+            const fabHoverDiff = navHoverId ? Math.abs(allIds.indexOf(navHoverId) - 2) : 99;
             const fabTy = (isFabActive||isFabHover) ? -15 : (fabHoverDiff===1||fabDiff===1) ? -6 : 0;
             const fabSc = (isFabActive||isFabHover) ? 1.16 : (fabHoverDiff===1||fabDiff===1) ? 1.05 : 1;
             return (
@@ -2992,7 +2992,7 @@ export default function LOGIOApp() {
                 <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'rgba(10,10,10,0.97)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 20px 60px rgba(0,0,0,0.8)'}}>
                   {renderDockBtn(navDefs[0], 0)}
                   {renderDockBtn(navDefs[1], 1)}
-                  <button onClick={() => handleNavigate('input')} onMouseEnter={()=>setHoverId('input')} onMouseLeave={()=>setHoverId(null)} onTouchStart={()=>setHoverId('input')} onTouchEnd={()=>{setTimeout(()=>setHoverId(null),300);}} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
+                  <button onClick={() => handleNavigate('input')} onMouseEnter={()=>setNavHoverId('input')} onMouseLeave={()=>setNavHoverId(null)} onTouchStart={()=>setNavHoverId('input')} onTouchEnd={()=>{setTimeout(()=>setNavHoverId(null),300);}} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>
                     <div style={{width:48,height:48,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:11,background:isFabActive?'white':'rgba(225,225,225,0.88)',border:'none',boxShadow:isFabActive?'0 1px 0 rgba(255,255,255,0.8) inset,0 10px 28px rgba(0,0,0,0.65)':'0 1px 0 rgba(255,255,255,0.5) inset,0 6px 20px rgba(0,0,0,0.55)',transform:`translateY(${fabTy}px) scale(${fabSc})`,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1),background .25s,box-shadow .25s'}}>
                       <svg viewBox="0 0 24 24" fill="none" stroke={isFabActive?'#000':'#222'} strokeWidth="2.3" strokeLinecap="round" style={{width:22,height:22,transition:'transform .35s cubic-bezier(0.34,1.4,0.64,1)',transform:isFabActive?'rotate(45deg)':'none'}}>
                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>

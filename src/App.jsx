@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Fragment } from 'react';
+AZimport React, { useState, useEffect, useRef, Fragment } from 'react';
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -896,7 +896,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#000', minHeight:'100vh', color:'white' }}>
+    <div style={{ background:'#000', minHeight:'100vh', color:'white', overflowX:'hidden', width:'100%' }}>
       <div style={{ maxWidth:'42rem', margin:'0 auto', padding:`24px 16px calc(160px + env(safe-area-inset-bottom,0px))`, width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
 
         {/* 閉じるボタン */}
@@ -961,6 +961,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           return (
             <div key={site.name} style={{
               borderRadius:14, marginBottom:10, overflow:'hidden',
+              width:'100%', boxSizing:'border-box',
               border: isOpen ? '1.5px solid transparent' : '1.5px solid rgba(255,255,255,0.07)',
               background: isOpen
                 ? 'linear-gradient(#050505,#050505) padding-box, linear-gradient(135deg,#3b82f6,#22d3ee,#6366f1) border-box'

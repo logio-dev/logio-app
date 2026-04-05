@@ -1087,9 +1087,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           return (
                             <div style={{marginBottom:16}}>
                               <div style={{display:'flex',gap:4,background:'#0a0a0a',padding:4,borderRadius:11,border:'1px solid rgba(255,255,255,0.07)',marginBottom:12}}>
-                                {[['out','現場外注費','直接原価','#60a5fa','rgba(59,130,246,0.15)'],['site','現場経費','直接原価','#4ade80','rgba(34,197,94,0.15)'],['sga','販管費','間接費','#fbbf24','rgba(245,158,11,0.15)']].map(([k,label,sub,color,bg])=>(
+                                {[['out','外注費','直接原価','#60a5fa','rgba(59,130,246,0.15)'],['site','現場経費','直接原価','#4ade80','rgba(34,197,94,0.15)'],['sga','販管費','間接費','#fbbf24','rgba(245,158,11,0.15)']].map(([k,label,sub,color,bg])=>(
                                   <button key={k} onClick={()=>setProjectInfo({...projectInfo,_costTab:k})}
-                                    style={{flex:1,padding:'9px 4px',borderRadius:8,border:'none',fontSize:11,fontWeight:700,cursor:'pointer',background:activeTab===k?bg:'transparent',color:activeTab===k?color:'#4B5563',fontFamily:'inherit',textAlign:'center',lineHeight:1.4}}>
+                                    style={{flex:1,padding:'8px 2px',borderRadius:8,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',background:activeTab===k?bg:'transparent',color:activeTab===k?color:'#4B5563',fontFamily:'inherit',textAlign:'center',lineHeight:1.3,whiteSpace:'nowrap'}}>
                                     {label}<br/><span style={{fontSize:9,fontWeight:400,color:activeTab===k?color:'#374151'}}>{sub}</span>
                                   </button>
                                 ))}
@@ -1246,12 +1246,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   };
 
   const isStep1Valid = () => report.date && report.recorder;
+  const [isSaving, setIsSaving] = useState(false);
   const handleSave = async () => {
-    const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems };
-    if (isEditMode && onUpdate) {
-      onUpdate(editReport.id, data);
-    } else {
-      onSave(data);
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems };
+      if (isEditMode && onUpdate) {
+        await onUpdate(editReport.id, data);
+      } else {
+        await onSave(data);
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1783,7 +1790,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}
 
-          <BFooter onBack={()=>setCurrentStep(2)} onNext={handleSave} nextLabel={isEditMode ? "更新する ✓" : "保存する ✓"} nextColor="#16a34a" />
+          <BFooter onBack={()=>setCurrentStep(2)} onNext={handleSave} nextLabel={isSaving ? '保存中...' : isEditMode ? '更新する ✓' : '保存する ✓'} nextColor="#16a34a" disabled={isSaving} />
         </div>
       )}
     </div>
@@ -1987,7 +1994,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
               ))}
             </div>
           )}
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 flex gap-2">
             <button onClick={() => { if (window.__navigatePDF) window.__navigatePDF(report); }}
               className="py-3 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-1">
               <FileText className="w-4 h-4" />PDF
@@ -2784,7 +2791,6 @@ export default function LOGIOApp() {
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
-      setCurrentPage('home');
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました'); }
   };
 
@@ -2807,7 +2813,7 @@ export default function LOGIOApp() {
       await loadReports(selectedSite);
       alert('✅ 日報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
-      setCurrentPage('home');
+      setCurrentPage('list');
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + error.message); }
   };
 

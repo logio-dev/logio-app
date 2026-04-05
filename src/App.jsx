@@ -898,7 +898,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
   return (
     <div style={{ background:'#000', minHeight:'100vh', color:'white' }}>
-      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:`24px 16px calc(160px + env(safe-area-inset-bottom,0px))`, width:'100%', boxSizing:'border-box' }}>
+      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'24px 16px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -924,7 +924,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             <input type="text" value={newSiteName} onChange={e=>setNewSiteName(e.target.value)}
               onKeyDown={e=>e.key==='Enter'&&handleAddSite()}
               placeholder="例: 渋谷〇〇ビル解体工事"
-              style={{ width:'100%', padding:'12px 14px', background:'#000', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box' }} />
+              style={{ width:'100%', padding:'12px 14px', background:'#000', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box', maxWidth:'100%' }} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
               <button onClick={handleAddSite} style={{ padding:12, background:'#2563EB', border:'none', color:'white', borderRadius:9, fontSize:14, fontWeight:700, cursor:'pointer' }}>追加する</button>
               <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
@@ -962,7 +962,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           return (
             <div key={site.name} style={{
               borderRadius:14, marginBottom:10, overflow:'hidden',
-              width:'100%', boxSizing:'border-box',
+              width:'100%', boxSizing:'border-box', minWidth:0,
               border: isOpen ? '1.5px solid rgba(99,102,241,0.4)' : '1.5px solid rgba(255,255,255,0.07)',
               background: isOpen ? '#050505' : 'rgba(255,255,255,0.02)',
               boxShadow: isOpen ? '0 0 0 1px rgba(59,130,246,0.15), 0 4px 20px rgba(99,102,241,0.1)' : 'none',
@@ -1009,7 +1009,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               {/* 展開コンテンツ */}
               {isOpen && (
                 <div style={{ padding:'0 14px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', width:'100%', boxSizing:'border-box' }}>
-                  <div style={{ paddingTop:16 }}>
+                  <div style={{ paddingTop:16, minWidth:0, width:'100%' }}>
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>
                       <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>

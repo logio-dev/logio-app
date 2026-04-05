@@ -307,11 +307,11 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
 function Select({ label, labelEn, options, value, onChange, placeholder = "選択してください", required = false }) {
   return (
     <div className="mb-6">
-      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+      <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">
         {label} / {labelEn} {required && <span className="text-red-500">*</span>}
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
+        className="w-full px-3 py-2.5 text-white text-sm font-medium focus:outline-none rounded-lg"
         style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
         required={required}>
         <option value="">{placeholder}</option>
@@ -335,7 +335,7 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
 
   return (
     <div className="mb-4 relative" ref={dropdownRef}>
-      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+      <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">
         {label} / {labelEn}
       </label>
       <button type="button" onClick={() => setIsOpen(!isOpen)}
@@ -378,11 +378,11 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
 function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "text", required = false }) {
   return (
     <div className="mb-4">
-      <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">
+      <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">
         {label} / {labelEn} {required && <span className="text-red-500">*</span>}
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
+        className="w-full px-3 py-2.5 text-white text-sm font-medium focus:outline-none rounded-lg"
         style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
         required={required} />
     </div>
@@ -885,13 +885,13 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
     const year = parts[0] || '';
     const num  = parts[1] || '';
     if (!year && !num) return (
-      <div style={{ width:52, height:48, borderRadius:11, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.03)', border:'1px dashed rgba(255,255,255,0.1)', fontSize:9, fontWeight:700, color:'#374151', textAlign:'center', lineHeight:1.4 }}>未採<br/>番</div>
+      <div style={{ width:40, height:40, borderRadius:9, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.03)', border:'1px dashed rgba(255,255,255,0.1)', fontSize:9, fontWeight:700, color:'#374151', textAlign:'center', lineHeight:1.4 }}>未採<br/>番</div>
     );
     return (
-      <div style={{ width:52, height:48, borderRadius:11, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#000', border:'1px solid rgba(99,102,241,0.3)', boxShadow:'0 0 12px rgba(99,102,241,0.08) inset', gap:2, padding:4 }}>
-        <span style={{ fontSize:8, fontWeight:700, color:'#6366f1', letterSpacing:'.04em', lineHeight:1, textShadow:'0 0 6px rgba(99,102,241,0.8)' }}>{year}</span>
+      <div style={{ width:40, height:40, borderRadius:9, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#000', border:'1px solid rgba(99,102,241,0.3)', boxShadow:'0 0 12px rgba(99,102,241,0.08) inset', gap:1, padding:3 }}>
+        <span style={{ fontSize:7, fontWeight:700, color:'#6366f1', letterSpacing:'.02em', lineHeight:1, textShadow:'0 0 6px rgba(99,102,241,0.8)' }}>{year}</span>
         <div style={{ width:28, height:1, background:'rgba(99,102,241,0.3)' }}/>
-        <span style={{ fontSize:14, fontWeight:900, color:'#a5b4fc', lineHeight:1, letterSpacing:'-.02em', textShadow:'0 0 8px rgba(99,102,241,0.7)' }}>{num||'---'}</span>
+        <span style={{ fontSize:12, fontWeight:900, color:'#a5b4fc', lineHeight:1, letterSpacing:'-.02em', textShadow:'0 0 8px rgba(99,102,241,0.7)' }}>{num||'---'}</span>
       </div>
     );
   };
@@ -972,7 +972,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                   if (!isSelected && !isOpen) onSelectSite && onSelectSite(site.name);
                   setOpenCard(isOpen ? null : site.name);
                 }}
-                style={{ width:'100%', padding:'13px 14px', display:'flex', alignItems:'center', gap:12, background:'none', border:'none', cursor:'pointer', textAlign:'left' }}>
+                style={{ width:'100%', padding:'12px 10px', display:'flex', alignItems:'center', gap:8, background:'none', border:'none', cursor:'pointer', textAlign:'left' }}>
                 <SiteAvatar pjNo={pjNo || cardInfo.projectNumber} />
                 <div style={{ flex:1, minWidth:0 }}>
                   {editingName === site.name ? (
@@ -991,9 +991,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                     </div>
                   ) : (
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <div style={{ fontSize:15, fontWeight:700, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
+                      <div style={{ fontSize:14, fontWeight:700, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
                       <button onClick={e=>{ e.stopPropagation(); setEditingName(site.name); setEditNameVal(site.name); }}
-                        style={{ padding:'3px 7px', borderRadius:6, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.04)', color:'#4B5563', fontSize:10, cursor:'pointer', flexShrink:0 }}>編集</button>
+                        style={{ padding:'2px 6px', borderRadius:5, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.04)', color:'#4B5563', fontSize:9, cursor:'pointer', flexShrink:0 }}>編集</button>
                     </div>
                   )}
                   <div style={{ fontSize:11, color:'#4B5563', marginTop:2 }}>
@@ -2119,7 +2119,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const costRatioNum = parseFloat(costRatio);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen">
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen" style={{paddingBottom:"calc(160px + env(safe-area-inset-bottom,0px))"}}>
       <div className="mb-4">
         <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
@@ -2202,13 +2202,13 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         <SectionHeader title="月別原価推移 / Monthly Trend" />
         {barData.length > 0 ? (
           <div className="rounded-md p-5" style={{ background: 'rgba(255,255,255,0.02)' }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={barData}>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={barData} margin={{top:5, right:10, left:0, bottom:5}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="month" stroke="#9CA3AF" />
-                <YAxis label={{ value: '(万円)', angle: -90, position: 'insideLeft' }} stroke="#9CA3AF" />
+                <XAxis dataKey="month" stroke="#9CA3AF" tick={{fontSize:11}} />
+                <YAxis stroke="#9CA3AF" tick={{fontSize:11}} width={40} tickFormatter={(v)=>`${v}万`} />
                 <Tooltip formatter={(v) => `${v}万円`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                <Bar dataKey="cost" fill="#3B82F6" />
+                <Bar dataKey="cost" fill="#3B82F6" radius={[4,4,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -2289,10 +2289,10 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       <div className="border rounded-lg p-6 mb-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         <div className="mb-4">
-          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">日報用 GAS URL <span className="text-red-500">*必須</span></label>
+          <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">日報用 GAS URL <span className="text-red-500">*必須</span></label>
           <input type="text" value={gasUrl} onChange={(e) => setGasUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
             className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-4" />
-          <label className="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-2">月報用 GAS URL</label>
+          <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">月報用 GAS URL</label>
           <input type="text" value={gasMonthlyUrl} onChange={(e) => setGasMonthlyUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
             className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-green-500 mb-4" />
           <button onClick={handleSaveSettings} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
@@ -2916,7 +2916,7 @@ export default function LOGIOApp() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : currentPage === 'settings' ? 'auto' : 'hidden' }}>
+    <div className="min-h-screen bg-black flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       <div className="flex flex-col flex-1 bg-black">
         <Header
@@ -2931,7 +2931,7 @@ export default function LOGIOApp() {
             return costRatio >= 70 ? 1 : 0;
           })()}
         />
-        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : currentPage === 'settings' ? 'auto' : 'hidden' }}>
+        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
           {selectedSite && ['home','list','analysis'].includes(currentPage) && (() => {
             const navDefs = [

@@ -897,8 +897,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#000', minHeight:'100vh', color:'white', overflowX:'hidden', width:'100%' }}>
-      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:`24px 16px calc(160px + env(safe-area-inset-bottom,0px))`, width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
+    <div style={{ background:'#000', minHeight:'100vh', color:'white' }}>
+      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:`24px 16px calc(160px + env(safe-area-inset-bottom,0px))`, width:'100%', boxSizing:'border-box' }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -1008,7 +1008,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
               {/* 展開コンテンツ */}
               {isOpen && (
-                <div style={{ padding:'0 14px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
+                <div style={{ padding:'0 14px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', width:'100%', boxSizing:'border-box' }}>
                   <div style={{ paddingTop:16 }}>
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>
@@ -2931,7 +2931,7 @@ export default function LOGIOApp() {
             return costRatio >= 70 ? 1 : 0;
           })()}
         />
-        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
+        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : currentPage === 'settings' ? 'auto' : 'hidden' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
           {selectedSite && ['home','list','analysis'].includes(currentPage) && (() => {
             const navDefs = [

@@ -897,7 +897,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
   return (
     <div style={{ background:'#000', minHeight:'100vh', color:'white' }}>
-      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'24px 16px 80px' }}>
+      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:`24px 16px calc(160px + env(safe-area-inset-bottom,0px))`, width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -1007,7 +1007,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
               {/* 展開コンテンツ */}
               {isOpen && (
-                <div style={{ padding:'0 14px 16px', borderTop:'1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ padding:'0 14px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', width:'100%', boxSizing:'border-box', overflowX:'hidden' }}>
                   <div style={{ paddingTop:16 }}>
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>

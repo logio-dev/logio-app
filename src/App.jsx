@@ -312,7 +312,7 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
-        style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark' }}
+        style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
         required={required}>
         <option value="">{placeholder}</option>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -383,7 +383,7 @@ function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full px-4 py-3 text-white text-base font-medium focus:outline-none rounded-lg"
-        style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark' }}
+        style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
         required={required} />
     </div>
   );
@@ -609,8 +609,9 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
     <div className="bg-black text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        *, *::before, *::after { box-sizing: border-box; }
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        input, select, textarea { font-size: 16px !important; }
+        input, select, textarea { font-size: 16px !important; max-width: 100%; }
         .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
         .finance-detail.open { grid-template-rows: 1fr; }
         .finance-detail > div { overflow: hidden; }
@@ -1012,7 +1013,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>
                       <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
-                      <div style={{ padding:'10px 12px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:8, fontSize:14, color:'#4B5563' }}>
+                      <div style={{ padding:'10px 12px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:8, fontSize:14, color:'#4B5563', boxSizing:'border-box', width:'100%' }}>
                         {cardInfo.projectNumber || pjNo || '未採番'}　<span style={{ fontSize:10 }}>※ 自動採番（編集不可）</span>
                       </div>
                     </div>

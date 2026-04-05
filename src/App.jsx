@@ -1,4 +1,4 @@
-AZimport React, { useState, useEffect, useRef, Fragment } from 'react';
+import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -716,10 +716,10 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               </button>
               <div className={`finance-detail ${financeOpen ? 'open' : ''}`}>
                 <div>
-                  <div className="px-5 py-3 grid grid-cols-3 gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div><p className="logio-lbl mb-1">売上</p><p className="logio-val-md text-white">¥{formatCurrency(totals.totalRevenue)}</p></div>
-                    <div><p className="logio-lbl mb-1">原価</p><p className="logio-val-md" style={{ color: 'rgba(248,113,113,0.8)' }}>¥{formatCurrency(totals.accumulatedCost)}</p></div>
-                    {totals.accumulatedScrap > 0 && <div><p className="logio-lbl mb-1">スクラップ</p><p className="logio-val-md text-white">¥{formatCurrency(totals.accumulatedScrap)}</p></div>}
+                  <div className="px-5 py-3 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div className="flex justify-between items-center"><p className="logio-lbl">売上</p><p className="logio-val-md text-white">¥{formatCurrency(totals.totalRevenue)}</p></div>
+                    <div className="flex justify-between items-center"><p className="logio-lbl">原価</p><p className="logio-val-md" style={{ color: 'rgba(248,113,113,0.8)' }}>¥{formatCurrency(totals.accumulatedCost)}</p></div>
+                    {totals.accumulatedScrap > 0 && <div className="flex justify-between items-center"><p className="logio-lbl">スクラップ</p><p className="logio-val-md text-white">¥{formatCurrency(totals.accumulatedScrap)}</p></div>}
                   </div>
                 </div>
               </div>
@@ -962,10 +962,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             <div key={site.name} style={{
               borderRadius:14, marginBottom:10, overflow:'hidden',
               width:'100%', boxSizing:'border-box',
-              border: isOpen ? '1.5px solid transparent' : '1.5px solid rgba(255,255,255,0.07)',
-              background: isOpen
-                ? 'linear-gradient(#050505,#050505) padding-box, linear-gradient(135deg,#3b82f6,#22d3ee,#6366f1) border-box'
-                : 'rgba(255,255,255,0.02)',
+              border: isOpen ? '1.5px solid rgba(99,102,241,0.4)' : '1.5px solid rgba(255,255,255,0.07)',
+              background: isOpen ? '#050505' : 'rgba(255,255,255,0.02)',
+              boxShadow: isOpen ? '0 0 0 1px rgba(59,130,246,0.15), 0 4px 20px rgba(99,102,241,0.1)' : 'none',
             }}>
               {/* カードヘッダー */}
               <button onClick={() => {

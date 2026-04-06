@@ -306,12 +306,12 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
 
 function Select({ label, labelEn, options, value, onChange, placeholder = "選択してください", required = false }) {
   return (
-    <div className="mb-6">
+    <div className="mb-4">
       <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">
         {label} / {labelEn} {required && <span className="text-red-500">*</span>}
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 text-white text-sm font-medium focus:outline-none rounded-lg"
+        className="w-full px-3 py-2 text-white text-sm font-medium focus:outline-none rounded-lg"
         style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
         required={required}>
         <option value="">{placeholder}</option>
@@ -382,7 +382,7 @@ function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "
         {label} / {labelEn} {required && <span className="text-red-500">*</span>}
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full px-3 py-2.5 text-white text-sm font-medium focus:outline-none rounded-lg"
+        className="w-full px-3 py-2 text-white text-sm font-medium focus:outline-none rounded-lg"
         style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
         required={required} />
     </div>
@@ -885,10 +885,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
     const year = parts[0] || '';
     const num  = parts[1] || '';
     if (!year && !num) return (
-      <div style={{ width:40, height:40, borderRadius:9, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.03)', border:'1px dashed rgba(255,255,255,0.1)', fontSize:9, fontWeight:700, color:'#374151', textAlign:'center', lineHeight:1.4 }}>未採<br/>番</div>
+      <div style={{ width:36, height:36, borderRadius:8, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.03)', border:'1px dashed rgba(255,255,255,0.1)', fontSize:8, fontWeight:700, color:'#374151', textAlign:'center', lineHeight:1.4 }}>未採<br/>番</div>
     );
     return (
-      <div style={{ width:40, height:40, borderRadius:9, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#000', border:'1px solid rgba(99,102,241,0.3)', boxShadow:'0 0 12px rgba(99,102,241,0.08) inset', gap:1, padding:3 }}>
+      <div style={{ width:36, height:36, borderRadius:8, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#000', border:'1px solid rgba(99,102,241,0.3)', boxShadow:'0 0 12px rgba(99,102,241,0.08) inset', gap:1, padding:2 }}>
         <span style={{ fontSize:7, fontWeight:700, color:'#6366f1', letterSpacing:'.02em', lineHeight:1, textShadow:'0 0 6px rgba(99,102,241,0.8)' }}>{year}</span>
         <div style={{ width:28, height:1, background:'rgba(99,102,241,0.3)' }}/>
         <span style={{ fontSize:12, fontWeight:900, color:'#a5b4fc', lineHeight:1, letterSpacing:'-.02em', textShadow:'0 0 8px rgba(99,102,241,0.7)' }}>{num||'---'}</span>
@@ -898,7 +898,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
   return (
     <div style={{ background:'#000', minHeight:'100vh', color:'white', overflowX:'auto' }}>
-      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'20px 12px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
+      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'16px 10px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -908,7 +908,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
         {/* タイトル */}
         <div style={{ marginBottom:24 }}>
-          <div style={{ fontSize:20, fontWeight:800, letterSpacing:'-.02em' }}>現場管理</div>
+          <div style={{ fontSize:18, fontWeight:800, letterSpacing:'-.02em' }}>現場管理</div>
           <div style={{ fontSize:10, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>Site Management</div>
         </div>
 
@@ -961,7 +961,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
           return (
             <div key={site.name} style={{
-              borderRadius:14, marginBottom:10, overflow:'hidden',
+              borderRadius:12, marginBottom:8, overflow:'hidden',
               width:'100%', boxSizing:'border-box', minWidth:0,
               border: isOpen ? '1.5px solid rgba(99,102,241,0.4)' : '1.5px solid rgba(255,255,255,0.07)',
               background: isOpen ? '#050505' : 'rgba(255,255,255,0.02)',
@@ -991,12 +991,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                     </div>
                   ) : (
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <div style={{ fontSize:14, fontWeight:700, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
                       <button onClick={e=>{ e.stopPropagation(); setEditingName(site.name); setEditNameVal(site.name); }}
                         style={{ padding:'2px 6px', borderRadius:5, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.04)', color:'#4B5563', fontSize:9, cursor:'pointer', flexShrink:0 }}>編集</button>
                     </div>
                   )}
-                  <div style={{ fontSize:11, color:'#4B5563', marginTop:2 }}>
+                  <div style={{ fontSize:10, color:'#4B5563', marginTop:1 }}>
                     {pjNo || cardInfo.projectNumber || '番号未設定'}{cardInfo.status ? ` · ${cardInfo.status}` : ''}
                   </div>
                 </div>
@@ -2131,7 +2131,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
-      <div className="mb-6">
+      <div className="mb-4">
         <SectionHeader title="財務サマリー / Financial Summary" />
         <div className="rounded-md p-5 space-y-3" style={{ background: 'rgba(255,255,255,0.02)' }}>
           {[

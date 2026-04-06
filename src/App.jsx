@@ -579,7 +579,7 @@ function LoginPage({ onLogin }) {
 }
 
 // ========== HomePage ==========
-function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId, sitesReady, currentPage }) {
+function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId, sitesReady, currentPage, onViewPdf }) {
   const [financeOpen, setFinanceOpen] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
   const [wasteOpen, setWasteOpen] = useState(false);
@@ -760,18 +760,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               </div>
             </div>
 
-            {/* 売上・原価ミニカード */}
-            {totals.totalRevenue > 0 && (
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
-                <div style={{background:'#F4F4F4',border:'none',borderRadius:14,padding:'14px 16px'}}>                  <div style={{fontSize:9,fontWeight:700,color:'#999',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:6}}>売上</div>
-                  <div style={{fontSize:18,fontWeight:800,color:'var(--text)',fontVariantNumeric:'tabular-nums',lineHeight:1}}>¥{formatCurrency(totals.totalRevenue)}</div>
-                </div>
-                <div style={{background:'#F4F4F4',border:'none',borderRadius:14,padding:'14px 16px'}}>
-                  <div style={{fontSize:9,fontWeight:700,color:'#999',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:6}}>原価</div>
-                  <div style={{fontSize:18,fontWeight:800,color:'#DC2626',fontVariantNumeric:'tabular-nums',lineHeight:1}}>¥{formatCurrency(totals.accumulatedCost)}</div>
-                </div>
-              </div>
-            )}
+
 
             {/* 産廃処分費カード */}
             {(() => {
@@ -887,7 +876,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                           ];
                           return Array.from({length:allRows},(_,si)=>(
                             <tr key={`${r.id}-${si}`} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:idx%2===0?'#F0EFED':'#E8E7E5'}}>
-                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{idx+1}</td>}
+                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle',cursor:'pointer'}} onClick={()=>onViewPdf&&onViewPdf(r)}>{idx+1}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',whiteSpace:'nowrap',verticalAlign:'middle'}}>{fmtDate(r.date)}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{dayName}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',maxWidth:120,verticalAlign:'middle'}}>{r.workDetails?.workContent||''}</td>}
@@ -3033,6 +3022,14 @@ export default function LOGIOApp() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
   window.__navigateEdit = (report) => { setEditingReport(report); setCurrentPage('edit'); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  window.__navigatePdf = async (report) => {
+    let info = projectInfo;
+    const fetched = await loadProjectInfo(selectedSite);
+    if (fetched) info = fetched;
+    setSelectedReport({ ...report, _projectInfo: info });
+    setCurrentPage('pdf');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
 
   if (showSplash) return <SplashScreen />;
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
@@ -3148,6 +3145,7 @@ export default function LOGIOApp() {
               currentUserId={currentUser?.userId}
               sitesReady={sitesReady}
               currentPage={currentPage}
+              onViewPdf={(report)=>{ window.__navigatePdf && window.__navigatePdf(report); }}
             />
           )}
           {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={setCurrentPage} onSelectSite={setSelectedSite} />}

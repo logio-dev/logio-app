@@ -355,12 +355,12 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
       </button>
       {isOpen && (
         <div className="absolute left-0 right-0 z-50 mt-1 rounded-lg shadow-xl max-h-80 overflow-y-auto"
-          style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+          style={{ background: '#fff', border: '1px solid #E8E8E8' }}>
           {options.map((option) => (
             <button key={option.value} type="button" onClick={() => { onChange(option.value); setIsOpen(false); }}
               className="w-full px-4 py-3 text-left transition-colors relative"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-              onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
+              style={{ borderBottom: '1px solid #F0F0F0' }}
+              onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
               onMouseLeave={e => e.currentTarget.style.background='transparent'}>
               <div className="pr-8">
                 <div className="text-white text-base font-medium">{option.title}</div>
@@ -664,7 +664,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           ) : (
           <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
             className="w-full px-4 py-3.5 flex items-center justify-between text-left"
-            style={{ background: 'linear-gradient(#0a0a0a, #0a0a0a) padding-box, linear-gradient(135deg, #3b82f6, #22d3ee, #6366f1) border-box', border: '1.5px solid transparent', borderRadius: '14px' }}>
+            style={{ background: '#1A1A1A', border: 'none', borderRadius: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
             {selectedSite ? (
               <div className="flex items-center gap-3">
                 <div className="logio-status-dot" />
@@ -681,18 +681,18 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           )}
           {siteDropdownOpen && (
             <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-xl overflow-hidden"
-              style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
+              style={{ background: '#fff', border: '1px solid #E8E8E8' }}>
               {sites.length === 0 ? (
                 <div className="px-4 py-3 text-sm text-gray-500">現場が登録されていません</div>
               ) : sites.map(site => (
                 <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); }}
                   className="w-full px-4 py-3 text-left flex items-center justify-between transition-colors"
-                  style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                  onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.04)'}
+                  style={{ borderBottom: '1px solid #F0F0F0' }}
+                  onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
                   onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                   <div>
-                    <p className="text-white font-medium" style={{ fontSize: '14px' }}>{site.name}</p>
-                    {site.projectNumber && <p className="text-gray-500 mt-0.5" style={{ fontSize: '11px' }}>{site.projectNumber}</p>}
+                    <p style={{ fontSize: '14px', fontWeight:600, color:'#1C1917' }}>{site.name}</p>
+                    {site.projectNumber && <p style={{ fontSize: '11px', color:'#999', marginTop:2 }}>{site.projectNumber}</p>}
                   </div>
                   {selectedSite === site.name && <Check className="w-4 h-4 text-blue-500" />}
                 </button>

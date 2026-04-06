@@ -586,8 +586,26 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
   // 稼働日数・人工数
   const workingDays = (reports||[]).length;
-  const totalInHouse = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
-  const totalOutsourcing = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
+  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+
+  // カウントアップアニメーション
+  const useCountUp = (target, duration=800) => {
+    const [val, setVal] = React.useState(0);
+    React.useEffect(() => {
+      if(target===0){setVal(0);return;}
+      let start=0; const step=target/Math.max(1,Math.floor(duration/16));
+      const timer = setInterval(()=>{ start+=step; if(start>=target){setVal(target);clearInterval(timer);}else{setVal(Math.floor(start));} },16);
+      return ()=>clearInterval(timer);
+    },[target]);
+    return val;
+  };
+  const animDays = useCountUp(workingDays);
+  const animWorkers = useCountUp(totalWorkers);
+  const animInHouse = useCountUp(totalInHouseRaw);
+  const animOutsourcing = useCountUp(totalOutsourcingRaw);
+  const totalInHouse = totalInHouseRaw;
+  const totalOutsourcing = totalOutsourcingRaw;
   const totalWorkers = totalInHouse + totalOutsourcing;
   const costRatioFixed = costRatio.toFixed(1);
   let costBarColor = "#3B82F6";
@@ -669,8 +687,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               <div className="flex items-center gap-3">
                 <div className="logio-status-dot" />
                 <div>
-                  <p className="text-white font-semibold" style={{ fontSize: '17px' }}>{selectedSite}</p>
-                  {projectNumber && <p className="text-gray-500 mt-0.5 tracking-wider" style={{ fontSize: '11px' }}>PROJECT NO.: {projectNumber}</p>}
+                  <p style={{ fontSize: '17px', fontWeight:700, color:'#fff' }}>{selectedSite}</p>
+                  {projectNumber && <p className="text-gray-500 mt-0.5 tracking-wider" style={{ fontSize: '11px', color:'#888', marginTop:2 }}>PROJECT NO.: {projectNumber}</p>}
                 </div>
               </div>
             ) : (
@@ -725,9 +743,9 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             <div className="mb-3" style={{background:'#2C2825',borderRadius:18,padding:18,boxShadow:'0 4px 20px rgba(44,40,37,0.12)'}}>
               <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.65)',letterSpacing:'.1em',fontFamily:'JetBrains Mono,monospace',marginBottom:10}}>稼働日数 / WORKING DAYS</div>
               <div style={{display:'flex',alignItems:'baseline',gap:20,marginBottom:14}}>
-                <div><span style={{fontSize:38,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{workingDays}</span><span style={{fontSize:14,color:'var(--text2)',marginLeft:4}}>日</span></div>
+                <div><span style={{fontSize:38,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums',transition:'all .3s'}}>{animDays}</span><span style={{fontSize:14,color:'var(--text2)',marginLeft:4}}>日</span></div>
                 <div style={{width:1,height:36,background:'rgba(255,255,255,0.1)'}}/>
-                <div><div style={{fontSize:10,color:'rgba(255,255,255,0.55)',marginBottom:3,fontFamily:'JetBrains Mono,monospace',letterSpacing:'.06em'}}>累計人工</div><span style={{fontSize:30,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{totalWorkers}</span><span style={{fontSize:14,color:'var(--text2)',marginLeft:4}}>人</span></div>
+                <div><div style={{fontSize:10,color:'rgba(255,255,255,0.55)',marginBottom:3,fontFamily:'JetBrains Mono,monospace',letterSpacing:'.06em'}}>累計人工</div><span style={{fontSize:30,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{animWorkers}</span><span style={{fontSize:14,color:'var(--text2)',marginLeft:4}}>人</span></div>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                 <div style={{background:'rgba(255,255,255,0.07)',borderRadius:10,padding:'10px 12px'}}>
@@ -777,12 +795,12 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               });
 
               return (
-                <div className="overflow-hidden mb-4" style={{background:'#F4F4F4',border:'none',borderRadius:'16px'}}>
+                <div className="overflow-hidden mb-4" style={{background:'#EEECEA',border:'none',borderRadius:'16px'}}>
                   <button onClick={()=>setWasteOpen(!wasteOpen)}
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
                       <div>
-                        <p style={{ fontSize:11, fontWeight:700, color:'var(--text2)', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
+                        <p style={{ fontSize:11, fontWeight:700, color:'#78716C', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
                         <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
                           <span style={{ fontSize:'20px', fontWeight:700, color:'var(--text)', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
                           <span style={{ fontSize:'10px', color:'var(--text3)' }}>{typeCount}種類</span>
@@ -827,14 +845,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               );
             })()}
 
-            {/* 日報一覧ボタン＋展開テーブル */}
+            {/* 日報PDF全画面ボタン */}
             {reports && reports.length > 0 && (
-              <div className="mb-4" style={card}>
+              <div className="mb-4" style={{background:'#F0EFED',border:'none',borderRadius:'16px'}}>
                 <button onClick={()=>setReportsOpen(!reportsOpen)}
                   style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
                   <div>
-                    <p style={{fontSize:11,fontWeight:700,color:'var(--text2)',marginBottom:2,letterSpacing:'.04em'}}>日報一覧</p>
-                    <span style={{fontSize:20,fontWeight:800,color:'var(--text)'}}>{reports.length}件</span>
+                    <p style={{fontSize:11,fontWeight:700,color:'#78716C',marginBottom:2,letterSpacing:'.04em'}}>日報一覧</p>
+                    <span style={{fontSize:20,fontWeight:800,color:'#1C1917'}}>{reports.length}件</span>
                   </div>
                   <GradChevron open={reportsOpen} size={16}/>
                 </button>
@@ -842,7 +860,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                   <div style={{borderTop:'1px solid var(--border)',overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
                     <table style={{width:'100%',minWidth:700,borderCollapse:'collapse',fontSize:11}}>
                       <thead>
-                        <tr style={{background:'var(--bg3)'}}>
+                        <tr style={{background:'#E5E3E0'}}>
                           {['日数','日付','曜','施工内容','開始','終了','自社氏名','金額','外注','金額','車種','車番','重機','発生材','数量','金額','搬出先','マニNo.'].map((h,i)=>(
                             <th key={i} style={{padding:'6px 8px',color:'var(--text2)',fontWeight:700,textAlign:'center',whiteSpace:'nowrap',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
                           ))}
@@ -867,23 +885,23 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                             ...scrapItems.map(s=>({material:s.type,qty:`${s.quantity}${s.unit}`,amt:Math.abs(s.amount),dest:s.buyer,mani:'スクラップ'}))
                           ];
                           return Array.from({length:allRows},(_,si)=>(
-                            <tr key={`${r.id}-${si}`} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:'#F7F7F7'}}>
+                            <tr key={`${r.id}-${si}`} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:idx%2===0?'#F0EFED':'#E8E7E5'}}>
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{idx+1}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',whiteSpace:'nowrap',verticalAlign:'middle'}}>{fmtDate(r.date)}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{dayName}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',maxWidth:120,verticalAlign:'middle'}}>{r.workDetails?.workContent||''}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{startT}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{endT}</td>}
-                              <td style={{padding:'6px 8px',color:workers[si]?'white':'transparent'}}>{workers[si]?.name||''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'right',color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>{workers[si]?`¥${formatCurrency(workers[si].amount)}`:''}</td>
-                              <td style={{padding:'6px 8px',fontSize:10,color:'#22d3ee'}}>{outsourcing[si]?`${outsourcing[si].company} ${outsourcing[si].count||outsourcing[si].workers}人`:''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'right',color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>{outsourcing[si]?`¥${formatCurrency(outsourcing[si].amount)}`:''}</td>
+                              <td style={{padding:'6px 8px',color:workers[si]?'#1C1917':'transparent'}}>{workers[si]?.name||''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'right',color:'#B45309',fontVariantNumeric:'tabular-nums'}}>{workers[si]?`¥${formatCurrency(workers[si].amount)}`:''}</td>
+                              <td style={{padding:'6px 8px',fontSize:10,color:'#0369A1'}}>{outsourcing[si]?`${outsourcing[si].company} ${outsourcing[si].count||outsourcing[si].workers}人`:''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'right',color:'#B45309',fontVariantNumeric:'tabular-nums'}}>{outsourcing[si]?`¥${formatCurrency(outsourcing[si].amount)}`:''}</td>
                               <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{vehicles[si]?.type||''}</td>
                               <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{vehicles[si]?.number||''}</td>
                               <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{machinery[si]?.type||''}</td>
-                              <td style={{padding:'6px 8px',color:'#fbbf24'}}>{wasteAndScrap[si]?.material||''}</td>
+                              <td style={{padding:'6px 8px',color:'#B45309'}}>{wasteAndScrap[si]?.material||''}</td>
                               <td style={{padding:'6px 8px',textAlign:'right',color:'var(--text2)'}}>{wasteAndScrap[si]?.qty||''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'right',color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>{wasteAndScrap[si]?`¥${formatCurrency(wasteAndScrap[si].amt)}`:''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'right',color:'#B45309',fontVariantNumeric:'tabular-nums'}}>{wasteAndScrap[si]?`¥${formatCurrency(wasteAndScrap[si].amt)}`:''}</td>
                               <td style={{padding:'6px 8px',fontSize:10,color:'var(--text3)'}}>{wasteAndScrap[si]?.dest||''}</td>
                               <td style={{padding:'6px 8px',fontSize:10,color:'var(--text2)'}}>{wasteAndScrap[si]?.mani||''}</td>
                             </tr>
@@ -1925,7 +1943,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   const fmtMonth = (ym) => { const [y, m] = ym.split('-'); return `${y}年${parseInt(m)}月`; };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
+    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#fff'}}>
       <div className="mb-4">
         <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
@@ -3041,8 +3059,26 @@ export default function LOGIOApp() {
 
   // 稼働日数・人工数
   const workingDays = (reports||[]).length;
-  const totalInHouse = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
-  const totalOutsourcing = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
+  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+
+  // カウントアップアニメーション
+  const useCountUp = (target, duration=800) => {
+    const [val, setVal] = React.useState(0);
+    React.useEffect(() => {
+      if(target===0){setVal(0);return;}
+      let start=0; const step=target/Math.max(1,Math.floor(duration/16));
+      const timer = setInterval(()=>{ start+=step; if(start>=target){setVal(target);clearInterval(timer);}else{setVal(Math.floor(start));} },16);
+      return ()=>clearInterval(timer);
+    },[target]);
+    return val;
+  };
+  const animDays = useCountUp(workingDays);
+  const animWorkers = useCountUp(totalWorkers);
+  const animInHouse = useCountUp(totalInHouseRaw);
+  const animOutsourcing = useCountUp(totalOutsourcingRaw);
+  const totalInHouse = totalInHouseRaw;
+  const totalOutsourcing = totalOutsourcingRaw;
   const totalWorkers = totalInHouse + totalOutsourcing;
             return costRatio >= 70 ? 1 : 0;
           })()}
@@ -3051,10 +3087,10 @@ export default function LOGIOApp() {
           {/* ★ ボトム固定ナビ - Dock Style */}
           {selectedSite && ['home','list','analysis'].includes(currentPage) && (() => {
             const navDefs = [
-              { id:'home',     label:'HOME',     color:'#7eb8d4', bg:'rgba(60,120,160,0.15)',  bd:'rgba(126,184,212,0.22)'  },
-              { id:'list',     label:'REPORTS',  color:'#6dbb8a', bg:'rgba(50,110,75,0.15)',   bd:'rgba(109,187,138,0.22)'  },
-              { id:'analysis', label:'ANALYSIS', color:'#c9973e', bg:'rgba(140,100,30,0.15)',   bd:'rgba(201,151,62,0.22)'  },
-              { id:'settings', label:'SETTINGS', color:'#a07cc5', bg:'rgba(110,75,155,0.15)',  bd:'rgba(160,124,197,0.22)' },
+              { id:'home',     label:'ホーム',     color:'#7eb8d4', bg:'rgba(60,120,160,0.15)',  bd:'rgba(126,184,212,0.22)'  },
+              { id:'list',     label:'日報',  color:'#6dbb8a', bg:'rgba(50,110,75,0.15)',   bd:'rgba(109,187,138,0.22)'  },
+              { id:'analysis', label:'分析', color:'#c9973e', bg:'rgba(140,100,30,0.15)',   bd:'rgba(201,151,62,0.22)'  },
+              { id:'settings', label:'設定', color:'#a07cc5', bg:'rgba(110,75,155,0.15)',  bd:'rgba(160,124,197,0.22)' },
             ];
             const allIds = ['home','list','input','analysis','settings'];
             const activeIdx = allIds.indexOf(currentPage);
@@ -3227,8 +3263,26 @@ export default function LOGIOApp() {
 
   // 稼働日数・人工数
   const workingDays = (reports||[]).length;
-  const totalInHouse = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
-  const totalOutsourcing = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
+  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+
+  // カウントアップアニメーション
+  const useCountUp = (target, duration=800) => {
+    const [val, setVal] = React.useState(0);
+    React.useEffect(() => {
+      if(target===0){setVal(0);return;}
+      let start=0; const step=target/Math.max(1,Math.floor(duration/16));
+      const timer = setInterval(()=>{ start+=step; if(start>=target){setVal(target);clearInterval(timer);}else{setVal(Math.floor(start));} },16);
+      return ()=>clearInterval(timer);
+    },[target]);
+    return val;
+  };
+  const animDays = useCountUp(workingDays);
+  const animWorkers = useCountUp(totalWorkers);
+  const animInHouse = useCountUp(totalInHouseRaw);
+  const animOutsourcing = useCountUp(totalOutsourcingRaw);
+  const totalInHouse = totalInHouseRaw;
+  const totalOutsourcing = totalOutsourcingRaw;
   const totalWorkers = totalInHouse + totalOutsourcing;
         const alerts = [];
         if (costRatio >= 85) alerts.push({ level:'danger', icon:'🚨', title:'原価率が危険水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 85%以下` });

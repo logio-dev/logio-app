@@ -1935,7 +1935,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#fff'}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -1957,16 +1957,16 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
         return (
           <div key={month} className="mb-3">
             <button onClick={() => toggleMonth(month)}
-              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#0f172a', border:'1px solid var(--border)', borderRadius: isOpen ? '10px 10px 0 0' : '10px', cursor:'pointer' }}>
+              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#2D2D2D', border:'none', borderRadius: isOpen ? '12px 12px 0 0' : '12px', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                <span style={{ fontSize:'14px', fontWeight:700, color:'var(--text)' }}>{fmtMonth(month)}</span>
-                <span style={{ fontSize:'11px', color:'var(--text2)', background:'var(--bg3)', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
-                {monthCost > 0 && <span style={{ fontSize:'11px', color:'#fbbf24', fontWeight:600 }}>¥{formatCurrency(monthCost)}</span>}
+                <span style={{ fontSize:'14px', fontWeight:700, color:'#fff' }}>{fmtMonth(month)}</span>
+                <span style={{ fontSize:'11px', color:'#aaa', background:'rgba(255,255,255,0.1)', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
+                {monthCost > 0 && <span style={{ fontSize:'11px', color:'#FCD34D', fontWeight:700 }}>¥{formatCurrency(monthCost)}</span>}
               </div>
               {isOpen ? <GradChevronUp size={16}/> : <GradChevron open={false} size={16}/>}
             </button>
             {isOpen && (
-              <div style={{ border:'1px solid var(--border)', borderTop:'none', borderRadius:'0 0 10px 10px', overflow:'hidden' }}>
+              <div style={{ background:'#F4F4F4', border:'none', borderRadius:'0 0 12px 12px', overflow:'hidden' }}>
                 {monthReports.map((report, idx) => (
                   <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} onEdit={() => onEdit(report)} isLast={idx === monthReports.length - 1} />
                 ))}
@@ -1983,15 +1983,15 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
 function ReportAccordion({ report, onDelete, onEdit, isLast }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div style={{ borderBottom: isLast && !isOpen ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ borderBottom: isLast && !isOpen ? 'none' : '1px solid #EBEBEB' }}>
       <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-transparent/50 transition-colors">
         <div className="text-left flex-1">
           <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <span className="text-lg font-bold text-white">{report.date}</span>
-            <span className="text-sm text-gray-400">({getDayOfWeek(report.date)})</span>
-            <span className="text-sm text-blue-400">{report.weather}</span>
+            <span style={{fontSize:15,fontWeight:700,color:"#1C1917"}}>{report.date}</span>
+            <span style={{fontSize:12,color:"#888"}}>({getDayOfWeek(report.date)})</span>
+            
             {/* 記入者＋更新日時 */}
-            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'var(--text2)', fontFamily:'monospace', background:'#EBEBEB', border:'none', padding:'2px 7px', borderRadius:99 }}>
+            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'var(--text2)', fontFamily:'monospace', background:'#E8E8E8', border:'none', padding:'2px 7px', borderRadius:99, color:'#555' }}>
               {report.updatedBy || report.recorder || ''}
               {report.updatedAt && (
                 <span style={{ color:'var(--text3)' }}>
@@ -2001,7 +2001,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm flex-wrap">
-            <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 rounded text-xs font-medium">{report.workDetails?.workCategory || report.workCategory}</span>
+            <span style={{padding:"2px 8px",borderRadius:6,background:"#EFF6FF",color:"#1D4ED8",fontSize:10,fontWeight:700}}>{report.workDetails?.workCategory || report.workCategory}</span>
             {report.wasteItems?.some(w=>w.haisha==='env') && (
               <span style={{padding:'2px 7px',borderRadius:6,background:'rgba(34,197,94,0.08)',border:'1px solid rgba(34,197,94,0.2)',fontSize:10,fontWeight:700,color:'#4ade80'}}>環境課配車</span>
             )}
@@ -2017,55 +2017,55 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
                 (report.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
                 (report.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
                 (report.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0);
-              return totalCost > 0 && <span className="text-yellow-400 font-semibold">¥{formatCurrency(totalCost)}</span>;
+              return totalCost > 0 && <span style={{color:"#B45309",fontWeight:700,fontSize:13,fontVariantNumeric:"tabular-nums"}}>¥{formatCurrency(totalCost)}</span>;
             })()}
           </div>
         </div>
         <span className="ml-4">{isOpen ? <GradChevronUp size={18}/> : <GradChevron open={false} size={18}/>}</span>
       </button>
       {isOpen && (
-        <div className="px-4 py-4 bg-transparent/30 border-t border-white/[0.08]">
-          <div className="mb-4 pb-4 border-b border-white/[0.08]">
-            <div className="flex items-center gap-2 mb-2"><span className="text-xs text-gray-500">記入者:</span><span className="text-sm text-white">{report.recorder}</span></div>
-            <div className="flex items-start gap-2"><span className="text-xs text-gray-500 mt-0.5">施工内容:</span><span className="text-sm text-white">{report.workDetails?.workContent || report.workContent || 'なし'}</span></div>
+        <div style={{padding:"14px 16px",background:"#FAFAFA",borderTop:"1px solid #EBEBEB"}}>
+          <div style={{marginBottom:14,paddingBottom:14,borderBottom:"1px solid #EBEBEB"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><span style={{fontSize:11,color:"#999"}}>記入者:</span><span style={{fontSize:13,fontWeight:600,color:"#1C1917"}}>{report.recorder}</span></div>
+            <div style={{display:"flex",alignItems:"flex-start",gap:8}}><span style={{fontSize:11,color:"#999",marginTop:1}}>施工内容:</span><span style={{fontSize:13,color:"#1C1917"}}>{report.workDetails?.workContent || report.workContent || 'なし'}</span></div>
           </div>
           {report.workDetails && (
             <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase mb-3">原価明細</p>
+              <p style={{fontSize:10,fontWeight:700,color:"#999",letterSpacing:".08em",textTransform:"uppercase",marginBottom:10}}>原価明細</p>
               {report.workDetails.inHouseWorkers?.length > 0 && (
-                <div className="mb-3 rounded p-2" style={{ background: 'var(--bg3)' }}>
-                  <p className="text-xs font-semibold text-blue-400 mb-2">自社人工: {report.workDetails.inHouseWorkers.length}名</p>
+                <div style={{marginBottom:10,borderRadius:8,padding:"10px 12px",background:"#F0F0F0"}}>
+                  <p style={{fontSize:11,fontWeight:700,color:"#1D4ED8",marginBottom:6}}>自社人工: {report.workDetails.inHouseWorkers.length}名</p>
                   {report.workDetails.inHouseWorkers.map((w, idx) => (
-                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {w.name} <span className="text-gray-500">{w.start||w.startTime}-{w.end||w.endTime}</span> <span className="text-yellow-400">¥{formatCurrency(w.amount)}</span></p>
+                    <p key={idx} style={{fontSize:12,color:"#333",marginLeft:8,marginBottom:4}}>• {w.name} <span style={{color:"#999"}}>{w.start||w.startTime}-{w.end||w.endTime}</span> <span style={{color:"#B45309",fontWeight:600}}>¥{formatCurrency(w.amount)}</span></p>
                   ))}
                 </div>
               )}
               {report.workDetails.outsourcingLabor?.length > 0 && (
-                <div className="mb-3 rounded p-2" style={{ background: 'var(--bg3)' }}>
-                  <p className="text-xs font-semibold text-blue-400 mb-2">外注人工: {report.workDetails.outsourcingLabor.length}件</p>
+                <div style={{marginBottom:10,borderRadius:8,padding:"10px 12px",background:"#F0F0F0"}}>
+                  <p style={{fontSize:11,fontWeight:700,color:"#0369A1",marginBottom:6}}>外注人工: {report.workDetails.outsourcingLabor.length}件</p>
                   {report.workDetails.outsourcingLabor.map((o, idx) => (
-                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {o.company} <span className="text-gray-500">{o.count || o.workers}人</span> <span className="text-yellow-400">¥{formatCurrency(o.amount)}</span></p>
+                    <p key={idx} style={{fontSize:12,color:"#333",marginLeft:8,marginBottom:4}}>• {o.company} <span style={{color:"#999"}}>{o.count || o.workers}人</span> <span style={{color:"#B45309",fontWeight:600}}>¥{formatCurrency(o.amount)}</span></p>
                   ))}
                 </div>
               )}
               {report.workDetails.vehicles?.length > 0 && (
-                <div className="mb-3 rounded p-2" style={{ background: 'var(--bg3)' }}>
-                  <p className="text-xs font-semibold text-blue-400 mb-2">車両: {report.workDetails.vehicles.length}台</p>
+                <div style={{marginBottom:10,borderRadius:8,padding:"10px 12px",background:"#F0F0F0"}}>
+                  <p style={{fontSize:11,fontWeight:700,color:"#78716C",marginBottom:6}}>車両: {report.workDetails.vehicles.length}台</p>
                   {report.workDetails.vehicles.map((v, idx) => (
-                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {v.type} <span className="text-gray-500">({v.number})</span> <span className="text-yellow-400">¥{formatCurrency(v.amount)}</span></p>
+                    <p key={idx} style={{fontSize:12,color:"#333",marginLeft:8,marginBottom:4}}>• {v.type} <span style={{color:"#999"}}>({v.number})</span> <span style={{color:"#B45309",fontWeight:600}}>¥{formatCurrency(v.amount)}</span></p>
                   ))}
                 </div>
               )}
               {report.workDetails.machinery?.length > 0 && (
-                <div className="mb-3 rounded p-2" style={{ background: 'var(--bg3)' }}>
-                  <p className="text-xs font-semibold text-blue-400 mb-2">重機: {report.workDetails.machinery.length}台</p>
+                <div style={{marginBottom:10,borderRadius:8,padding:"10px 12px",background:"#F0F0F0"}}>
+                  <p style={{fontSize:11,fontWeight:700,color:"#78716C",marginBottom:6}}>重機: {report.workDetails.machinery.length}台</p>
                   {report.workDetails.machinery.map((m, idx) => (
-                    <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {m.type} <span className="text-yellow-400">¥{formatCurrency(m.unitPrice)}</span></p>
+                    <p key={idx} style={{fontSize:12,color:"#333",marginLeft:8,marginBottom:4}}>• {m.type} <span style={{color:"#B45309",fontWeight:600}}>¥{formatCurrency(m.unitPrice)}</span></p>
                   ))}
                 </div>
               )}
               {(report.workDetails.envItems?.length > 0 || report.workDetails.extItems?.length > 0) && (
-                <div className="mb-3 rounded p-2" style={{ background: 'rgba(34,197,94,0.03)', border:'1px solid rgba(34,197,94,0.1)' }}>
+                <div className="mb-3 rounded p-2" style={{ background: '#F0FDF4', border:'1px solid #BBF7D0' }}>
                   <p className="text-xs font-semibold mb-2" style={{color:'#4ade80'}}>
                     運搬: {(report.workDetails.envItems?.length||0)+(report.workDetails.extItems?.length||0)}件 / ¥{formatCurrency(
                       (report.workDetails.envItems||[]).reduce((s,t)=>s+(t.amount||0),0)+
@@ -2137,7 +2137,7 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -2239,7 +2239,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 bg-transparent min-h-screen" style={{paddingBottom:"calc(160px + env(safe-area-inset-bottom,0px))"}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -2398,7 +2398,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 bg-transparent min-h-screen">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -2520,7 +2520,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         }
       `}</style>
       <div className="no-print bg-transparent border-b border-white/[0.06] p-4 flex items-center justify-between sticky top-0 z-50">
-        <button onClick={() => onNavigate('list')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('list')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
           <ChevronLeft className="w-4 h-4" />日報一覧に戻る
         </button>
         <div className="flex items-center gap-3">

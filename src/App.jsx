@@ -671,7 +671,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#F2F2F2' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -785,7 +785,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               });
 
               return (
-                <div className="overflow-hidden mb-4" style={{background:'#EEECEA',border:'none',borderRadius:'16px'}}>
+                <div className="overflow-hidden mb-4" style={{background:'#FFFFFF',border:'none',borderRadius:'16px',boxShadow:'0 1px 6px rgba(0,0,0,0.07)'}}>
                   <button onClick={()=>setWasteOpen(!wasteOpen)}
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
@@ -837,7 +837,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
             {/* 日報PDF全画面ボタン */}
             {reports && reports.length > 0 && (
-              <div className="mb-4" style={{background:'#F0EFED',border:'none',borderRadius:'16px'}}>
+              <div className="mb-4" style={{background:'#FFFFFF',border:'none',borderRadius:'16px',boxShadow:'0 1px 6px rgba(0,0,0,0.07)'}}>
                 <button onClick={()=>setReportsOpen(!reportsOpen)}
                   style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
                   <div>
@@ -850,7 +850,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                   <div style={{borderTop:'1px solid var(--border)',overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
                     <table style={{width:'100%',minWidth:700,borderCollapse:'collapse',fontSize:11}}>
                       <thead>
-                        <tr style={{background:'#E5E3E0'}}>
+                        <tr style={{background:'#F4F4F4'}}>
                           {['日数','日付','曜','施工内容','開始','終了','自社氏名','金額','外注','金額','車種','車番','重機','発生材','数量','金額','搬出先','マニNo.'].map((h,i)=>(
                             <th key={i} style={{padding:'6px 8px',color:'var(--text2)',fontWeight:700,textAlign:'center',whiteSpace:'nowrap',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
                           ))}
@@ -978,7 +978,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', overflowX:'auto' }}>
+    <div style={{ background:'#F2F2F2', minHeight:'100vh', color:'#1C1917', overflowX:'auto' }}>
       <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'16px 12px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
 
         {/* 閉じるボタン */}
@@ -1045,8 +1045,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               borderRadius:12, marginBottom:8, overflow:'hidden',
               width:'100%', boxSizing:'border-box', minWidth:0,
               border: 'none',
-              background: '#F4F4F4',
-              boxShadow: isOpen ? '0 2px 12px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.04)',
+              background: '#FFFFFF',
+              boxShadow: isOpen ? '0 4px 16px rgba(0,0,0,0.1)' : '0 1px 6px rgba(0,0,0,0.07)',
             }}>
               {/* カードヘッダー */}
               <button onClick={() => {
@@ -1452,17 +1452,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const mkCard = (accentColor) => ({
-    background: '#F4F4F4',
+    background: '#FFFFFF',
     border: 'none',
-    borderRadius: '12px', padding: '14px', marginBottom: '10px', overflow: 'hidden'
+    borderRadius: '14px', padding: '16px', marginBottom: '12px', overflow: 'hidden',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.07)'
   });
   const inputCard      = mkCard('#3b82f6');
   const inputCardCyan  = mkCard('#22d3ee');
   const inputCardAmber = mkCard('#f59e0b');
   const inputCardGreen = mkCard('#34d399');
   const inputCardRose  = mkCard('#f43f5e');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'#F4F4F4', border:'none', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
-  const inpTxt = { width:'100%', padding:'12px 10px', background:'#F4F4F4', border:'none', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'#F0F0F0', border:'none', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpTxt = { width:'100%', padding:'12px 10px', background:'#F0F0F0', border:'none', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'var(--text2)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
@@ -1533,7 +1534,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
-    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'var(--bg2)', borderTop:'1px solid var(--border)', display:'flex', gap:'10px', zIndex:40 }}>
+    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', zIndex:40 }}>
       {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#EBEBEB', border:'none', color:'#444', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
       <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'var(--bg3)': nextColor||'#2563eb', border:'none', color: disabled?'var(--text3)':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
@@ -1542,7 +1543,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const workContent_tags = ['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'];
 
   return (
-    <div style={{ background:'#fff', minHeight:'100vh', overflowX:'hidden' }}>
+    <div style={{ background:'#F2F2F2', minHeight:'100vh', overflowX:'hidden' }}>
       <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;}`}</style>
 
       {/* ヘッダー */}
@@ -1559,18 +1560,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'var(--bg)' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#F2F2F2' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}
-                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box', background:'#F4F4F4', border:'none' }} />
+                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box', background:'#F0F0F0', border:'none' }} />
             </div>
 
             <div>
               <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>記入者 <span style={{color:'#f87171'}}>*</span></label>
-              <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px', background:'#F4F4F4', border:'none' }}>
+              <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px', background:'#F0F0F0', border:'none' }}>
                 <option value="">選択してください</option>
                 {MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}
               </select>
@@ -1582,7 +1583,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'var(--bg)' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#F2F2F2' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -1733,7 +1734,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'var(--bg)' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#F2F2F2' }}>
           <p style={{ fontSize:'12px', color:'var(--text3)', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 */}
@@ -1933,7 +1934,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   const fmtMonth = (ym) => { const [y, m] = ym.split('-'); return `${y}年${parseInt(m)}月`; };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#fff'}}>
+    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#F2F2F2'}}>
       <div className="mb-4">
         <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる

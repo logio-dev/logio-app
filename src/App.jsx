@@ -312,7 +312,7 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 text-white text-sm font-medium focus:outline-none rounded-lg"
-        style={{ background: 'var(--bg)', border: '1px solid var(--border)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
+        style={{ background: 'var(--bg)', border: '1px solid var(--border)', boxSizing:'border-box', maxWidth:'100%' }}
         required={required}>
         <option value="">{placeholder}</option>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -383,7 +383,7 @@ function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full px-3 py-2 text-white text-sm font-medium focus:outline-none rounded-lg"
-        style={{ background: 'var(--bg)', border: '1px solid var(--border)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
+        style={{ background: 'var(--bg)', border: '1px solid var(--border)', boxSizing:'border-box', maxWidth:'100%' }}
         required={required} />
     </div>
   );
@@ -741,6 +741,20 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               </div>
             </div>
 
+            {/* 売上・原価ミニカード */}
+            {totals.totalRevenue > 0 && (
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+                <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,padding:'14px 16px',boxShadow:'0 1px 4px rgba(0,0,0,0.05)'}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'var(--text3)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:6}}>売上</div>
+                  <div style={{fontSize:18,fontWeight:800,color:'var(--text)',fontVariantNumeric:'tabular-nums',lineHeight:1}}>¥{formatCurrency(totals.totalRevenue)}</div>
+                </div>
+                <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,padding:'14px 16px',boxShadow:'0 1px 4px rgba(0,0,0,0.05)'}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'var(--text3)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:6}}>原価</div>
+                  <div style={{fontSize:18,fontWeight:800,color:'#DC2626',fontVariantNumeric:'tabular-nums',lineHeight:1}}>¥{formatCurrency(totals.accumulatedCost)}</div>
+                </div>
+              </div>
+            )}
+
             {/* 産廃処分費カード */}
             {(() => {
               const WASTE_COLORS = ['#d97706','#65a30d','#7c3aed','#0891b2','#dc2626','#f472b6'];
@@ -1089,12 +1103,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
                             <input type="date" value={projectInfo.startDate||''} onChange={e=>setProjectInfo({...projectInfo,startDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
                           </div>
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期終了</label>
                             <input type="date" value={projectInfo.endDate||''} onChange={e=>setProjectInfo({...projectInfo,endDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
                           </div>
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
@@ -1423,25 +1437,27 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       {[1,2,3].map(i => (
         <div key={i} style={{
           width: '8px', height: '8px', borderRadius: '50%',
-          background: i < currentStep ? '#22c55e' : i === currentStep ? '#3b82f6' : '#1f2937',
+          background: i < currentStep ? '#22c55e' : i === currentStep ? '#2563EB' : 'var(--border)',
           transition: 'all 0.3s ease', flexShrink: 0,
         }} />
       ))}
     </div>
   );
 
-  const mkCard = (color) => ({
-    background: `linear-gradient(#050505,#050505) padding-box, linear-gradient(135deg,${color}) border-box`,
-    border: '1.5px solid var(--border)', borderRadius: '12px', padding: '14px', marginBottom: '20px', overflow: 'hidden', background:'var(--bg2)'
+  const mkCard = (accentColor) => ({
+    background: 'var(--bg2)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px', padding: '14px', marginBottom: '14px', overflow: 'hidden',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
   });
-  const inputCard      = mkCard('#3b82f6,#6366f1');
-  const inputCardCyan  = mkCard('#22d3ee,#3b82f6');
-  const inputCardAmber = mkCard('#f59e0b,#f97316');
-  const inputCardGreen = mkCard('#34d399,#22d3ee');
-  const inputCardRose  = mkCard('#f43f5e,#f59e0b');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1px solid #1f2937', color:'var(--text)', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', colorScheme:'dark', boxSizing:'border-box' };
-  const inpTxt = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1px solid #1f2937', color:'var(--text)', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
-  const inpLbl = { display:'block', fontSize:'10px', fontWeight:'700', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' };
+  const inputCard      = mkCard('#3b82f6');
+  const inputCardCyan  = mkCard('#22d3ee');
+  const inputCardAmber = mkCard('#f59e0b');
+  const inputCardGreen = mkCard('#34d399');
+  const inputCardRose  = mkCard('#f43f5e');
+  const inpSel = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1px solid var(--border)', color:'var(--text)', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpTxt = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1px solid var(--border)', color:'var(--text)', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'var(--text2)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
 
@@ -1466,17 +1482,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const ShiftBtns4 = ({ value, onChange }) => (
     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'5px' }}>
       {[
-        ['daytime',     '日勤',   '#3b82f6'],
-        ['nighttime',   '夜間',   '#8b5cf6'],
-        ['nightLoading','夜積',   '#6366f1'],
-        ['halfDay',     '半日 ×½','#f59e0b'],
+        ['daytime',     '日勤',   '#2563EB'],
+        ['nighttime',   '夜間',   '#7C3AED'],
+        ['nightLoading','夜積',   '#4F46E5'],
+        ['halfDay',     '半日 ×½','#D97706'],
       ].map(([v,label,color])=>(
         <button key={v} onClick={()=>onChange(v)} style={{
           padding:'10px 2px', borderRadius:'9px',
-          border:`1px solid ${value===v?color:'#1f2937'}`,
-          background: value===v?`${color}20`:'#0d0d0d',
-          color: value===v?color:'var(--text3)',
-          fontSize:'11px', fontWeight:'600', cursor:'pointer', transition:'all 0.15s', lineHeight:1.3
+          border:`1px solid ${value===v?color:'var(--border)'}`,
+          background: value===v?`${color}18`:'var(--bg3)',
+          color: value===v?color:'var(--text2)',
+          fontSize:'11px', fontWeight:'700', cursor:'pointer', transition:'all 0.15s', lineHeight:1.3
         }}>{label}</button>
       ))}
     </div>
@@ -1484,35 +1500,35 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   // ★ 課タブ（人数表記なし）
   const DeptTabs = ({ value, onChange }) => (
-    <div style={{ display:'flex', gap:'4px', marginBottom:'10px', background:'var(--bg2)', borderRadius:'10px', padding:'4px', border:'1px solid #1f2937' }}>
+    <div style={{ display:'flex', gap:'4px', marginBottom:'10px', background:'var(--bg3)', borderRadius:'10px', padding:'4px', border:'1px solid var(--border)' }}>
       {[['k1','工事1課'],['ek','環境課']].map(([d,label])=>(
         <button key={d} onClick={()=>onChange(d)}
           style={{
             flex:1, padding:'8px 4px', borderRadius:'7px', border:'none',
             fontFamily:'inherit', fontSize:'12px', fontWeight:'700',
             cursor:'pointer', transition:'all .15s', textAlign:'center',
-            background: value===d ? (d==='k1'?'rgba(59,130,246,0.12)':'rgba(34,197,94,0.1)') : 'transparent',
-            color: value===d ? (d==='k1'?'#3b82f6':'#22c55e') : '#4B5563'
+            background: value===d ? (d==='k1'?'rgba(37,99,235,0.1)':'rgba(22,163,74,0.1)') : 'transparent',
+            color: value===d ? (d==='k1'?'#1D4ED8':'#15803D') : 'var(--text2)'
           }}>{label}</button>
       ))}
     </div>
   );
 
   const AddBtn = ({ onClick, disabled }) => (
-    <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.02)':'rgba(59,130,246,0.08)', border:`1px solid ${disabled?'rgba(255,255,255,0.06)':'rgba(59,130,246,0.2)'}`, borderRadius:'10px', color: disabled?'#374151':'#60a5fa', fontSize:'13px', fontWeight:'600', cursor: disabled?'not-allowed':'pointer', marginTop:'8px' }}>＋ 追加する</button>
+    <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'var(--bg3)':'rgba(29,78,216,0.06)', border:`1px solid ${disabled?'var(--border)':'rgba(37,99,235,0.25)'}`, borderRadius:'10px', color: disabled?'var(--text3)':'#1D4ED8', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px' }}>＋ 追加する</button>
   );
 
   const SectionLabel = ({ ja, en }) => (
     <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'10px' }}>
-      <span style={{ fontSize:'10px', fontWeight:'700', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'var(--text2)'}}>/ {en}</span></span>
-      <span style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.08)' }} />
+      <span style={{ fontSize:'10px', fontWeight:'700', color:'var(--text)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'var(--text2)'}}>/ {en}</span></span>
+      <span style={{ flex:1, height:'1px', background:'var(--border)' }} />
     </div>
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
-    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'rgba(0,0,0,0.95)', borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:'10px', zIndex:40 }}>
-      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'var(--bg2)', border:'1px solid #1f2937', color:'var(--text2)', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
-      <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'#1f2937': nextColor||'#2563eb', border:'none', color: disabled?'#4B5563':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
+    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'var(--bg2)', borderTop:'1px solid var(--border)', display:'flex', gap:'10px', zIndex:40 }}>
+      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'var(--bg2)', border:'1px solid var(--border)', color:'var(--text2)', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
+      <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'var(--bg3)': nextColor||'#2563eb', border:'none', color: disabled?'var(--text3)':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
   );
 
@@ -1527,7 +1543,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
           <span style={{ fontSize:'17px', fontWeight:700 }}>{isEditMode ? '日報を編集' : '日報入力'}</span>
           <button onClick={handleCancel}
-            style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:8, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:8, background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', color:'#DC2626', cursor:'pointer', fontSize:12, fontWeight:700 }}>
             <X style={{width:13,height:13}}/> キャンセル
           </button>
         </div>
@@ -1536,13 +1552,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'20px 16px 100px' }}>
+        <div className="b-panel" style={{ padding:'20px 16px 100px', background:'var(--bg)' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}
-                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', colorScheme:'dark', boxSizing:'border-box' }} />
+                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box' }} />
             </div>
 
             <div>
@@ -1559,7 +1575,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'20px 16px 100px' }}>
+        <div className="b-panel" style={{ padding:'20px 16px 100px', background:'var(--bg)' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -1571,7 +1587,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
                 {workContent_tags.filter(t=>!workDetails.workContent||t.includes(workDetails.workContent)).map(t=>(
                   <button key={t} onClick={()=>setWorkDetails({...workDetails,workContent:t})}
-                    style={{ fontSize:'11px', color: workDetails.workContent===t?'#60a5fa':'#6B7280', background: workDetails.workContent===t?'rgba(59,130,246,0.12)':'#0f172a', border:`1px solid ${workDetails.workContent===t?'#3b82f6':'#1f2937'}`, padding:'5px 10px', borderRadius:'20px', cursor:'pointer', whiteSpace:'nowrap' }}>{t}</button>
+                    style={{ fontSize:'11px', color: workDetails.workContent===t?'#1D4ED8':'var(--text2)', background: workDetails.workContent===t?'rgba(37,99,235,0.1)':'var(--bg3)', border:`1px solid ${workDetails.workContent===t?'#1D4ED8':'var(--border)'}`, padding:'5px 10px', borderRadius:'20px', cursor:'pointer', whiteSpace:'nowrap' }}>{t}</button>
                 ))}
               </div>
             </div>
@@ -1655,7 +1671,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div style={{ marginBottom:'10px' }}><label style={inpLbl}>区分</label>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>
                 {[['daytime','日勤','#3b82f6'],['nighttime','夜間','#8b5cf6']].map(([v,label,color])=>(
-                  <button key={v} onClick={()=>setOForm({...oForm,shift:v})} style={{ padding:'11px', borderRadius:'9px', border:`1px solid ${oForm.shift===v?color:'#1f2937'}`, background: oForm.shift===v?`${color}20`:'#0d0d0d', color: oForm.shift===v?color:'var(--text3)', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>{label}</button>
+                  <button key={v} onClick={()=>setOForm({...oForm,shift:v})} style={{ padding:'11px', borderRadius:'9px', border:`1px solid ${oForm.shift===v?color:'var(--border)'}`, background: oForm.shift===v?`${color}18`:'var(--bg3)', color: oForm.shift===v?color:'var(--text3)', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>{label}</button>
                 ))}
               </div>
             </div>
@@ -1710,13 +1726,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'20px 16px 100px' }}>
+        <div className="b-panel" style={{ padding:'20px 16px 100px', background:'var(--bg)' }}>
           <p style={{ fontSize:'12px', color:'var(--text3)', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 */}
           <SectionLabel ja="産廃処分費" en="Waste Disposal" />
           {wasteItems.map((w,i)=>(
-            <div key={i} style={{borderRadius:11,marginBottom:6,background:'rgba(245,158,11,0.04)',border:'1px solid rgba(245,158,11,0.12)',overflow:'hidden'}}>
+            <div key={i} style={{borderRadius:11,marginBottom:6,background:'#FFFBEB',border:'1px solid #FDE68A',overflow:'hidden'}}>
               <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px'}}>
                 <div style={{width:36,height:36,borderRadius:9,background:'rgba(245,158,11,0.15)',color:'#fbbf24',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{w.material.slice(0,2)}</div>
                 <div style={{flex:1,minWidth:0}}>
@@ -1759,7 +1775,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 ['ext','ワイエム配車','昼¥22,000\n夜¥32,000','rgba(99,102,241,0.15)','rgba(99,102,241,0.5)','#a5b4fc'],
               ].map(([v,label,price,bg,border,color])=>(
                 <button key={v} onClick={()=>setWasteForm({...wasteForm,haisha:wasteForm.haisha===v?'':v,driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''})}
-                  style={{padding:'10px 4px',borderRadius:10,border:`1px solid ${wasteForm.haisha===v?border:'rgba(255,255,255,0.08)'}`,background:wasteForm.haisha===v?bg:'rgba(255,255,255,0.02)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .12s'}}>
+                  style={{padding:'10px 4px',borderRadius:10,border:`1px solid ${wasteForm.haisha===v?border:'rgba(255,255,255,0.08)'}`,background:wasteForm.haisha===v?bg:'var(--bg3)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .12s'}}>
                   <div style={{fontSize:11,fontWeight:700,color:wasteForm.haisha===v?color:'var(--text2)',lineHeight:1.4}}>{label}</div>
                   <div style={{fontSize:9,fontFamily:'monospace',color:wasteForm.haisha===v?color:'var(--text3)',marginTop:3,whiteSpace:'pre'}}>{price}</div>
                 </button>
@@ -1768,7 +1784,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
             {/* 環境課展開 */}
             {wasteForm.haisha==='env' && (
-              <div style={{padding:12,borderRadius:9,background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.2)',marginBottom:10}}>
+              <div style={{padding:12,borderRadius:9,background:'#F0FDF4',border:'1px solid #BBF7D0',marginBottom:10}}>
                 <label style={{...inpLbl,color:'#4ade80',marginBottom:6}}>運転者（環境課）</label>
                 <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:8}}>
                   {['小峯朋宏','松橋信行','浅見勇弥','石田竜二','古山慎祐','尾崎奈帆'].map(d=>(
@@ -1810,7 +1826,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
             {/* ワイエム展開 */}
             {wasteForm.haisha==='ext' && (
-              <div style={{padding:12,borderRadius:9,background:'rgba(99,102,241,0.06)',border:'1px solid rgba(99,102,241,0.2)',marginBottom:10}}>
+              <div style={{padding:12,borderRadius:9,background:'#EEF2FF',border:'1px solid #C7D2FE',marginBottom:10}}>
                 <div style={{marginBottom:10,padding:'6px 10px',borderRadius:7,background:'rgba(99,102,241,0.1)',fontSize:12,fontWeight:700,color:'#a5b4fc'}}>ワイエムエコフューチャー</div>
                 <label style={{...inpLbl,marginBottom:6}}>シフト</label>
                 <div style={{...grid2,marginBottom:8}}>
@@ -1854,7 +1870,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>種類</label>
                 <div style={{display:'flex',gap:5,marginBottom:5}}>
                   <button onClick={()=>setScrapForm({...scrapForm,type:'金属くず'})}
-                    style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${scrapForm.type==='金属くず'?'rgba(74,222,128,0.5)':'rgba(255,255,255,0.07)'}`,background:scrapForm.type==='金属くず'?'rgba(74,222,128,0.15)':'rgba(255,255,255,0.02)',color:scrapForm.type==='金属くず'?'#4ade80':'#9CA3AF',fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
+                    style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${scrapForm.type==='金属くず'?'rgba(74,222,128,0.5)':'rgba(255,255,255,0.07)'}`,background:scrapForm.type==='金属くず'?'rgba(74,222,128,0.15)':'var(--bg3)',color:scrapForm.type==='金属くず'?'#4ade80':'#9CA3AF',fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
                     金属くず
                   </button>
                 </div>
@@ -1864,7 +1880,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:5}}>
                   {MASTER_DATA.buyers.map(b=>(
                     <button key={b} onClick={()=>setScrapForm({...scrapForm,buyer:b})}
-                      style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${scrapForm.buyer===b?'rgba(74,222,128,0.5)':'rgba(255,255,255,0.07)'}`,background:scrapForm.buyer===b?'rgba(74,222,128,0.15)':'rgba(255,255,255,0.02)',color:scrapForm.buyer===b?'#4ade80':'#9CA3AF',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                      style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${scrapForm.buyer===b?'rgba(74,222,128,0.5)':'rgba(255,255,255,0.07)'}`,background:scrapForm.buyer===b?'rgba(74,222,128,0.15)':'var(--bg3)',color:scrapForm.buyer===b?'#4ade80':'#9CA3AF',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                       {b}
                     </button>
                   ))}

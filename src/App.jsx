@@ -144,7 +144,7 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
           </svg>
         </div>
         <span className={`${sizeStyles[size]} relative z-10`}
-          style={{ fontFamily: 'Roboto Condensed, -apple-system, sans-serif', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text)' }}>
+          style={{ fontFamily: 'Roboto Condensed, -apple-system, sans-serif', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#1C1917' }}>
           {['L','O','G','I','O'].map((c, i) => (
             <span key={i} className={`logio-char ${animated ? `logio-char-animated logio-char-${i}` : ''}`}>{c}</span>
           ))}
@@ -312,7 +312,7 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 text-white text-sm font-medium focus:outline-none rounded-lg"
-        style={{ background: 'var(--bg)', border: '1px solid var(--border)', boxSizing:'border-box', maxWidth:'100%' }}
+        style={{ background: 'var(--bg)', border: '1px solid #EBEBEB', boxSizing:'border-box', maxWidth:'100%' }}
         required={required}>
         <option value="">{placeholder}</option>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -383,7 +383,7 @@ function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full px-3 py-2 text-white text-sm font-medium focus:outline-none rounded-lg"
-        style={{ background: 'var(--bg)', border: '1px solid var(--border)', boxSizing:'border-box', maxWidth:'100%' }}
+        style={{ background: 'var(--bg)', border: '1px solid #EBEBEB', boxSizing:'border-box', maxWidth:'100%' }}
         required={required} />
     </div>
   );
@@ -533,14 +533,14 @@ function LoginPage({ onLogin }) {
             <LOGIOLogo size="md" />
             <p style={{fontSize:13, color:'var(--text3)', marginTop:8, fontFamily:'DM Sans,sans-serif'}}>現場管理をスマートに</p>
           </div>
-          <div style={{borderRadius:16, padding:24, background:'var(--bg2)', border:'1px solid var(--border)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
+          <div style={{borderRadius:16, padding:24, background:'#F4F4F4', border:'none', boxShadow:'none'}}>
             {[['ID', 'text', userId, setUserId], ['パスワード', 'password', password, setPassword]].map(([lbl, tp, val, setter]) => (
               <div key={lbl} style={{marginBottom:20}}>
                 <label style={{display:'block', fontSize:12, fontWeight:600, color:'var(--text2)', marginBottom:8}}>{lbl}</label>
                 <input type={tp} value={val} onChange={(e) => setter(e.target.value)}
                   onKeyDown={tp === 'password' ? (e) => e.key === 'Enter' && handleLogin() : undefined}
                   placeholder={`${lbl}を入力`}
-                  style={{width:'100%', padding:'12px 14px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
+                  style={{width:'100%', padding:'12px 14px', background:'#EBEBEB', border:'none', color:'var(--text)', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
                   onFocus={(e) => e.target.style.borderColor = '#78716C'}
                   onBlur={(e) => e.target.style.borderColor = 'var(--border)'} />
               </div>
@@ -551,7 +551,7 @@ function LoginPage({ onLogin }) {
               </div>
             )}
             <button onClick={handleLogin}
-              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background:'#2C2825', color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'background .15s'}}
+              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background:'#1C1917', color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'background .15s'}}
               onMouseEnter={e=>e.target.style.background='#44403C'}
               onMouseLeave={e=>e.target.style.background='#2C2825'}>
               ログイン
@@ -607,7 +607,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const selectedSiteData = sites.find(s => s.name === selectedSite);
   const projectNumber = selectedSiteData?.projectNumber || projectInfo?.projectNumber || '';
 
-  const card = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '12px', transition: 'border-color 0.15s ease' };
+  const card = { background: 'var(--bg3)', border: '1px solid #EBEBEB', borderRadius: '12px', transition: 'border-color 0.15s ease' };
 
   // ★ ナビの maxWidth をコンテンツ(max-w-2xl=672px)と統一
   const NAV_MAX_W = '672px';
@@ -617,25 +617,25 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
         :root {
-          --bg:      #F7F5F2;
-          --bg2:     #FDFCFB;
-          --bg3:     #F0EDE8;
-          --border:  #E8E2DA;
+          --bg:      #FFFFFF;
+          --bg2:     #FFFFFF;
+          --bg3:     #F4F4F4;
+          --border:  #E8E8E8;
           --text:    #1C1917;
-          --text2:   #78716C;
-          --text3:   #A8A29E;
-          --main:    #2C2825;
-          --main2:   #44403C;
-          --accent:  #44403C;
+          --text2:   #666666;
+          --text3:   #999999;
+          --main:    #2D2D2D;
+          --main2:   #3D3D3D;
+          --accent:  #2D2D2D;
         }
-        html, body { background: var(--bg) !important; }
+        html, body { background: #fff !important; }
         *, *::before, *::after { box-sizing: border-box; }
         * { font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
         input, select, textarea { font-size: 16px !important; max-width: 100%; width: 100%; box-sizing: border-box; }
         .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
         .finance-detail.open { grid-template-rows: 1fr; }
         .finance-detail > div { overflow: hidden; }
-        .logio-progress-track { background: var(--border); border-radius: 999px; overflow: hidden; }
+        .logio-progress-track { background: #EBEBEB; border-radius: 999px; overflow: hidden; }
         .logio-progress-bar { border-radius: 999px; transition: width 0.8s ease; }
         .logio-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; animation: logiopulse 2s ease infinite; flex-shrink: 0; }
         @keyframes logiopulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
@@ -744,12 +744,11 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             {/* 売上・原価ミニカード */}
             {totals.totalRevenue > 0 && (
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
-                <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,padding:'14px 16px',boxShadow:'0 1px 4px rgba(0,0,0,0.05)'}}>
-                  <div style={{fontSize:9,fontWeight:700,color:'var(--text3)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:6}}>売上</div>
+                <div style={{background:'#F4F4F4',border:'none',borderRadius:14,padding:'14px 16px'}}>                  <div style={{fontSize:9,fontWeight:700,color:'#999',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:6}}>売上</div>
                   <div style={{fontSize:18,fontWeight:800,color:'var(--text)',fontVariantNumeric:'tabular-nums',lineHeight:1}}>¥{formatCurrency(totals.totalRevenue)}</div>
                 </div>
-                <div style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:14,padding:'14px 16px',boxShadow:'0 1px 4px rgba(0,0,0,0.05)'}}>
-                  <div style={{fontSize:9,fontWeight:700,color:'var(--text3)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:6}}>原価</div>
+                <div style={{background:'#F4F4F4',border:'none',borderRadius:14,padding:'14px 16px'}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'#999',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:6}}>原価</div>
                   <div style={{fontSize:18,fontWeight:800,color:'#DC2626',fontVariantNumeric:'tabular-nums',lineHeight:1}}>¥{formatCurrency(totals.accumulatedCost)}</div>
                 </div>
               </div>
@@ -778,7 +777,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               });
 
               return (
-                <div className="overflow-hidden mb-4" style={card}>
+                <div className="overflow-hidden mb-4" style={{background:'#F4F4F4',border:'none',borderRadius:'16px'}}>
                   <button onClick={()=>setWasteOpen(!wasteOpen)}
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
@@ -868,7 +867,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                             ...scrapItems.map(s=>({material:s.type,qty:`${s.quantity}${s.unit}`,amt:Math.abs(s.amount),dest:s.buyer,mani:'スクラップ'}))
                           ];
                           return Array.from({length:allRows},(_,si)=>(
-                            <tr key={`${r.id}-${si}`} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:idx%2===0?'transparent':'var(--bg3)'}}>
+                            <tr key={`${r.id}-${si}`} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:'#F7F7F7'}}>
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{idx+1}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',whiteSpace:'nowrap',verticalAlign:'middle'}}>{fmtDate(r.date)}</td>}
                               {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{dayName}</td>}
@@ -971,12 +970,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'var(--bg)', minHeight:'100vh', color:'var(--text)', overflowX:'auto' }}>
-      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'16px 10px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
+    <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', overflowX:'auto' }}>
+      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'16px 12px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
-          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:24 }}>
+          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'#EBEBEB', border:'none', color:'var(--text3)', fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:24 }}>
           <X className="w-4 h-4" />閉じる
         </button>
 
@@ -1001,7 +1000,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               style={{ width:'100%', padding:'12px 14px', background:'var(--bg)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box', maxWidth:'100%' }} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
               <button onClick={handleAddSite} style={{ padding:12, background:'#2563EB', border:'none', color:'var(--text)', borderRadius:9, fontSize:14, fontWeight:700, cursor:'pointer' }}>追加する</button>
-              <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text2)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
+              <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'#EBEBEB', border:'none', color:'var(--text2)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
             </div>
           </div>
         )}
@@ -1010,7 +1009,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         {sites.length > 0 && (
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
             <span style={{ fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.1em', whiteSpace:'nowrap' }}>登録済み現場</span>
-            <span style={{ fontSize:10, fontWeight:700, color:'var(--text3)', background:'var(--bg3)', border:'1px solid var(--border)', padding:'2px 8px', borderRadius:99 }}>{sites.length}件</span>
+            <span style={{ fontSize:10, fontWeight:700, color:'var(--text3)', background:'#EBEBEB', border:'none', padding:'2px 8px', borderRadius:99 }}>{sites.length}件</span>
             <div style={{ flex:1, height:1, background:'var(--bg3)' }}/>
           </div>
         )}
@@ -1037,9 +1036,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             <div key={site.name} style={{
               borderRadius:12, marginBottom:8, overflow:'hidden',
               width:'100%', boxSizing:'border-box', minWidth:0,
-              border: isOpen ? '1.5px solid rgba(99,102,241,0.4)' : '1.5px solid rgba(255,255,255,0.07)',
-              background: isOpen ? '#050505' : 'rgba(255,255,255,0.02)',
-              boxShadow: isOpen ? '0 0 0 1px rgba(59,130,246,0.15), 0 4px 20px rgba(99,102,241,0.1)' : 'none',
+              border: 'none',
+              background: '#F4F4F4',
+              boxShadow: isOpen ? '0 2px 12px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.04)',
             }}>
               {/* カードヘッダー */}
               <button onClick={() => {
@@ -1087,7 +1086,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>
                       <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
-                      <div style={{ padding:'10px 12px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, fontSize:14, color:'var(--text3)', boxSizing:'border-box', width:'100%' }}>
+                      <div style={{ padding:'10px 12px', background:'#EBEBEB', border:'none', borderRadius:8, fontSize:14, color:'var(--text3)', boxSizing:'border-box', width:'100%' }}>
                         {cardInfo.projectNumber || pjNo || '未採番'}　<span style={{ fontSize:10 }}>※ 自動採番（編集不可）</span>
                       </div>
                     </div>
@@ -1103,12 +1102,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
                             <input type="date" value={projectInfo.startDate||''} onChange={e=>setProjectInfo({...projectInfo,startDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'#EBEBEB', border:'none', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
                           </div>
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期終了</label>
                             <input type="date" value={projectInfo.endDate||''} onChange={e=>setProjectInfo({...projectInfo,endDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'#EBEBEB', border:'none', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
                           </div>
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
@@ -1445,25 +1444,24 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const mkCard = (accentColor) => ({
-    background: 'var(--bg2)',
-    border: '1px solid var(--border)',
-    borderRadius: '12px', padding: '14px', marginBottom: '10px', overflow: 'hidden',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
+    background: '#F7F7F7',
+    border: '1px solid #EBEBEB',
+    borderRadius: '12px', padding: '14px', marginBottom: '10px', overflow: 'hidden'
   });
   const inputCard      = mkCard('#3b82f6');
   const inputCardCyan  = mkCard('#22d3ee');
   const inputCardAmber = mkCard('#f59e0b');
   const inputCardGreen = mkCard('#34d399');
   const inputCardRose  = mkCard('#f43f5e');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1.5px solid #D6D0C8', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
-  const inpTxt = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1.5px solid #D6D0C8', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1.5px solid #E0E0E0', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpTxt = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1.5px solid #E0E0E0', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'var(--text2)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
 
   // ★ ItemCard: アバターは常に1文字
   const ItemCard = ({ avatarBg, avatarColor, avatarText, name, meta, amount, amountColor, onDel }) => (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'12px', marginBottom:'8px' }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'#EBEBEB', border:'none', borderRadius:'12px', marginBottom:'8px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:'10px', minWidth:0 }}>
         <div style={{ width:'34px', height:'34px', borderRadius:'9px', background:avatarBg, color:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700', flexShrink:0, fontFamily:'sans-serif' }}>{avatarText}</div>
         <div style={{ minWidth:0 }}>
@@ -1528,7 +1526,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
     <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'var(--bg2)', borderTop:'1px solid var(--border)', display:'flex', gap:'10px', zIndex:40 }}>
-      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'var(--bg2)', border:'1px solid var(--border)', color:'var(--text2)', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
+      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#F4F4F4', border:'none', color:'#666', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
       <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'var(--bg3)': nextColor||'#2563eb', border:'none', color: disabled?'var(--text3)':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
   );
@@ -1536,7 +1534,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const workContent_tags = ['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'];
 
   return (
-    <div style={{ background:'var(--bg)', minHeight:'100vh', overflowX:'hidden' }}>
+    <div style={{ background:'#fff', minHeight:'100vh', overflowX:'hidden' }}>
       <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;}`}</style>
 
       {/* ヘッダー */}
@@ -1985,7 +1983,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             <span className="text-sm text-gray-400">({getDayOfWeek(report.date)})</span>
             <span className="text-sm text-blue-400">{report.weather}</span>
             {/* 記入者＋更新日時 */}
-            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'var(--text2)', fontFamily:'monospace', background:'var(--bg3)', border:'1px solid var(--border)', padding:'2px 7px', borderRadius:99 }}>
+            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'var(--text2)', fontFamily:'monospace', background:'#EBEBEB', border:'none', padding:'2px 7px', borderRadius:99 }}>
               {report.updatedBy || report.recorder || ''}
               {report.updatedAt && (
                 <span style={{ color:'var(--text3)' }}>
@@ -3194,7 +3192,7 @@ export default function LOGIOApp() {
                   <p style={{ fontSize:'16px', fontWeight:700, color:'var(--text)', marginBottom:'20px' }}>{selectedSite}</p>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'20px' }}>
                     {[['開始日', projectInfo?.startDate], ['終了日', projectInfo?.endDate]].map(([label, val]) => (
-                      <div key={label} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'10px', padding:'14px' }}>
+                      <div key={label} style={{ background:'#EBEBEB', border:'none', borderRadius:'10px', padding:'14px' }}>
                         <p style={{ fontSize:'10px', color:'var(--text2)', marginBottom:'6px' }}>{label}</p>
                         <p style={{ fontSize:'15px', fontWeight:600, color:'var(--text)' }}>{val || '未設定'}</p>
                       </div>
@@ -3215,7 +3213,7 @@ export default function LOGIOApp() {
                 <p style={{ fontSize:'14px', color:'var(--text2)', textAlign:'center', padding:'20px 0' }}>現場を選択してください</p>
               )}
               <button onClick={() => setShowCalendarModal(false)}
-                style={{ width:'100%', padding:'14px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer', marginTop:'8px' }}>
+                style={{ width:'100%', padding:'14px', background:'#EBEBEB', border:'none', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer', marginTop:'8px' }}>
                 閉じる
               </button>
             </div>
@@ -3265,7 +3263,7 @@ export default function LOGIOApp() {
                 </div>
               )}
               <button onClick={() => setShowNotificationModal(false)}
-                style={{ width:'100%', padding:'14px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
+                style={{ width:'100%', padding:'14px', background:'#EBEBEB', border:'none', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
                 閉じる
               </button>
             </div>

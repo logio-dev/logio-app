@@ -1447,7 +1447,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const mkCard = (accentColor) => ({
     background: 'var(--bg2)',
     border: '1px solid var(--border)',
-    borderRadius: '12px', padding: '14px', marginBottom: '14px', overflow: 'hidden',
+    borderRadius: '12px', padding: '14px', marginBottom: '10px', overflow: 'hidden',
     boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
   });
   const inputCard      = mkCard('#3b82f6');
@@ -1455,8 +1455,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const inputCardAmber = mkCard('#f59e0b');
   const inputCardGreen = mkCard('#34d399');
   const inputCardRose  = mkCard('#f43f5e');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1px solid var(--border)', color:'var(--text)', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
-  const inpTxt = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1px solid var(--border)', color:'var(--text)', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1.5px solid #D6D0C8', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpTxt = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1.5px solid #D6D0C8', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'var(--text2)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
@@ -1480,19 +1480,20 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   // ★ シフトボタン: 4択（半日追加）
   const ShiftBtns4 = ({ value, onChange }) => (
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'5px' }}>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'6px' }}>
       {[
         ['daytime',     '日勤',   '#2563EB'],
         ['nighttime',   '夜間',   '#7C3AED'],
         ['nightLoading','夜積',   '#4F46E5'],
-        ['halfDay',     '半日 ×½','#D97706'],
+        ['halfDay',     '半日',   '#D97706'],
       ].map(([v,label,color])=>(
         <button key={v} onClick={()=>onChange(v)} style={{
-          padding:'10px 2px', borderRadius:'9px',
-          border:`1px solid ${value===v?color:'var(--border)'}`,
-          background: value===v?`${color}18`:'var(--bg3)',
+          padding:'9px 4px', borderRadius:'8px',
+          border:`1.5px solid ${value===v?color:'var(--border)'}`,
+          background: value===v?`${color}12`:'var(--bg2)',
           color: value===v?color:'var(--text2)',
-          fontSize:'11px', fontWeight:'700', cursor:'pointer', transition:'all 0.15s', lineHeight:1.3
+          fontSize:'12px', fontWeight:'700', cursor:'pointer', transition:'all 0.15s',
+          textAlign:'center', whiteSpace:'nowrap'
         }}>{label}</button>
       ))}
     </div>
@@ -1519,7 +1520,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const SectionLabel = ({ ja, en }) => (
-    <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'10px' }}>
+    <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'8px' }}>
       <span style={{ fontSize:'10px', fontWeight:'700', color:'var(--text)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'var(--text2)'}}>/ {en}</span></span>
       <span style={{ flex:1, height:'1px', background:'var(--border)' }} />
     </div>
@@ -1552,7 +1553,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'20px 16px 100px', background:'var(--bg)' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'var(--bg)' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
@@ -1575,7 +1576,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'20px 16px 100px', background:'var(--bg)' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'var(--bg)' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -1726,7 +1727,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'20px 16px 100px', background:'var(--bg)' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'var(--bg)' }}>
           <p style={{ fontSize:'12px', color:'var(--text3)', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 */}

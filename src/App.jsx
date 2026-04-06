@@ -545,7 +545,7 @@ function LoginPage({ onLogin }) {
             <LOGIOLogo size="md" />
             <p style={{fontSize:13, color:'var(--text3)', marginTop:8, fontFamily:'DM Sans,sans-serif'}}>現場管理をスマートに</p>
           </div>
-          <div style={{borderRadius:16, padding:24, background:'#F4F4F4', border:'none', boxShadow:'none'}}>
+          <div style={{borderRadius:16, padding:24, background:'#EBEBEB', border:'none'}}>
             {[['ID', 'text', userId, setUserId], ['パスワード', 'password', password, setPassword]].map(([lbl, tp, val, setter]) => (
               <div key={lbl} style={{marginBottom:20}}>
                 <label style={{display:'block', fontSize:12, fontWeight:600, color:'var(--text2)', marginBottom:8}}>{lbl}</label>
@@ -785,7 +785,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               });
 
               return (
-                <div className="overflow-hidden mb-4" style={{background:'#FFFFFF',border:'none',borderRadius:'16px',boxShadow:'0 1px 6px rgba(0,0,0,0.07)'}}>
+                <div className="overflow-hidden mb-4" style={{background:'#EBEBEB',border:'none',borderRadius:'16px'}}>
                   <button onClick={()=>setWasteOpen(!wasteOpen)}
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
@@ -837,7 +837,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
             {/* 日報PDF全画面ボタン */}
             {reports && reports.length > 0 && (
-              <div className="mb-4" style={{background:'#FFFFFF',border:'none',borderRadius:'16px',boxShadow:'0 1px 6px rgba(0,0,0,0.07)'}}>
+              <div className="mb-4" style={{background:'#EBEBEB',border:'none',borderRadius:'16px'}}>
                 <button onClick={()=>setReportsOpen(!reportsOpen)}
                   style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
                   <div>
@@ -847,58 +847,34 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                   <GradChevron open={reportsOpen} size={16}/>
                 </button>
                 {reportsOpen && (
-                  <div style={{borderTop:'1px solid var(--border)',overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
-                    <table style={{width:'100%',minWidth:700,borderCollapse:'collapse',fontSize:11}}>
-                      <thead>
-                        <tr style={{background:'#F4F4F4'}}>
-                          {['日数','日付','曜','施工内容','開始','終了','自社氏名','金額','外注','金額','車種','車番','重機','発生材','数量','金額','搬出先','マニNo.'].map((h,i)=>(
-                            <th key={i} style={{padding:'6px 8px',color:'var(--text2)',fontWeight:700,textAlign:'center',whiteSpace:'nowrap',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {reports.map((r,idx)=>{
-                          const workers = r.workDetails?.inHouseWorkers||[];
-                          const outsourcing = r.workDetails?.outsourcingLabor||[];
-                          const vehicles = r.workDetails?.vehicles||[];
-                          const machinery = r.workDetails?.machinery||[];
-                          const wasteItems = r.wasteItems||[];
-                          const scrapItems = r.scrapItems||[];
-                          const dayNames = ['日','月','火','水','木','金','土'];
-                          const dayName = r.date ? dayNames[new Date(r.date).getDay()] : '';
-                          const fmtDate = d => { if(!d) return ''; const p=d.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
-                          const startT = workers.map(w=>w.start||w.startTime).filter(Boolean).sort()[0]||'-';
-                          const endT = workers.map(w=>w.end||w.endTime).filter(Boolean).sort().reverse()[0]||'-';
-                          const allRows = Math.max(1,workers.length,outsourcing.length,vehicles.length,machinery.length,wasteItems.length+scrapItems.length);
-                          const wasteAndScrap = [
-                            ...wasteItems.map(w=>({material:w.material,qty:`${w.quantity}${w.unit}`,amt:w.amount,dest:w.disposalSite,mani:w.manifestNumber||''})),
-                            ...scrapItems.map(s=>({material:s.type,qty:`${s.quantity}${s.unit}`,amt:Math.abs(s.amount),dest:s.buyer,mani:'スクラップ'}))
-                          ];
-                          return Array.from({length:allRows},(_,si)=>(
-                            <tr key={`${r.id}-${si}`} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:idx%2===0?'#F0EFED':'#E8E7E5'}}>
-                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle',cursor:'pointer'}} onClick={()=>onViewPdf&&onViewPdf(r)}>{idx+1}</td>}
-                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',whiteSpace:'nowrap',verticalAlign:'middle'}}>{fmtDate(r.date)}</td>}
-                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{dayName}</td>}
-                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',maxWidth:120,verticalAlign:'middle'}}>{r.workDetails?.workContent||''}</td>}
-                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{startT}</td>}
-                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{endT}</td>}
-                              <td style={{padding:'6px 8px',color:workers[si]?'#1C1917':'transparent'}}>{workers[si]?.name||''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'right',color:'#B45309',fontVariantNumeric:'tabular-nums'}}>{workers[si]?`¥${formatCurrency(workers[si].amount)}`:''}</td>
-                              <td style={{padding:'6px 8px',fontSize:10,color:'#0369A1'}}>{outsourcing[si]?`${outsourcing[si].company} ${outsourcing[si].count||outsourcing[si].workers}人`:''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'right',color:'#B45309',fontVariantNumeric:'tabular-nums'}}>{outsourcing[si]?`¥${formatCurrency(outsourcing[si].amount)}`:''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{vehicles[si]?.type||''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{vehicles[si]?.number||''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{machinery[si]?.type||''}</td>
-                              <td style={{padding:'6px 8px',color:'#B45309'}}>{wasteAndScrap[si]?.material||''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'right',color:'var(--text2)'}}>{wasteAndScrap[si]?.qty||''}</td>
-                              <td style={{padding:'6px 8px',textAlign:'right',color:'#B45309',fontVariantNumeric:'tabular-nums'}}>{wasteAndScrap[si]?`¥${formatCurrency(wasteAndScrap[si].amt)}`:''}</td>
-                              <td style={{padding:'6px 8px',fontSize:10,color:'var(--text3)'}}>{wasteAndScrap[si]?.dest||''}</td>
-                              <td style={{padding:'6px 8px',fontSize:10,color:'var(--text2)'}}>{wasteAndScrap[si]?.mani||''}</td>
-                            </tr>
-                          ));
-                        })}
-                      </tbody>
-                    </table>
+                  <div style={{borderTop:'1px solid #DCDCDC',padding:'12px 16px'}}>
+                    {reports.map((r,idx)=>{
+                      const dayNames=['日','月','火','水','木','金','土'];
+                      const dayName=r.date?dayNames[new Date(r.date).getDay()]:'';
+                      const totalCost=(r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0)+(r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0)+(r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0)+(r.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0);
+                      return (
+                        <button key={r.id} onClick={()=>onViewPdf&&onViewPdf(r)}
+                          style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'10px 12px',background:'#fff',border:'none',borderRadius:12,marginBottom:8,cursor:'pointer',textAlign:'left'}}>
+                          <div style={{width:42,flexShrink:0,textAlign:'center',padding:'6px 4px',background:'#EBEBEB',borderRadius:9}}>
+                            <div style={{fontSize:8,fontWeight:700,color:'#999',letterSpacing:'.04em'}}>{r.date?r.date.split('-')[1]+'月':''}</div>
+                            <div style={{fontSize:20,fontWeight:900,color:'#1C1917',lineHeight:1}}>{r.date?parseInt(r.date.split('-')[2]):''}</div>
+                            <div style={{fontSize:10,fontWeight:700,color:'#999'}}>{dayName}</div>
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:13,fontWeight:700,color:'#1C1917',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.workDetails?.workContent||'作業内容未入力'}</div>
+                            <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                              {(r.workDetails?.inHouseWorkers?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'#EFF6FF',color:'#1D4ED8',fontSize:10,fontWeight:700}}>{r.workDetails.inHouseWorkers.length}名</span>}
+                              {(r.workDetails?.outsourcingLabor?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'#ECFDF5',color:'#065F46',fontSize:10,fontWeight:700}}>外注{r.workDetails.outsourcingLabor.length}社</span>}
+                              {(r.wasteItems?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'#FEF3C7',color:'#92400E',fontSize:10,fontWeight:700}}>産廃{r.wasteItems.length}件</span>}
+                            </div>
+                          </div>
+                          <div style={{flexShrink:0,textAlign:'right'}}>
+                            <div style={{fontSize:13,fontWeight:700,color:'#B45309',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(totalCost)}</div>
+                            <div style={{fontSize:10,color:'#60A5FA',marginTop:2,fontWeight:600}}>PDF表示 →</div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1045,8 +1021,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               borderRadius:12, marginBottom:8, overflow:'hidden',
               width:'100%', boxSizing:'border-box', minWidth:0,
               border: 'none',
-              background: '#FFFFFF',
-              boxShadow: isOpen ? '0 4px 16px rgba(0,0,0,0.1)' : '0 1px 6px rgba(0,0,0,0.07)',
+              background: '#EBEBEB',
+              boxShadow: 'none',
             }}>
               {/* カードヘッダー */}
               <button onClick={() => {
@@ -1452,18 +1428,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const mkCard = (accentColor) => ({
-    background: '#FFFFFF',
+    background: '#EBEBEB',
     border: 'none',
-    borderRadius: '14px', padding: '16px', marginBottom: '12px', overflow: 'hidden',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.07)'
+    borderRadius: '14px', padding: '16px', marginBottom: '12px', overflow: 'hidden'
   });
   const inputCard      = mkCard('#3b82f6');
   const inputCardCyan  = mkCard('#22d3ee');
   const inputCardAmber = mkCard('#f59e0b');
   const inputCardGreen = mkCard('#34d399');
   const inputCardRose  = mkCard('#f43f5e');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'#F0F0F0', border:'none', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
-  const inpTxt = { width:'100%', padding:'12px 10px', background:'#F0F0F0', border:'none', color:'var(--text)', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'#DCDCDC', border:'none', color:'#1C1917', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpTxt = { width:'100%', padding:'12px 10px', background:'#DCDCDC', border:'none', color:'#1C1917', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'var(--text2)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
@@ -1566,12 +1541,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}
-                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box', background:'#F0F0F0', border:'none' }} />
+                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box', background:'#DCDCDC', border:'none' }} />
             </div>
 
             <div>
               <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>記入者 <span style={{color:'#f87171'}}>*</span></label>
-              <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px', background:'#F0F0F0', border:'none' }}>
+              <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px', background:'#DCDCDC', border:'none' }}>
                 <option value="">選択してください</option>
                 {MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}
               </select>

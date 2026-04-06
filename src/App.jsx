@@ -154,6 +154,18 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
   );
 }
 
+// ===== カウントアップフック =====
+function useCountUp(target, duration=800) {
+  const [val, setVal] = React.useState(0);
+  React.useEffect(() => {
+    if(target===0){setVal(0);return;}
+    let start=0; const step=target/Math.max(1,Math.floor(duration/16));
+    const timer = setInterval(()=>{ start+=step; if(start>=target){setVal(target);clearInterval(timer);}else{setVal(Math.floor(start));} },16);
+    return ()=>clearInterval(timer);
+  },[target]);
+  return val;
+}
+
 // ========== マスタデータ ==========
 const MASTER_DATA = {
   projectNames: ['内装解体', 'スケルトン解体', '建物解体', '外装解体', '外構解体', 'アスベスト除去', '設備解体', '躯体解体'],
@@ -586,27 +598,16 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
   // 稼働日数・人工数
   const workingDays = (reports||[]).length;
-  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
+  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss)=>ss+1,s),0);
   const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
-
-  // カウントアップアニメーション
-  const useCountUp = (target, duration=800) => {
-    const [val, setVal] = React.useState(0);
-    React.useEffect(() => {
-      if(target===0){setVal(0);return;}
-      let start=0; const step=target/Math.max(1,Math.floor(duration/16));
-      const timer = setInterval(()=>{ start+=step; if(start>=target){setVal(target);clearInterval(timer);}else{setVal(Math.floor(start));} },16);
-      return ()=>clearInterval(timer);
-    },[target]);
-    return val;
-  };
-  const animDays = useCountUp(workingDays);
-  const animWorkers = useCountUp(totalWorkers);
-  const animInHouse = useCountUp(totalInHouseRaw);
-  const animOutsourcing = useCountUp(totalOutsourcingRaw);
   const totalInHouse = totalInHouseRaw;
   const totalOutsourcing = totalOutsourcingRaw;
   const totalWorkers = totalInHouse + totalOutsourcing;
+  const animDays = useCountUp(workingDays);
+  const animWorkers = useCountUp(totalWorkers);
+  const animInHouse = useCountUp(totalInHouse);
+  const animOutsourcing = useCountUp(totalOutsourcing);
+
   const costRatioFixed = costRatio.toFixed(1);
   let costBarColor = "#3B82F6";
   let costBarBg = "rgba(59,130,246,0.12)";
@@ -3057,29 +3058,6 @@ export default function LOGIOApp() {
           notificationCount={(() => {
             const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
 
-  // 稼働日数・人工数
-  const workingDays = (reports||[]).length;
-  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
-  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
-
-  // カウントアップアニメーション
-  const useCountUp = (target, duration=800) => {
-    const [val, setVal] = React.useState(0);
-    React.useEffect(() => {
-      if(target===0){setVal(0);return;}
-      let start=0; const step=target/Math.max(1,Math.floor(duration/16));
-      const timer = setInterval(()=>{ start+=step; if(start>=target){setVal(target);clearInterval(timer);}else{setVal(Math.floor(start));} },16);
-      return ()=>clearInterval(timer);
-    },[target]);
-    return val;
-  };
-  const animDays = useCountUp(workingDays);
-  const animWorkers = useCountUp(totalWorkers);
-  const animInHouse = useCountUp(totalInHouseRaw);
-  const animOutsourcing = useCountUp(totalOutsourcingRaw);
-  const totalInHouse = totalInHouseRaw;
-  const totalOutsourcing = totalOutsourcingRaw;
-  const totalWorkers = totalInHouse + totalOutsourcing;
             return costRatio >= 70 ? 1 : 0;
           })()}
         />
@@ -3261,29 +3239,7 @@ export default function LOGIOApp() {
       {showNotificationModal && (() => {
         const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
 
-  // 稼働日数・人工数
-  const workingDays = (reports||[]).length;
-  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
-  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
 
-  // カウントアップアニメーション
-  const useCountUp = (target, duration=800) => {
-    const [val, setVal] = React.useState(0);
-    React.useEffect(() => {
-      if(target===0){setVal(0);return;}
-      let start=0; const step=target/Math.max(1,Math.floor(duration/16));
-      const timer = setInterval(()=>{ start+=step; if(start>=target){setVal(target);clearInterval(timer);}else{setVal(Math.floor(start));} },16);
-      return ()=>clearInterval(timer);
-    },[target]);
-    return val;
-  };
-  const animDays = useCountUp(workingDays);
-  const animWorkers = useCountUp(totalWorkers);
-  const animInHouse = useCountUp(totalInHouseRaw);
-  const animOutsourcing = useCountUp(totalOutsourcingRaw);
-  const totalInHouse = totalInHouseRaw;
-  const totalOutsourcing = totalOutsourcingRaw;
-  const totalWorkers = totalInHouse + totalOutsourcing;
         const alerts = [];
         if (costRatio >= 85) alerts.push({ level:'danger', icon:'🚨', title:'原価率が危険水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 85%以下` });
         else if (costRatio >= 70) alerts.push({ level:'warn', icon:'⚠️', title:'原価率が注意水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 70%以下` });

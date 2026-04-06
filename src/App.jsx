@@ -611,7 +611,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        input, select, textarea { font-size: 16px !important; max-width: 100%; }
+        input, select, textarea { font-size: 16px !important; max-width: 100%; width: 100%; box-sizing: border-box; }
         .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
         .finance-detail.open { grid-template-rows: 1fr; }
         .finance-detail > div { overflow: hidden; }
@@ -897,8 +897,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#000', minHeight:'100vh', color:'white' }}>
-      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'24px 16px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
+    <div style={{ background:'#000', minHeight:'100vh', color:'white', overflowX:'auto' }}>
+      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'20px 12px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -972,7 +972,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                   if (!isSelected && !isOpen) onSelectSite && onSelectSite(site.name);
                   setOpenCard(isOpen ? null : site.name);
                 }}
-                style={{ width:'100%', padding:'12px 10px', display:'flex', alignItems:'center', gap:8, background:'none', border:'none', cursor:'pointer', textAlign:'left' }}>
+                style={{ width:'100%', padding:'10px 8px', display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', textAlign:'left' }}>
                 <SiteAvatar pjNo={pjNo || cardInfo.projectNumber} />
                 <div style={{ flex:1, minWidth:0 }}>
                   {editingName === site.name ? (
@@ -1008,7 +1008,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
               {/* 展開コンテンツ */}
               {isOpen && (
-                <div style={{ padding:'0 14px 16px', borderTop:'1px solid rgba(255,255,255,0.05)', width:'100%', boxSizing:'border-box' }}>
+                <div style={{ padding:'0 10px 14px', borderTop:'1px solid rgba(255,255,255,0.05)', width:'100%', boxSizing:'border-box' }}>
                   <div style={{ paddingTop:16, minWidth:0, width:'100%' }}>
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>
@@ -2916,7 +2916,7 @@ export default function LOGIOApp() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
+    <div className="min-h-screen bg-black flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : currentPage === 'settings' ? 'auto' : 'hidden' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       <div className="flex flex-col flex-1 bg-black">
         <Header
@@ -2931,7 +2931,7 @@ export default function LOGIOApp() {
             return costRatio >= 70 ? 1 : 0;
           })()}
         />
-        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
+        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : currentPage === 'settings' ? 'auto' : 'hidden' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
           {selectedSite && ['home','list','analysis'].includes(currentPage) && (() => {
             const navDefs = [

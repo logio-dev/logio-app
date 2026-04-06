@@ -130,21 +130,21 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
         <div className={`absolute inset-0 flex items-center justify-center ${animated ? 'elephant-silhouette' : 'elephant-static'}`}>
           <svg width={elephantSizes[size]} height={elephantSizes[size]} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <g>
-              <rect x="70" y="80" width="80" height="60" rx="30" fill="#ffffff" opacity="0.12"/>
-              <circle cx="90" cy="70" r="35" fill="#ffffff" opacity="0.12"/>
-              <ellipse cx="65" cy="60" rx="20" ry="30" fill="#ffffff" opacity="0.12"/>
-              <ellipse cx="115" cy="60" rx="20" ry="30" fill="#ffffff" opacity="0.12"/>
-              <path d="M 90,95 Q 85,110 75,125 Q 70,135 65,145 Q 60,155 55,165" stroke="#ffffff" strokeWidth="12" fill="none" opacity="0.12" strokeLinecap="round"/>
-              <rect x="75" y="135" width="12" height="30" rx="6" fill="#ffffff" opacity="0.12"/>
-              <rect x="95" y="135" width="12" height="30" rx="6" fill="#ffffff" opacity="0.12"/>
-              <rect x="115" y="135" width="12" height="30" rx="6" fill="#ffffff" opacity="0.12"/>
-              <rect x="135" y="135" width="12" height="30" rx="6" fill="#ffffff" opacity="0.12"/>
-              <path d="M 150,110 Q 155,115 158,125" stroke="#ffffff" strokeWidth="5" fill="none" opacity="0.12" strokeLinecap="round"/>
+              <rect x="70" y="80" width="80" height="60" rx="30" fill="#1C1917" opacity="0.08"/>
+              <circle cx="90" cy="70" r="35" fill="#1C1917" opacity="0.08"/>
+              <ellipse cx="65" cy="60" rx="20" ry="30" fill="#1C1917" opacity="0.08"/>
+              <ellipse cx="115" cy="60" rx="20" ry="30" fill="#1C1917" opacity="0.08"/>
+              <path d="M 90,95 Q 85,110 75,125 Q 70,135 65,145 Q 60,155 55,165" stroke="#1C1917" strokeWidth="12" fill="none" opacity="0.08" strokeLinecap="round"/>
+              <rect x="75" y="135" width="12" height="30" rx="6" fill="#1C1917" opacity="0.08"/>
+              <rect x="95" y="135" width="12" height="30" rx="6" fill="#1C1917" opacity="0.08"/>
+              <rect x="115" y="135" width="12" height="30" rx="6" fill="#1C1917" opacity="0.08"/>
+              <rect x="135" y="135" width="12" height="30" rx="6" fill="#1C1917" opacity="0.08"/>
+              <path d="M 150,110 Q 155,115 158,125" stroke="#1C1917" strokeWidth="5" fill="none" opacity="0.08" strokeLinecap="round"/>
             </g>
           </svg>
         </div>
-        <span className={`text-white ${sizeStyles[size]} relative z-10`}
-          style={{ fontFamily: 'Roboto Condensed, -apple-system, sans-serif', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <span className={`${sizeStyles[size]} relative z-10`}
+          style={{ fontFamily: 'Roboto Condensed, -apple-system, sans-serif', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text)' }}>
           {['L','O','G','I','O'].map((c, i) => (
             <span key={i} className={`logio-char ${animated ? `logio-char-animated logio-char-${i}` : ''}`}>{c}</span>
           ))}
@@ -193,8 +193,8 @@ const MASTER_DATA = {
     return options;
   })(),
   wasteTypes: ['混合廃棄物', '木くず', '廃プラ', 'がら陶', 'コンクリートがら', '金属くず', '石膏ボード', 'ガラス', '断熱材', '繊維くず', '非飛散性アスベスト（運搬費含む）'],
-  disposalSites: ['木村建材', '二光産業', 'ギプロ', 'ウムヴェルト', '日栄興産', '戸部組', 'リバー', 'ワイエムエコフューチャー', '東和アークス', 'ヤマゼン', '入間緑化', '石坂産業', 'フルハシEPO'],
-  scrapTypes: ['鉄くず', '銅線', 'アルミ', 'ステンレス', '真鍮'],
+  disposalSites: ['入間緑化', '石坂', 'ワイエム', 'フルハシ', 'ミダック', 'リバー', '二光産業', '木村建設', 'ウムヴェルト', 'ギプロ', '中央環境', '戸部組', '東和アークス'],
+  scrapTypes: ['金属くず'],
   buyers: ['小林金属', '高橋金属', 'ナンセイスチール', '服部金属', 'サンビーム', '光田産業', '青木商店', '長沼商事'],
   statuses: ['進行中', '完了', '中断']
 };
@@ -240,7 +240,7 @@ function GradChevronUp({ size = 16 }) {
 // ========== ★ Header（リロードアイコン追加）==========
 function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onNotification, onReload, reloading = false, notificationCount = 0 }) {
   return (
-    <header className="bg-black" style={{
+    <header className="bg-transparent" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
       borderBottom: '1px solid rgba(255,255,255,0.06)',
       paddingTop: 'env(safe-area-inset-top, 0px)',
@@ -261,7 +261,7 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
           )}
         </div>
         {/* 中央：ロゴ */}
-        <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'white', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
+        <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'var(--text)', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
         {/* 右：アイコン4つ（リロード追加）*/}
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
           {/* ★ リロード */}
@@ -312,7 +312,7 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 text-white text-sm font-medium focus:outline-none rounded-lg"
-        style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
+        style={{ background: 'var(--bg)', border: '1px solid var(--border)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
         required={required}>
         <option value="">{placeholder}</option>
         {options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -340,7 +340,7 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
       </label>
       <button type="button" onClick={() => setIsOpen(!isOpen)}
         className="w-full px-4 py-3 text-left focus:outline-none transition-colors relative rounded-lg"
-        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
         {selectedOption ? (
           <div>
             <div className="text-white text-base font-medium">{selectedOption.title}</div>
@@ -355,7 +355,7 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
       </button>
       {isOpen && (
         <div className="absolute left-0 right-0 z-50 mt-1 rounded-lg shadow-xl max-h-80 overflow-y-auto"
-          style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)' }}>
+          style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
           {options.map((option) => (
             <button key={option.value} type="button" onClick={() => { onChange(option.value); setIsOpen(false); }}
               className="w-full px-4 py-3 text-left transition-colors relative"
@@ -383,7 +383,7 @@ function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full px-3 py-2 text-white text-sm font-medium focus:outline-none rounded-lg"
-        style={{ background: '#000', border: '1px solid rgba(255,255,255,0.1)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
+        style={{ background: 'var(--bg)', border: '1px solid var(--border)', colorScheme:'dark', boxSizing:'border-box', maxWidth:'100%' }}
         required={required} />
     </div>
   );
@@ -398,7 +398,7 @@ function Button({ children, onClick, variant = 'primary', className = '', icon: 
   };
   const styles = {
     primary: disabled ? { background: 'rgba(255,255,255,0.1)' } : { background: 'rgba(59,130,246,0.8)' },
-    secondary: { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' },
+    secondary: { background: 'var(--bg3)', border: '1px solid var(--border)' },
     danger: { background: 'rgba(239,68,68,0.8)' }
   };
   return (
@@ -454,8 +454,8 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
     <>
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-black border-r border-gray-900">
+          <div className="fixed inset-0 bg-transparent bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-transparent border-r border-gray-900">
             <div className="absolute top-0 right-0 -mr-12 pt-2">
               <button onClick={() => setSidebarOpen(false)} className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none">
                 <X className="h-6 w-6 text-white" />
@@ -482,7 +482,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
             </div>
             <div className="border-t border-white/[0.06]" style={{ padding:'16px', paddingBottom:'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
               <button onClick={onLogout} className="w-full px-4 py-3 text-sm font-medium text-gray-300 hover:text-white transition-colors flex items-center gap-3 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', border: '1px solid var(--border)' }}>
                 <LogOut className="h-5 w-5" />
                 <span>ログアウト</span>
               </button>
@@ -526,40 +526,41 @@ function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-[360px]">
-          <div className="text-center mb-10">
+    <div style={{minHeight:'100vh', background:'var(--bg)', display:'flex', flexDirection:'column'}}>
+      <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 16px'}}>
+        <div style={{width:'100%', maxWidth:360}}>
+          <div style={{textAlign:'center', marginBottom:32}}>
             <LOGIOLogo size="md" />
-            <p className="text-sm text-gray-500 mt-3" style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}>現場管理をスマートに</p>
+            <p style={{fontSize:13, color:'var(--text3)', marginTop:8, fontFamily:'DM Sans,sans-serif'}}>現場管理をスマートに</p>
           </div>
-          <div className="rounded-xl p-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{borderRadius:16, padding:24, background:'var(--bg2)', border:'1px solid var(--border)', boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
             {[['ID', 'text', userId, setUserId], ['パスワード', 'password', password, setPassword]].map(([lbl, tp, val, setter]) => (
-              <div key={lbl} className="mb-5">
-                <label className="block text-sm font-medium text-gray-400 mb-2" style={{ fontFamily: 'Inter, sans-serif' }}>{lbl}</label>
+              <div key={lbl} style={{marginBottom:20}}>
+                <label style={{display:'block', fontSize:12, fontWeight:600, color:'var(--text2)', marginBottom:8}}>{lbl}</label>
                 <input type={tp} value={val} onChange={(e) => setter(e.target.value)}
                   onKeyDown={tp === 'password' ? (e) => e.key === 'Enter' && handleLogin() : undefined}
                   placeholder={`${lbl}を入力`}
-                  className="w-full px-4 py-3 bg-transparent text-white text-sm rounded-lg focus:outline-none transition-all"
-                  style={{ border: '1px solid rgba(255,255,255,0.12)', fontFamily: 'Inter, sans-serif' }}
-                  onFocus={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.4)'}
-                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.12)'} />
+                  style={{width:'100%', padding:'12px 14px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
+                  onFocus={(e) => e.target.style.borderColor = '#78716C'}
+                  onBlur={(e) => e.target.style.borderColor = 'var(--border)'} />
               </div>
             ))}
             {error && (
-              <div className="mb-5 p-3 rounded-lg text-sm" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', fontFamily: 'Inter, sans-serif' }}>
+              <div style={{marginBottom:20, padding:'10px 14px', borderRadius:10, fontSize:13, background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', color:'#DC2626'}}>
                 {error}
               </div>
             )}
-            <button onClick={handleLogin} className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:bg-white active:scale-[0.98]"
-              style={{ background: '#EDEDED', color: '#000', fontFamily: 'Inter, sans-serif' }}>
+            <button onClick={handleLogin}
+              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background:'#2C2825', color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'background .15s'}}
+              onMouseEnter={e=>e.target.style.background='#44403C'}
+              onMouseLeave={e=>e.target.style.background='#2C2825'}>
               ログイン
             </button>
           </div>
         </div>
       </div>
-      <div className="text-center py-6">
-        <p className="text-xs text-gray-600" style={{ fontFamily: 'Inter, sans-serif' }}>© 2026 LOGIO</p>
+      <div style={{textAlign:'center', padding:'24px 0'}}>
+        <p style={{fontSize:11, color:'var(--text3)'}}>© 2026 LOGIO</p>
       </div>
     </div>
   );
@@ -570,7 +571,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const [financeOpen, setFinanceOpen] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
   const [wasteOpen, setWasteOpen] = useState(false);
-  const [reportsOpen, setReportsOpen] = useState(true);
+  const [reportsOpen, setReportsOpen] = useState(false);
   const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -582,6 +583,12 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   }, [siteDropdownOpen]);
 
   const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+
+  // 稼働日数・人工数
+  const workingDays = (reports||[]).length;
+  const totalInHouse = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
+  const totalOutsourcing = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+  const totalWorkers = totalInHouse + totalOutsourcing;
   const costRatioFixed = costRatio.toFixed(1);
   let costBarColor = "#3B82F6";
   let costBarBg = "rgba(59,130,246,0.12)";
@@ -600,30 +607,48 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const selectedSiteData = sites.find(s => s.name === selectedSite);
   const projectNumber = selectedSiteData?.projectNumber || projectInfo?.projectNumber || '';
 
-  const card = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', transition: 'border-color 0.15s ease' };
+  const card = { background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '12px', transition: 'border-color 0.15s ease' };
 
   // ★ ナビの maxWidth をコンテンツ(max-w-2xl=672px)と統一
   const NAV_MAX_W = '672px';
 
   return (
-    <div className="bg-black text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
+    <div className="bg-transparent text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
+        :root {
+          --bg:      #F7F5F2;
+          --bg2:     #FDFCFB;
+          --bg3:     #F0EDE8;
+          --border:  #E8E2DA;
+          --text:    #1C1917;
+          --text2:   #78716C;
+          --text3:   #A8A29E;
+          --main:    #2C2825;
+          --main2:   #44403C;
+          --accent:  #44403C;
+        }
+        html, body { background: var(--bg) !important; }
         *, *::before, *::after { box-sizing: border-box; }
-        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        * { font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
         input, select, textarea { font-size: 16px !important; max-width: 100%; width: 100%; box-sizing: border-box; }
         .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
         .finance-detail.open { grid-template-rows: 1fr; }
         .finance-detail > div { overflow: hidden; }
-        .logio-progress-track { background: rgba(255,255,255,0.04); border-radius: 999px; overflow: hidden; }
+        .logio-progress-track { background: var(--border); border-radius: 999px; overflow: hidden; }
         .logio-progress-bar { border-radius: 999px; transition: width 0.8s ease; }
         .logio-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; animation: logiopulse 2s ease infinite; flex-shrink: 0; }
         @keyframes logiopulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
         .logio-nav-btn { position:relative; overflow:hidden; transition:all 0.15s ease; }
         .logio-nav-btn:active { transform:scale(0.98); }
-        .logio-lbl { font-size: 11px; font-weight: 500; color: #6B7280; letter-spacing: 0.04em; }
-        .logio-val-lg { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-        .logio-val-md { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+        .logio-lbl { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.04em; }
+        .logio-val-lg { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--text); }
+        .logio-val-md { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+        .bg-transparent { background: var(--bg) !important; }
+        .min-h-screen { background: var(--bg); }
+        .text-white { color: var(--text) !important; }
+        .text-gray-300, .text-gray-400, .text-gray-500 { color: var(--text3) !important; }
+        .border-white\/\[0\.08\], .border-white\/\[0\.06\] { border-color: var(--border) !important; }
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
@@ -632,9 +657,9 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
           {!sitesReady ? (
-            <div style={{ width:'100%', padding:'14px 16px', borderRadius:14, background:'rgba(255,255,255,0.03)', border:'1.5px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:'100%', padding:'14px 16px', borderRadius:14, background:'var(--bg3)', border:'1.5px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', gap:10 }}>
               <div style={{ width:8, height:8, borderRadius:'50%', background:'rgba(255,255,255,0.1)', flexShrink:0 }}/>
-              <div style={{ height:14, width:140, borderRadius:6, background:'rgba(255,255,255,0.06)' }}/>
+              <div style={{ height:14, width:140, borderRadius:6, background:'var(--bg3)' }}/>
             </div>
           ) : (
           <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
@@ -656,7 +681,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           )}
           {siteDropdownOpen && (
             <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-xl overflow-hidden"
-              style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}>
               {sites.length === 0 ? (
                 <div className="px-4 py-3 text-sm text-gray-500">現場が登録されていません</div>
               ) : sites.map(site => (
@@ -696,56 +721,22 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
         {selectedSite && (
           <>
-            {/* 粗利・粗利率（折りたたみ） */}
-            <div className="overflow-hidden mb-4" style={card}>
-              <button onClick={() => setFinanceOpen(!financeOpen)}
-                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-white/[0.01] transition-colors">
-                <div className="flex items-baseline gap-8">
-                  <div>
-                    <p className="logio-lbl mb-1">粗利</p>
-                    <p className="logio-val-lg" style={{ color: totals.grossProfit >= 0 ? 'white' : '#F87171' }}>¥{formatCurrency(totals.grossProfit)}</p>
-                  </div>
-                  <div>
-                    <p className="logio-lbl mb-1">粗利率</p>
-                    <div className="flex items-center gap-1.5">
-                      <p className="logio-val-lg text-white">{totals.grossProfitRateContract}%</p>
-                      <TrendingUp className="w-4 h-4" style={{ color: '#34D399' }} />
-                    </div>
-                  </div>
-                </div>
-                <GradChevron open={financeOpen} size={16}/>
-              </button>
-              <div className={`finance-detail ${financeOpen ? 'open' : ''}`}>
-                <div>
-                  <div className="px-5 py-3 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div className="flex justify-between items-center"><p className="logio-lbl">売上</p><p className="logio-val-md text-white">¥{formatCurrency(totals.totalRevenue)}</p></div>
-                    <div className="flex justify-between items-center"><p className="logio-lbl">原価</p><p className="logio-val-md" style={{ color: 'rgba(248,113,113,0.8)' }}>¥{formatCurrency(totals.accumulatedCost)}</p></div>
-                    {totals.accumulatedScrap > 0 && <div className="flex justify-between items-center"><p className="logio-lbl">スクラップ</p><p className="logio-val-md text-white">¥{formatCurrency(totals.accumulatedScrap)}</p></div>}
-                  </div>
-                </div>
+            {/* 稼働日数・人工数カード */}
+            <div className="mb-3" style={{background:'#2C2825',borderRadius:18,padding:18,boxShadow:'0 4px 20px rgba(44,40,37,0.12)'}}>
+              <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.65)',letterSpacing:'.1em',fontFamily:'JetBrains Mono,monospace',marginBottom:10}}>稼働日数 / WORKING DAYS</div>
+              <div style={{display:'flex',alignItems:'baseline',gap:20,marginBottom:14}}>
+                <div><span style={{fontSize:38,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{workingDays}</span><span style={{fontSize:14,color:'var(--text2)',marginLeft:4}}>日</span></div>
+                <div style={{width:1,height:36,background:'rgba(255,255,255,0.1)'}}/>
+                <div><div style={{fontSize:10,color:'rgba(255,255,255,0.55)',marginBottom:3,fontFamily:'JetBrains Mono,monospace',letterSpacing:'.06em'}}>累計人工</div><span style={{fontSize:30,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{totalWorkers}</span><span style={{fontSize:14,color:'var(--text2)',marginLeft:4}}>人</span></div>
               </div>
-            </div>
-
-            {/* 原価率・工期 */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="px-4 py-4" style={card}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="logio-lbl">原価率</p>
-                  <span className="font-medium px-1.5 py-0.5 rounded" style={{ fontSize: '10px', background: costBarBg, color: costBarColor }}>{costStatus}</span>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <div style={{background:'rgba(255,255,255,0.07)',borderRadius:10,padding:'10px 12px'}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'var(--text2)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:4}}>自社人工</div>
+                  <div style={{fontSize:22,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{totalInHouse}<span style={{fontSize:12,color:'var(--text2)',marginLeft:2}}>人</span></div>
                 </div>
-                <p className="text-white font-bold tabular-nums mb-2" style={{ fontSize: '20px' }}>{costRatioFixed}%</p>
-                <div className="logio-progress-track h-1.5">
-                  <div className="logio-progress-bar h-full" style={{ width: `${Math.min(costRatio,100)}%`, backgroundColor: costBarColor }} />
-                </div>
-              </div>
-              <div className="px-4 py-4" style={card}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="logio-lbl">工期</p>
-                  <span className="font-medium text-gray-400" style={{ fontSize: '10px' }}>{remainDays !== null ? `残${remainDays}日` : '未設定'}</span>
-                </div>
-                <p className="text-white font-bold tabular-nums mb-2" style={{ fontSize: '20px' }}>{Math.round(progressPercent)}%</p>
-                <div className="logio-progress-track h-1.5">
-                  <div className="logio-progress-bar h-full" style={{ width: `${progressPercent}%`, backgroundColor: progressPercent >= 90 ? '#F59E0B' : '#3B82F6' }} />
+                <div style={{background:'rgba(255,255,255,0.07)',borderRadius:10,padding:'10px 12px'}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'var(--text2)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:4}}>外注人工</div>
+                  <div style={{fontSize:22,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{totalOutsourcing}<span style={{fontSize:12,color:'var(--text3)',marginLeft:2}}>人</span></div>
                 </div>
               </div>
             </div>
@@ -778,14 +769,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
                       <div>
-                        <p className="logio-lbl" style={{ marginBottom:'3px' }}>産廃処分費 / WASTE DISPOSAL</p>
+                        <p style={{ fontSize:11, fontWeight:700, color:'var(--text2)', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
                         <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
-                          <span style={{ fontSize:'20px', fontWeight:700, color:'white', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
-                          <span style={{ fontSize:'10px', color:'#4B5563' }}>{typeCount}種類</span>
+                          <span style={{ fontSize:'20px', fontWeight:700, color:'var(--text)', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
+                          <span style={{ fontSize:'10px', color:'var(--text3)' }}>{typeCount}種類</span>
                         </div>
                       </div>
                       <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink:0 }}>
-                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="#0f172a" strokeWidth="8"/>
+                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--border)" strokeWidth="8"/>
                         {donutSlices.map((s,i)=>(
                           <circle key={i} cx={CX} cy={CY} r={R} fill="none"
                             stroke={s.color} strokeWidth="8"
@@ -793,7 +784,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                             strokeDashoffset={-(s.offset-CIRC/4)}
                             transform={`rotate(-90 ${CX} ${CY})`}/>
                         ))}
-                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="white">{typeCount}種</text>
+                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="var(--text)">{typeCount}種</text>
                       </svg>
                     </div>
                     <GradChevron open={wasteOpen} size={16}/>
@@ -807,10 +798,10 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                           return (
                             <div key={name}>
                               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-                                <span style={{ fontSize:'11px', color, fontWeight:'600' }}>{name}</span>
-                                <span style={{ fontSize:'11px', color:'white', fontWeight:'700' }}>¥{formatCurrency(val)}</span>
+                                <span style={{ fontSize:'12px', color:'var(--text)', fontWeight:'700' }}>{name}</span>
+                                <span style={{ fontSize:'11px', color:'var(--text)', fontWeight:'700' }}>¥{formatCurrency(val)}</span>
                               </div>
-                              <div style={{ height:'5px', background:'#0f172a', borderRadius:'3px' }}>
+                              <div style={{ height:'5px', background:'var(--bg3)', borderRadius:'3px' }}>
                                 <div style={{ height:'5px', width:`${pct}%`, background:color, borderRadius:'3px', transition:'width 0.4s ease' }}/>
                               </div>
                             </div>
@@ -822,12 +813,81 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 </div>
               );
             })()}
+
+            {/* 日報一覧ボタン＋展開テーブル */}
+            {reports && reports.length > 0 && (
+              <div className="mb-4" style={card}>
+                <button onClick={()=>setReportsOpen(!reportsOpen)}
+                  style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
+                  <div>
+                    <p style={{fontSize:11,fontWeight:700,color:'var(--text2)',marginBottom:2,letterSpacing:'.04em'}}>日報一覧</p>
+                    <span style={{fontSize:20,fontWeight:800,color:'var(--text)'}}>{reports.length}件</span>
+                  </div>
+                  <GradChevron open={reportsOpen} size={16}/>
+                </button>
+                {reportsOpen && (
+                  <div style={{borderTop:'1px solid var(--border)',overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
+                    <table style={{width:'100%',minWidth:700,borderCollapse:'collapse',fontSize:11}}>
+                      <thead>
+                        <tr style={{background:'var(--bg3)'}}>
+                          {['日数','日付','曜','施工内容','開始','終了','自社氏名','金額','外注','金額','車種','車番','重機','発生材','数量','金額','搬出先','マニNo.'].map((h,i)=>(
+                            <th key={i} style={{padding:'6px 8px',color:'var(--text2)',fontWeight:700,textAlign:'center',whiteSpace:'nowrap',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reports.map((r,idx)=>{
+                          const workers = r.workDetails?.inHouseWorkers||[];
+                          const outsourcing = r.workDetails?.outsourcingLabor||[];
+                          const vehicles = r.workDetails?.vehicles||[];
+                          const machinery = r.workDetails?.machinery||[];
+                          const wasteItems = r.wasteItems||[];
+                          const scrapItems = r.scrapItems||[];
+                          const dayNames = ['日','月','火','水','木','金','土'];
+                          const dayName = r.date ? dayNames[new Date(r.date).getDay()] : '';
+                          const fmtDate = d => { if(!d) return ''; const p=d.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
+                          const startT = workers.map(w=>w.start||w.startTime).filter(Boolean).sort()[0]||'-';
+                          const endT = workers.map(w=>w.end||w.endTime).filter(Boolean).sort().reverse()[0]||'-';
+                          const allRows = Math.max(1,workers.length,outsourcing.length,vehicles.length,machinery.length,wasteItems.length+scrapItems.length);
+                          const wasteAndScrap = [
+                            ...wasteItems.map(w=>({material:w.material,qty:`${w.quantity}${w.unit}`,amt:w.amount,dest:w.disposalSite,mani:w.manifestNumber||''})),
+                            ...scrapItems.map(s=>({material:s.type,qty:`${s.quantity}${s.unit}`,amt:Math.abs(s.amount),dest:s.buyer,mani:'スクラップ'}))
+                          ];
+                          return Array.from({length:allRows},(_,si)=>(
+                            <tr key={`${r.id}-${si}`} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:idx%2===0?'transparent':'var(--bg3)'}}>
+                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{idx+1}</td>}
+                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',whiteSpace:'nowrap',verticalAlign:'middle'}}>{fmtDate(r.date)}</td>}
+                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{dayName}</td>}
+                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',maxWidth:120,verticalAlign:'middle'}}>{r.workDetails?.workContent||''}</td>}
+                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{startT}</td>}
+                              {si===0&&<td rowSpan={allRows} style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)',verticalAlign:'middle'}}>{endT}</td>}
+                              <td style={{padding:'6px 8px',color:workers[si]?'white':'transparent'}}>{workers[si]?.name||''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'right',color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>{workers[si]?`¥${formatCurrency(workers[si].amount)}`:''}</td>
+                              <td style={{padding:'6px 8px',fontSize:10,color:'#22d3ee'}}>{outsourcing[si]?`${outsourcing[si].company} ${outsourcing[si].count||outsourcing[si].workers}人`:''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'right',color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>{outsourcing[si]?`¥${formatCurrency(outsourcing[si].amount)}`:''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{vehicles[si]?.type||''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{vehicles[si]?.number||''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'center',color:'var(--text2)'}}>{machinery[si]?.type||''}</td>
+                              <td style={{padding:'6px 8px',color:'#fbbf24'}}>{wasteAndScrap[si]?.material||''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'right',color:'var(--text2)'}}>{wasteAndScrap[si]?.qty||''}</td>
+                              <td style={{padding:'6px 8px',textAlign:'right',color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>{wasteAndScrap[si]?`¥${formatCurrency(wasteAndScrap[si].amt)}`:''}</td>
+                              <td style={{padding:'6px 8px',fontSize:10,color:'var(--text3)'}}>{wasteAndScrap[si]?.dest||''}</td>
+                              <td style={{padding:'6px 8px',fontSize:10,color:'var(--text2)'}}>{wasteAndScrap[si]?.mani||''}</td>
+                            </tr>
+                          ));
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
         {!selectedSite && sitesReady && sites.length === 0 && (
           <div className="flex flex-col items-center justify-center" style={{ minHeight: '20vh', marginTop: '16px' }}>
-            <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '16px' }}>現場が登録されていません</p>
+            <p style={{ fontSize: '13px', color: 'var(--text3)', marginBottom: '16px' }}>現場が登録されていません</p>
             <button onClick={() => onNavigate('settings')}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 32px', background: '#1e2d4a', border: 'none', color: 'rgba(255,255,255,0.85)', borderRadius: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
               onMouseEnter={e => e.currentTarget.style.background = '#263a5e'}
@@ -885,10 +945,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
     const year = parts[0] || '';
     const num  = parts[1] || '';
     if (!year && !num) return (
-      <div style={{ width:36, height:36, borderRadius:8, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.03)', border:'1px dashed rgba(255,255,255,0.1)', fontSize:8, fontWeight:700, color:'#374151', textAlign:'center', lineHeight:1.4 }}>未採<br/>番</div>
+      <div style={{ width:36, height:36, borderRadius:8, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg3)', border:'1px dashed rgba(255,255,255,0.1)', fontSize:8, fontWeight:700, color:'var(--text3)', textAlign:'center', lineHeight:1.4 }}>未採<br/>番</div>
     );
     return (
-      <div style={{ width:36, height:36, borderRadius:8, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#000', border:'1px solid rgba(99,102,241,0.3)', boxShadow:'0 0 12px rgba(99,102,241,0.08) inset', gap:1, padding:2 }}>
+      <div style={{ width:36, height:36, borderRadius:8, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'var(--bg)', border:'1px solid rgba(99,102,241,0.3)', boxShadow:'0 0 12px rgba(99,102,241,0.08) inset', gap:1, padding:2 }}>
         <span style={{ fontSize:7, fontWeight:700, color:'#6366f1', letterSpacing:'.02em', lineHeight:1, textShadow:'0 0 6px rgba(99,102,241,0.8)' }}>{year}</span>
         <div style={{ width:28, height:1, background:'rgba(99,102,241,0.3)' }}/>
         <span style={{ fontSize:12, fontWeight:900, color:'#a5b4fc', lineHeight:1, letterSpacing:'-.02em', textShadow:'0 0 8px rgba(99,102,241,0.7)' }}>{num||'---'}</span>
@@ -897,19 +957,19 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#000', minHeight:'100vh', color:'white', overflowX:'auto' }}>
+    <div style={{ background:'var(--bg)', minHeight:'100vh', color:'var(--text)', overflowX:'auto' }}>
       <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'16px 10px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
-          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.5)', fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:24 }}>
+          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text3)', fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:24 }}>
           <X className="w-4 h-4" />閉じる
         </button>
 
         {/* タイトル */}
         <div style={{ marginBottom:24 }}>
           <div style={{ fontSize:18, fontWeight:800, letterSpacing:'-.02em' }}>現場管理</div>
-          <div style={{ fontSize:10, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>Site Management</div>
+          <div style={{ fontSize:10, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>Site Management</div>
         </div>
 
         {/* 新規追加ボタン / フォーム */}
@@ -920,14 +980,14 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           </button>
         ) : (
           <div style={{ marginBottom:24, padding:16, borderRadius:12, border:'1.5px solid rgba(59,130,246,0.35)', background:'rgba(59,130,246,0.04)' }}>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:8 }}>新規現場名 / Site Name</label>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:8 }}>新規現場名 / Site Name</label>
             <input type="text" value={newSiteName} onChange={e=>setNewSiteName(e.target.value)}
               onKeyDown={e=>e.key==='Enter'&&handleAddSite()}
               placeholder="例: 渋谷〇〇ビル解体工事"
-              style={{ width:'100%', padding:'12px 14px', background:'#000', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box', maxWidth:'100%' }} />
+              style={{ width:'100%', padding:'12px 14px', background:'var(--bg)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box', maxWidth:'100%' }} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-              <button onClick={handleAddSite} style={{ padding:12, background:'#2563EB', border:'none', color:'white', borderRadius:9, fontSize:14, fontWeight:700, cursor:'pointer' }}>追加する</button>
-              <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
+              <button onClick={handleAddSite} style={{ padding:12, background:'#2563EB', border:'none', color:'var(--text)', borderRadius:9, fontSize:14, fontWeight:700, cursor:'pointer' }}>追加する</button>
+              <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text2)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
             </div>
           </div>
         )}
@@ -935,9 +995,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         {/* セクションラベル */}
         {sites.length > 0 && (
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-            <span style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.1em', whiteSpace:'nowrap' }}>登録済み現場</span>
-            <span style={{ fontSize:10, fontWeight:700, color:'#4B5563', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)', padding:'2px 8px', borderRadius:99 }}>{sites.length}件</span>
-            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.06)' }}/>
+            <span style={{ fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.1em', whiteSpace:'nowrap' }}>登録済み現場</span>
+            <span style={{ fontSize:10, fontWeight:700, color:'var(--text3)', background:'var(--bg3)', border:'1px solid var(--border)', padding:'2px 8px', borderRadius:99 }}>{sites.length}件</span>
+            <div style={{ flex:1, height:1, background:'var(--bg3)' }}/>
           </div>
         )}
 
@@ -982,21 +1042,21 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         onChange={e=>setEditNameVal(e.target.value)}
                         onKeyDown={e=>{ if(e.key==='Enter'){ onRenameSite(site.name,editNameVal); setEditingName(null); } if(e.key==='Escape') setEditingName(null); }}
                         autoFocus
-                        style={{ flex:1, padding:'5px 8px', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(59,130,246,0.5)', borderRadius:7, color:'white', fontSize:14, fontWeight:700, outline:'none' }}
+                        style={{ flex:1, padding:'5px 8px', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(59,130,246,0.5)', borderRadius:7, color:'var(--text)', fontSize:14, fontWeight:700, outline:'none' }}
                       />
                       <button onClick={e=>{ e.stopPropagation(); onRenameSite(site.name,editNameVal); setEditingName(null); }}
                         style={{ padding:'5px 10px', borderRadius:7, border:'none', background:'rgba(59,130,246,0.2)', color:'#60a5fa', fontSize:11, fontWeight:700, cursor:'pointer' }}>保存</button>
                       <button onClick={e=>{ e.stopPropagation(); setEditingName(null); }}
-                        style={{ padding:'5px 8px', borderRadius:7, border:'none', background:'rgba(255,255,255,0.05)', color:'#6B7280', fontSize:11, cursor:'pointer' }}>✕</button>
+                        style={{ padding:'5px 8px', borderRadius:7, border:'none', background:'var(--bg3)', color:'var(--text2)', fontSize:11, cursor:'pointer' }}>✕</button>
                     </div>
                   ) : (
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
+                      <div style={{ fontSize:13, fontWeight:700, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
                       <button onClick={e=>{ e.stopPropagation(); setEditingName(site.name); setEditNameVal(site.name); }}
-                        style={{ padding:'2px 6px', borderRadius:5, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.04)', color:'#4B5563', fontSize:9, cursor:'pointer', flexShrink:0 }}>編集</button>
+                        style={{ padding:'2px 6px', borderRadius:5, border:'1px solid var(--border)', background:'var(--bg3)', color:'var(--text3)', fontSize:9, cursor:'pointer', flexShrink:0 }}>編集</button>
                     </div>
                   )}
-                  <div style={{ fontSize:10, color:'#4B5563', marginTop:1 }}>
+                  <div style={{ fontSize:10, color:'var(--text3)', marginTop:1 }}>
                     {pjNo || cardInfo.projectNumber || '番号未設定'}{cardInfo.status ? ` · ${cardInfo.status}` : ''}
                   </div>
                 </div>
@@ -1012,8 +1072,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                   <div style={{ paddingTop:16, minWidth:0, width:'100%' }}>
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>
-                      <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
-                      <div style={{ padding:'10px 12px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:8, fontSize:14, color:'#4B5563', boxSizing:'border-box', width:'100%' }}>
+                      <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
+                      <div style={{ padding:'10px 12px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, fontSize:14, color:'var(--text3)', boxSizing:'border-box', width:'100%' }}>
                         {cardInfo.projectNumber || pjNo || '未採番'}　<span style={{ fontSize:10 }}>※ 自動採番（編集不可）</span>
                       </div>
                     </div>
@@ -1027,14 +1087,14 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager||''} onChange={v=>setProjectInfo({...projectInfo,siteManager:v})} />
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:24 }}>
                           <div>
-                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
+                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
                             <input type="date" value={projectInfo.startDate||''} onChange={e=>setProjectInfo({...projectInfo,startDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
                           </div>
                           <div>
-                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期終了</label>
+                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期終了</label>
                             <input type="date" value={projectInfo.endDate||''} onChange={e=>setProjectInfo({...projectInfo,endDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', color:'white', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', colorScheme:'dark', boxSizing:'border-box' }} />
                           </div>
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
@@ -1050,7 +1110,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               <div style={{width:34,height:34,borderRadius:8,background:bg,color:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
-                                <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
+                                <div style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
                               </div>
                               <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
                               <button onClick={()=>delFn(i)} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,fontWeight:700}}>✕</button>
@@ -1061,21 +1121,21 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             const rgb=key==='out'?'59,130,246':key==='site'?'34,197,94':'245,158,11';
                             return (
                               <div style={{padding:12,borderRadius:10,background:`rgba(${rgb},0.04)`,border:`1px solid rgba(${rgb},0.15)`,marginTop:8}}>
-                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
                                 <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Name`]:e.target.value})}
-                                  placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
+                                  placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'var(--bg3)',border:'1px solid var(--border)',color:'var(--text)',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
                                 <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
                                   {quick.map(q=>(<button key={q} onClick={()=>setProjectInfo({...projectInfo,[`_${key}Name`]:q})}
-                                    style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${name===q?`rgba(${rgb},0.5)`:'rgba(255,255,255,0.07)'}`,background:name===q?`rgba(${rgb},0.15)`:'rgba(255,255,255,0.02)',color:name===q?color:'#6B7280',fontSize:11,fontWeight:name===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>{q}</button>))}
+                                    style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${name===q?`rgba(${rgb},0.5)`:'rgba(255,255,255,0.07)'}`,background:name===q?`rgba(${rgb},0.15)`:'rgba(255,255,255,0.02)',color:name===q?color:'var(--text2)',fontSize:11,fontWeight:name===q?700:600,cursor:'pointer',fontFamily:'inherit'}}>{q}</button>))}
                                 </div>
                                 <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:8,marginBottom:8}}>
                                   <div>
-                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
-                                    <input type="number" value={days} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Days`]:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
+                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
+                                    <input type="number" value={days} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Days`]:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px',background:'var(--bg3)',border:'1px solid var(--border)',color:'var(--text)',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
                                   </div>
                                   <div>
-                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
-                                    <input type="number" value={amt} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Amt`]:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.09)',color:'white',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
+                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
+                                    <input type="number" value={amt} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Amt`]:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px',background:'var(--bg3)',border:'1px solid var(--border)',color:'var(--text)',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
                                   </div>
                                 </div>
                                 <button disabled={!name||!amt} onClick={()=>addFn(name,days,amt)}
@@ -1087,22 +1147,22 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           };
                           return (
                             <div style={{marginBottom:16}}>
-                              <div style={{display:'flex',gap:4,background:'#0a0a0a',padding:4,borderRadius:11,border:'1px solid rgba(255,255,255,0.07)',marginBottom:12}}>
+                              <div style={{display:'flex',gap:4,background:'var(--bg2)',padding:4,borderRadius:11,border:'1px solid var(--border)',marginBottom:12}}>
                                 {[['out','外注費','直接原価','#60a5fa','rgba(59,130,246,0.15)'],['site','現場経費','直接原価','#4ade80','rgba(34,197,94,0.15)'],['sga','販管費','間接費','#fbbf24','rgba(245,158,11,0.15)']].map(([k,label,sub,color,bg])=>(
                                   <button key={k} onClick={()=>setProjectInfo({...projectInfo,_costTab:k})}
-                                    style={{flex:1,padding:'8px 2px',borderRadius:8,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',background:activeTab===k?bg:'transparent',color:activeTab===k?color:'#4B5563',fontFamily:'inherit',textAlign:'center',lineHeight:1.3,whiteSpace:'nowrap'}}>
-                                    {label}<br/><span style={{fontSize:9,fontWeight:400,color:activeTab===k?color:'#374151'}}>{sub}</span>
+                                    style={{flex:1,padding:'8px 2px',borderRadius:8,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',background:activeTab===k?bg:'transparent',color:activeTab===k?color:'var(--text3)',fontFamily:'inherit',textAlign:'center',lineHeight:1.3,whiteSpace:'nowrap'}}>
+                                    {label}<br/><span style={{fontSize:9,fontWeight:400,color:activeTab===k?color:'var(--text3)'}}>{sub}</span>
                                   </button>
                                 ))}
                               </div>
                               {activeTab==='out' && (<>
                                 {renderItems(projectInfo.outsourcingItems||[],(i)=>setProjectInfo({...projectInfo,outsourcingItems:(projectInfo.outsourcingItems||[]).filter((_,j)=>j!==i)}),'#60a5fa','rgba(59,130,246,0.05)','rgba(59,130,246,0.12)')}
-                                {(projectInfo.outsourcingItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(59,130,246,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#60a5fa',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                                {(projectInfo.outsourcingItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(59,130,246,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#60a5fa',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
                                 {renderForm('out',OUT_QUICK,'#60a5fa','linear-gradient(135deg,#2563EB,#4f46e5)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,outsourcingItems:[...(projectInfo.outsourcingItems||[]),ni],_outName:'',_outDays:'',_outAmt:''});})}
                               </>)}
                               {activeTab==='site' && (<>
                                 {renderItems(projectInfo.siteExpenseItems||[],(i)=>setProjectInfo({...projectInfo,siteExpenseItems:(projectInfo.siteExpenseItems||[]).filter((_,j)=>j!==i)}),'#4ade80','rgba(34,197,94,0.05)','rgba(34,197,94,0.12)')}
-                                {(projectInfo.siteExpenseItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(34,197,94,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#4ade80',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.siteExpenseItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                                {(projectInfo.siteExpenseItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(34,197,94,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#4ade80',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.siteExpenseItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
                                 {renderForm('site',SITE_QUICK,'#4ade80','linear-gradient(135deg,#16a34a,#22c55e)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,siteExpenseItems:[...(projectInfo.siteExpenseItems||[]),ni],_siteName:'',_siteDays:'',_siteAmt:''});})}
                               </>)}
                               {activeTab==='sga' && (<>
@@ -1110,28 +1170,28 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                   ⚠ 間接費 — 粗利には含まれません
                                 </div>
                                 {renderItems(projectInfo.sgaItems||[],(i)=>setProjectInfo({...projectInfo,sgaItems:(projectInfo.sgaItems||[]).filter((_,j)=>j!==i)}),'#fbbf24','rgba(245,158,11,0.05)','rgba(245,158,11,0.12)')}
-                                {(projectInfo.sgaItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(245,158,11,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                                {(projectInfo.sgaItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(245,158,11,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
                                 {renderForm('sga',SGA_QUICK,'#fbbf24','linear-gradient(135deg,#d97706,#f97316)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,sgaItems:[...(projectInfo.sgaItems||[]),ni],_sgaName:'',_sgaDays:'',_sgaAmt:''});})}
                               </>)}
-                              <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)'}}>
-                                <div style={{fontSize:9,fontWeight:700,color:'#4B5563',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8,fontFamily:'monospace'}}>コストサマリー</div>
+                              <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'var(--bg3)',border:'1px solid var(--border)'}}>
+                                <div style={{fontSize:9,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8,fontFamily:'monospace'}}>コストサマリー</div>
                                 {[['現場外注費','直接原価',(projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#60a5fa'],['現場経費','直接原価',(projectInfo.siteExpenseItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#4ade80']].map(([label,sub,val,color])=>(
                                   <div key={label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
-                                    <span style={{fontSize:11,color:'#9CA3AF'}}>{label} <span style={{fontSize:9,color:'#374151',fontFamily:'monospace'}}>{sub}</span></span>
+                                    <span style={{fontSize:11,color:'var(--text3)'}}>{label} <span style={{fontSize:9,color:'var(--text3)',fontFamily:'monospace'}}>{sub}</span></span>
                                     <span style={{fontSize:13,fontWeight:700,color,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(val)}</span>
                                   </div>
                                 ))}
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0 0'}}>
-                                  <span style={{fontSize:12,fontWeight:700,color:'#9CA3AF'}}>直接原価 合計</span>
-                                  <span style={{fontSize:16,fontWeight:900,color:'white',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency([...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[])].reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                                  <span style={{fontSize:12,fontWeight:700,color:'var(--text3)'}}>直接原価 合計</span>
+                                  <span style={{fontSize:16,fontWeight:900,color:'var(--text)',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency([...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[])].reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
                                 </div>
                                 {(projectInfo.sgaItems||[]).length>0&&(
                                   <div style={{marginTop:8,paddingTop:8,borderTop:'1px dashed rgba(255,255,255,0.05)'}}>
                                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                                      <span style={{fontSize:11,color:'#6B7280'}}>販管費 <span style={{fontSize:9,color:'#374151',fontFamily:'monospace'}}>間接費・参考</span></span>
+                                      <span style={{fontSize:11,color:'var(--text2)'}}>販管費 <span style={{fontSize:9,color:'var(--text3)',fontFamily:'monospace'}}>間接費・参考</span></span>
                                       <span style={{fontSize:13,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
                                     </div>
-                                    <div style={{fontSize:9,color:'#374151',marginTop:3,fontFamily:'monospace'}}>※ 粗利の計算には含まれません</div>
+                                    <div style={{fontSize:9,color:'var(--text3)',marginTop:3,fontFamily:'monospace'}}>※ 粗利の計算には含まれません</div>
                                   </div>
                                 )}
                               </div>
@@ -1142,8 +1202,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         <TextInput label="排出事業者" labelEn="Discharger" value={projectInfo.discharger||''} onChange={v=>setProjectInfo({...projectInfo,discharger:v})} placeholder="株式会社LOGIO" />
                         <TextInput label="運搬会社" labelEn="Transport" value={projectInfo.transportCompany||''} onChange={v=>setProjectInfo({...projectInfo,transportCompany:v})} placeholder="〇〇運送株式会社" />
                         <div style={{ marginBottom:16 }}>
-                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:8 }}>契約処分先 / Disposal Sites</label>
-                          <div style={{ borderRadius:10, padding:12, border:'1px solid rgba(255,255,255,0.08)', background:'rgba(255,255,255,0.02)', maxHeight:240, overflowY:'auto', display:'flex', flexDirection:'column', gap:6 }}>
+                          <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:8 }}>契約処分先 / Disposal Sites</label>
+                          <div style={{ borderRadius:10, padding:12, border:'1px solid var(--border)', background:'var(--bg3)', maxHeight:240, overflowY:'auto', display:'flex', flexDirection:'column', gap:6 }}>
                             {MASTER_DATA.disposalSites.map(s=>{
                               const sel=(projectInfo.contractedDisposalSites||[]).includes(s);
                               return (
@@ -1157,11 +1217,23 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               );
                             })}
                           </div>
-                          {(projectInfo.contractedDisposalSites||[]).length>0 && <p style={{ fontSize:11, color:'#4B5563', marginTop:6 }}>選択済み: {projectInfo.contractedDisposalSites.length}件</p>}
+                          {/* 手入力追加 */}
+                          <div style={{display:'flex',gap:6,marginTop:8}}>
+                            <input type="text" value={projectInfo._customDisposal||''} onChange={e=>setProjectInfo({...projectInfo,_customDisposal:e.target.value})}
+                              placeholder="リストにない処分先を入力" style={{flex:1,padding:'9px 12px',background:'var(--bg)',border:'1px solid var(--border)',color:'var(--text)',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box'}} />
+                            <button onClick={()=>{
+                              const v=(projectInfo._customDisposal||'').trim();
+                              if(!v) return;
+                              const cur=projectInfo.contractedDisposalSites||[];
+                              if(!cur.includes(v)) setProjectInfo({...projectInfo,contractedDisposalSites:[...cur,v],_customDisposal:''});
+                              else setProjectInfo({...projectInfo,_customDisposal:''});
+                            }} style={{padding:'9px 14px',background:'rgba(59,130,246,0.2)',border:'1px solid rgba(59,130,246,0.3)',color:'#60a5fa',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>追加</button>
+                          </div>
+                          {(projectInfo.contractedDisposalSites||[]).length>0 && <p style={{ fontSize:11, color:'var(--text3)', marginTop:6 }}>選択済み: {projectInfo.contractedDisposalSites.length}件</p>}
                         </div>
                         {/* 保存・削除 */}
                         <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                          <button onClick={onSave} style={{ flex:3, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'white', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                          <button onClick={onSave} style={{ flex:3, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'var(--text)', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
                             <Save className="w-4 h-4" />保存
                           </button>
                           <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, padding:'13px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
@@ -1170,15 +1242,15 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                     ) : (
                       /* 非選択現場：基本情報のみ表示 + 「この現場を選択して編集」ボタン */
                       <div>
-                        <div style={{ padding:'12px 14px', background:'rgba(255,255,255,0.02)', borderRadius:9, marginBottom:14, fontSize:13, color:'#6B7280', lineHeight:1.6 }}>
+                        <div style={{ padding:'12px 14px', background:'var(--bg3)', borderRadius:9, marginBottom:14, fontSize:13, color:'var(--text2)', lineHeight:1.6 }}>
                           {cardInfo.workType && <div>工事種別：{cardInfo.workType}</div>}
                           {cardInfo.client && <div>発注者：{cardInfo.client}</div>}
                           {cardInfo.status && <div>ステータス：{cardInfo.status}</div>}
-                          {!cardInfo.workType && !cardInfo.client && <span style={{ color:'#374151' }}>プロジェクト情報未設定</span>}
+                          {!cardInfo.workType && !cardInfo.client && <span style={{ color:'var(--text3)' }}>プロジェクト情報未設定</span>}
                         </div>
                         <div style={{ display:'flex', gap:8 }}>
                           <button onClick={()=>{ onSelectSite && onSelectSite(site.name); setOpenCard(site.name); }}
-                            style={{ flex:3, padding:'12px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'white', borderRadius:9, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                            style={{ flex:3, padding:'12px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'var(--text)', borderRadius:9, fontSize:13, fontWeight:700, cursor:'pointer' }}>
                             この現場を選択して編集
                           </button>
                           <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, padding:'12px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:9, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
@@ -1193,7 +1265,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         })}
 
         {sites.length === 0 && (
-          <div style={{ textAlign:'center', padding:'40px 0', color:'#374151', fontSize:13 }}>
+          <div style={{ textAlign:'center', padding:'40px 0', color:'var(--text3)', fontSize:13 }}>
             現場が登録されていません
           </div>
         )}
@@ -1205,7 +1277,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 // ========== ReportInputPage ==========
 const SubTotal = ({ label, value }) => value > 0 ? (
   <div style={{ display:'flex', justifyContent:'space-between', padding:'6px 4px 14px', alignItems:'center' }}>
-    <span style={{ fontSize:'10px', color:'#4B5563' }}>{label}小計</span>
+    <span style={{ fontSize:'10px', color:'var(--text3)' }}>{label}小計</span>
     <span style={{ fontSize:'13px', fontWeight:'700', color:'#60A5FA', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(value)}</span>
   </div>
 ) : <div style={{marginBottom:'14px'}} />;
@@ -1232,7 +1304,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
   const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'' });
-  const [scrapForm, setScrapForm] = useState({ type:'', buyer:'', qty:'', unit:'kg', price:'' });
+  const [scrapForm, setScrapForm] = useState({ type:'金属くず', buyer:'', qty:'', unit:'kg', price:'' });
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
 
@@ -1272,13 +1344,15 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   };
 
   const addWorker = () => {
-    if (!wForm.name||!wForm.start||!wForm.end) return;
+    const actualName = wForm.name.trim();
+    if (!actualName||!wForm.start||!wForm.end) return;
     const amount = getShiftAmount(wForm.shift);
     setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm,amount}]});
     setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
   };
   const addOutsource = () => {
-    if (!oForm.company||!oForm.count) return;
+    const actualCompany = oForm.company.trim();
+    if (!actualCompany||!oForm.count) return;
     const amount = parseInt(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime);
     setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,amount}]});
     setOForm({company:'',count:'',shift:'daytime'});
@@ -1316,14 +1390,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   };
   const addWaste = () => {
     if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price) return;
-    const qty=parseFloat(wasteForm.qty), price=parseFloat(wasteForm.price);
+    const qty=parseFloat(wasteForm.qty)||0, price=parseFloat(wasteForm.price)||0;
     const ENV_P={day:20000,night:30000}, EXT_P={day:22000,night:32000};
     let haishiAmount=0;
     if(wasteForm.haisha==='env'&&wasteForm.haishiShift) haishiAmount=ENV_P[wasteForm.haishiShift];
     else if(wasteForm.haisha==='ext') haishiAmount=wasteForm.haishiOverride?parseFloat(wasteForm.haishiPrice)||0:(wasteForm.haishiShift?EXT_P[wasteForm.haishiShift]:0);
     setWasteItems([...wasteItems,{
       material:wasteForm.type, disposalSite:wasteForm.disposal,
-      quantity:qty, unit:wasteForm.unit, unitPrice:price, amount:qty*price,
+      quantity:qty, unit:wasteForm.unit, unitPrice:0, amount:price,
       manifestNumber:wasteForm.manifest,
       haisha:wasteForm.haisha||'',
       driver:wasteForm.driver||'',
@@ -1338,7 +1412,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price) return;
     const qty=parseFloat(scrapForm.qty), price=parseFloat(scrapForm.price);
     setScrapItems([...scrapItems,{type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:price,amount:-(qty*price)}]);
-    setScrapForm({type:'',buyer:'',qty:'',unit:'kg',price:''});
+    setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});
   };
 
   const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':s==='halfDay'?'半日':'日勤';
@@ -1358,27 +1432,27 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const mkCard = (color) => ({
     background: `linear-gradient(#050505,#050505) padding-box, linear-gradient(135deg,${color}) border-box`,
-    border: '1.5px solid transparent', borderRadius: '12px', padding: '14px', marginBottom: '20px', overflow: 'hidden'
+    border: '1.5px solid var(--border)', borderRadius: '12px', padding: '14px', marginBottom: '20px', overflow: 'hidden', background:'var(--bg2)'
   });
   const inputCard      = mkCard('#3b82f6,#6366f1');
   const inputCardCyan  = mkCard('#22d3ee,#3b82f6');
   const inputCardAmber = mkCard('#f59e0b,#f97316');
   const inputCardGreen = mkCard('#34d399,#22d3ee');
   const inputCardRose  = mkCard('#f43f5e,#f59e0b');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', colorScheme:'dark', boxSizing:'border-box' };
-  const inpTxt = { width:'100%', padding:'12px 10px', background:'#000', border:'1px solid #1f2937', color:'white', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
-  const inpLbl = { display:'block', fontSize:'10px', fontWeight:'700', color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1px solid #1f2937', color:'var(--text)', fontSize:'16px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', colorScheme:'dark', boxSizing:'border-box' };
+  const inpTxt = { width:'100%', padding:'12px 10px', background:'var(--bg)', border:'1px solid #1f2937', color:'var(--text)', fontSize:'16px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpLbl = { display:'block', fontSize:'10px', fontWeight:'700', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
 
   // ★ ItemCard: アバターは常に1文字
   const ItemCard = ({ avatarBg, avatarColor, avatarText, name, meta, amount, amountColor, onDel }) => (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'12px', marginBottom:'8px' }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'12px', marginBottom:'8px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:'10px', minWidth:0 }}>
         <div style={{ width:'34px', height:'34px', borderRadius:'9px', background:avatarBg, color:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700', flexShrink:0, fontFamily:'sans-serif' }}>{avatarText}</div>
         <div style={{ minWidth:0 }}>
-          <div style={{ fontSize:'13px', fontWeight:'600', color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{name}</div>
-          <div style={{ fontSize:'11px', color:'#4B5563', marginTop:'2px' }} dangerouslySetInnerHTML={{__html: meta}} />
+          <div style={{ fontSize:'13px', fontWeight:'700', color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{name}</div>
+          <div style={{ fontSize:'11px', color:'var(--text3)', marginTop:'2px' }} dangerouslySetInnerHTML={{__html: meta}} />
         </div>
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:'8px', flexShrink:0 }}>
@@ -1401,7 +1475,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           padding:'10px 2px', borderRadius:'9px',
           border:`1px solid ${value===v?color:'#1f2937'}`,
           background: value===v?`${color}20`:'#0d0d0d',
-          color: value===v?color:'#4B5563',
+          color: value===v?color:'var(--text3)',
           fontSize:'11px', fontWeight:'600', cursor:'pointer', transition:'all 0.15s', lineHeight:1.3
         }}>{label}</button>
       ))}
@@ -1410,7 +1484,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   // ★ 課タブ（人数表記なし）
   const DeptTabs = ({ value, onChange }) => (
-    <div style={{ display:'flex', gap:'4px', marginBottom:'10px', background:'#0a0a0a', borderRadius:'10px', padding:'4px', border:'1px solid #1f2937' }}>
+    <div style={{ display:'flex', gap:'4px', marginBottom:'10px', background:'var(--bg2)', borderRadius:'10px', padding:'4px', border:'1px solid #1f2937' }}>
       {[['k1','工事1課'],['ek','環境課']].map(([d,label])=>(
         <button key={d} onClick={()=>onChange(d)}
           style={{
@@ -1430,14 +1504,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const SectionLabel = ({ ja, en }) => (
     <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'10px' }}>
-      <span style={{ fontSize:'10px', fontWeight:'700', color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'#6B7280'}}>/ {en}</span></span>
+      <span style={{ fontSize:'10px', fontWeight:'700', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'var(--text2)'}}>/ {en}</span></span>
       <span style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.08)' }} />
     </div>
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
     <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'rgba(0,0,0,0.95)', borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:'10px', zIndex:40 }}>
-      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#111', border:'1px solid #1f2937', color:'#6B7280', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
+      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'var(--bg2)', border:'1px solid #1f2937', color:'var(--text2)', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
       <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'#1f2937': nextColor||'#2563eb', border:'none', color: disabled?'#4B5563':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
   );
@@ -1445,7 +1519,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const workContent_tags = ['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'];
 
   return (
-    <div style={{ background:'#000', minHeight:'100vh', overflowX:'hidden' }}>
+    <div style={{ background:'var(--bg)', minHeight:'100vh', overflowX:'hidden' }}>
       <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;}`}</style>
 
       {/* ヘッダー */}
@@ -1466,19 +1540,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
-              <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
+              <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}
                 style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', colorScheme:'dark', boxSizing:'border-box' }} />
             </div>
-            <div style={{ marginBottom:'16px' }}>
-              <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>天候 <span style={{color:'#f87171'}}>*</span></label>
-              <select value={report.weather} onChange={e=>setReport({...report,weather:e.target.value})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px' }}>
-                <option value="">選択してください</option>
-                {MASTER_DATA.weather.map(w=><option key={w}>{w}</option>)}
-              </select>
-            </div>
+
             <div>
-              <label style={{ display:'block', fontSize:'11px', color:'#6B7280', marginBottom:'8px' }}>記入者 <span style={{color:'#f87171'}}>*</span></label>
+              <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>記入者 <span style={{color:'#f87171'}}>*</span></label>
               <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px' }}>
                 <option value="">選択してください</option>
                 {MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}
@@ -1496,17 +1564,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
           <div style={inputCard}>
-            <div style={{ marginBottom:'10px' }}>
-              <label style={inpLbl}>区分</label>
-              <select value={workDetails.workCategory} onChange={e=>setWorkDetails({...workDetails,workCategory:e.target.value})} style={inpSel}>
-                <option value="">選択</option>
-                {MASTER_DATA.workCategories.map(c=><option key={c}>{c}</option>)}
-              </select>
-            </div>
             <div>
               <label style={inpLbl}>施工内容</label>
               <input type="text" placeholder="例）1F解体作業" value={workDetails.workContent} onChange={e=>setWorkDetails({...workDetails,workContent:e.target.value})} style={inpTxt} />
-              <p style={{ fontSize:'9px', color:'#374151', margin:'7px 0 5px' }}>⏱ 候補から選択</p>
+              <p style={{ fontSize:'9px', color:'var(--text3)', margin:'7px 0 5px' }}>⏱ 候補から選択</p>
               <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
                 {workContent_tags.filter(t=>!workDetails.workContent||t.includes(workDetails.workContent)).map(t=>(
                   <button key={t} onClick={()=>setWorkDetails({...workDetails,workContent:t})}
@@ -1538,10 +1599,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             </div>
             <div style={{ marginBottom:'10px' }}>
               <label style={inpLbl}>氏名</label>
-              <select value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})} style={inpSel}>
-                <option value="">選択してください</option>
-                {(MASTER_DATA.inHouseWorkersByDept[currentDept==='k1'?'工事1課':'環境課']||[]).map(n=><option key={n}>{n}</option>)}
-              </select>
+              <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
+                {(MASTER_DATA.inHouseWorkersByDept[currentDept==='k1'?'工事1課':'環境課']||[]).map(n=>(
+                  <button key={n} onClick={()=>setWForm({...wForm,name:n})}
+                    style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${wForm.name===n?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.07)'}`,background:wForm.name===n?'rgba(59,130,246,0.15)':'rgba(255,255,255,0.02)',color:wForm.name===n?'#60a5fa':'#9CA3AF',fontSize:12,fontWeight:wForm.name===n?700:400,cursor:'pointer',fontFamily:'inherit'}}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <input type="text" value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})}
+                placeholder="直接入力も可" style={inpTxt} />
             </div>
             {/* ★ シフト4択 */}
             <div style={{ marginBottom:'10px' }}>
@@ -1555,7 +1622,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>
               適用単価: ¥{formatCurrency(getShiftAmount(wForm.shift))}
             </div>
-            <AddBtn onClick={addWorker} disabled={!wForm.name||!wForm.start||!wForm.end} />
+            <AddBtn onClick={addWorker} disabled={!wForm.name.trim()||!wForm.start||!wForm.end} />
           </div>
           {workDetails.inHouseWorkers.length>0 && <SubTotal label="自社人工" value={workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0)} />}
 
@@ -1572,18 +1639,28 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCardCyan}>
             <div style={grid2}>
-              <div><label style={inpLbl}>会社名</label><select value={oForm.company} onChange={e=>setOForm({...oForm,company:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.outsourcingCompanies.map(c=><option key={c}>{c}</option>)}</select></div>
+              <div><label style={inpLbl}>会社名</label>
+                <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
+                  {MASTER_DATA.outsourcingCompanies.map(c=>(
+                    <button key={c} onClick={()=>setOForm({...oForm,company:c})}
+                      style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${oForm.company===c?'rgba(34,211,238,0.5)':'rgba(255,255,255,0.07)'}`,background:oForm.company===c?'rgba(34,211,238,0.15)':'rgba(255,255,255,0.02)',color:oForm.company===c?'#22d3ee':'#9CA3AF',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+                <input type="text" value={oForm.company} onChange={e=>setOForm({...oForm,company:e.target.value})} placeholder="直接入力も可" style={inpTxt} />
+              </div>
               <div><label style={inpLbl}>人数</label><input type="number" min="1" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{ marginBottom:'10px' }}><label style={inpLbl}>区分</label>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>
                 {[['daytime','日勤','#3b82f6'],['nighttime','夜間','#8b5cf6']].map(([v,label,color])=>(
-                  <button key={v} onClick={()=>setOForm({...oForm,shift:v})} style={{ padding:'11px', borderRadius:'9px', border:`1px solid ${oForm.shift===v?color:'#1f2937'}`, background: oForm.shift===v?`${color}20`:'#0d0d0d', color: oForm.shift===v?color:'#4B5563', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>{label}</button>
+                  <button key={v} onClick={()=>setOForm({...oForm,shift:v})} style={{ padding:'11px', borderRadius:'9px', border:`1px solid ${oForm.shift===v?color:'#1f2937'}`, background: oForm.shift===v?`${color}20`:'#0d0d0d', color: oForm.shift===v?color:'var(--text3)', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>{label}</button>
                 ))}
               </div>
             </div>
             {oForm.count && <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>¥{formatCurrency(parseInt(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
-            <AddBtn onClick={addOutsource} disabled={!oForm.company||!oForm.count} />
+            <AddBtn onClick={addOutsource} disabled={!oForm.company.trim()||!oForm.count} />
           </div>
           {workDetails.outsourcingLabor.length>0 && <SubTotal label="外注人工" value={workDetails.outsourcingLabor.reduce((s,o)=>s+o.amount,0)} />}
 
@@ -1634,7 +1711,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       {/* Step 3 */}
       {currentStep === 3 && (
         <div className="b-panel" style={{ padding:'20px 16px 100px' }}>
-          <p style={{ fontSize:'12px', color:'#4B5563', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
+          <p style={{ fontSize:'12px', color:'var(--text3)', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 */}
           <SectionLabel ja="産廃処分費" en="Waste Disposal" />
@@ -1644,7 +1721,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{width:36,height:36,borderRadius:9,background:'rgba(245,158,11,0.15)',color:'#fbbf24',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{w.material.slice(0,2)}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700}}>{w.material} → {w.disposalSite}</div>
-                  <div style={{fontSize:10,color:'#4B5563',fontFamily:'monospace'}}>{w.quantity}{w.unit}　¥{formatCurrency(w.unitPrice)}/{w.unit}{w.manifestNumber?`　マニ:${w.manifestNumber}`:''}</div>
+                  <div style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>{w.quantity}{w.unit}　¥{formatCurrency(w.unitPrice)}/{w.unit}{w.manifestNumber?`　マニ:${w.manifestNumber}`:''}</div>
                 </div>
                 <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(w.amount)}</div>
                 <button onClick={()=>setWasteItems(wasteItems.filter((_,j)=>j!==i))} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
@@ -1664,18 +1741,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCardGreen}>
             <div style={grid2}>
-              <div><label style={inpLbl}>種類</label><select value={wasteForm.type} onChange={e=>{const t=e.target.value;const prices=MASTER_DATA.disposalSiteUnitPrices[wasteForm.disposal]||{};const auto=t&&prices[t]?String(prices[t]):wasteForm.price;setWasteForm({...wasteForm,type:t,price:auto});}} style={inpSel}><option value="">選択</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></div>
-              <div><label style={inpLbl}>処分先</label><select value={wasteForm.disposal} onChange={e=>{const d=e.target.value;const prices=MASTER_DATA.disposalSiteUnitPrices[d]||{};const auto=wasteForm.type&&prices[wasteForm.type]?String(prices[wasteForm.type]):wasteForm.price;setWasteForm({...wasteForm,disposal:d,price:auto});}} style={inpSel}><option value="">選択</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></div>
+              <div><label style={inpLbl}>種類</label><select value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></div>
+              <div><label style={inpLbl}>処分先</label><select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} style={inpSel}><option value="">選択</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></div>
             </div>
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
               <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={inpSel}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select></div>
-              <div><label style={inpLbl}>単価</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
+              <div><label style={inpLbl}>金額</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
-            <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'#4B5563',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
+            <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'var(--text3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
 
             {/* 配車方法 */}
-            <label style={{...inpLbl,marginBottom:6}}>配車方法 <span style={{color:'#374151',fontWeight:400}}>(任意)</span></label>
+            <label style={{...inpLbl,marginBottom:6}}>配車方法 <span style={{color:'var(--text3)',fontWeight:400}}>(任意)</span></label>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
               {[
                 ['env','環境課配車','昼¥20,000\n夜¥30,000','rgba(34,197,94,0.15)','rgba(34,197,94,0.5)','#4ade80'],
@@ -1683,8 +1760,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               ].map(([v,label,price,bg,border,color])=>(
                 <button key={v} onClick={()=>setWasteForm({...wasteForm,haisha:wasteForm.haisha===v?'':v,driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''})}
                   style={{padding:'10px 4px',borderRadius:10,border:`1px solid ${wasteForm.haisha===v?border:'rgba(255,255,255,0.08)'}`,background:wasteForm.haisha===v?bg:'rgba(255,255,255,0.02)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .12s'}}>
-                  <div style={{fontSize:11,fontWeight:700,color:wasteForm.haisha===v?color:'#6B7280',lineHeight:1.4}}>{label}</div>
-                  <div style={{fontSize:9,fontFamily:'monospace',color:wasteForm.haisha===v?color:'#374151',marginTop:3,whiteSpace:'pre'}}>{price}</div>
+                  <div style={{fontSize:11,fontWeight:700,color:wasteForm.haisha===v?color:'var(--text2)',lineHeight:1.4}}>{label}</div>
+                  <div style={{fontSize:9,fontFamily:'monospace',color:wasteForm.haisha===v?color:'var(--text3)',marginTop:3,whiteSpace:'pre'}}>{price}</div>
                 </button>
               ))}
             </div>
@@ -1747,7 +1824,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 </div>
                 <button onClick={()=>setWasteForm({...wasteForm,haishiOverride:!wasteForm.haishiOverride,haishiShift:''})}
                   style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',marginBottom:6}}>
-                  <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${wasteForm.haishiOverride?'#6366f1':'#374151'}`,background:wasteForm.haishiOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'white',flexShrink:0}}>{wasteForm.haishiOverride?'✓':''}</div>
+                  <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${wasteForm.haishiOverride?'#6366f1':'#374151'}`,background:wasteForm.haishiOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'var(--text)',flexShrink:0}}>{wasteForm.haishiOverride?'✓':''}</div>
                   <span style={{fontSize:11,color:wasteForm.haishiOverride?'#a5b4fc':'#4B5563'}}>遠方・例外あり（金額を手入力）</span>
                 </button>
                 {wasteForm.haishiOverride && (
@@ -1774,8 +1851,26 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCardRose}>
             <div style={grid2}>
-              <div><label style={inpLbl}>種類</label><select value={scrapForm.type} onChange={e=>setScrapForm({...scrapForm,type:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.scrapTypes.map(t=><option key={t}>{t}</option>)}</select></div>
-              <div><label style={inpLbl}>買取業者</label><select value={scrapForm.buyer} onChange={e=>setScrapForm({...scrapForm,buyer:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.buyers.map(b=><option key={b}>{b}</option>)}</select></div>
+              <div><label style={inpLbl}>種類</label>
+                <div style={{display:'flex',gap:5,marginBottom:5}}>
+                  <button onClick={()=>setScrapForm({...scrapForm,type:'金属くず'})}
+                    style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${scrapForm.type==='金属くず'?'rgba(74,222,128,0.5)':'rgba(255,255,255,0.07)'}`,background:scrapForm.type==='金属くず'?'rgba(74,222,128,0.15)':'rgba(255,255,255,0.02)',color:scrapForm.type==='金属くず'?'#4ade80':'#9CA3AF',fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
+                    金属くず
+                  </button>
+                </div>
+                <input type="text" value={scrapForm.type} onChange={e=>setScrapForm({...scrapForm,type:e.target.value})} placeholder="直接入力も可" style={inpTxt} />
+              </div>
+              <div><label style={inpLbl}>買取業者</label>
+                <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:5}}>
+                  {MASTER_DATA.buyers.map(b=>(
+                    <button key={b} onClick={()=>setScrapForm({...scrapForm,buyer:b})}
+                      style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${scrapForm.buyer===b?'rgba(74,222,128,0.5)':'rgba(255,255,255,0.07)'}`,background:scrapForm.buyer===b?'rgba(74,222,128,0.15)':'rgba(255,255,255,0.02)',color:scrapForm.buyer===b?'#4ade80':'#9CA3AF',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                      {b}
+                    </button>
+                  ))}
+                </div>
+                <input type="text" value={scrapForm.buyer} onChange={e=>setScrapForm({...scrapForm,buyer:e.target.value})} placeholder="直接入力も可" style={inpTxt} />
+              </div>
             </div>
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm({...scrapForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
@@ -1817,7 +1912,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -1839,16 +1934,16 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
         return (
           <div key={month} className="mb-3">
             <button onClick={() => toggleMonth(month)}
-              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#0f172a', border:'1px solid rgba(255,255,255,0.08)', borderRadius: isOpen ? '10px 10px 0 0' : '10px', cursor:'pointer' }}>
+              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#0f172a', border:'1px solid var(--border)', borderRadius: isOpen ? '10px 10px 0 0' : '10px', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                <span style={{ fontSize:'14px', fontWeight:700, color:'white' }}>{fmtMonth(month)}</span>
-                <span style={{ fontSize:'11px', color:'#6B7280', background:'rgba(255,255,255,0.05)', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
+                <span style={{ fontSize:'14px', fontWeight:700, color:'var(--text)' }}>{fmtMonth(month)}</span>
+                <span style={{ fontSize:'11px', color:'var(--text2)', background:'var(--bg3)', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
                 {monthCost > 0 && <span style={{ fontSize:'11px', color:'#fbbf24', fontWeight:600 }}>¥{formatCurrency(monthCost)}</span>}
               </div>
               {isOpen ? <GradChevronUp size={16}/> : <GradChevron open={false} size={16}/>}
             </button>
             {isOpen && (
-              <div style={{ border:'1px solid rgba(255,255,255,0.08)', borderTop:'none', borderRadius:'0 0 10px 10px', overflow:'hidden' }}>
+              <div style={{ border:'1px solid var(--border)', borderTop:'none', borderRadius:'0 0 10px 10px', overflow:'hidden' }}>
                 {monthReports.map((report, idx) => (
                   <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} onEdit={() => onEdit(report)} isLast={idx === monthReports.length - 1} />
                 ))}
@@ -1866,17 +1961,17 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div style={{ borderBottom: isLast && !isOpen ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-black/50 transition-colors">
+      <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-transparent/50 transition-colors">
         <div className="text-left flex-1">
           <div className="flex items-center gap-3 mb-1 flex-wrap">
             <span className="text-lg font-bold text-white">{report.date}</span>
             <span className="text-sm text-gray-400">({getDayOfWeek(report.date)})</span>
             <span className="text-sm text-blue-400">{report.weather}</span>
             {/* 記入者＋更新日時 */}
-            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'#6B7280', fontFamily:'monospace', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)', padding:'2px 7px', borderRadius:99 }}>
+            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'var(--text2)', fontFamily:'monospace', background:'var(--bg3)', border:'1px solid var(--border)', padding:'2px 7px', borderRadius:99 }}>
               {report.updatedBy || report.recorder || ''}
               {report.updatedAt && (
-                <span style={{ color:'#374151' }}>
+                <span style={{ color:'var(--text3)' }}>
                   {' · '}{new Date(report.updatedAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
                 </span>
               )}
@@ -1906,7 +2001,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
         <span className="ml-4">{isOpen ? <GradChevronUp size={18}/> : <GradChevron open={false} size={18}/>}</span>
       </button>
       {isOpen && (
-        <div className="px-4 py-4 bg-black/30 border-t border-white/[0.08]">
+        <div className="px-4 py-4 bg-transparent/30 border-t border-white/[0.08]">
           <div className="mb-4 pb-4 border-b border-white/[0.08]">
             <div className="flex items-center gap-2 mb-2"><span className="text-xs text-gray-500">記入者:</span><span className="text-sm text-white">{report.recorder}</span></div>
             <div className="flex items-start gap-2"><span className="text-xs text-gray-500 mt-0.5">施工内容:</span><span className="text-sm text-white">{report.workDetails?.workContent || report.workContent || 'なし'}</span></div>
@@ -1915,7 +2010,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             <div className="mb-4">
               <p className="text-xs font-semibold text-gray-400 uppercase mb-3">原価明細</p>
               {report.workDetails.inHouseWorkers?.length > 0 && (
-                <div className="mb-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <div className="mb-3 rounded p-2" style={{ background: 'var(--bg3)' }}>
                   <p className="text-xs font-semibold text-blue-400 mb-2">自社人工: {report.workDetails.inHouseWorkers.length}名</p>
                   {report.workDetails.inHouseWorkers.map((w, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {w.name} <span className="text-gray-500">{w.start||w.startTime}-{w.end||w.endTime}</span> <span className="text-yellow-400">¥{formatCurrency(w.amount)}</span></p>
@@ -1923,7 +2018,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
                 </div>
               )}
               {report.workDetails.outsourcingLabor?.length > 0 && (
-                <div className="mb-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <div className="mb-3 rounded p-2" style={{ background: 'var(--bg3)' }}>
                   <p className="text-xs font-semibold text-blue-400 mb-2">外注人工: {report.workDetails.outsourcingLabor.length}件</p>
                   {report.workDetails.outsourcingLabor.map((o, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {o.company} <span className="text-gray-500">{o.count || o.workers}人</span> <span className="text-yellow-400">¥{formatCurrency(o.amount)}</span></p>
@@ -1931,7 +2026,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
                 </div>
               )}
               {report.workDetails.vehicles?.length > 0 && (
-                <div className="mb-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <div className="mb-3 rounded p-2" style={{ background: 'var(--bg3)' }}>
                   <p className="text-xs font-semibold text-blue-400 mb-2">車両: {report.workDetails.vehicles.length}台</p>
                   {report.workDetails.vehicles.map((v, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {v.type} <span className="text-gray-500">({v.number})</span> <span className="text-yellow-400">¥{formatCurrency(v.amount)}</span></p>
@@ -1939,7 +2034,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
                 </div>
               )}
               {report.workDetails.machinery?.length > 0 && (
-                <div className="mb-3 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <div className="mb-3 rounded p-2" style={{ background: 'var(--bg3)' }}>
                   <p className="text-xs font-semibold text-blue-400 mb-2">重機: {report.workDetails.machinery.length}台</p>
                   {report.workDetails.machinery.map((m, idx) => (
                     <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {m.type} <span className="text-yellow-400">¥{formatCurrency(m.unitPrice)}</span></p>
@@ -1965,7 +2060,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             </div>
           )}
           {report.wasteItems?.length > 0 && (
-            <div className="mb-4 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <div className="mb-4 rounded p-2" style={{ background: 'var(--bg3)' }}>
               <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0))}</p>
               {report.wasteItems.map((waste, idx) => (
                 <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
@@ -1988,7 +2083,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             </div>
           )}
           {report.scrapItems?.length > 0 && (
-            <div className="mb-4 rounded p-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <div className="mb-4 rounded p-2" style={{ background: 'var(--bg3)' }}>
               <p className="text-xs font-semibold text-green-400 mb-2">スクラップ: {report.scrapItems.length}件 / ¥{formatCurrency(Math.abs(report.scrapItems.reduce((s,sc)=>s+sc.amount,0)))}</p>
               {report.scrapItems.map((scrap, idx) => (
                 <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {scrap.type} <span className="text-gray-500">{scrap.quantity}{scrap.unit}</span> - {scrap.buyer}</p>
@@ -2019,12 +2114,12 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       {(selectedSite || projectInfo?.workType || projectInfo?.projectName) && (
-        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
           <div className="text-white text-lg font-bold leading-relaxed mb-2">{selectedSite || projectInfo?.workType || projectInfo?.projectName}</div>
           {projectInfo?.workType && selectedSite && <div className="text-gray-500 text-xs mb-1">{projectInfo.workType}</div>}
           {projectInfo?.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
@@ -2065,7 +2160,7 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
           <h2 className="text-xl font-semibold mb-4 text-blue-400">ステータス</h2>
           <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
             projectInfo.status === '進行中' ? 'bg-green-900/30 text-green-400' :
-            projectInfo.status === '完了' ? 'bg-blue-900/30 text-blue-400' : 'bg-black text-gray-400'
+            projectInfo.status === '完了' ? 'bg-blue-900/30 text-blue-400' : 'bg-transparent text-gray-400'
           }`}>{projectInfo.status || '-'}</span>
         </div>
       </div>
@@ -2119,21 +2214,21 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const costRatioNum = parseFloat(costRatio);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 bg-black min-h-screen" style={{paddingBottom:"calc(160px + env(safe-area-inset-bottom,0px))"}}>
+    <div className="max-w-2xl mx-auto px-4 py-6 bg-transparent min-h-screen" style={{paddingBottom:"calc(160px + env(safe-area-inset-bottom,0px))"}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       {(projectInfo?.workType || projectInfo?.projectName) && (
-        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
           <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.workType || projectInfo.projectName}</div>
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
       <div className="mb-4">
         <SectionHeader title="財務サマリー / Financial Summary" />
-        <div className="rounded-md p-5 space-y-3" style={{ background: 'rgba(255,255,255,0.02)' }}>
+        <div className="rounded-md p-5 space-y-3" style={{ background: 'var(--bg3)' }}>
           {[
             { label: '売上 / Revenue', value: totals.totalRevenue, color: 'text-white' },
             { label: '原価 / Cost', value: totals.accumulatedCost, color: 'text-red-400/80' },
@@ -2154,7 +2249,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           </div>
         </div>
       </div>
-      <div className="mb-6 rounded-md p-5" style={{ background: 'rgba(255,255,255,0.02)' }}>
+      <div className="mb-6 rounded-md p-5" style={{ background: 'var(--bg3)' }}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1">原価率 / Cost Ratio</p>
@@ -2170,7 +2265,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       </div>
       <SectionHeader title="原価構成比 / Cost Structure" />
       {pieData.length > 0 ? (
-        <div className="rounded-md p-5 mb-6" style={{ background: 'rgba(255,255,255,0.02)' }}>
+        <div className="rounded-md p-5 mb-6" style={{ background: 'var(--bg3)' }}>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
@@ -2196,12 +2291,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           </div>
         </div>
       ) : (
-        <div className="rounded-md p-8" style={{ background: 'rgba(255,255,255,0.02)' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+        <div className="rounded-md p-8" style={{ background: 'var(--bg3)' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
       )}
       <div className="mt-8">
         <SectionHeader title="月別原価推移 / Monthly Trend" />
         {barData.length > 0 ? (
-          <div className="rounded-md p-5" style={{ background: 'rgba(255,255,255,0.02)' }}>
+          <div className="rounded-md p-5" style={{ background: 'var(--bg3)' }}>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={barData} margin={{top:5, right:10, left:0, bottom:5}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -2213,7 +2308,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="rounded-md p-8" style={{ background: 'rgba(255,255,255,0.02)' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+          <div className="rounded-md p-8" style={{ background: 'var(--bg3)' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
         )}
       </div>
     </div>
@@ -2278,29 +2373,29 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 bg-black min-h-screen">
+    <div className="max-w-2xl mx-auto px-6 py-8 bg-transparent min-h-screen">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+        <button onClick={() => onNavigate('home')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
       <p className="text-gray-400 text-sm mb-8">解体作業日報をGoogle スプレッドシートに出力</p>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+      <div className="border rounded-lg p-6 mb-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         <div className="mb-4">
           <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">日報用 GAS URL <span className="text-red-500">*必須</span></label>
           <input type="text" value={gasUrl} onChange={(e) => setGasUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
-            className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-4" />
+            className="w-full px-4 py-3 bg-transparent border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-4" />
           <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">月報用 GAS URL</label>
           <input type="text" value={gasMonthlyUrl} onChange={(e) => setGasMonthlyUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
-            className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-green-500 mb-4" />
+            className="w-full px-4 py-3 bg-transparent border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-green-500 mb-4" />
           <button onClick={handleSaveSettings} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
             <Save className="inline w-4 h-4 mr-2" />保存
           </button>
         </div>
       </div>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+      <div className="border rounded-lg p-6 mb-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
         <h2 className="text-xl font-semibold text-white mb-2">月報</h2>
         <p className="text-gray-400 text-sm mb-4">全現場の月報シートにこの現場の情報を反映します。</p>
         <button onClick={handleExportMonthlyReport} disabled={exporting || !gasUrl || !selectedSite}
@@ -2308,7 +2403,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
           <FileText className="w-5 h-5" />{exporting ? '更新中...' : '月報を更新'}
         </button>
       </div>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+      <div className="border rounded-lg p-6 mb-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
         <h2 className="text-xl font-semibold text-white mb-2">解体作業日報</h2>
         <p className="text-gray-400 text-sm mb-4">LOGIO仕様の解体作業日報をスプレッドシートに自動生成します</p>
         <button onClick={handleExportWorkReport} disabled={exporting || !gasUrl || !selectedSite}
@@ -2319,7 +2414,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
           <div className={`mt-4 p-3 rounded-lg text-sm whitespace-pre-line ${exportStatus.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-800' : exportStatus.startsWith('❌') ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-blue-900/30 text-blue-400 border border-blue-800'}`}>{exportStatus}</div>
         )}
       </div>
-      <div className="border rounded-lg p-6" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+      <div className="border rounded-lg p-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
         <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
         <div className="space-y-3 text-sm">
           {[['最終エクスポート', lastExport || '未実行'], ['現場', selectedSite || '未選択'], ['日報データ', `${reports.length}件`]].map(([label, val]) => (
@@ -2355,7 +2450,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
     loadAllReports();
   }, [report]);
 
-  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center"><p className="text-gray-400">読み込み中...</p></div>;
+  if (loading) return <div className="min-h-screen bg-transparent flex items-center justify-center"><p className="text-gray-400">読み込み中...</p></div>;
 
   const totalInHouseWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.inHouseWorkers?.length || 0), 0);
   const totalInHouseCost = allReports.reduce((sum, r) => sum + (r.workDetails?.inHouseWorkers || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
@@ -2380,7 +2475,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const emptyRows = MAX_ROWS - displayReports.length;
 
   return (
-    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'#000', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
+    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'var(--bg)', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
         .pdf-container { font-family: 'Noto Sans JP', sans-serif; }
@@ -2401,8 +2496,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           @page { size: A3 landscape; margin: 8mm; }
         }
       `}</style>
-      <div className="no-print bg-black border-b border-white/[0.06] p-4 flex items-center justify-between sticky top-0 z-50">
-        <button onClick={() => onNavigate('list')} className="px-4 py-2 bg-black hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+      <div className="no-print bg-transparent border-b border-white/[0.06] p-4 flex items-center justify-between sticky top-0 z-50">
+        <button onClick={() => onNavigate('list')} className="px-4 py-2 bg-transparent hover:bg-gray-700 text-gray-300 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
           <ChevronLeft className="w-4 h-4" />日報一覧に戻る
         </button>
         <div className="flex items-center gap-3">
@@ -2413,7 +2508,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         </div>
       </div>
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
-      <div className="pdf-container bg-black p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto' }}>
+      <div className="pdf-container bg-transparent p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto' }}>
         <div style={{ width: '1100px' }}>
           <div className="text-center mb-3">
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
@@ -2459,7 +2554,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       {outItems.map((it,i)=>(
                         <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{formatCurrency(it.amount)}</td></tr>
                       ))}
-                      <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.03)'}}>
+                      <tr style={{borderTop:'1px solid #374151',background:'var(--bg3)'}}>
                         <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
                         <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(outTotal)}</td>
                       </tr>
@@ -2476,7 +2571,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       {siteExpItems.map((it,i)=>(
                         <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{formatCurrency(it.amount)}</td></tr>
                       ))}
-                      <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.03)'}}>
+                      <tr style={{borderTop:'1px solid #374151',background:'var(--bg3)'}}>
                         <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
                         <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(siteExpTotal)}</td>
                       </tr>
@@ -2568,7 +2663,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{endTimes[0] || '-'}</td>
                           </>
                         )}
-                        <td className="text-[8px]" style={allWorkers[subIdx]?.isEnv?{color:'#6B7280'}:{}}>{allWorkers[subIdx]?.name||''}</td>
+                        <td className="text-[8px]" style={allWorkers[subIdx]?.isEnv?{color:'var(--text2)'}:{}}>{allWorkers[subIdx]?.name||''}</td>
                         <td className="text-right text-[8px]">{allWorkers[subIdx]&&!allWorkers[subIdx].isEnv?`¥${formatCurrency(allWorkers[subIdx].amount)}`:''}</td>
                         <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${outsourcing[subIdx].count || outsourcing[subIdx].workers || ''}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
@@ -2605,7 +2700,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 </tr>
               ))}
               <tr style={{ background: '#111827' }}>
-                <th colSpan="8" className="text-right" style={{ background: '#111827', color: '#9CA3AF' }}>計</th>
+                <th colSpan="8" className="text-right" style={{ background: '#111827', color: 'var(--text3)' }}>計</th>
                 <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalInHouseWorkers}人</td>
                 <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalInHouseCost)}</td>
                 <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalOutsourcingWorkers}人</td>
@@ -2613,12 +2708,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalVehicleCost)}</td>
                 <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalMachineryCost)}</td>
                 <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalWasteCost)}</td>
-                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#9CA3AF' }}>原価小計：</td>
+                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: 'var(--text3)' }}>原価小計：</td>
               </tr>
             </tbody>
           </table>
           <div className="mt-2 flex justify-end">
-            <div className="border border-white/[0.08] bg-black px-6 py-2 flex items-center gap-4">
+            <div className="border border-white/[0.08] bg-transparent px-6 py-2 flex items-center gap-4">
               <span className="text-gray-400 text-xs font-bold">原価合計</span>
               <span className="text-white text-lg font-black tabular-nums">¥{formatCurrency(totalCost)}</span>
             </div>
@@ -2916,9 +3011,9 @@ export default function LOGIOApp() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : currentPage === 'settings' ? 'auto' : 'hidden' }}>
+    <div className="min-h-screen bg-transparent flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : currentPage === 'settings' ? 'auto' : 'hidden' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
-      <div className="flex flex-col flex-1 bg-black">
+      <div className="flex flex-col flex-1 bg-transparent">
         <Header
           showMenuButton onMenuClick={() => setSidebarOpen(true)}
           onCalendar={() => setShowCalendarModal(true)}
@@ -2928,6 +3023,12 @@ export default function LOGIOApp() {
           reloading={reloading}
           notificationCount={(() => {
             const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+
+  // 稼働日数・人工数
+  const workingDays = (reports||[]).length;
+  const totalInHouse = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
+  const totalOutsourcing = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+  const totalWorkers = totalInHouse + totalOutsourcing;
             return costRatio >= 70 ? 1 : 0;
           })()}
         />
@@ -2979,7 +3080,7 @@ export default function LOGIOApp() {
                   <div style={{width:42,height:42,borderRadius:13,display:'flex',alignItems:'center',justifyContent:'center',position:'absolute',bottom:14,background:showColor?item.bg:'rgba(255,255,255,0.03)',border:`1px solid ${showColor?item.bd:'rgba(255,255,255,0.05)'}`,boxShadow:showColor?'0 6px 20px rgba(0,0,0,0.5)':'none',transform:`translateY(${ty}px) scale(${sc})`,transition:'transform .3s cubic-bezier(0.34,1.4,0.64,1),background .2s,border-color .2s,box-shadow .2s'}}>
                     {dockIcon(item.id, showColor?item.color:'rgba(255,255,255,0.22)')}
                   </div>
-                  <span style={{position:'absolute',bottom:1,fontSize:8,fontWeight:700,letterSpacing:'.05em',color:showColor?item.color:'rgba(255,255,255,0.16)',whiteSpace:'nowrap',fontFamily:'monospace',transition:'color .2s'}}>{item.label}</span>
+                  <span style={{position:'absolute',bottom:1,fontSize:8,fontWeight:700,letterSpacing:'.05em',color:showColor?item.color:'var(--text3)',whiteSpace:'nowrap',fontFamily:'monospace',transition:'color .2s'}}>{item.label}</span>
                   {isActive && <div style={{position:'absolute',bottom:-1,left:'50%',transform:'translateX(-50%)',width:3,height:3,borderRadius:'50%',background:item.color}}/>}
                 </button>
               );
@@ -3001,7 +3102,7 @@ export default function LOGIOApp() {
                         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                       </svg>
                     </div>
-                    <span style={{position:'absolute',bottom:1,fontSize:8,fontWeight:700,letterSpacing:'.05em',color:isFabActive?'rgba(255,255,255,0.55)':'rgba(255,255,255,0.18)',whiteSpace:'nowrap',fontFamily:'monospace',transition:'color .25s'}}>INPUT</span>
+                    <span style={{position:'absolute',bottom:1,fontSize:8,fontWeight:700,letterSpacing:'.05em',color:isFabActive?'var(--text2)':'var(--text3)',whiteSpace:'nowrap',fontFamily:'monospace',transition:'color .25s'}}>INPUT</span>
                     {isFabActive && <div style={{position:'absolute',bottom:-1,left:'50%',transform:'translateX(-50%)',width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,0.5)'}}/>}
                   </button>
                   {renderDockBtn(navDefs[2], 3)}
@@ -3042,14 +3143,14 @@ export default function LOGIOApp() {
 
       {/* パスワードモーダル */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
-          <div className="bg-black p-6 max-w-md w-full rounded-lg border border-white/[0.08]">
+        <div className="fixed inset-0 bg-transparent/80 flex items-center justify-center z-50 px-4">
+          <div className="bg-transparent p-6 max-w-md w-full rounded-lg border border-white/[0.08]">
             <h2 className="text-xl font-bold text-white mb-4">管理者認証</h2>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-              placeholder="パスワードを入力" className="w-full px-4 py-3 bg-black border border-white/[0.08] text-white text-base rounded-md focus:outline-none focus:border-blue-500 mb-4" autoFocus />
+              placeholder="パスワードを入力" className="w-full px-4 py-3 bg-transparent border border-white/[0.08] text-white text-base rounded-md focus:outline-none focus:border-blue-500 mb-4" autoFocus />
             <div className="grid grid-cols-2 gap-3">
               <button onClick={handlePasswordSubmit} className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">認証</button>
-              <button onClick={() => { setShowPasswordModal(false); setPassword(''); }} className="px-4 py-3 bg-black border border-white/[0.08] text-gray-300 font-medium rounded-lg hover:bg-gray-700">キャンセル</button>
+              <button onClick={() => { setShowPasswordModal(false); setPassword(''); }} className="px-4 py-3 bg-transparent border border-white/[0.08] text-gray-300 font-medium rounded-lg hover:bg-gray-700">キャンセル</button>
             </div>
           </div>
         </div>
@@ -3066,38 +3167,38 @@ export default function LOGIOApp() {
         const progressPercent = totalDays > 0 ? Math.min(100, (elapsedDays / totalDays) * 100) : 0;
         const barColor = progressPercent >= 90 ? '#f59e0b' : '#3b82f6';
         return (
-          <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50" onClick={() => setShowCalendarModal(false)} style={{ backdropFilter:'blur(4px)' }}>
+          <div className="fixed inset-0 bg-transparent/80 flex items-end justify-center z-50" onClick={() => setShowCalendarModal(false)} style={{ backdropFilter:'blur(4px)' }}>
             <div onClick={e => e.stopPropagation()}
-              style={{ background:'#0a0a0a', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 24px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+              style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 24px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
               <div style={{ width:'36px', height:'4px', background:'rgba(255,255,255,0.15)', borderRadius:'2px', margin:'0 auto 24px' }} />
-              <p style={{ fontSize:'11px', fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'16px' }}>工期 / Schedule</p>
+              <p style={{ fontSize:'11px', fontWeight:700, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'16px' }}>工期 / Schedule</p>
               {selectedSite ? (
                 <>
-                  <p style={{ fontSize:'16px', fontWeight:700, color:'white', marginBottom:'20px' }}>{selectedSite}</p>
+                  <p style={{ fontSize:'16px', fontWeight:700, color:'var(--text)', marginBottom:'20px' }}>{selectedSite}</p>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'20px' }}>
                     {[['開始日', projectInfo?.startDate], ['終了日', projectInfo?.endDate]].map(([label, val]) => (
-                      <div key={label} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:'10px', padding:'14px' }}>
-                        <p style={{ fontSize:'10px', color:'#6B7280', marginBottom:'6px' }}>{label}</p>
-                        <p style={{ fontSize:'15px', fontWeight:600, color:'white' }}>{val || '未設定'}</p>
+                      <div key={label} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'10px', padding:'14px' }}>
+                        <p style={{ fontSize:'10px', color:'var(--text2)', marginBottom:'6px' }}>{label}</p>
+                        <p style={{ fontSize:'15px', fontWeight:600, color:'var(--text)' }}>{val || '未設定'}</p>
                       </div>
                     ))}
                   </div>
                   <div style={{ marginBottom:'16px' }}>
                     <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'8px' }}>
-                      <span style={{ fontSize:'12px', color:'#6B7280' }}>経過 {elapsedDays}日 / 全{totalDays}日</span>
+                      <span style={{ fontSize:'12px', color:'var(--text2)' }}>経過 {elapsedDays}日 / 全{totalDays}日</span>
                       <span style={{ fontSize:'12px', fontWeight:700, color: remainDays === 0 ? '#ef4444' : remainDays !== null && remainDays <= 7 ? '#f59e0b' : '#6B7280' }}>{remainDays !== null ? `残 ${remainDays}日` : '未設定'}</span>
                     </div>
-                    <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:'99px', height:'6px', overflow:'hidden' }}>
+                    <div style={{ background:'var(--bg3)', borderRadius:'99px', height:'6px', overflow:'hidden' }}>
                       <div style={{ width:`${progressPercent}%`, height:'100%', background:barColor, borderRadius:'99px', transition:'width 0.6s ease' }} />
                     </div>
-                    <p style={{ fontSize:'24px', fontWeight:800, color:'white', marginTop:'12px' }}>{Math.round(progressPercent)}%</p>
+                    <p style={{ fontSize:'24px', fontWeight:800, color:'var(--text)', marginTop:'12px' }}>{Math.round(progressPercent)}%</p>
                   </div>
                 </>
               ) : (
-                <p style={{ fontSize:'14px', color:'#6B7280', textAlign:'center', padding:'20px 0' }}>現場を選択してください</p>
+                <p style={{ fontSize:'14px', color:'var(--text2)', textAlign:'center', padding:'20px 0' }}>現場を選択してください</p>
               )}
               <button onClick={() => setShowCalendarModal(false)}
-                style={{ width:'100%', padding:'14px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer', marginTop:'8px' }}>
+                style={{ width:'100%', padding:'14px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer', marginTop:'8px' }}>
                 閉じる
               </button>
             </div>
@@ -3108,24 +3209,30 @@ export default function LOGIOApp() {
       {/* 通知モーダル */}
       {showNotificationModal && (() => {
         const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+
+  // 稼働日数・人工数
+  const workingDays = (reports||[]).length;
+  const totalInHouse = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+1,s),0);
+  const totalOutsourcing = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+  const totalWorkers = totalInHouse + totalOutsourcing;
         const alerts = [];
         if (costRatio >= 85) alerts.push({ level:'danger', icon:'🚨', title:'原価率が危険水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 85%以下` });
         else if (costRatio >= 70) alerts.push({ level:'warn', icon:'⚠️', title:'原価率が注意水準です', body:`現在 ${costRatio.toFixed(1)}% — 目安: 70%以下` });
         const levelColor = { danger:'#ef4444', warn:'#f59e0b' };
         const levelBg = { danger:'rgba(239,68,68,0.08)', warn:'rgba(245,158,11,0.08)' };
         return (
-          <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50" onClick={() => setShowNotificationModal(false)} style={{ backdropFilter:'blur(4px)' }}>
+          <div className="fixed inset-0 bg-transparent/80 flex items-end justify-center z-50" onClick={() => setShowNotificationModal(false)} style={{ backdropFilter:'blur(4px)' }}>
             <div onClick={e => e.stopPropagation()}
-              style={{ background:'#0a0a0a', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 24px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+              style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 24px calc(24px + env(safe-area-inset-bottom, 0px))' }}>
               <div style={{ width:'36px', height:'4px', background:'rgba(255,255,255,0.15)', borderRadius:'2px', margin:'0 auto 24px' }} />
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px' }}>
-                <p style={{ fontSize:'11px', fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:'0.1em' }}>通知 / Notifications</p>
+                <p style={{ fontSize:'11px', fontWeight:700, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.1em' }}>通知 / Notifications</p>
                 {alerts.length > 0 && <span style={{ fontSize:'11px', fontWeight:700, color:'#ef4444', background:'rgba(239,68,68,0.1)', padding:'2px 8px', borderRadius:'99px' }}>{alerts.length}件</span>}
               </div>
               {alerts.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'32px 0' }}>
                   <p style={{ fontSize:'28px', marginBottom:'12px' }}>✅</p>
-                  <p style={{ fontSize:'14px', color:'#6B7280' }}>アラートはありません</p>
+                  <p style={{ fontSize:'14px', color:'var(--text2)' }}>アラートはありません</p>
                 </div>
               ) : (
                 <div style={{ display:'flex', flexDirection:'column', gap:'10px', marginBottom:'16px' }}>
@@ -3134,14 +3241,14 @@ export default function LOGIOApp() {
                       <span style={{ fontSize:'20px', flexShrink:0 }}>{a.icon}</span>
                       <div>
                         <p style={{ fontSize:'13px', fontWeight:700, color: levelColor[a.level], marginBottom:'4px' }}>{a.title}</p>
-                        <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.5)' }}>{a.body}</p>
+                        <p style={{ fontSize:'12px', color:'var(--text3)' }}>{a.body}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
               <button onClick={() => setShowNotificationModal(false)}
-                style={{ width:'100%', padding:'14px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
+                style={{ width:'100%', padding:'14px', background:'var(--bg3)', border:'1px solid var(--border)', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
                 閉じる
               </button>
             </div>

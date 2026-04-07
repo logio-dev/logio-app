@@ -1824,18 +1824,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder="木くず・廃プラ等" style={inpTxt} /></div>
               <div>
                 <label style={inpLbl}>処分先</label>
-                <select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} style={{...inpSel,marginBottom:5}}>
-                  <option value="">選択</option>
-                  {(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}
-                  {(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i).map(s=><option key={s}>{s}</option>)}
-                </select>
-                <input type="text" value={wasteForm._customDisposal||''} onChange={e=>setWasteForm({...wasteForm,_customDisposal:e.target.value})}
-                  onKeyDown={e=>{if(e.key==='Enter'&&(wasteForm._customDisposal||'').trim()){setWasteForm({...wasteForm,disposal:wasteForm._customDisposal.trim(),_customDisposal:''});}}}
-                  placeholder="直接入力" style={{...inpTxt,marginBottom:0,fontSize:12}} />
-                {(wasteForm._customDisposal||'').trim() && (
-                  <button onClick={()=>setWasteForm({...wasteForm,disposal:wasteForm._customDisposal.trim(),_customDisposal:''})}
-                    style={{marginTop:4,padding:'4px 10px',background:'rgba(59,130,246,0.2)',border:'1px solid rgba(59,130,246,0.3)',color:'#60a5fa',borderRadius:6,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>＋ 決定</button>
+                {((projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter((d,i,a)=>a.indexOf(d)===i).length > 0 ||
+                  (projectInfo?.contractedDisposalSites||[]).length > 0) && (
+                  <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                    {[...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)].map(s=>(
+                      <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
+                        style={{padding:'3px 8px',borderRadius:6,border:`1px solid ${wasteForm.disposal===s?'rgba(74,222,128,0.5)':'rgba(255,255,255,0.1)'}`,background:wasteForm.disposal===s?'rgba(74,222,128,0.15)':'rgba(255,255,255,0.06)',color:wasteForm.disposal===s?'#4ade80':'rgba(255,255,255,0.5)',fontSize:10,cursor:'pointer',fontFamily:'inherit'}}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
                 )}
+                <input type="text" value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})}
+                  placeholder="処分先を入力または上から選択" style={inpTxt} />
               </div>
             </div>
             <div style={grid3}>
@@ -2759,7 +2760,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         )}
                         <td className="text-[8px]" style={allWorkers[subIdx]?.isEnv?{color:'rgba(255,255,255,0.65)'}:{}}>{allWorkers[subIdx]?.name||''}</td>
                         <td className="text-right text-[8px]">{allWorkers[subIdx]&&!allWorkers[subIdx].isEnv?`¥${formatCurrency(allWorkers[subIdx].amount)}`:''}</td>
-                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${outsourcing[subIdx].count || outsourcing[subIdx].workers || ''}人` : ''}</td>
+                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseInt(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
                         {/* 車両：通常車両 or 環境課車両 or ワイエム */}
                         <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (allWorkers[subIdx]?.isEnv ? allWorkers[subIdx].vType : '') || (extWasteRows[subIdx] ? '配車' : '')}</td>
@@ -3013,10 +3014,19 @@ export default function LOGIOApp() {
     try {
       const now = new Date().toISOString();
       const updatedBy = reportData.recorder || currentUser?.userId || '';
+      // outsourcingLabor の count を確実に数値に変換
+      const normalizedWorkDetails = {
+        ...reportData.workDetails,
+        outsourcingLabor: (reportData.workDetails?.outsourcingLabor || []).map(o => ({
+          ...o,
+          count: parseInt(o.count || o.workers || 0, 10),
+          amount: parseInt(o.count || o.workers || 0, 10) * (o.shift === 'nighttime' ? 30000 : 25000)
+        }))
+      };
       try {
-        await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
+        await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: normalizedWorkDetails, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
       } catch(e) {
-        await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
+        await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: normalizedWorkDetails, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
       }
       await loadReports(selectedSite);
       setEditingReport(null);

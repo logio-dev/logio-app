@@ -2555,9 +2555,9 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         .pdf-header-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 700; text-align: left; font-size: 8px; width: 80px; }
         .pdf-header-table td { color: #F3F4F6; background: #1A1A1A; }
         .result-table { border-collapse: collapse; width: 100%; }
-        .result-table th, .result-table td { border: 1px solid #3D3D3D; padding: 2px 6px; font-size: 9px; }
-        .result-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 500; text-align: left; width: 70px; }
-        .result-table td { color: #F3F4F6; text-align: right; background: #1A1A1A; font-variant-numeric: tabular-nums; }
+        .result-table th, .result-table td { border: 1px solid #3D3D3D; padding: 2px 8px; font-size: 9px; }
+        .result-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 500; text-align: left; width: 70px; white-space: nowrap; }
+        .result-table td { color: #F3F4F6; text-align: right; background: #1A1A1A; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 90px; }
         @media print {
           .no-print { display: none !important; }
           @page { size: A3 landscape; margin: 6mm; }

@@ -785,19 +785,19 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               });
 
               return (
-                <div className="overflow-hidden mb-4" style={{background:'#2D2D2D',border:'none',borderRadius:'16px'}}>
+                <div className="overflow-hidden mb-4" style={{background:'#F4F4F4',border:'none',borderRadius:'16px'}}>
                   <button onClick={()=>setWasteOpen(!wasteOpen)}
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
                       <div>
-                        <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
+                        <p style={{ fontSize:11, fontWeight:700, color:'#999', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
                         <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
-                          <span style={{ fontSize:'20px', fontWeight:700, color:'#fff', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
-                          <span style={{ fontSize:'10px', color:'var(--text3)' }}>{typeCount}種類</span>
+                          <span style={{ fontSize:'20px', fontWeight:700, color:'#1C1917', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
+                          <span style={{ fontSize:'10px', color:'#999' }}>{typeCount}種類</span>
                         </div>
                       </div>
                       <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink:0 }}>
-                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8"/>
+                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="8"/>
                         {donutSlices.map((s,i)=>(
                           <circle key={i} cx={CX} cy={CY} r={R} fill="none"
                             stroke={s.color} strokeWidth="8"
@@ -805,12 +805,12 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                             strokeDashoffset={-(s.offset-CIRC/4)}
                             transform={`rotate(-90 ${CX} ${CY})`}/>
                         ))}
-                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="#fff">{typeCount}種</text>
+                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="#1C1917">{typeCount}種</text>
                       </svg>
                     </div>
                     <GradChevron open={wasteOpen} size={16}/>
                   </button>
-                  <div style={{ display: wasteOpen ? 'block' : 'none', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+                  <div style={{ display: wasteOpen ? 'block' : 'none', borderTop:'1px solid rgba(0,0,0,0.06)' }}>
                     <div style={{ padding:'4px 14px 16px' }}>
                       <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                         {wasteEntries.map(([name,val],i)=>{
@@ -819,10 +819,10 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                           return (
                             <div key={name}>
                               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-                                <span style={{ fontSize:'12px', color:'#fff', fontWeight:'700' }}>{name}</span>
-                                <span style={{ fontSize:'11px', color:'var(--text)', fontWeight:'700' }}>¥{formatCurrency(val)}</span>
+                                <span style={{ fontSize:'12px', color:'#1C1917', fontWeight:'700' }}>{name}</span>
+                                <span style={{ fontSize:'11px', color:'#1C1917', fontWeight:'700' }}>¥{formatCurrency(val)}</span>
                               </div>
-                              <div style={{ height:'5px', background:'rgba(255,255,255,0.1)', borderRadius:'3px' }}>
+                              <div style={{ height:'5px', background:'rgba(0,0,0,0.08)', borderRadius:'3px' }}>
                                 <div style={{ height:'5px', width:`${pct}%`, background:color, borderRadius:'3px', transition:'width 0.4s ease' }}/>
                               </div>
                             </div>
@@ -837,17 +837,17 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
             {/* 日報タイムラインカード */}
             {reports && reports.length > 0 && (
-              <div className="mb-4" style={{background:'#2D2D2D',border:'none',borderRadius:'16px'}}>
+              <div className="mb-4" style={{background:'#F4F4F4',border:'none',borderRadius:'16px'}}>
                 <button onClick={()=>setReportsOpen(!reportsOpen)}
                   style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
                   <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <p style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.1em'}}>日報 / REPORTS</p>
-                    <span style={{fontSize:10,color:'rgba(255,255,255,0.5)',background:'rgba(255,255,255,0.1)',padding:'2px 8px',borderRadius:8,fontWeight:700}}>{reports.length}件</span>
+                    <p style={{fontSize:10,fontWeight:700,color:'#999',letterSpacing:'.1em'}}>日報 / REPORTS</p>
+                    <span style={{fontSize:10,color:'#666',background:'rgba(0,0,0,0.08)',padding:'2px 8px',borderRadius:8,fontWeight:700}}>{reports.length}件</span>
                   </div>
                   <GradChevron open={reportsOpen} size={16}/>
                 </button>
                 {reportsOpen && (
-                  <div style={{borderTop:'1px solid rgba(255,255,255,0.08)',padding:'12px 16px 16px'}}>
+                  <div style={{borderTop:'1px solid rgba(0,0,0,0.06)',padding:'12px 16px 16px'}}>
                     {[...reports].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((r,idx,arr)=>{
                       const dayNames=['日','月','火','水','木','金','土'];
                       const dayName=r.date?dayNames[new Date(r.date).getDay()]:'';
@@ -861,27 +861,25 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                       const wasteCount=r.wasteItems?.length||0;
                       return (
                         <div key={r.id} style={{display:'flex',gap:12,alignItems:'stretch'}}>
-                          {/* タイムラインライン */}
                           <div style={{display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0,paddingTop:4}}>
-                            <div style={{width:10,height:10,borderRadius:'50%',background:isFirst?'#22C55E':'rgba(255,255,255,0.2)',flexShrink:0,boxShadow:isFirst?'0 0 0 3px rgba(34,197,94,0.2)':'none'}}/>
-                            {!isLast&&<div style={{width:1,flex:1,background:'rgba(255,255,255,0.08)',marginTop:4}}/>}
+                            <div style={{width:10,height:10,borderRadius:'50%',background:isFirst?'#22C55E':'rgba(0,0,0,0.2)',flexShrink:0,boxShadow:isFirst?'0 0 0 3px rgba(34,197,94,0.2)':'none'}}/>
+                            {!isLast&&<div style={{width:1,flex:1,background:'rgba(0,0,0,0.1)',marginTop:4}}/>}
                           </div>
-                          {/* コンテンツ */}
                           <button onClick={()=>onViewPdf&&onViewPdf(r)}
                             style={{flex:1,display:'flex',justifyContent:'space-between',alignItems:'flex-start',background:'none',border:'none',cursor:'pointer',textAlign:'left',paddingBottom:isLast?0:14,paddingTop:0,paddingLeft:0,paddingRight:0}}>
                             <div style={{minWidth:0,flex:1}}>
-                              <p style={{fontSize:13,fontWeight:600,color:isFirst?'#fff':'rgba(255,255,255,0.65)',marginBottom:5,lineHeight:1.3}}>
+                              <p style={{fontSize:13,fontWeight:600,color:isFirst?'#1C1917':'#444',marginBottom:5,lineHeight:1.3}}>
                                 {mo}/{da}（{dayName}）{r.workDetails?.workContent||'作業内容未入力'}
                               </p>
                               <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
-                                {inHouseCount>0&&<span style={{fontSize:10,color:'#93C5FD',background:'rgba(59,130,246,0.15)',padding:'2px 7px',borderRadius:4,fontWeight:600}}>自社{inHouseCount}名</span>}
-                                {outsourceCount>0&&<span style={{fontSize:10,color:'#6EE7B7',background:'rgba(34,197,94,0.12)',padding:'2px 7px',borderRadius:4,fontWeight:600}}>外注{outsourceCount}社</span>}
-                                {wasteCount>0&&<span style={{fontSize:10,color:'#FCD34D',background:'rgba(245,158,11,0.12)',padding:'2px 7px',borderRadius:4,fontWeight:600}}>産廃{wasteCount}件</span>}
+                                {inHouseCount>0&&<span style={{fontSize:10,color:'#1D4ED8',background:'#EFF6FF',padding:'2px 7px',borderRadius:4,fontWeight:600}}>自社{inHouseCount}名</span>}
+                                {outsourceCount>0&&<span style={{fontSize:10,color:'#065F46',background:'#ECFDF5',padding:'2px 7px',borderRadius:4,fontWeight:600}}>外注{outsourceCount}社</span>}
+                                {wasteCount>0&&<span style={{fontSize:10,color:'#92400E',background:'#FEF3C7',padding:'2px 7px',borderRadius:4,fontWeight:600}}>産廃{wasteCount}件</span>}
                               </div>
                             </div>
                             <div style={{flexShrink:0,textAlign:'right',marginLeft:10}}>
-                              {totalCost>0&&<p style={{fontSize:12,fontWeight:600,color:'#FCD34D',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(totalCost)}</p>}
-                              <p style={{fontSize:10,color:'rgba(99,179,237,0.8)',marginTop:2}}>PDF →</p>
+                              {totalCost>0&&<p style={{fontSize:12,fontWeight:600,color:'#B45309',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(totalCost)}</p>}
+                              <p style={{fontSize:10,color:'#3B82F6',marginTop:2}}>PDF →</p>
                             </div>
                           </button>
                         </div>
@@ -966,7 +964,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#1A1A1A', minHeight:'100vh', color:'#fff', overflowX:'auto' }}>
+    <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', overflowX:'auto' }}>
       <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'16px 12px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
 
         {/* 閉じるボタン */}

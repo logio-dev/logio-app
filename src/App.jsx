@@ -2584,7 +2584,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
             <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
           </div>
-          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '300px 200px 240px 1fr' }}>
+          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '300px 200px 240px 1fr', width:'1152px' }}>
             <table className="pdf-header-table">
               <tbody>
                 {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName || report.site_name || ''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
@@ -2651,9 +2651,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 );
               })()}
             </div>
-            <div>
+            <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
+              <div style={{width:'100%'}}>
               <div className="text-center py-1 font-bold text-[10px] tracking-widest bg-yellow-500/20 text-yellow-400 border border-gray-600">【　収　支　結　果　】</div>
-              <table className="result-table">
+              <table className="result-table" style={{width:'100%'}}>
                 <tbody>
                   {[
                     ['見積金額', totalRevenue],
@@ -2669,6 +2670,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
           <table className="pdf-table" style={{ width:'1152px' }}>

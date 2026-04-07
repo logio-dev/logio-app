@@ -973,7 +973,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
   return (
     <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', overflowX:'auto' }}>
-      <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'16px 12px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
+      <div className="max-w-2xl mx-auto px-4 py-6 w-full" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box' }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -2566,15 +2566,17 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           @page { size: A3 landscape; margin: 8mm; }
         }
       `}</style>
-      <div className="no-print border-b p-4 flex items-center justify-between sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
-          <ChevronLeft className="w-4 h-4" />ホームに戻る
-        </button>
-        <div className="flex items-center gap-3">
-          <span className="text-gray-500 text-xs">全{allReports.length}件の日報</span>
-          <button onClick={() => window.print()} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
-            <FileText className="w-4 h-4" />PDF出力 / 印刷
+      <div className="no-print border-b sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', gap:8, flexWrap:'wrap' }}>
+          <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer",flexShrink:0}}>
+            <ChevronLeft className="w-4 h-4" />ホームに戻る
           </button>
+          <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+            <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',whiteSpace:'nowrap'}}>全{allReports.length}件</span>
+            <button onClick={() => window.print()} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#2563EB',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
+              <FileText className="w-4 h-4" />PDF出力
+            </button>
+          </div>
         </div>
       </div>
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#1A1A1A' }}>

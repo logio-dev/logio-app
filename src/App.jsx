@@ -367,16 +367,16 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
       </button>
       {isOpen && (
         <div className="absolute left-0 right-0 z-50 mt-1 rounded-lg shadow-xl max-h-80 overflow-y-auto"
-          style={{ background: '#fff', border: '1px solid #E8E8E8' }}>
+          style={{ background: '#2D2D2D', border: '1px solid #3D3D3D' }}>
           {options.map((option) => (
             <button key={option.value} type="button" onClick={() => { onChange(option.value); setIsOpen(false); }}
               className="w-full px-4 py-3 text-left transition-colors relative"
-              style={{ borderBottom: '1px solid #F0F0F0' }}
-              onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
+              style={{ borderBottom: '1px solid #3D3D3D' }}
+              onMouseEnter={e => e.currentTarget.style.background='#3D3D3D'}
               onMouseLeave={e => e.currentTarget.style.background='transparent'}>
               <div className="pr-8">
-                <div className="text-white text-base font-medium">{option.title}</div>
-                {option.subtitle && <div className="text-gray-500 text-xs mt-1">{option.subtitle}</div>}
+                <div className="text-base font-medium" style={{color:'#fff'}}>{option.title}</div>
+                {option.subtitle && <div className="text-xs mt-1" style={{color:'rgba(255,255,255,0.4)'}}>{option.subtitle}</div>}
               </div>
               {value === option.value && <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />}
             </button>
@@ -636,25 +636,25 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
         :root {
-          --bg:      #FFFFFF;
-          --bg2:     #FFFFFF;
-          --bg3:     #F4F4F4;
-          --border:  #E8E8E8;
-          --text:    #1C1917;
-          --text2:   #666666;
-          --text3:   #999999;
+          --bg:      #1A1A1A;
+          --bg2:     #1A1A1A;
+          --bg3:     #2D2D2D;
+          --border:  #3D3D3D;
+          --text:    #FFFFFF;
+          --text2:   #AAAAAA;
+          --text3:   #666666;
           --main:    #2D2D2D;
           --main2:   #3D3D3D;
-          --accent:  #2D2D2D;
+          --accent:  #3D3D3D;
         }
-        html, body { background: #fff !important; }
+        html, body { background: #1A1A1A !important; }
         *, *::before, *::after { box-sizing: border-box; }
         * { font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
         input, select, textarea { font-size: 16px !important; max-width: 100%; width: 100%; box-sizing: border-box; }
         .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
         .finance-detail.open { grid-template-rows: 1fr; }
         .finance-detail > div { overflow: hidden; }
-        .logio-progress-track { background: #EBEBEB; border-radius: 999px; overflow: hidden; }
+        .logio-progress-track { background: #3D3D3D; border-radius: 999px; overflow: hidden; }
         .logio-progress-bar { border-radius: 999px; transition: width 0.8s ease; }
         .logio-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; animation: logiopulse 2s ease infinite; flex-shrink: 0; }
         @keyframes logiopulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
@@ -671,7 +671,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#F2F2F2' }}>
+      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#1A1A1A' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -700,18 +700,18 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           )}
           {siteDropdownOpen && (
             <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-xl overflow-hidden"
-              style={{ background: '#fff', border: '1px solid #E8E8E8' }}>
+              style={{ background: '#2D2D2D', border: '1px solid #3D3D3D' }}>
               {sites.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-gray-500">現場が登録されていません</div>
+                <div className="px-4 py-3 text-sm" style={{color:'rgba(255,255,255,0.4)'}}>現場が登録されていません</div>
               ) : sites.map(site => (
                 <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); }}
                   className="w-full px-4 py-3 text-left flex items-center justify-between transition-colors"
-                  style={{ borderBottom: '1px solid #F0F0F0' }}
-                  onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
+                  style={{ borderBottom: '1px solid #3D3D3D' }}
+                  onMouseEnter={e => e.currentTarget.style.background='#3D3D3D'}
                   onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight:600, color:'#1C1917' }}>{site.name}</p>
-                    {site.projectNumber && <p style={{ fontSize: '11px', color:'#999', marginTop:2 }}>{site.projectNumber}</p>}
+                    <p style={{ fontSize: '14px', fontWeight:600, color:'#fff' }}>{site.name}</p>
+                    {site.projectNumber && <p style={{ fontSize: '11px', color:'rgba(255,255,255,0.4)', marginTop:2 }}>{site.projectNumber}</p>}
                   </div>
                   {selectedSite === site.name && <Check className="w-4 h-4 text-blue-500" />}
                 </button>
@@ -854,18 +854,18 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                       const totalCost=(r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0)+(r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0)+(r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0)+(r.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0);
                       return (
                         <button key={r.id} onClick={()=>onViewPdf&&onViewPdf(r)}
-                          style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'10px 12px',background:'#fff',border:'none',borderRadius:12,marginBottom:8,cursor:'pointer',textAlign:'left'}}>
-                          <div style={{width:42,flexShrink:0,textAlign:'center',padding:'6px 4px',background:'#EBEBEB',borderRadius:9}}>
-                            <div style={{fontSize:8,fontWeight:700,color:'#999',letterSpacing:'.04em'}}>{r.date?r.date.split('-')[1]+'月':''}</div>
-                            <div style={{fontSize:20,fontWeight:900,color:'#1C1917',lineHeight:1}}>{r.date?parseInt(r.date.split('-')[2]):''}</div>
-                            <div style={{fontSize:10,fontWeight:700,color:'#999'}}>{dayName}</div>
+                          style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'10px 12px',background:'#3D3D3D',border:'none',borderRadius:12,marginBottom:8,cursor:'pointer',textAlign:'left'}}>
+                          <div style={{width:42,flexShrink:0,textAlign:'center',padding:'6px 4px',background:'rgba(255,255,255,0.08)',borderRadius:9}}>
+                            <div style={{fontSize:8,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.04em'}}>{r.date?r.date.split('-')[1]+'月':''}</div>
+                            <div style={{fontSize:20,fontWeight:900,color:'#fff',lineHeight:1}}>{r.date?parseInt(r.date.split('-')[2]):''}</div>
+                            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.4)'}}>{dayName}</div>
                           </div>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:13,fontWeight:700,color:'#1C1917',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.workDetails?.workContent||'作業内容未入力'}</div>
+                            <div style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.workDetails?.workContent||'作業内容未入力'}</div>
                             <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-                              {(r.workDetails?.inHouseWorkers?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'#EFF6FF',color:'#1D4ED8',fontSize:10,fontWeight:700}}>{r.workDetails.inHouseWorkers.length}名</span>}
-                              {(r.workDetails?.outsourcingLabor?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'#ECFDF5',color:'#065F46',fontSize:10,fontWeight:700}}>外注{r.workDetails.outsourcingLabor.length}社</span>}
-                              {(r.wasteItems?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'#FEF3C7',color:'#92400E',fontSize:10,fontWeight:700}}>産廃{r.wasteItems.length}件</span>}
+                              {(r.workDetails?.inHouseWorkers?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'rgba(59,130,246,0.2)',color:'#93C5FD',fontSize:10,fontWeight:700}}>{r.workDetails.inHouseWorkers.length}名</span>}
+                              {(r.workDetails?.outsourcingLabor?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'rgba(34,197,94,0.15)',color:'#6EE7B7',fontSize:10,fontWeight:700}}>外注{r.workDetails.outsourcingLabor.length}社</span>}
+                              {(r.wasteItems?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'rgba(245,158,11,0.15)',color:'#FCD34D',fontSize:10,fontWeight:700}}>産廃{r.wasteItems.length}件</span>}
                             </div>
                           </div>
                           <div style={{flexShrink:0,textAlign:'right'}}>
@@ -1509,7 +1509,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
-    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', zIndex:40 }}>
+    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#2D2D2D', borderTop:'1px solid #3D3D3D', display:'flex', gap:'10px', zIndex:40 }}>
       {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'rgba(255,255,255,0.1)', border:'none', color:'rgba(255,255,255,0.7)', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
       <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'var(--bg3)': nextColor||'#2563eb', border:'none', color: disabled?'var(--text3)':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>

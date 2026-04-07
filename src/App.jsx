@@ -3096,7 +3096,7 @@ export default function LOGIOApp() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
+    <div className="min-h-screen bg-transparent flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden', overflowY: 'visible' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       <div className="flex flex-col flex-1 bg-transparent">
         <Header
@@ -3106,7 +3106,7 @@ export default function LOGIOApp() {
           onSearch={() => setShowSearchModal(true)}
           reloading={reloading}
         />
-        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
+        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden', overflowY: 'auto' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
           {selectedSite && ['home','list','analysis'].includes(currentPage) && (() => {
             const navDefs = [

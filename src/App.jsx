@@ -1281,11 +1281,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                   </div>
                                   <div>
                                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.3)',letterSpacing:'.06em',marginBottom:4}}>枚数</div>
-                                    <input type="number" min="1" value={row.count||'1'} onChange={e=>{
+                                    <input type="number" min="1" inputMode="numeric" value={row.count||''} onChange={e=>{
                                       const rows=[...(projectInfo.manifestRows||[])];
                                       rows[i]={...rows[i],count:e.target.value};
                                       setProjectInfo({...projectInfo,manifestRows:rows});
-                                    }} style={{padding:'9px 6px',background:'rgba(59,130,246,0.12)',border:'none',color:'#60a5fa',borderRadius:8,fontSize:15,fontWeight:700,outline:'none',textAlign:'center',width:'100%',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                                    }} placeholder="1" style={{padding:'9px 6px',background:'rgba(59,130,246,0.12)',border:'none',color:'#60a5fa',borderRadius:8,fontSize:15,fontWeight:700,outline:'none',textAlign:'center',width:'100%',boxSizing:'border-box',fontFamily:'inherit'}}/>
                                   </div>
                                 </div>
                               </div>
@@ -2567,6 +2567,17 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           .no-print { display: none !important; }
           @page { size: A3 landscape; margin: 6mm; }
           .pdf-container { zoom: 0.85; }
+        }
+        @media screen and (max-width: 768px) {
+          .pdf-container {
+            transform: scale(0.42);
+            transform-origin: top left;
+            width: calc(100% / 0.42) !important;
+            min-width: calc(100% / 0.42) !important;
+          }
+          .pdf-scroll-wrapper {
+            overflow: hidden !important;
+          }
         }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>

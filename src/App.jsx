@@ -2568,10 +2568,6 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           @page { size: A3 landscape; margin: 6mm; }
           .pdf-container { zoom: 0.85; }
         }
-        @media screen and (max-width: 768px) {
-          .pdf-container { zoom: 0.30; transform-origin: top left; }
-          .pdf-scroll-wrapper { width: fit-content; }
-        }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', gap:8, flexWrap:'wrap' }}>

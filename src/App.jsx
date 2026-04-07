@@ -154,15 +154,22 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
   );
 }
 
-// ===== カウントアップフック =====
-function useCountUp(target, duration=800) {
+// ===== カウントアップフック（easeOut）=====
+function useCountUp(target, duration=900) {
   const [val, setVal] = React.useState(0);
   React.useEffect(() => {
-    if(target===0){setVal(0);return;}
-    let start=0; const step=target/Math.max(1,Math.floor(duration/16));
-    const timer = setInterval(()=>{ start+=step; if(start>=target){setVal(target);clearInterval(timer);}else{setVal(Math.floor(start));} },16);
-    return ()=>clearInterval(timer);
-  },[target]);
+    if (target === 0) { setVal(0); return; }
+    const startTime = performance.now();
+    const easeOut = t => 1 - Math.pow(1 - t, 3);
+    const tick = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      setVal(Math.round(easeOut(progress) * target));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    const raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target]);
   return val;
 }
 
@@ -273,7 +280,7 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
           )}
         </div>
         {/* 中央：ロゴ */}
-        <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'#fff', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
+        <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'#1C1917', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
         {/* 右：アイコン4つ（リロード追加）*/}
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
           {/* ★ リロード */}
@@ -742,10 +749,11 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             <div className="mb-3" style={{background:'#2C2825',borderRadius:18,padding:18,boxShadow:'0 4px 20px rgba(44,40,37,0.12)'}}>
               <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.65)',letterSpacing:'.1em',fontFamily:'JetBrains Mono,monospace',marginBottom:10}}>稼働日数 / WORKING DAYS</div>
               <div style={{display:'flex',alignItems:'baseline',gap:20,marginBottom:14}}>
-                <div><span style={{fontSize:38,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums',transition:'all .3s'}}>{animDays}</span><span style={{fontSize:14,color:'rgba(255,255,255,0.65)',marginLeft:4}}>日</span></div>
+                <div><span style={{fontSize:48,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums',display:'inline-block',transition:'transform 0.1s ease',animation:'numPop 0.9s ease-out'}}>{animDays}</span><span style={{fontSize:14,color:'rgba(255,255,255,0.65)',marginLeft:4}}>日</span></div>
                 <div style={{width:1,height:36,background:'rgba(255,255,255,0.1)'}}/>
-                <div><div style={{fontSize:10,color:'rgba(255,255,255,0.55)',marginBottom:3,fontFamily:'JetBrains Mono,monospace',letterSpacing:'.06em'}}>累計人工</div><span style={{fontSize:30,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{animWorkers}</span><span style={{fontSize:14,color:'rgba(255,255,255,0.65)',marginLeft:4}}>人</span></div>
+                <div><div style={{fontSize:10,color:'rgba(255,255,255,0.55)',marginBottom:3,fontFamily:'JetBrains Mono,monospace',letterSpacing:'.06em'}}>累計人工</div><span style={{fontSize:36,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums',animation:'numPop 0.9s ease-out'}}>{animWorkers}</span><span style={{fontSize:14,color:'rgba(255,255,255,0.65)',marginLeft:4}}>人</span></div>
               </div>
+              <style>{`@keyframes numPop { 0%{opacity:0;transform:translateY(6px) scale(0.92)} 60%{opacity:1;transform:translateY(-2px) scale(1.03)} 100%{opacity:1;transform:translateY(0) scale(1)} }`}</style>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                 <div style={{background:'rgba(255,255,255,0.07)',borderRadius:10,padding:'10px 12px'}}>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.65)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:4}}>自社人工</div>
@@ -1114,8 +1122,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(255,255,255,0.06)',border:'none'}}>
                               <div style={{width:34,height:34,borderRadius:8,background:'rgba(255,255,255,0.1)',color:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
                               <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
-                                <div style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
+                                <div style={{fontSize:13,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                                <div style={{fontSize:10,color:'rgba(255,255,255,0.55)',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'日数未設定'}</div>
                               </div>
                               <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
                               <button onClick={()=>delFn(i)} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,fontWeight:700}}>✕</button>
@@ -3132,23 +3140,23 @@ export default function LOGIOApp() {
               onViewPdf={(report)=>{ window.__navigatePdf && window.__navigatePdf(report); }}
             />
           )}
-          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={setCurrentPage} onSelectSite={setSelectedSite} />}
+          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={handleNavigate} onSelectSite={setSelectedSite} />}
           {currentPage === 'input' && (
             <ReportInputPage
               key={editingReport ? editingReport.id : 'new'}
               onSave={handleSaveReport}
-              onNavigate={setCurrentPage}
+              onNavigate={handleNavigate}
               projectInfo={projectInfo}
               onReleaseLock={releaseLock}
               editReport={editingReport}
               onUpdate={handleUpdateReport}
             />
           )}
-          {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={setCurrentPage} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}
-          {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
-          {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
-          {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={setCurrentPage} />}
-          {currentPage === 'pdf' && selectedReport && <ReportPDFPage report={selectedReport} projectInfo={projectInfo} onNavigate={setCurrentPage} />}
+          {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={handleNavigate} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}
+          {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={handleNavigate} />}
+          {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
+          {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
+          {currentPage === 'pdf' && selectedReport && <ReportPDFPage report={selectedReport} projectInfo={projectInfo} onNavigate={handleNavigate} />}
         </main>
       </div>
 

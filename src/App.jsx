@@ -751,40 +751,40 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             <div className="mb-3" style={{background:'#2C2825',borderRadius:18,padding:18}}>
               <style>{`
                 @keyframes breatheSlate {
-                  0%,100% { opacity:1; text-shadow:0 0 0px rgba(148,163,184,0); }
-                  50%      { opacity:0.45; text-shadow:0 0 24px rgba(148,163,184,0.5); }
+                  0%,100% { opacity:1; text-shadow:0 0 0px rgba(203,213,225,0); }
+                  50%      { opacity:0.55; text-shadow:0 0 24px rgba(203,213,225,0.5); }
                 }
                 .workers-breathe { animation: breatheSlate 3s ease-in-out infinite; }
               `}</style>
-              <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.3)',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:14}}>稼働日数 / WORKING DAYS</div>
+              <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:14}}>稼働日数 / WORKING DAYS</div>
               <div style={{display:'flex',alignItems:'flex-end',gap:18,marginBottom:16}}>
                 <div>
-                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:2}}>DAYS</div>
+                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:2}}>DAYS</div>
                   <span style={{fontSize:54,fontWeight:700,color:'#fff',lineHeight:1,fontVariantNumeric:'tabular-nums'}}>{animDays}</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.25)',marginLeft:3}}>日</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.5)',marginLeft:3}}>日</span>
                 </div>
-                <div style={{width:1,height:50,background:'rgba(255,255,255,0.07)',flexShrink:0,alignSelf:'flex-end',marginBottom:4}}/>
+                <div style={{width:1,height:50,background:'rgba(255,255,255,0.1)',flexShrink:0,alignSelf:'flex-end',marginBottom:4}}/>
                 <div>
-                  <div style={{fontSize:9,fontWeight:700,color:'#94A3B8',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:2}}>WORKERS</div>
-                  <span className="workers-breathe" style={{fontSize:42,fontWeight:700,color:'#94A3B8',lineHeight:1,fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.25)',marginLeft:3}}>人</span>
+                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:2}}>WORKERS</div>
+                  <span className="workers-breathe" style={{fontSize:42,fontWeight:700,color:'#CBD5E1',lineHeight:1,fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.5)',marginLeft:3}}>人</span>
                 </div>
               </div>
-              <div style={{display:'flex',gap:20,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+              <div style={{display:'flex',gap:20,paddingTop:12,borderTop:'1px solid rgba(255,255,255,0.08)'}}>
                 <div>
-                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.25)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>自社</p>
-                  <span style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.45)',fontVariantNumeric:'tabular-nums'}}>{totalInHouse}</span>
-                  <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',marginLeft:2}}>人</span>
+                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>自社</p>
+                  <span style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.7)',fontVariantNumeric:'tabular-nums'}}>{totalInHouse}</span>
+                  <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginLeft:2}}>人</span>
                 </div>
                 <div>
-                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.25)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>外注</p>
-                  <span style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.45)',fontVariantNumeric:'tabular-nums'}}>{totalOutsourcing}</span>
-                  <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',marginLeft:2}}>人</span>
+                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>外注</p>
+                  <span style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.7)',fontVariantNumeric:'tabular-nums'}}>{totalOutsourcing}</span>
+                  <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginLeft:2}}>人</span>
                 </div>
                 <div>
-                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.25)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>合計</p>
-                  <span style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.45)',fontVariantNumeric:'tabular-nums'}}>{totalWorkers}</span>
-                  <span style={{fontSize:11,color:'rgba(255,255,255,0.22)',marginLeft:2}}>人</span>
+                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>合計</p>
+                  <span style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.7)',fontVariantNumeric:'tabular-nums'}}>{totalWorkers}</span>
+                  <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginLeft:2}}>人</span>
                 </div>
               </div>
             </div>
@@ -1145,7 +1145,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                 </div>
                                 <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',gap:8,marginBottom:8}}>
                                   <div>
-                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'#2d3748'}}>(任意)</span></label>
+                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>使用日数 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
                                     <input type="number" value={days} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Days`]:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
                                   </div>
                                   <div>
@@ -1986,9 +1986,6 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
-      <div className="mb-4">
-        <Select label="作業区分" labelEn="Category" options={MASTER_DATA.workCategories} value={filterCategory} onChange={setFilterCategory} placeholder="全作業" />
-      </div>
       <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:16}}>全 {filteredReports.length}件</p>
       {months.map(month => {
         const monthReports = filteredReports.filter(r => r.date.startsWith(month)).sort((a,b) => new Date(b.date)-new Date(a.date));
@@ -2677,8 +2674,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
             <thead>
               <tr>
                 <th rowSpan="2" style={{ width: '30px' }}>日数</th><th rowSpan="2" style={{ width: '55px' }}>日付</th>
-                <th rowSpan="2" style={{ width: '20px' }}>曜</th><th rowSpan="2" style={{ width: '20px' }}>天候</th>
-                <th rowSpan="2" style={{ width: '25px' }}>区分</th><th rowSpan="2" style={{ minWidth: '120px' }}>施工内容</th>
+                <th rowSpan="2" style={{ width: '20px' }}>曜</th><th rowSpan="2" style={{ minWidth: '120px' }}>施工内容</th>
                 <th colSpan="2">作業時間</th><th colSpan="2">自社人工</th><th colSpan="2">外注人工</th>
                 <th colSpan="2">車両</th><th rowSpan="2" style={{ width: '50px' }}>重機</th><th colSpan="5">産廃・スクラップ</th>
               </tr>
@@ -2729,8 +2725,6 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             <td rowSpan={maxSubRows} className="text-center">{idx + 1}</td>
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDate(r.date)}</td>
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDay(r.date)}</td>
-                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{r.weather || ''}</td>
-                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{r.workDetails?.workCategory || ''}</td>
                             <td rowSpan={maxSubRows} className="text-[8px]" style={{ whiteSpace: 'normal', maxWidth: '120px' }}>{r.workDetails?.workContent || ''}</td>
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{startTimes[0] || '-'}</td>
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{endTimes[0] || '-'}</td>

@@ -744,22 +744,40 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         {selectedSite && (
           <>
             {/* 稼働日数・人工数カード */}
-            <div className="mb-3" style={{background:'#2C2825',borderRadius:18,padding:18,boxShadow:'0 4px 20px rgba(44,40,37,0.12)'}}>
-              <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.65)',letterSpacing:'.1em',fontFamily:'JetBrains Mono,monospace',marginBottom:10}}>稼働日数 / WORKING DAYS</div>
-              <div style={{display:'flex',alignItems:'baseline',gap:20,marginBottom:14}}>
-                <div><span style={{fontSize:48,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums',display:'inline-block',transition:'transform 0.1s ease',animation:'numPop 0.9s ease-out'}}>{animDays}</span><span style={{fontSize:14,color:'rgba(255,255,255,0.65)',marginLeft:4}}>日</span></div>
-                <div style={{width:1,height:36,background:'rgba(255,255,255,0.1)'}}/>
-                <div><div style={{fontSize:10,color:'rgba(255,255,255,0.55)',marginBottom:3,fontFamily:'JetBrains Mono,monospace',letterSpacing:'.06em'}}>累計人工</div><span style={{fontSize:36,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums',animation:'numPop 0.9s ease-out'}}>{animWorkers}</span><span style={{fontSize:14,color:'rgba(255,255,255,0.65)',marginLeft:4}}>人</span></div>
-              </div>
-              <style>{`@keyframes numPop { 0%{opacity:0;transform:translateY(6px) scale(0.92)} 60%{opacity:1;transform:translateY(-2px) scale(1.03)} 100%{opacity:1;transform:translateY(0) scale(1)} }`}</style>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                <div style={{background:'rgba(255,255,255,0.07)',borderRadius:10,padding:'10px 12px'}}>
-                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.65)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:4}}>自社人工</div>
-                  <div style={{fontSize:22,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{totalInHouse}<span style={{fontSize:12,color:'rgba(255,255,255,0.65)',marginLeft:2}}>人</span></div>
+            <div className="mb-3" style={{background:'#2C2825',borderRadius:18,padding:18}}>
+              <style>{`
+                @keyframes slideUpNum { from{opacity:0;transform:translateY(12px) scale(0.88)} to{opacity:1;transform:translateY(0) scale(1)} }
+                .num-slide { animation: slideUpNum 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+                .num-slide-d { animation: slideUpNum 0.8s cubic-bezier(0.22,1,0.36,1) 0.1s both; }
+              `}</style>
+              <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.1em',fontFamily:'JetBrains Mono,monospace',marginBottom:14}}>稼働日数 / WORKING DAYS</div>
+              <div style={{display:'flex',alignItems:'baseline',gap:20,marginBottom:18}}>
+                <div>
+                  <span key={animDays} className="num-slide" style={{fontSize:52,fontWeight:700,color:'#7EB8D4',fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animDays}</span>
+                  <span style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginLeft:4}}>日</span>
                 </div>
-                <div style={{background:'rgba(255,255,255,0.07)',borderRadius:10,padding:'10px 12px'}}>
-                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.65)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:4}}>外注人工</div>
-                  <div style={{fontSize:22,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{totalOutsourcing}<span style={{fontSize:12,color:'rgba(255,255,255,0.45)',marginLeft:2}}>人</span></div>
+                <div style={{width:1,height:44,background:'rgba(255,255,255,0.1)'}}/>
+                <div>
+                  <div style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:3,fontFamily:'JetBrains Mono,monospace',letterSpacing:'.06em'}}>累計人工</div>
+                  <span key={animWorkers} className="num-slide-d" style={{fontSize:38,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
+                  <span style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginLeft:4}}>人</span>
+                </div>
+              </div>
+              <div style={{display:'flex',gap:24,paddingTop:14,borderTop:'1px solid rgba(255,255,255,0.07)'}}>
+                <div>
+                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:4}}>自社</p>
+                  <span style={{fontSize:24,fontWeight:700,color:'#93C5FD',fontVariantNumeric:'tabular-nums'}}>{totalInHouse}</span>
+                  <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginLeft:2}}>人</span>
+                </div>
+                <div>
+                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:4}}>外注</p>
+                  <span style={{fontSize:24,fontWeight:700,color:'#C4B5FD',fontVariantNumeric:'tabular-nums'}}>{totalOutsourcing}</span>
+                  <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginLeft:2}}>人</span>
+                </div>
+                <div>
+                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:4}}>合計</p>
+                  <span style={{fontSize:24,fontWeight:700,color:'#fff',fontVariantNumeric:'tabular-nums'}}>{totalWorkers}</span>
+                  <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginLeft:2}}>人</span>
                 </div>
               </div>
             </div>

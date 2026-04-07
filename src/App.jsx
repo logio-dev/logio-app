@@ -2762,13 +2762,13 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
               {Array.from({ length: emptyRows }, (_, idx) => (
                 <tr key={`empty-${idx}`}>
                   <td className="text-center" style={{ height: '18px' }}>{displayReports.length + idx + 1}</td>
+                  <td></td><td></td><td></td><td></td><td></td><td></td>
                   <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                  <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                  <td></td><td></td><td></td><td></td><td></td>
+                  <td></td><td></td><td></td><td></td>
                 </tr>
               ))}
               <tr style={{ background: '#2D2D2D' }}>
-                <th colSpan="8" className="text-right" style={{ background: '#2D2D2D', color: 'var(--text3)' }}>計</th>
+                <th colSpan="6" className="text-right" style={{ background: '#2D2D2D', color: 'var(--text3)' }}>計</th>
                 <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalInHouseWorkers}人</td>
                 <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalInHouseCost)}</td>
                 <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalOutsourcingWorkers}人</td>

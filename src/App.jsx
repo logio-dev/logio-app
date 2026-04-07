@@ -2681,11 +2681,11 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
               </tr>
               <tr>
                 <th style={{ width: '35px' }}>開始</th><th style={{ width: '35px' }}>終了</th>
-                <th style={{ width: '72px' }}>氏名</th><th style={{ width: '52px' }}>金額</th>
-                <th style={{ width: '68px' }}>会社・人数</th><th style={{ width: '52px' }}>金額</th>
-                <th style={{ width: '35px' }}>車種</th><th style={{ width: '38px' }}>車番</th>
-                <th style={{ width: '58px' }}>発生材</th><th style={{ width: '38px' }}>数量</th>
-                <th style={{ width: '55px' }}>金額</th><th style={{ width: '62px' }}>搬出先</th><th style={{ width: '62px' }}>マニNo.</th>
+                <th style={{ width: '68px' }}>氏名</th><th style={{ width: '50px' }}>金額</th>
+                <th style={{ width: '65px' }}>会社・人数</th><th style={{ width: '50px' }}>金額</th>
+                <th style={{ width: '33px' }}>車種</th><th style={{ width: '36px' }}>車番</th>
+                <th style={{ width: '55px' }}>発生材</th><th style={{ width: '36px' }}>数量</th>
+                <th style={{ width: '52px' }}>金額</th><th style={{ width: '90px', textAlign:'right' }}>搬出先</th><th style={{ width: '90px', textAlign:'right' }}>マニNo.</th>
               </tr>
             </thead>
             <tbody>
@@ -2750,8 +2750,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             <td className="text-[8px]">{w?.material||''}</td>
                             <td className="text-right text-[8px]">{w?`${w.quantity}${w.unit}`:''}</td>
                             <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?`¥${formatCurrency(w.amount)}`:''}</td>
-                            <td className="text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?.disposalSite||''}</td>
-                            <td className="text-[8px]">{isScrap?'スクラップ':(w?.manifestNumber||'')}</td>
+                            <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?.disposalSite||''}</td>
+                            <td className="text-right text-[8px]">{isScrap?'スクラップ':(w?.manifestNumber||'')}</td>
                           </>);
                         })()}
                       </tr>

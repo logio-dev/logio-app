@@ -2569,7 +2569,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           .pdf-container { zoom: 0.85; }
         }
         @media screen and (max-width: 768px) {
-          .pdf-container { zoom: 0.28; transform-origin: top left; }
+          .pdf-container { zoom: 0.30; transform-origin: top left; }
           .pdf-scroll-wrapper { width: fit-content; }
         }
       `}</style>

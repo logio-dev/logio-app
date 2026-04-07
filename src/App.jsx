@@ -1726,7 +1726,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     entries[i]={...entries[i],count:newCount,amount:newAmount};
                     setWorkDetails({...workDetails,outsourcingLabor:entries});
                   }} style={{width:60,padding:'6px 8px',background:'rgba(34,211,238,0.15)',border:'1.5px solid rgba(34,211,238,0.4)',color:'#67E8F9',borderRadius:7,fontSize:18,fontWeight:700,textAlign:'center',outline:'none',fontFamily:'inherit'}}/>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>人　<span style={{color:shiftColor(o.shift)}}>{shiftLabel(o.shift)}</span></span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>人</span>
+                  {o.start && o.end && <span style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>{o.start} → {o.end}</span>}
+                  <span style={{color:shiftColor(o.shift),fontSize:11}}>{shiftLabel(o.shift)}</span>
                 </div>
               </div>
               <div style={{textAlign:'right',flexShrink:0}}>
@@ -1812,6 +1814,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
           {workDetails.machinery.length>0 && <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />}
 
+          {isEditMode && (
+            <button onClick={handleSave} disabled={isSaving}
+              style={{width:'100%',padding:'14px',background:'rgba(34,197,94,0.2)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:10,color:'#4ade80',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:8,fontFamily:'inherit'}}>
+              {isSaving ? '更新中...' : '✓ この内容で更新する'}
+            </button>
+          )}
           <BFooter onBack={()=>setCurrentStep(1)} onNext={()=>setCurrentStep(3)} nextLabel="次へ →" />
         </div>
       )}

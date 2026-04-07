@@ -1373,7 +1373,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, inHouseHalfDay: 12500, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
   // ★ dept追加
   const [wForm, setWForm] = useState({ name:'', start:'', end:'', shift:'daytime', dept:'k1' });
-  const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime' });
+  const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime', start:'', end:'' });
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
   const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'' });
@@ -1426,12 +1426,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const addOutsource = () => {
     const actualCompany = oForm.company.trim();
     if (!actualCompany||!oForm.count) return;
-    const amount = parseInt(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime);
-    setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,amount}]});
-    setOForm({company:'',count:'',shift:'daytime'});
+    const count = parseInt(oForm.count, 10) || 0;
+    const amount = count*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime);
+    setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,count,amount}]});
+    setOForm({company:'',count:'',shift:'daytime',start:'',end:''});
   };
   const addVehicle = () => {
-    if (!vForm.type||!vForm.number) return;
+    if (!vForm.type) return;
     setWorkDetails({...workDetails, vehicles:[...workDetails.vehicles,{...vForm,amount:VEHICLE_UNIT_PRICES[vForm.type]||0}]});
     setVForm({type:'',number:'',driver:''});
   };
@@ -1462,7 +1463,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     setExtForm({shift:'',count:1,price:'',isOverride:false});
   };
   const addWaste = () => {
-    if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price) return;
+    if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty) return;
     const qty=parseFloat(wasteForm.qty)||0, price=parseFloat(wasteForm.price)||0;
     const ENV_P={day:20000,night:30000}, EXT_P={day:22000,night:32000};
     let haishiAmount=0;
@@ -1482,9 +1483,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''});
   };
   const addScrap = () => {
-    if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price) return;
-    const qty=parseFloat(scrapForm.qty), price=parseFloat(scrapForm.price);
-    setScrapItems([...scrapItems,{type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:price,amount:-(qty*price)}]);
+    if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty) return;
+    const qty=parseFloat(scrapForm.qty), total=parseFloat(scrapForm.price)||0;
+    setScrapItems([...scrapItems,{type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total}]);
     setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});
   };
 
@@ -1725,7 +1726,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 </div>
                 <input type="text" value={oForm.company} onChange={e=>setOForm({...oForm,company:e.target.value})} placeholder="直接入力も可" style={inpTxt} />
               </div>
-              <div><label style={inpLbl}>人数</label><input type="number" min="1" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
+              <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
+            </div>
+            <div style={{...grid2, marginBottom:'10px'}}>
+              <div><label style={inpLbl}>開始時間</label><input type="time" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>終了時間</label><input type="time" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
             </div>
             <div style={{ marginBottom:'10px' }}><label style={inpLbl}>区分</label>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>
@@ -1756,7 +1761,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>車番</label><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} style={inpSel}><option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></div>
             </div>
             {vForm.type && <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>¥{formatCurrency(VEHICLE_UNIT_PRICES[vForm.type]||0)}</div>}
-            <AddBtn onClick={addVehicle} disabled={!vForm.type||!vForm.number} />
+            <AddBtn onClick={addVehicle} disabled={!vForm.type} />
           </div>
           {workDetails.vehicles.length>0 && <SubTotal label="車両" value={workDetails.vehicles.reduce((s,v)=>s+v.amount,0)} />}
 
@@ -1816,8 +1821,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCardGreen}>
             <div style={grid2}>
-              <div><label style={inpLbl}>種類</label><select value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.wasteTypes.map(t=><option key={t}>{t}</option>)}</select></div>
-              <div><label style={inpLbl}>処分先</label><select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} style={inpSel}><option value="">選択</option>{(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}</select></div>
+              <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder="木くず・廃プラ等" style={inpTxt} /></div>
+              <div>
+                <label style={inpLbl}>処分先</label>
+                <select value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} style={{...inpSel,marginBottom:5}}>
+                  <option value="">選択</option>
+                  {(projectInfo?.contractedDisposalSites||[]).map(s=><option key={s}>{s}</option>)}
+                  {(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i).map(s=><option key={s}>{s}</option>)}
+                </select>
+                <input type="text" value={wasteForm._customDisposal||''} onChange={e=>setWasteForm({...wasteForm,_customDisposal:e.target.value})}
+                  onKeyDown={e=>{if(e.key==='Enter'&&(wasteForm._customDisposal||'').trim()){setWasteForm({...wasteForm,disposal:wasteForm._customDisposal.trim(),_customDisposal:''});}}}
+                  placeholder="直接入力" style={{...inpTxt,marginBottom:0,fontSize:12}} />
+                {(wasteForm._customDisposal||'').trim() && (
+                  <button onClick={()=>setWasteForm({...wasteForm,disposal:wasteForm._customDisposal.trim(),_customDisposal:''})}
+                    style={{marginTop:4,padding:'4px 10px',background:'rgba(59,130,246,0.2)',border:'1px solid rgba(59,130,246,0.3)',color:'#60a5fa',borderRadius:6,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>＋ 決定</button>
+                )}
+              </div>
             </div>
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
@@ -1908,7 +1927,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
             )}
 
-            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.price||(wasteForm.haisha==='env'&&(!wasteForm.driver||!wasteForm.haishiShift))||(wasteForm.haisha==='ext'&&!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
+            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||(wasteForm.haisha==='env'&&(!wasteForm.driver||!wasteForm.haishiShift))||(wasteForm.haisha==='ext'&&!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
           </div>
           {wasteItems.length>0 && (
             <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0)} />
@@ -1950,14 +1969,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm({...scrapForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
               <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
-              <div><label style={inpLbl}>単価</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
+              <div><label style={inpLbl}>合計金額</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
-            {scrapForm.qty && scrapForm.price && (
+            {scrapForm.price && (
               <div style={{ textAlign:'right', fontSize:'12px', color:'#4ade80', fontWeight:'600', marginBottom:'8px' }}>
-                ¥{formatCurrency(parseFloat(scrapForm.qty||0)*parseFloat(scrapForm.price||0))}
+                ¥{formatCurrency(parseFloat(scrapForm.price||0))}
               </div>
             )}
-            <AddBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty||!scrapForm.price} />
+            <AddBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty} />
           </div>
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}
 
@@ -2722,8 +2741,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 const allWorkers = [ ...workers, ...envWorkerRows ];
                 const wasteAndScrap = normWasteRows;
                 const maxSubRows = Math.max(1, allWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, wasteAndScrap.length);
-                const startTimes = workers.map(w => w.start || w.startTime).filter(Boolean).sort();
-                const endTimes = workers.map(w => w.end || w.endTime).filter(Boolean).sort().reverse();
+                const allStartTimes = [...workers.map(w => w.start || w.startTime), ...outsourcing.map(o => o.start || o.startTime)].filter(Boolean).sort();
+                const allEndTimes = [...workers.map(w => w.end || w.endTime), ...outsourcing.map(o => o.end || o.endTime)].filter(Boolean).sort().reverse();
                 return (
                   <Fragment key={r.id}>
                     {Array.from({ length: maxSubRows }, (_, subIdx) => (
@@ -2734,8 +2753,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDate(r.date)}</td>
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDay(r.date)}</td>
                             <td rowSpan={maxSubRows} className="text-[8px]" style={{ whiteSpace: 'normal', maxWidth: '120px' }}>{r.workDetails?.workContent || ''}</td>
-                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{startTimes[0] || '-'}</td>
-                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{endTimes[0] || '-'}</td>
+                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{allStartTimes[0] || '-'}</td>
+                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{allEndTimes[0] || '-'}</td>
                           </>
                         )}
                         <td className="text-[8px]" style={allWorkers[subIdx]?.isEnv?{color:'rgba(255,255,255,0.65)'}:{}}>{allWorkers[subIdx]?.name||''}</td>
@@ -2964,7 +2983,7 @@ export default function LOGIOApp() {
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
-    } catch (error) { console.error(error); alert('❌ 保存に失敗しました'); }
+    } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + (error?.message || JSON.stringify(error))); }
   };
 
   // ★ 保存後にロック解放

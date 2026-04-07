@@ -790,14 +790,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
                       <div>
-                        <p style={{ fontSize:11, fontWeight:700, color:'#78716C', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
+                        <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
                         <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
-                          <span style={{ fontSize:'20px', fontWeight:700, color:'var(--text)', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
+                          <span style={{ fontSize:'20px', fontWeight:700, color:'#fff', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
                           <span style={{ fontSize:'10px', color:'var(--text3)' }}>{typeCount}種類</span>
                         </div>
                       </div>
                       <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink:0 }}>
-                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--border)" strokeWidth="8"/>
+                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8"/>
                         {donutSlices.map((s,i)=>(
                           <circle key={i} cx={CX} cy={CY} r={R} fill="none"
                             stroke={s.color} strokeWidth="8"
@@ -805,7 +805,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                             strokeDashoffset={-(s.offset-CIRC/4)}
                             transform={`rotate(-90 ${CX} ${CY})`}/>
                         ))}
-                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="var(--text)">{typeCount}種</text>
+                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="#fff">{typeCount}種</text>
                       </svg>
                     </div>
                     <GradChevron open={wasteOpen} size={16}/>
@@ -819,10 +819,10 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                           return (
                             <div key={name}>
                               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-                                <span style={{ fontSize:'12px', color:'var(--text)', fontWeight:'700' }}>{name}</span>
+                                <span style={{ fontSize:'12px', color:'#fff', fontWeight:'700' }}>{name}</span>
                                 <span style={{ fontSize:'11px', color:'var(--text)', fontWeight:'700' }}>¥{formatCurrency(val)}</span>
                               </div>
-                              <div style={{ height:'5px', background:'var(--bg3)', borderRadius:'3px' }}>
+                              <div style={{ height:'5px', background:'rgba(255,255,255,0.1)', borderRadius:'3px' }}>
                                 <div style={{ height:'5px', width:`${pct}%`, background:color, borderRadius:'3px', transition:'width 0.4s ease' }}/>
                               </div>
                             </div>
@@ -841,13 +841,13 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 <button onClick={()=>setReportsOpen(!reportsOpen)}
                   style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
                   <div>
-                    <p style={{fontSize:11,fontWeight:700,color:'#78716C',marginBottom:2,letterSpacing:'.04em'}}>日報一覧</p>
-                    <span style={{fontSize:20,fontWeight:800,color:'#1C1917'}}>{reports.length}件</span>
+                    <p style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.5)',marginBottom:2,letterSpacing:'.04em'}}>日報一覧</p>
+                    <span style={{fontSize:20,fontWeight:800,color:'#fff'}}>{reports.length}件</span>
                   </div>
                   <GradChevron open={reportsOpen} size={16}/>
                 </button>
                 {reportsOpen && (
-                  <div style={{borderTop:'1px solid #DCDCDC',padding:'12px 16px'}}>
+                  <div style={{borderTop:'1px solid rgba(255,255,255,0.1)',padding:'12px 16px'}}>
                     {reports.map((r,idx)=>{
                       const dayNames=['日','月','火','水','木','金','土'];
                       const dayName=r.date?dayNames[new Date(r.date).getDay()]:'';
@@ -1522,9 +1522,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;}`}</style>
 
       {/* ヘッダー */}
-      <div style={{ position:'sticky', top:0, zIndex:50, background:'rgba(0,0,0,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px 0' }}>
+      <div style={{ position:'sticky', top:0, zIndex:50, background:'#2D2D2D', backdropFilter:'blur(4px)', borderBottom:'none', padding:'12px 16px 0' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-          <span style={{ fontSize:'17px', fontWeight:700 }}>{isEditMode ? '日報を編集' : '日報入力'}</span>
+          <span style={{ fontSize:'17px', fontWeight:700, color:'#fff' }}>{isEditMode ? '日報を編集' : '日報入力'}</span>
           <button onClick={handleCancel}
             style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:8, background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', color:'#DC2626', cursor:'pointer', fontSize:12, fontWeight:700 }}>
             <X style={{width:13,height:13}}/> キャンセル
@@ -1911,7 +1911,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#F2F2F2'}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -2059,7 +2059,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             </div>
           )}
           {report.wasteItems?.length > 0 && (
-            <div className="mb-4 rounded p-2" style={{ background: 'var(--bg3)' }}>
+            <div className="mb-4 rounded p-2" style={{ background: '#2D2D2D' }}>
               <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0))}</p>
               {report.wasteItems.map((waste, idx) => (
                 <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
@@ -2082,7 +2082,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             </div>
           )}
           {report.scrapItems?.length > 0 && (
-            <div className="mb-4 rounded p-2" style={{ background: 'var(--bg3)' }}>
+            <div className="mb-4 rounded p-2" style={{ background: '#2D2D2D' }}>
               <p className="text-xs font-semibold text-green-400 mb-2">スクラップ: {report.scrapItems.length}件 / ¥{formatCurrency(Math.abs(report.scrapItems.reduce((s,sc)=>s+sc.amount,0)))}</p>
               {report.scrapItems.map((scrap, idx) => (
                 <p key={idx} className="text-sm text-gray-300 ml-3 mb-1">• {scrap.type} <span className="text-gray-500">{scrap.quantity}{scrap.unit}</span> - {scrap.buyer}</p>
@@ -2111,14 +2111,14 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
 function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-2xl mx-auto px-6 py-8" style={{background:'#F2F2F2',minHeight:'100vh'}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       {(selectedSite || projectInfo?.workType || projectInfo?.projectName) && (
-        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: '#2D2D2D', border:'none' }}>
           <div className="text-white text-lg font-bold leading-relaxed mb-2">{selectedSite || projectInfo?.workType || projectInfo?.projectName}</div>
           {projectInfo?.workType && selectedSite && <div className="text-gray-500 text-xs mb-1">{projectInfo.workType}</div>}
           {projectInfo?.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
@@ -2126,23 +2126,23 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
       )}
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold mb-4 text-blue-400">基本情報</h2>
+          <h2 style={{fontSize:18,fontWeight:700,color:'#93C5FD',marginBottom:16}}>基本情報</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[['発注者 / CLIENT', projectInfo.client], ['現場住所 / LOCATION', projectInfo.workLocation], ['営業担当 / SALES', projectInfo.salesPerson], ['現場責任者 / MANAGER', projectInfo.siteManager]].map(([label, val]) => (
-              <div key={label}><p className="text-xs text-gray-500 mb-1">{label}</p><p className="text-lg font-medium text-white">{val || '-'}</p></div>
+              <div key={label}><p style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{label}</p><p style={{fontSize:16,fontWeight:500,color:'#fff'}}>{val || '-'}</p></div>
             ))}
           </div>
         </div>
         <div>
-          <h2 className="text-xl font-semibold mb-4 text-blue-400">期間</h2>
+          <h2 style={{fontSize:18,fontWeight:700,color:'#93C5FD',marginBottom:16}}>期間</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[['開始日 / START DATE', projectInfo.startDate], ['終了日 / END DATE', projectInfo.endDate]].map(([label, val]) => (
-              <div key={label}><p className="text-xs text-gray-500 mb-1">{label}</p><p className="text-lg font-medium text-white">{val || '-'}</p></div>
+              <div key={label}><p style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{label}</p><p style={{fontSize:16,fontWeight:500,color:'#fff'}}>{val || '-'}</p></div>
             ))}
           </div>
         </div>
         <div>
-          <h2 className="text-xl font-semibold mb-4 text-blue-400">金額</h2>
+          <h2 style={{fontSize:18,fontWeight:700,color:'#93C5FD',marginBottom:16}}>金額</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               ['契約金額 / CONTRACT AMOUNT', projectInfo.contractAmount, 'text-white'],
@@ -2156,7 +2156,7 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
           </div>
         </div>
         <div>
-          <h2 className="text-xl font-semibold mb-4 text-blue-400">ステータス</h2>
+          <h2 style={{fontSize:18,fontWeight:700,color:'#93C5FD',marginBottom:16}}>ステータス</h2>
           <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
             projectInfo.status === '進行中' ? 'bg-green-900/30 text-green-400' :
             projectInfo.status === '完了' ? 'bg-blue-900/30 text-blue-400' : 'bg-transparent text-gray-400'
@@ -2215,47 +2215,47 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 bg-transparent min-h-screen" style={{paddingBottom:"calc(160px + env(safe-area-inset-bottom,0px))"}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       {(projectInfo?.workType || projectInfo?.projectName) && (
-        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: '#2D2D2D', border:'none' }}>
           <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.workType || projectInfo.projectName}</div>
           {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
       <div className="mb-4">
         <SectionHeader title="財務サマリー / Financial Summary" />
-        <div className="rounded-md p-5 space-y-3" style={{ background: 'var(--bg3)' }}>
+        <div className="rounded-md p-5 space-y-3" style={{ background: '#2D2D2D' }}>
           {[
             { label: '売上 / Revenue', value: totals.totalRevenue, color: 'text-white' },
             { label: '原価 / Cost', value: totals.accumulatedCost, color: 'text-red-400/80' },
             ...(totals.accumulatedScrap > 0 ? [{ label: 'スクラップ / Scrap', value: totals.accumulatedScrap, color: 'text-white' }] : []),
             { label: '粗利 / Profit', value: totals.grossProfit, color: totals.grossProfit >= 0 ? 'text-blue-400/90' : 'text-red-400/80', bold: true },
           ].map((row, i, arr) => (
-            <div key={i} className={`flex justify-between items-center py-2 ${i < arr.length - 1 ? 'border-b border-white/[0.06]' : ''}`}>
-              <span className="text-xs font-medium text-gray-400">{row.label}</span>
+            <div key={i} className={`flex justify-between items-center py-2 ${i < arr.length - 1 ? 'border-b border-white/10' : ''}`}>
+              <span style={{fontSize:11,fontWeight:500,color:'rgba(255,255,255,0.5)'}}>{row.label}</span>
               <span className={`${row.bold ? 'text-lg' : ''} font-semibold ${row.color} tabular-nums`}>¥{formatCurrency(row.value)}</span>
             </div>
           ))}
           <div className="flex justify-between items-center py-2">
-            <span className="text-xs font-medium text-gray-400">粗利率 / Margin</span>
+            <span style={{fontSize:11,fontWeight:500,color:'rgba(255,255,255,0.5)'}}>粗利率 / Margin</span>
             <div className="text-right">
               <span className="text-lg font-semibold text-white tabular-nums">{totals.grossProfitRateContract}%</span>
-              <span className="text-xs text-gray-500 ml-2">(込み: {totals.grossProfitRateWithScrap}%)</span>
+              <span style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginLeft:8}}>(込み: {totals.grossProfitRateWithScrap}%)</span>
             </div>
           </div>
         </div>
       </div>
-      <div className="mb-6 rounded-md p-5" style={{ background: 'var(--bg3)' }}>
+      <div className="mb-6 rounded-md p-5" style={{ background: '#2D2D2D' }}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1">原価率 / Cost Ratio</p>
+            <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:4}}>原価率 / Cost Ratio</p>
             <p className={`text-4xl font-semibold tabular-nums ${costRatioNum >= 85 ? 'text-red-400' : costRatioNum >= 70 ? 'text-yellow-400' : 'text-blue-400'}`}>{costRatio}%</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-gray-500 mb-2">目安</p>
+            <p style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginBottom:8}}>目安</p>
             <p className={`text-lg font-semibold ${costRatioNum >= 85 ? 'text-red-400' : costRatioNum >= 70 ? 'text-yellow-400' : 'text-blue-400'}`}>
               {costRatioNum >= 85 ? '要警戒' : costRatioNum >= 70 ? '注意' : '余裕あり'}
             </p>
@@ -2264,7 +2264,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       </div>
       <SectionHeader title="原価構成比 / Cost Structure" />
       {pieData.length > 0 ? (
-        <div className="rounded-md p-5 mb-6" style={{ background: 'var(--bg3)' }}>
+        <div className="rounded-md p-5 mb-6" style={{ background: '#2D2D2D' }}>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
@@ -2290,12 +2290,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
           </div>
         </div>
       ) : (
-        <div className="rounded-md p-8" style={{ background: 'var(--bg3)' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+        <div className="rounded-md p-8" style={{ background: '#2D2D2D' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
       )}
       <div className="mt-8">
         <SectionHeader title="月別原価推移 / Monthly Trend" />
         {barData.length > 0 ? (
-          <div className="rounded-md p-5" style={{ background: 'var(--bg3)' }}>
+          <div className="rounded-md p-5" style={{ background: '#2D2D2D' }}>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={barData} margin={{top:5, right:10, left:0, bottom:5}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -2307,7 +2307,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="rounded-md p-8" style={{ background: 'var(--bg3)' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+          <div className="rounded-md p-8" style={{ background: '#2D2D2D' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
         )}
       </div>
     </div>
@@ -2374,13 +2374,13 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 bg-transparent min-h-screen">
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
       <p className="text-gray-400 text-sm mb-8">解体作業日報をGoogle スプレッドシートに出力</p>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+      <div className="border rounded-lg p-6 mb-6" style={{ background: '#2D2D2D', border:'none' }}>
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         <div className="mb-4">
           <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>日報用 GAS URL <span className="text-red-500">*必須</span></label>
@@ -2394,7 +2394,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
           </button>
         </div>
       </div>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+      <div className="border rounded-lg p-6 mb-6" style={{ background: '#2D2D2D', border:'none' }}>
         <h2 className="text-xl font-semibold text-white mb-2">月報</h2>
         <p className="text-gray-400 text-sm mb-4">全現場の月報シートにこの現場の情報を反映します。</p>
         <button onClick={handleExportMonthlyReport} disabled={exporting || !gasUrl || !selectedSite}
@@ -2402,7 +2402,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
           <FileText className="w-5 h-5" />{exporting ? '更新中...' : '月報を更新'}
         </button>
       </div>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+      <div className="border rounded-lg p-6 mb-6" style={{ background: '#2D2D2D', border:'none' }}>
         <h2 className="text-xl font-semibold text-white mb-2">解体作業日報</h2>
         <p className="text-gray-400 text-sm mb-4">LOGIO仕様の解体作業日報をスプレッドシートに自動生成します</p>
         <button onClick={handleExportWorkReport} disabled={exporting || !gasUrl || !selectedSite}
@@ -2413,7 +2413,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
           <div className={`mt-4 p-3 rounded-lg text-sm whitespace-pre-line ${exportStatus.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-800' : exportStatus.startsWith('❌') ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-blue-900/30 text-blue-400 border border-blue-800'}`}>{exportStatus}</div>
         )}
       </div>
-      <div className="border rounded-lg p-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+      <div className="border rounded-lg p-6" style={{ background: '#2D2D2D', border:'none' }}>
         <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
         <div className="space-y-3 text-sm">
           {[['最終エクスポート', lastExport || '未実行'], ['現場', selectedSite || '未選択'], ['日報データ', `${reports.length}件`]].map(([label, val]) => (

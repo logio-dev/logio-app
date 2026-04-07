@@ -469,25 +469,29 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
     <>
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-transparent bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-transparent border-r border-gray-900">
+          <div className="fixed inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} />
+          <div className="relative flex-1 flex flex-col max-w-xs w-full border-r" style={{background:'#fff', borderColor:'#E8E8E8'}}>
             <div className="absolute top-0 right-0 -mr-12 pt-2">
               <button onClick={() => setSidebarOpen(false)} className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none">
-                <X className="h-6 w-6 text-white" />
+                <X className="h-6 w-6" style={{color:'#1C1917'}} />
               </button>
             </div>
             <div className="flex-1 h-0 overflow-y-auto" style={{ paddingTop:'calc(env(safe-area-inset-top, 0px) + 20px)', paddingBottom:'16px' }}>
               <div className="flex items-center flex-shrink-0 px-4 mb-8">
-                <LOGIOLogo size="sm" />
+                <span style={{fontSize:20,fontWeight:800,letterSpacing:'-0.02em',color:'#1C1917',fontFamily:'Inter,-apple-system,sans-serif'}}>LOGIO</span>
               </div>
               <nav className="px-2 space-y-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
+                  const isActive = currentPage === item.id;
                   return (
                     <button key={item.id} onClick={() => { onNavigate(item.id); setSidebarOpen(false); }}
-                      className={`w-full group flex items-center px-3 py-3 text-sm font-medium transition-colors min-h-[48px] ${
-                        currentPage === item.id ? 'text-white' : 'text-gray-500 hover:text-white'
-                      }`}>
+                      className="w-full group flex items-center px-3 py-3 text-sm font-medium transition-colors min-h-[48px] rounded-lg"
+                      style={{
+                        color: isActive ? '#1C1917' : '#999',
+                        background: isActive ? '#F4F4F4' : 'transparent',
+                        fontWeight: isActive ? 700 : 500,
+                      }}>
                       <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
                       {item.label}
                     </button>
@@ -495,9 +499,9 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
                 })}
               </nav>
             </div>
-            <div className="border-t border-white/[0.06]" style={{ padding:'16px', paddingBottom:'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
-              <button onClick={onLogout} className="w-full px-4 py-3 text-sm font-medium text-gray-300 hover:text-white transition-colors flex items-center gap-3 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', border: '1px solid var(--border)' }}>
+            <div className="border-t" style={{ borderColor:'#E8E8E8', padding:'16px', paddingBottom:'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
+              <button onClick={onLogout} className="w-full px-4 py-3 text-sm font-medium transition-colors flex items-center gap-3 rounded-lg"
+                style={{ background:'#F4F4F4', border:'none', color:'#666' }}>
                 <LogOut className="h-5 w-5" />
                 <span>ログアウト</span>
               </button>

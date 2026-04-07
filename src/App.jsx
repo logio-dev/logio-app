@@ -319,7 +319,7 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
 function Select({ label, labelEn, options, value, onChange, placeholder = "選択してください", required = false }) {
   return (
     <div className="mb-4">
-      <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">
+      <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>
         {label} / {labelEn} {required && <span className="text-red-500">*</span>}
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
@@ -347,7 +347,7 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
 
   return (
     <div className="mb-4 relative" ref={dropdownRef}>
-      <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">
+      <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>
         {label} / {labelEn}
       </label>
       <button type="button" onClick={() => setIsOpen(!isOpen)}
@@ -390,7 +390,7 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
 function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "text", required = false }) {
   return (
     <div className="mb-4">
-      <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">
+      <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>
         {label} / {labelEn} {required && <span className="text-red-500">*</span>}
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
@@ -545,14 +545,14 @@ function LoginPage({ onLogin }) {
             <LOGIOLogo size="md" />
             <p style={{fontSize:13, color:'var(--text3)', marginTop:8, fontFamily:'DM Sans,sans-serif'}}>現場管理をスマートに</p>
           </div>
-          <div style={{borderRadius:16, padding:24, background:'#EBEBEB', border:'none'}}>
+          <div style={{borderRadius:16, padding:24, background:'#2D2D2D', border:'none'}}>
             {[['ID', 'text', userId, setUserId], ['パスワード', 'password', password, setPassword]].map(([lbl, tp, val, setter]) => (
               <div key={lbl} style={{marginBottom:20}}>
                 <label style={{display:'block', fontSize:12, fontWeight:600, color:'var(--text2)', marginBottom:8}}>{lbl}</label>
                 <input type={tp} value={val} onChange={(e) => setter(e.target.value)}
                   onKeyDown={tp === 'password' ? (e) => e.key === 'Enter' && handleLogin() : undefined}
                   placeholder={`${lbl}を入力`}
-                  style={{width:'100%', padding:'12px 14px', background:'#EBEBEB', border:'none', color:'var(--text)', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
+                  style={{width:'100%', padding:'12px 14px', background:'#2D2D2D', border:'none', color:'var(--text)', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
                   onFocus={(e) => e.target.style.borderColor = '#78716C'}
                   onBlur={(e) => e.target.style.borderColor = 'var(--border)'} />
               </div>
@@ -563,7 +563,7 @@ function LoginPage({ onLogin }) {
               </div>
             )}
             <button onClick={handleLogin}
-              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background:'#1C1917', color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'background .15s'}}
+              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background:'#fff', color:'#1C1917', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'background .15s'}}
               onMouseEnter={e=>e.target.style.background='#44403C'}
               onMouseLeave={e=>e.target.style.background='#2C2825'}>
               ログイン
@@ -693,7 +693,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 </div>
               </div>
             ) : (
-              <span className="text-gray-500" style={{ fontSize: '14px' }}>現場を選択してください</span>
+              <span style={{ fontSize: '14px', color:'rgba(255,255,255,0.4)' }}>現場を選択してください</span>
             )}
             <GradChevron open={siteDropdownOpen} size={16}/>
           </button>
@@ -785,7 +785,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               });
 
               return (
-                <div className="overflow-hidden mb-4" style={{background:'#EBEBEB',border:'none',borderRadius:'16px'}}>
+                <div className="overflow-hidden mb-4" style={{background:'#2D2D2D',border:'none',borderRadius:'16px'}}>
                   <button onClick={()=>setWasteOpen(!wasteOpen)}
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
@@ -837,7 +837,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
             {/* 日報PDF全画面ボタン */}
             {reports && reports.length > 0 && (
-              <div className="mb-4" style={{background:'#EBEBEB',border:'none',borderRadius:'16px'}}>
+              <div className="mb-4" style={{background:'#2D2D2D',border:'none',borderRadius:'16px'}}>
                 <button onClick={()=>setReportsOpen(!reportsOpen)}
                   style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
                   <div>
@@ -959,7 +959,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
-          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'#EBEBEB', border:'none', color:'var(--text3)', fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:24 }}>
+          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'#2D2D2D', border:'none', color:'var(--text3)', fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:24 }}>
           <X className="w-4 h-4" />閉じる
         </button>
 
@@ -984,7 +984,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               style={{ width:'100%', padding:'12px 14px', background:'var(--bg)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box', maxWidth:'100%' }} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
               <button onClick={handleAddSite} style={{ padding:12, background:'#2563EB', border:'none', color:'var(--text)', borderRadius:9, fontSize:14, fontWeight:700, cursor:'pointer' }}>追加する</button>
-              <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'#EBEBEB', border:'none', color:'var(--text2)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
+              <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'#2D2D2D', border:'none', color:'var(--text2)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
             </div>
           </div>
         )}
@@ -993,7 +993,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         {sites.length > 0 && (
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
             <span style={{ fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.1em', whiteSpace:'nowrap' }}>登録済み現場</span>
-            <span style={{ fontSize:10, fontWeight:700, color:'var(--text3)', background:'#EBEBEB', border:'none', padding:'2px 8px', borderRadius:99 }}>{sites.length}件</span>
+            <span style={{ fontSize:10, fontWeight:700, color:'var(--text3)', background:'#2D2D2D', border:'none', padding:'2px 8px', borderRadius:99 }}>{sites.length}件</span>
             <div style={{ flex:1, height:1, background:'var(--bg3)' }}/>
           </div>
         )}
@@ -1021,7 +1021,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               borderRadius:12, marginBottom:8, overflow:'hidden',
               width:'100%', boxSizing:'border-box', minWidth:0,
               border: 'none',
-              background: '#EBEBEB',
+              background: '#2D2D2D',
               boxShadow: 'none',
             }}>
               {/* カードヘッダー */}
@@ -1070,7 +1070,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>
                       <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
-                      <div style={{ padding:'10px 12px', background:'#EBEBEB', border:'none', borderRadius:8, fontSize:14, color:'var(--text3)', boxSizing:'border-box', width:'100%' }}>
+                      <div style={{ padding:'10px 12px', background:'#2D2D2D', border:'none', borderRadius:8, fontSize:14, color:'var(--text3)', boxSizing:'border-box', width:'100%' }}>
                         {cardInfo.projectNumber || pjNo || '未採番'}　<span style={{ fontSize:10 }}>※ 自動採番（編集不可）</span>
                       </div>
                     </div>
@@ -1086,12 +1086,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
                             <input type="date" value={projectInfo.startDate||''} onChange={e=>setProjectInfo({...projectInfo,startDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'#EBEBEB', border:'none', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'#2D2D2D', border:'none', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
                           </div>
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期終了</label>
                             <input type="date" value={projectInfo.endDate||''} onChange={e=>setProjectInfo({...projectInfo,endDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'#EBEBEB', border:'none', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'#2D2D2D', border:'none', color:'var(--text)', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
                           </div>
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
@@ -1103,8 +1103,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           const SITE_QUICK=['道具代','パーキング代','資材費','消耗品'];
                           const SGA_QUICK=['営業交通費','ガソリン代','営業パーキング代','接待費'];
                           const renderItems=(items,delFn,color,bg,border)=>items.map((item,i)=>(
-                            <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'#EBEBEB',border:'none'}}>
-                              <div style={{width:34,height:34,borderRadius:8,background:'#E0E0E0',color:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
+                            <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(255,255,255,0.06)',border:'none'}}>
+                              <div style={{width:34,height:34,borderRadius:8,background:'rgba(255,255,255,0.1)',color:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
                                 <div style={{fontSize:10,color:'var(--text3)',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'—'}</div>
@@ -1117,7 +1117,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             const name=projectInfo[`_${key}Name`]||'', days=projectInfo[`_${key}Days`]||'', amt=projectInfo[`_${key}Amt`]||'';
                             const rgb=key==='out'?'59,130,246':key==='site'?'34,197,94':'245,158,11';
                             return (
-                              <div style={{padding:12,borderRadius:10,background:'#F0F0F0',border:'none',marginTop:8}}>
+                              <div style={{padding:12,borderRadius:10,background:'rgba(255,255,255,0.06)',border:'none',marginTop:8}}>
                                 <label style={{display:'block',fontSize:9,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
                                 <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Name`]:e.target.value})}
                                   placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'var(--bg3)',border:'1px solid var(--border)',color:'var(--text)',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
@@ -1205,7 +1205,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               const sel=(projectInfo.contractedDisposalSites||[]).includes(s);
                               return (
                                 <button key={s} onClick={()=>toggleDisposalSite(s)}
-                                  style={{ padding:'10px 12px', borderRadius:8, background:sel?'rgba(37,99,235,0.9)':'#F4F4F4', border:`1px solid ${sel?'rgba(59,130,246,0.5)':'#DCDCDC'}`, color:sel?'white':'#555', fontSize:13, fontWeight:sel?700:400, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:10 }}>
+                                  style={{ padding:'10px 12px', borderRadius:8, background:sel?'rgba(37,99,235,0.9)':'rgba(255,255,255,0.06)', border:`1px solid ${sel?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.1)'}`, color:sel?'white':'rgba(255,255,255,0.5)', fontSize:13, fontWeight:sel?700:400, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:10 }}>
                                   <div style={{ width:18, height:18, borderRadius:5, border:`2px solid ${sel?'white':'#4B5563'}`, background:sel?'white':'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                                     {sel && <Check className="w-3 h-3" style={{ color:'#2563EB' }} />}
                                   </div>
@@ -1428,7 +1428,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const mkCard = (accentColor) => ({
-    background: '#EBEBEB',
+    background: '#2D2D2D',
     border: 'none',
     borderRadius: '14px', padding: '16px', marginBottom: '12px', overflow: 'hidden'
   });
@@ -1437,15 +1437,15 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const inputCardAmber = mkCard('#f59e0b');
   const inputCardGreen = mkCard('#34d399');
   const inputCardRose  = mkCard('#f43f5e');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'#DCDCDC', border:'none', color:'#1C1917', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
-  const inpTxt = { width:'100%', padding:'12px 10px', background:'#DCDCDC', border:'none', color:'#1C1917', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
-  const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'var(--text2)', marginBottom:'6px', letterSpacing:'0.04em' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpTxt = { width:'100%', padding:'12px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'rgba(255,255,255,0.5)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
 
   // ★ ItemCard: アバターは常に1文字
   const ItemCard = ({ avatarBg, avatarColor, avatarText, name, meta, amount, amountColor, onDel }) => (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'#EBEBEB', border:'none', borderRadius:'12px', marginBottom:'8px' }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'12px', marginBottom:'8px' }}>
       <div style={{ display:'flex', alignItems:'center', gap:'10px', minWidth:0 }}>
         <div style={{ width:'34px', height:'34px', borderRadius:'9px', background:avatarBg, color:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700', flexShrink:0, fontFamily:'sans-serif' }}>{avatarText}</div>
         <div style={{ minWidth:0 }}>
@@ -1471,9 +1471,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       ].map(([v,label,color])=>(
         <button key={v} onClick={()=>onChange(v)} style={{
           padding:'9px 4px', borderRadius:'8px',
-          border:`1.5px solid ${value===v?color:'var(--border)'}`,
-          background: value===v?`${color}12`:'var(--bg2)',
-          color: value===v?color:'var(--text2)',
+          border:`1.5px solid ${value===v?color:'rgba(255,255,255,0.15)'}`,
+          background: value===v?`${color}25`:'rgba(255,255,255,0.06)',
+          color: value===v?color:'rgba(255,255,255,0.5)',
           fontSize:'12px', fontWeight:'700', cursor:'pointer', transition:'all 0.15s',
           textAlign:'center', whiteSpace:'nowrap'
         }}>{label}</button>
@@ -1483,34 +1483,34 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   // ★ 課タブ（人数表記なし）
   const DeptTabs = ({ value, onChange }) => (
-    <div style={{ display:'flex', gap:'4px', marginBottom:'10px', background:'#EBEBEB', borderRadius:'10px', padding:'4px', border:'none' }}>
+    <div style={{ display:'flex', gap:'4px', marginBottom:'10px', background:'rgba(255,255,255,0.08)', borderRadius:'10px', padding:'4px', border:'none' }}>
       {[['k1','工事1課'],['ek','環境課']].map(([d,label])=>(
         <button key={d} onClick={()=>onChange(d)}
           style={{
             flex:1, padding:'8px 4px', borderRadius:'7px', border:'none',
             fontFamily:'inherit', fontSize:'12px', fontWeight:'700',
             cursor:'pointer', transition:'all .15s', textAlign:'center',
-            background: value===d ? (d==='k1'?'rgba(37,99,235,0.1)':'rgba(22,163,74,0.1)') : 'transparent',
-            color: value===d ? (d==='k1'?'#1D4ED8':'#15803D') : 'var(--text2)'
+            background: value===d ? (d==='k1'?'rgba(59,130,246,0.25)':'rgba(34,197,94,0.25)') : 'transparent',
+            color: value===d ? (d==='k1'?'#93C5FD':'#6EE7B7') : 'rgba(255,255,255,0.4)'
           }}>{label}</button>
       ))}
     </div>
   );
 
   const AddBtn = ({ onClick, disabled }) => (
-    <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'#EBEBEB':'rgba(29,78,216,0.06)', border:`1px solid ${disabled?'var(--border)':'rgba(37,99,235,0.25)'}`, borderRadius:'10px', color: disabled?'var(--text3)':'#1D4ED8', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px' }}>＋ 追加する</button>
+    <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)':'rgba(59,130,246,0.2)', border:`1px solid ${disabled?'rgba(255,255,255,0.08)':'rgba(59,130,246,0.4)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)':'#93C5FD', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px' }}>＋ 追加する</button>
   );
 
   const SectionLabel = ({ ja, en }) => (
     <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'8px' }}>
-      <span style={{ fontSize:'10px', fontWeight:'700', color:'#1C1917', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'#888'}}>/ {en}</span></span>
+      <span style={{ fontSize:'10px', fontWeight:'700', color:'#fff', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'rgba(255,255,255,0.4)'}}>/ {en}</span></span>
       <span style={{ flex:1, height:'1px', background:'var(--border)' }} />
     </div>
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
     <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', zIndex:40 }}>
-      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#EBEBEB', border:'none', color:'#444', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
+      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'rgba(255,255,255,0.1)', border:'none', color:'rgba(255,255,255,0.7)', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
       <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'var(--bg3)': nextColor||'#2563eb', border:'none', color: disabled?'var(--text3)':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
   );
@@ -1570,7 +1570,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
                 {workContent_tags.filter(t=>!workDetails.workContent||t.includes(workDetails.workContent)).map(t=>(
                   <button key={t} onClick={()=>setWorkDetails({...workDetails,workContent:t})}
-                    style={{ fontSize:'11px', color: workDetails.workContent===t?'#1D4ED8':'var(--text2)', background: workDetails.workContent===t?'rgba(37,99,235,0.1)':'var(--bg3)', border:`1px solid ${workDetails.workContent===t?'#1D4ED8':'var(--border)'}`, padding:'5px 10px', borderRadius:'20px', cursor:'pointer', whiteSpace:'nowrap' }}>{t}</button>
+                    style={{ fontSize:'11px', color: workDetails.workContent===t?'#93C5FD':'rgba(255,255,255,0.5)', background: workDetails.workContent===t?'rgba(37,99,235,0.1)':'var(--bg3)', border:`1px solid ${workDetails.workContent===t?'#1D4ED8':'var(--border)'}`, padding:'5px 10px', borderRadius:'20px', cursor:'pointer', whiteSpace:'nowrap' }}>{t}</button>
                 ))}
               </div>
             </div>
@@ -1601,7 +1601,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
                 {(MASTER_DATA.inHouseWorkersByDept[currentDept==='k1'?'工事1課':'環境課']||[]).map(n=>(
                   <button key={n} onClick={()=>setWForm({...wForm,name:n})}
-                    style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${wForm.name===n?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.07)'}`,background:wForm.name===n?'rgba(59,130,246,0.15)':'rgba(255,255,255,0.02)',color:wForm.name===n?'#60a5fa':'#9CA3AF',fontSize:12,fontWeight:wForm.name===n?700:400,cursor:'pointer',fontFamily:'inherit'}}>
+                    style={{padding:'5px 10px',borderRadius:7,border:`1px solid ${wForm.name===n?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.1)'}`,background:wForm.name===n?'rgba(59,130,246,0.3)':'rgba(255,255,255,0.08)',color:wForm.name===n?'#93C5FD':'rgba(255,255,255,0.5)',fontSize:12,fontWeight:wForm.name===n?700:400,cursor:'pointer',fontFamily:'inherit'}}>
                     {n}
                   </button>
                 ))}
@@ -1642,7 +1642,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
                   {MASTER_DATA.outsourcingCompanies.map(c=>(
                     <button key={c} onClick={()=>setOForm({...oForm,company:c})}
-                      style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${oForm.company===c?'rgba(34,211,238,0.5)':'rgba(255,255,255,0.07)'}`,background:oForm.company===c?'rgba(34,211,238,0.15)':'rgba(255,255,255,0.02)',color:oForm.company===c?'#22d3ee':'#9CA3AF',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                      style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${oForm.company===c?'rgba(34,211,238,0.5)':'rgba(255,255,255,0.07)'}`,background:oForm.company===c?'rgba(34,211,238,0.25)':'rgba(255,255,255,0.08)',color:oForm.company===c?'#67E8F9':'rgba(255,255,255,0.5)',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                       {c}
                     </button>
                   ))}
@@ -2383,10 +2383,10 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
       <div className="border rounded-lg p-6 mb-6" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
         <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
         <div className="mb-4">
-          <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">日報用 GAS URL <span className="text-red-500">*必須</span></label>
+          <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>日報用 GAS URL <span className="text-red-500">*必須</span></label>
           <input type="text" value={gasUrl} onChange={(e) => setGasUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
             className="w-full px-4 py-3 bg-transparent border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-4" />
-          <label className="block text-[9px] font-medium text-gray-500 uppercase tracking-wider mb-1">月報用 GAS URL</label>
+          <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>月報用 GAS URL</label>
           <input type="text" value={gasMonthlyUrl} onChange={(e) => setGasMonthlyUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
             className="w-full px-4 py-3 bg-transparent border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-green-500 mb-4" />
           <button onClick={handleSaveSettings} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
@@ -2496,8 +2496,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         }
       `}</style>
       <div className="no-print bg-transparent border-b border-white/[0.06] p-4 flex items-center justify-between sticky top-0 z-50">
-        <button onClick={() => onNavigate('list')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#F4F4F4",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#555",cursor:"pointer"}}>
-          <ChevronLeft className="w-4 h-4" />日報一覧に戻る
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
+          <ChevronLeft className="w-4 h-4" />ホームに戻る
         </button>
         <div className="flex items-center gap-3">
           <span className="text-gray-500 text-xs">全{allReports.length}件の日報</span>
@@ -3180,7 +3180,7 @@ export default function LOGIOApp() {
                   <p style={{ fontSize:'16px', fontWeight:700, color:'var(--text)', marginBottom:'20px' }}>{selectedSite}</p>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'20px' }}>
                     {[['開始日', projectInfo?.startDate], ['終了日', projectInfo?.endDate]].map(([label, val]) => (
-                      <div key={label} style={{ background:'#EBEBEB', border:'none', borderRadius:'10px', padding:'14px' }}>
+                      <div key={label} style={{ background:'#2D2D2D', border:'none', borderRadius:'10px', padding:'14px' }}>
                         <p style={{ fontSize:'10px', color:'var(--text2)', marginBottom:'6px' }}>{label}</p>
                         <p style={{ fontSize:'15px', fontWeight:600, color:'var(--text)' }}>{val || '未設定'}</p>
                       </div>
@@ -3201,7 +3201,7 @@ export default function LOGIOApp() {
                 <p style={{ fontSize:'14px', color:'var(--text2)', textAlign:'center', padding:'20px 0' }}>現場を選択してください</p>
               )}
               <button onClick={() => setShowCalendarModal(false)}
-                style={{ width:'100%', padding:'14px', background:'#EBEBEB', border:'none', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer', marginTop:'8px' }}>
+                style={{ width:'100%', padding:'14px', background:'#2D2D2D', border:'none', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer', marginTop:'8px' }}>
                 閉じる
               </button>
             </div>
@@ -3247,7 +3247,7 @@ export default function LOGIOApp() {
                 </div>
               )}
               <button onClick={() => setShowNotificationModal(false)}
-                style={{ width:'100%', padding:'14px', background:'#EBEBEB', border:'none', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
+                style={{ width:'100%', padding:'14px', background:'#2D2D2D', border:'none', color:'var(--text2)', borderRadius:'10px', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
                 閉じる
               </button>
             </div>

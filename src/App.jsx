@@ -254,7 +254,7 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
   return (
     <header className="bg-transparent" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      borderBottom: '1px solid #E8E8E8',
       paddingTop: 'env(safe-area-inset-top, 0px)',
     }}>
       <style>{`@keyframes logio-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
@@ -671,7 +671,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#F2F2F2' }}>
+      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#fff' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -1521,22 +1521,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
-    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#2D2D2D', borderTop:'1px solid #3D3D3D', display:'flex', gap:'10px', zIndex:40 }}>
-      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'rgba(255,255,255,0.1)', border:'none', color:'rgba(255,255,255,0.7)', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
-      <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'var(--bg3)': nextColor||'#2563eb', border:'none', color: disabled?'var(--text3)':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
+    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', zIndex:40 }}>
+      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#F4F4F4', border:'none', color:'#666', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
+      <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'#E8E8E8': nextColor||'#2563eb', border:'none', color: disabled?'#999':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
   );
 
   const workContent_tags = ['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'];
 
   return (
-    <div style={{ background:'#1A1A1A', minHeight:'100vh', overflowX:'hidden' }}>
+    <div style={{ background:'#fff', minHeight:'100vh', overflowX:'hidden' }}>
       <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;}`}</style>
 
       {/* ヘッダー */}
-      <div style={{ position:'sticky', top:0, zIndex:50, background:'#2D2D2D', backdropFilter:'blur(4px)', borderBottom:'none', padding:'12px 16px 0' }}>
+      <div style={{ position:'sticky', top:0, zIndex:50, background:'#fff', backdropFilter:'blur(4px)', borderBottom:'1px solid #E8E8E8', padding:'12px 16px 0' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
-          <span style={{ fontSize:'17px', fontWeight:700, color:'#fff' }}>{isEditMode ? '日報を編集' : '日報入力'}</span>
+          <span style={{ fontSize:'17px', fontWeight:700, color:'#1C1917' }}>{isEditMode ? '日報を編集' : '日報入力'}</span>
           <button onClick={handleCancel}
             style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:8, background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', color:'#DC2626', cursor:'pointer', fontSize:12, fontWeight:700 }}>
             <X style={{width:13,height:13}}/> キャンセル
@@ -1547,7 +1547,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1A1A1A' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
@@ -1570,7 +1570,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1A1A1A' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -1721,7 +1721,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1A1A1A' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff' }}>
           <p style={{ fontSize:'12px', color:'var(--text3)', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 */}

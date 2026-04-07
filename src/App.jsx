@@ -1611,13 +1611,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
               <label style={{ display:'block', fontSize:'11px', color:'rgba(255,255,255,0.5)', marginBottom:'8px', fontWeight:700, letterSpacing:'0.04em' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}
-                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box' }} />
+                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box', width:'100%', display:'block', WebkitAppearance:'none', textAlign:'left' }} />
             </div>
 
             <div>
@@ -1634,7 +1634,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -1785,7 +1785,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.45)', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 */}
@@ -2567,9 +2567,6 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           .no-print { display: none !important; }
           @page { size: A3 landscape; margin: 6mm; }
           .pdf-container { zoom: 0.85; }
-        }
-        @media screen and (max-width: 768px) {
-          .pdf-container { zoom: 0.55; }
         }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>

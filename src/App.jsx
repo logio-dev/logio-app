@@ -2560,7 +2560,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         .result-table td { color: #F3F4F6; text-align: right; background: #1A1A1A; font-variant-numeric: tabular-nums; }
         @media print {
           .no-print { display: none !important; }
-          @page { size: A3 landscape; margin: 8mm; }
+          @page { size: A3 landscape; margin: 6mm; }
+          .pdf-container { zoom: 0.85; }
         }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>
@@ -2577,13 +2578,13 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         </div>
       </div>
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#1A1A1A' }}>
-      <div className="pdf-container p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto', background:'#1A1A1A' }}>
-        <div style={{ width: '1100px' }}>
+      <div className="pdf-container p-6" style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#1A1A1A' }}>
+        <div style={{ width: '1200px' }}>
           <div className="text-center mb-3">
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
             <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
           </div>
-          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '320px 240px 240px 1fr' }}>
+          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '300px 200px 240px 1fr' }}>
             <table className="pdf-header-table">
               <tbody>
                 {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName || report.site_name || ''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
@@ -2670,21 +2671,21 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
               </table>
             </div>
           </div>
-          <table className="pdf-table">
+          <table className="pdf-table" style={{ width:'1152px' }}>
             <thead>
               <tr>
-                <th rowSpan="2" style={{ width: '30px' }}>日数</th><th rowSpan="2" style={{ width: '55px' }}>日付</th>
-                <th rowSpan="2" style={{ width: '20px' }}>曜</th><th rowSpan="2" style={{ minWidth: '120px' }}>施工内容</th>
+                <th rowSpan="2" style={{ width: '28px' }}>日数</th><th rowSpan="2" style={{ width: '52px' }}>日付</th>
+                <th rowSpan="2" style={{ width: '18px' }}>曜</th><th rowSpan="2" style={{ minWidth: '150px' }}>施工内容</th>
                 <th colSpan="2">作業時間</th><th colSpan="2">自社人工</th><th colSpan="2">外注人工</th>
                 <th colSpan="2">車両</th><th rowSpan="2" style={{ width: '50px' }}>重機</th><th colSpan="5">産廃・スクラップ</th>
               </tr>
               <tr>
                 <th style={{ width: '35px' }}>開始</th><th style={{ width: '35px' }}>終了</th>
-                <th style={{ width: '70px' }}>氏名</th><th style={{ width: '50px' }}>金額</th>
-                <th style={{ width: '65px' }}>会社・人数</th><th style={{ width: '50px' }}>金額</th>
-                <th style={{ width: '35px' }}>車種</th><th style={{ width: '35px' }}>車番</th>
-                <th style={{ width: '55px' }}>発生材</th><th style={{ width: '35px' }}>数量</th>
-                <th style={{ width: '50px' }}>金額</th><th style={{ width: '55px' }}>搬出先</th><th style={{ width: '55px' }}>マニNo.</th>
+                <th style={{ width: '72px' }}>氏名</th><th style={{ width: '52px' }}>金額</th>
+                <th style={{ width: '68px' }}>会社・人数</th><th style={{ width: '52px' }}>金額</th>
+                <th style={{ width: '35px' }}>車種</th><th style={{ width: '38px' }}>車番</th>
+                <th style={{ width: '58px' }}>発生材</th><th style={{ width: '38px' }}>数量</th>
+                <th style={{ width: '55px' }}>金額</th><th style={{ width: '62px' }}>搬出先</th><th style={{ width: '62px' }}>マニNo.</th>
               </tr>
             </thead>
             <tbody>

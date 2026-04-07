@@ -636,25 +636,25 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
         :root {
-          --bg:      #1A1A1A;
-          --bg2:     #1A1A1A;
-          --bg3:     #2D2D2D;
-          --border:  #3D3D3D;
-          --text:    #FFFFFF;
-          --text2:   #AAAAAA;
-          --text3:   #666666;
+          --bg:      #FFFFFF;
+          --bg2:     #FFFFFF;
+          --bg3:     #F4F4F4;
+          --border:  #E8E8E8;
+          --text:    #1C1917;
+          --text2:   #666666;
+          --text3:   #999999;
           --main:    #2D2D2D;
           --main2:   #3D3D3D;
-          --accent:  #3D3D3D;
+          --accent:  #2D2D2D;
         }
-        html, body { background: #1A1A1A !important; }
+        html, body { background: #fff !important; }
         *, *::before, *::after { box-sizing: border-box; }
         * { font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
         input, select, textarea { font-size: 16px !important; max-width: 100%; width: 100%; box-sizing: border-box; }
         .finance-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
         .finance-detail.open { grid-template-rows: 1fr; }
         .finance-detail > div { overflow: hidden; }
-        .logio-progress-track { background: #3D3D3D; border-radius: 999px; overflow: hidden; }
+        .logio-progress-track { background: #EBEBEB; border-radius: 999px; overflow: hidden; }
         .logio-progress-bar { border-radius: 999px; transition: width 0.8s ease; }
         .logio-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; animation: logiopulse 2s ease infinite; flex-shrink: 0; }
         @keyframes logiopulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
@@ -671,7 +671,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#1A1A1A' }}>
+      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#F2F2F2' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -700,18 +700,18 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           )}
           {siteDropdownOpen && (
             <div className="absolute left-0 right-0 z-50 mt-1 rounded-xl shadow-xl overflow-hidden"
-              style={{ background: '#2D2D2D', border: '1px solid #3D3D3D' }}>
+              style={{ background: '#fff', border: '1px solid #E8E8E8' }}>
               {sites.length === 0 ? (
-                <div className="px-4 py-3 text-sm" style={{color:'rgba(255,255,255,0.4)'}}>現場が登録されていません</div>
+                <div className="px-4 py-3 text-sm text-gray-500">現場が登録されていません</div>
               ) : sites.map(site => (
                 <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); }}
                   className="w-full px-4 py-3 text-left flex items-center justify-between transition-colors"
-                  style={{ borderBottom: '1px solid #3D3D3D' }}
-                  onMouseEnter={e => e.currentTarget.style.background='#3D3D3D'}
+                  style={{ borderBottom: '1px solid #F0F0F0' }}
+                  onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
                   onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight:600, color:'#fff' }}>{site.name}</p>
-                    {site.projectNumber && <p style={{ fontSize: '11px', color:'rgba(255,255,255,0.4)', marginTop:2 }}>{site.projectNumber}</p>}
+                    <p style={{ fontSize: '14px', fontWeight:600, color:'#1C1917' }}>{site.name}</p>
+                    {site.projectNumber && <p style={{ fontSize: '11px', color:'#999', marginTop:2 }}>{site.projectNumber}</p>}
                   </div>
                   {selectedSite === site.name && <Check className="w-4 h-4 text-blue-500" />}
                 </button>
@@ -835,44 +835,56 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               );
             })()}
 
-            {/* 日報PDF全画面ボタン */}
+            {/* 日報タイムラインカード */}
             {reports && reports.length > 0 && (
               <div className="mb-4" style={{background:'#2D2D2D',border:'none',borderRadius:'16px'}}>
                 <button onClick={()=>setReportsOpen(!reportsOpen)}
                   style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
-                  <div>
-                    <p style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.5)',marginBottom:2,letterSpacing:'.04em'}}>日報一覧</p>
-                    <span style={{fontSize:20,fontWeight:800,color:'#fff'}}>{reports.length}件</span>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <p style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.1em'}}>日報 / REPORTS</p>
+                    <span style={{fontSize:10,color:'rgba(255,255,255,0.5)',background:'rgba(255,255,255,0.1)',padding:'2px 8px',borderRadius:8,fontWeight:700}}>{reports.length}件</span>
                   </div>
                   <GradChevron open={reportsOpen} size={16}/>
                 </button>
                 {reportsOpen && (
-                  <div style={{borderTop:'1px solid rgba(255,255,255,0.1)',padding:'12px 16px'}}>
-                    {reports.map((r,idx)=>{
+                  <div style={{borderTop:'1px solid rgba(255,255,255,0.08)',padding:'12px 16px 16px'}}>
+                    {[...reports].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((r,idx,arr)=>{
                       const dayNames=['日','月','火','水','木','金','土'];
                       const dayName=r.date?dayNames[new Date(r.date).getDay()]:'';
+                      const mo=r.date?parseInt(r.date.split('-')[1]):'';
+                      const da=r.date?parseInt(r.date.split('-')[2]):'';
                       const totalCost=(r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0)+(r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0)+(r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0)+(r.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0);
+                      const isFirst=idx===0;
+                      const isLast=idx===arr.length-1;
+                      const inHouseCount=r.workDetails?.inHouseWorkers?.length||0;
+                      const outsourceCount=r.workDetails?.outsourcingLabor?.length||0;
+                      const wasteCount=r.wasteItems?.length||0;
                       return (
-                        <button key={r.id} onClick={()=>onViewPdf&&onViewPdf(r)}
-                          style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'10px 12px',background:'#3D3D3D',border:'none',borderRadius:12,marginBottom:8,cursor:'pointer',textAlign:'left'}}>
-                          <div style={{width:42,flexShrink:0,textAlign:'center',padding:'6px 4px',background:'rgba(255,255,255,0.08)',borderRadius:9}}>
-                            <div style={{fontSize:8,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.04em'}}>{r.date?r.date.split('-')[1]+'月':''}</div>
-                            <div style={{fontSize:20,fontWeight:900,color:'#fff',lineHeight:1}}>{r.date?parseInt(r.date.split('-')[2]):''}</div>
-                            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.4)'}}>{dayName}</div>
+                        <div key={r.id} style={{display:'flex',gap:12,alignItems:'stretch'}}>
+                          {/* タイムラインライン */}
+                          <div style={{display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0,paddingTop:4}}>
+                            <div style={{width:10,height:10,borderRadius:'50%',background:isFirst?'#22C55E':'rgba(255,255,255,0.2)',flexShrink:0,boxShadow:isFirst?'0 0 0 3px rgba(34,197,94,0.2)':'none'}}/>
+                            {!isLast&&<div style={{width:1,flex:1,background:'rgba(255,255,255,0.08)',marginTop:4}}/>}
                           </div>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.workDetails?.workContent||'作業内容未入力'}</div>
-                            <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
-                              {(r.workDetails?.inHouseWorkers?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'rgba(59,130,246,0.2)',color:'#93C5FD',fontSize:10,fontWeight:700}}>{r.workDetails.inHouseWorkers.length}名</span>}
-                              {(r.workDetails?.outsourcingLabor?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'rgba(34,197,94,0.15)',color:'#6EE7B7',fontSize:10,fontWeight:700}}>外注{r.workDetails.outsourcingLabor.length}社</span>}
-                              {(r.wasteItems?.length||0)>0&&<span style={{padding:'2px 7px',borderRadius:5,background:'rgba(245,158,11,0.15)',color:'#FCD34D',fontSize:10,fontWeight:700}}>産廃{r.wasteItems.length}件</span>}
+                          {/* コンテンツ */}
+                          <button onClick={()=>onViewPdf&&onViewPdf(r)}
+                            style={{flex:1,display:'flex',justifyContent:'space-between',alignItems:'flex-start',background:'none',border:'none',cursor:'pointer',textAlign:'left',paddingBottom:isLast?0:14,paddingTop:0,paddingLeft:0,paddingRight:0}}>
+                            <div style={{minWidth:0,flex:1}}>
+                              <p style={{fontSize:13,fontWeight:600,color:isFirst?'#fff':'rgba(255,255,255,0.65)',marginBottom:5,lineHeight:1.3}}>
+                                {mo}/{da}（{dayName}）{r.workDetails?.workContent||'作業内容未入力'}
+                              </p>
+                              <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                                {inHouseCount>0&&<span style={{fontSize:10,color:'#93C5FD',background:'rgba(59,130,246,0.15)',padding:'2px 7px',borderRadius:4,fontWeight:600}}>自社{inHouseCount}名</span>}
+                                {outsourceCount>0&&<span style={{fontSize:10,color:'#6EE7B7',background:'rgba(34,197,94,0.12)',padding:'2px 7px',borderRadius:4,fontWeight:600}}>外注{outsourceCount}社</span>}
+                                {wasteCount>0&&<span style={{fontSize:10,color:'#FCD34D',background:'rgba(245,158,11,0.12)',padding:'2px 7px',borderRadius:4,fontWeight:600}}>産廃{wasteCount}件</span>}
+                              </div>
                             </div>
-                          </div>
-                          <div style={{flexShrink:0,textAlign:'right'}}>
-                            <div style={{fontSize:13,fontWeight:700,color:'#B45309',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(totalCost)}</div>
-                            <div style={{fontSize:10,color:'#60A5FA',marginTop:2,fontWeight:600}}>PDF表示 →</div>
-                          </div>
-                        </button>
+                            <div style={{flexShrink:0,textAlign:'right',marginLeft:10}}>
+                              {totalCost>0&&<p style={{fontSize:12,fontWeight:600,color:'#FCD34D',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(totalCost)}</p>}
+                              <p style={{fontSize:10,color:'rgba(99,179,237,0.8)',marginTop:2}}>PDF →</p>
+                            </div>
+                          </button>
+                        </div>
                       );
                     })}
                   </div>

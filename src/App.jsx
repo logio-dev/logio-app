@@ -3262,7 +3262,9 @@ export default function LOGIOApp() {
               </button>
             </div>
           </div>
-        )}
+        );
+      })()}
+
       {/* 現場検索モーダル */}
       {showSearchModal && (
         <div className="fixed inset-0 flex items-end justify-center z-50" onClick={() => { setShowSearchModal(false); setSearchQuery(''); }} style={{ backdropFilter:'blur(4px)', background:'rgba(0,0,0,0.3)' }}>

@@ -864,60 +864,39 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               );
             })()}
 
-            {/* 日報タイムラインカード */}
-            {reports && reports.length > 0 && (
-              <div className="mb-4" style={{background:'#F4F4F4',border:'none',borderRadius:'16px'}}>
-                <button onClick={()=>setReportsOpen(!reportsOpen)}
-                  style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
-                  <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <p style={{fontSize:10,fontWeight:700,color:'#555',letterSpacing:'.1em'}}>日報 / REPORTS</p>
-                    <span style={{fontSize:10,color:'#666',background:'rgba(0,0,0,0.08)',padding:'2px 8px',borderRadius:8,fontWeight:700}}>{reports.length}件</span>
+            {/* 解体作業日報カード */}
+            {reports && reports.length > 0 && (() => {
+              const latest = [...reports].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+              const latestDate = latest?.date || '';
+              const mo = latestDate ? parseInt(latestDate.split('-')[1]) : '';
+              const da = latestDate ? parseInt(latestDate.split('-')[2]) : '';
+              const dayNames = ['日','月','火','水','木','金','土'];
+              const dayName = latestDate ? dayNames[new Date(latestDate).getDay()] : '';
+              return (
+                <div className="mb-4" style={{background:'#F4F4F4',borderRadius:14,padding:'14px 16px'}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                    <div>
+                      <p style={{fontSize:9,fontWeight:700,color:'#999',letterSpacing:'.1em',marginBottom:5}}>REPORT</p>
+                      <p style={{fontSize:15,fontWeight:800,color:'#1C1917',marginBottom:5}}>解体作業日報</p>
+                      <div style={{display:'flex',gap:6}}>
+                        <span style={{fontSize:10,fontWeight:700,color:'#555',background:'rgba(0,0,0,0.07)',padding:'2px 8px',borderRadius:20}}>{reports.length}件</span>
+                        {latestDate && <span style={{fontSize:10,fontWeight:700,color:'#16A34A',background:'rgba(34,197,94,0.12)',padding:'2px 8px',borderRadius:20}}>最新 {mo}/{da}（{dayName}）</span>}
+                      </div>
+                    </div>
+                    <button onClick={()=>onViewPdf&&onViewPdf(latest)}
+                      style={{display:'flex',alignItems:'center',gap:7,padding:'10px 16px',background:'#1A1A1A',border:'none',borderRadius:10,cursor:'pointer',flexShrink:0}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                      <span style={{fontSize:12,fontWeight:700,color:'#fff'}}>PDF</span>
+                    </button>
                   </div>
-                  <GradChevron open={reportsOpen} size={16}/>
-                </button>
-                {reportsOpen && (
-                  <div style={{borderTop:'1px solid rgba(0,0,0,0.06)',padding:'12px 16px 16px'}}>
-                    {[...reports].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((r,idx,arr)=>{
-                      const dayNames=['日','月','火','水','木','金','土'];
-                      const dayName=r.date?dayNames[new Date(r.date).getDay()]:'';
-                      const mo=r.date?parseInt(r.date.split('-')[1]):'';
-                      const da=r.date?parseInt(r.date.split('-')[2]):'';
-                      const totalCost=(r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0)+(r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0)+(r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0)+(r.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0);
-                      const isFirst=idx===0;
-                      const isLast=idx===arr.length-1;
-                      const inHouseCount=r.workDetails?.inHouseWorkers?.length||0;
-                      const outsourceCount=r.workDetails?.outsourcingLabor?.length||0;
-                      const wasteCount=r.wasteItems?.length||0;
-                      return (
-                        <div key={r.id} style={{display:'flex',gap:12,alignItems:'stretch'}}>
-                          <div style={{display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0,paddingTop:4}}>
-                            <div style={{width:10,height:10,borderRadius:'50%',background:isFirst?'#22C55E':'rgba(0,0,0,0.2)',flexShrink:0,boxShadow:isFirst?'0 0 0 3px rgba(34,197,94,0.2)':'none'}}/>
-                            {!isLast&&<div style={{width:1,flex:1,background:'rgba(0,0,0,0.1)',marginTop:4}}/>}
-                          </div>
-                          <button onClick={()=>onViewPdf&&onViewPdf(r)}
-                            style={{flex:1,display:'flex',justifyContent:'space-between',alignItems:'flex-start',background:'none',border:'none',cursor:'pointer',textAlign:'left',paddingBottom:isLast?0:14,paddingTop:0,paddingLeft:0,paddingRight:0}}>
-                            <div style={{minWidth:0,flex:1}}>
-                              <p style={{fontSize:13,fontWeight:600,color:isFirst?'#1C1917':'#444',marginBottom:5,lineHeight:1.3}}>
-                                {mo}/{da}（{dayName}）{r.workDetails?.workContent||'作業内容未入力'}
-                              </p>
-                              <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
-                                {inHouseCount>0&&<span style={{fontSize:10,color:'#1D4ED8',background:'#EFF6FF',padding:'2px 7px',borderRadius:4,fontWeight:600}}>自社{inHouseCount}名</span>}
-                                {outsourceCount>0&&<span style={{fontSize:10,color:'#065F46',background:'#ECFDF5',padding:'2px 7px',borderRadius:4,fontWeight:600}}>外注{outsourceCount}社</span>}
-                                {wasteCount>0&&<span style={{fontSize:10,color:'#92400E',background:'#FEF3C7',padding:'2px 7px',borderRadius:4,fontWeight:600}}>産廃{wasteCount}件</span>}
-                              </div>
-                            </div>
-                            <div style={{flexShrink:0,textAlign:'right',marginLeft:10}}>
-                              {totalCost>0&&<p style={{fontSize:12,fontWeight:600,color:'#B45309',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(totalCost)}</p>}
-                              <p style={{fontSize:10,color:'#3B82F6',marginTop:2}}>PDF →</p>
-                            </div>
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </>
         )}
 

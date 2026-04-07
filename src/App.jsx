@@ -921,7 +921,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
-  const [openCard, setOpenCard] = useState(selectedSite || null);
+  const [openCard, setOpenCard] = useState(null);
   const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
   const [editingName, setEditingName] = useState(null); // 編集中のsite.name
   const [editNameVal, setEditNameVal] = useState('');
@@ -2568,6 +2568,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           @page { size: A3 landscape; margin: 6mm; }
           .pdf-container { zoom: 0.85; }
         }
+        @media screen and (max-width: 768px) {
+          .pdf-container { zoom: 0.28; transform-origin: top left; }
+          .pdf-scroll-wrapper { width: fit-content; }
+        }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', gap:8, flexWrap:'wrap' }}>
@@ -2582,7 +2586,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           </div>
         </div>
       </div>
-      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#1A1A1A' }}>
+      <div className="pdf-scroll-wrapper" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#1A1A1A' }}>
       <div className="pdf-container p-6" style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#1A1A1A' }}>
         <div style={{ width: '1200px' }}>
           <div className="text-center mb-3">

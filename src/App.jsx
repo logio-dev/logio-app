@@ -1229,7 +1229,24 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         })()}
                                                                         <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status||''} onChange={v=>setProjectInfo({...projectInfo,status:v})} />
                         <TextInput label="排出事業者" labelEn="Discharger" value={projectInfo.discharger||''} onChange={v=>setProjectInfo({...projectInfo,discharger:v})} placeholder="株式会社LOGIO" />
-                        <TextInput label="運搬会社" labelEn="Transport" value={projectInfo.transportCompany||''} onChange={v=>setProjectInfo({...projectInfo,transportCompany:v})} placeholder="〇〇運送株式会社" />
+                        {/* 運搬会社 クイック選択 */}
+                        <div style={{marginBottom:16}}>
+                          <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>運搬会社 / Transport</label>
+                          <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:8}}>
+                            {['自社運搬','奈良商事','ワイエムエコフューチャー'].map(c=>{
+                              const sel=(projectInfo.transportCompany||'')===c;
+                              return (
+                                <button key={c} onClick={()=>setProjectInfo({...projectInfo,transportCompany:sel?'':c})}
+                                  style={{padding:'6px 12px',borderRadius:8,border:`1px solid ${sel?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.1)'}`,background:sel?'rgba(59,130,246,0.25)':'rgba(255,255,255,0.06)',color:sel?'#93C5FD':'rgba(255,255,255,0.55)',fontSize:12,fontWeight:sel?700:500,cursor:'pointer',fontFamily:'inherit'}}>
+                                  {c}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <input type="text" value={projectInfo.transportCompany||''} onChange={e=>setProjectInfo({...projectInfo,transportCompany:e.target.value})}
+                            placeholder="その他の運搬会社を入力"
+                            style={{width:'100%',padding:'10px 12px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:9,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}} />
+                        </div>
                         <div style={{ marginBottom:16 }}>
                           <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:8 }}>契約処分先 / Disposal Sites</label>
                           <div style={{ borderRadius:10, padding:12, border:'none', background:'rgba(255,255,255,0.08)', maxHeight:240, overflowY:'auto', display:'flex', flexDirection:'column', gap:6 }}>
@@ -1260,6 +1277,65 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           </div>
                           {(projectInfo.contractedDisposalSites||[]).length>0 && <p style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:6 }}>選択済み: {projectInfo.contractedDisposalSites.length}件</p>}
                         </div>
+
+                        {/* マニフェスト発行枚数 */}
+                        {(projectInfo.contractedDisposalSites||[]).length > 0 && (
+                          <div style={{marginBottom:16}}>
+                            <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>マニフェスト発行枚数 / Manifest</label>
+                            <div style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}>
+                              {/* ヘッダー */}
+                              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 64px',background:'rgba(255,255,255,0.06)',padding:'8px 12px',gap:8}}>
+                                <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.06em'}}>排出者</span>
+                                <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.06em'}}>処分先</span>
+                                <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.06em',textAlign:'center'}}>枚数</span>
+                              </div>
+                              {/* 行 */}
+                              {(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}]).map((entry,i)=>(
+                                <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr 64px',padding:'6px 8px',gap:6,borderTop:'1px solid rgba(255,255,255,0.05)',alignItems:'center'}}>
+                                  <input type="text" value={entry.discharger||''} onChange={e=>{
+                                    const entries=[...(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}])];
+                                    entries[i]={...entries[i],discharger:e.target.value};
+                                    setProjectInfo({...projectInfo,manifestEntries:entries});
+                                  }} placeholder={projectInfo.discharger||'排出者名'}
+                                    style={{padding:'7px 8px',background:'rgba(255,255,255,0.06)',border:'none',color:'#fff',borderRadius:6,fontSize:12,outline:'none',width:'100%',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                                  <select value={entry.disposal||''} onChange={e=>{
+                                    const entries=[...(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}])];
+                                    entries[i]={...entries[i],disposal:e.target.value};
+                                    setProjectInfo({...projectInfo,manifestEntries:entries});
+                                  }} style={{padding:'7px 6px',background:'rgba(255,255,255,0.06)',border:'none',color:entry.disposal?'#fff':'rgba(255,255,255,0.3)',borderRadius:6,fontSize:12,outline:'none',width:'100%',boxSizing:'border-box',fontFamily:'inherit',WebkitAppearance:'none'}}>
+                                    <option value="" style={{background:'#2D2D2D'}}>処分先を選択</option>
+                                    {(projectInfo.contractedDisposalSites||[]).map(s=><option key={s} value={s} style={{background:'#2D2D2D'}}>{s}</option>)}
+                                  </select>
+                                  <div style={{display:'flex',alignItems:'center',gap:4}}>
+                                    <input type="number" min="1" value={entry.count||'1'} onChange={e=>{
+                                      const entries=[...(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}])];
+                                      entries[i]={...entries[i],count:e.target.value};
+                                      setProjectInfo({...projectInfo,manifestEntries:entries});
+                                    }} style={{padding:'7px 6px',background:'rgba(255,255,255,0.06)',border:'none',color:'#fff',borderRadius:6,fontSize:13,fontWeight:700,outline:'none',width:'100%',textAlign:'center',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                                    <button onClick={()=>{
+                                      const entries=(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}]).filter((_,j)=>j!==i);
+                                      setProjectInfo({...projectInfo,manifestEntries:entries.length?entries:[{discharger:'',disposal:'',count:'1'}]});
+                                    }} style={{width:22,height:22,borderRadius:5,border:'none',background:'rgba(239,68,68,0.15)',color:'#f87171',fontSize:12,cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
+                                  </div>
+                                </div>
+                              ))}
+                              {/* 追加ボタン */}
+                              <button onClick={()=>{
+                                const entries=[...(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}]),{discharger:projectInfo.discharger||'',disposal:'',count:'1'}];
+                                setProjectInfo({...projectInfo,manifestEntries:entries});
+                              }} style={{width:'100%',padding:'9px',background:'rgba(255,255,255,0.04)',border:'none',borderTop:'1px solid rgba(255,255,255,0.05)',color:'rgba(255,255,255,0.4)',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                                ＋ 行を追加
+                              </button>
+                            </div>
+                            {/* 合計 */}
+                            {(projectInfo.manifestEntries||[]).some(e=>e.disposal) && (
+                              <div style={{marginTop:8,padding:'8px 12px',background:'rgba(255,255,255,0.04)',borderRadius:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                                <span style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>合計枚数</span>
+                                <span style={{fontSize:15,fontWeight:700,color:'#60a5fa'}}>{(projectInfo.manifestEntries||[]).reduce((s,e)=>s+(parseInt(e.count)||0),0)}枚</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {/* 保存・削除 */}
                         <div style={{ display:'flex', gap:8, marginTop:8 }}>
                           <button onClick={onSave} style={{ flex:3, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
@@ -2896,7 +2972,7 @@ export default function LOGIOApp() {
       const data = await sb('project_info').select(`site_name=eq.${encodeURIComponent(siteName)}`);
       if (Array.isArray(data) && data.length > 0) {
         const d = data[0];
-        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], completionDate: d.completion_date || '' };
+        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], manifestEntries: d.manifest_entries || [], completionDate: d.completion_date || '' };
         setProjectInfo(info);
         return info;
       }
@@ -2915,7 +2991,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.discharger || '', transport_company: projectInfo.transportCompany || '', contracted_disposal_sites: projectInfo.contractedDisposalSites || [], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], updated_at: new Date().toISOString() }, 'site_name');
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.discharger || '', transport_company: projectInfo.transportCompany || '', contracted_disposal_sites: projectInfo.contractedDisposalSites || [], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], manifest_entries: projectInfo.manifestEntries || [], updated_at: new Date().toISOString() }, 'site_name');
       await sb('sites').update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');

@@ -1279,63 +1279,73 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         </div>
 
                         {/* マニフェスト発行枚数 */}
-                        {(projectInfo.contractedDisposalSites||[]).length > 0 && (
-                          <div style={{marginBottom:16}}>
-                            <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>マニフェスト発行枚数 / Manifest</label>
-                            <div style={{borderRadius:10,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}>
-                              {/* ヘッダー */}
-                              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 64px',background:'rgba(255,255,255,0.06)',padding:'8px 12px',gap:8}}>
-                                <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.06em'}}>排出者</span>
-                                <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.06em'}}>処分先</span>
-                                <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.06em',textAlign:'center'}}>枚数</span>
+                        <div style={{marginBottom:16}}>
+                          <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:8}}>マニフェスト / MANIFEST</label>
+                          {(projectInfo.manifestEntries||[]).map((entry,i)=>(
+                            <div key={i} style={{background:'rgba(255,255,255,0.06)',borderRadius:12,padding:14,marginBottom:8,position:'relative'}}>
+                              <button onClick={()=>{
+                                const entries=(projectInfo.manifestEntries||[]).filter((_,j)=>j!==i);
+                                setProjectInfo({...projectInfo,manifestEntries:entries});
+                              }} style={{position:'absolute',top:10,right:10,width:24,height:24,borderRadius:6,border:'none',background:'rgba(239,68,68,0.15)',color:'#f87171',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
+                              {/* 排出事業者 */}
+                              <div style={{marginBottom:8}}>
+                                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>排出事業者</div>
+                                <input type="text" value={entry.discharger||''} onChange={e=>{
+                                  const entries=[...(projectInfo.manifestEntries||[])];
+                                  entries[i]={...entries[i],discharger:e.target.value};
+                                  setProjectInfo({...projectInfo,manifestEntries:entries});
+                                }} placeholder={projectInfo.discharger||'排出事業者名を入力'}
+                                  style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
                               </div>
-                              {/* 行 */}
-                              {(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}]).map((entry,i)=>(
-                                <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr 64px',padding:'6px 8px',gap:6,borderTop:'1px solid rgba(255,255,255,0.05)',alignItems:'center'}}>
-                                  <input type="text" value={entry.discharger||''} onChange={e=>{
-                                    const entries=[...(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}])];
-                                    entries[i]={...entries[i],discharger:e.target.value};
-                                    setProjectInfo({...projectInfo,manifestEntries:entries});
-                                  }} placeholder={projectInfo.discharger||'排出者名'}
-                                    style={{padding:'7px 8px',background:'rgba(255,255,255,0.06)',border:'none',color:'#fff',borderRadius:6,fontSize:12,outline:'none',width:'100%',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                              {/* 運搬会社 */}
+                              <div style={{marginBottom:8}}>
+                                <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>運搬会社</div>
+                                <select value={entry.transport||''} onChange={e=>{
+                                  const entries=[...(projectInfo.manifestEntries||[])];
+                                  entries[i]={...entries[i],transport:e.target.value};
+                                  setProjectInfo({...projectInfo,manifestEntries:entries});
+                                }} style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.08)',border:'none',color:entry.transport?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit',WebkitAppearance:'none'}}>
+                                  <option value="" style={{background:'#2D2D2D'}}>選択してください</option>
+                                  {['入間緑化','奈良商事','自社運搬'].map(t=><option key={t} value={t} style={{background:'#2D2D2D'}}>{t}</option>)}
+                                </select>
+                              </div>
+                              {/* 処分先 & 枚数 */}
+                              <div style={{display:'grid',gridTemplateColumns:'1fr 72px',gap:8}}>
+                                <div>
+                                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>処分先</div>
                                   <select value={entry.disposal||''} onChange={e=>{
-                                    const entries=[...(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}])];
+                                    const entries=[...(projectInfo.manifestEntries||[])];
                                     entries[i]={...entries[i],disposal:e.target.value};
                                     setProjectInfo({...projectInfo,manifestEntries:entries});
-                                  }} style={{padding:'7px 6px',background:'rgba(255,255,255,0.06)',border:'none',color:entry.disposal?'#fff':'rgba(255,255,255,0.3)',borderRadius:6,fontSize:12,outline:'none',width:'100%',boxSizing:'border-box',fontFamily:'inherit',WebkitAppearance:'none'}}>
+                                  }} style={{width:'100%',padding:'8px 10px',background:'rgba(255,255,255,0.08)',border:'none',color:entry.disposal?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit',WebkitAppearance:'none'}}>
                                     <option value="" style={{background:'#2D2D2D'}}>処分先を選択</option>
-                                    {(projectInfo.contractedDisposalSites||[]).map(s=><option key={s} value={s} style={{background:'#2D2D2D'}}>{s}</option>)}
+                                    {MASTER_DATA.disposalSites.map(s=><option key={s} value={s} style={{background:'#2D2D2D'}}>{s}</option>)}
                                   </select>
-                                  <div style={{display:'flex',alignItems:'center',gap:4}}>
-                                    <input type="number" min="1" value={entry.count||'1'} onChange={e=>{
-                                      const entries=[...(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}])];
-                                      entries[i]={...entries[i],count:e.target.value};
-                                      setProjectInfo({...projectInfo,manifestEntries:entries});
-                                    }} style={{padding:'7px 6px',background:'rgba(255,255,255,0.06)',border:'none',color:'#fff',borderRadius:6,fontSize:13,fontWeight:700,outline:'none',width:'100%',textAlign:'center',boxSizing:'border-box',fontFamily:'inherit'}}/>
-                                    <button onClick={()=>{
-                                      const entries=(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}]).filter((_,j)=>j!==i);
-                                      setProjectInfo({...projectInfo,manifestEntries:entries.length?entries:[{discharger:'',disposal:'',count:'1'}]});
-                                    }} style={{width:22,height:22,borderRadius:5,border:'none',background:'rgba(239,68,68,0.15)',color:'#f87171',fontSize:12,cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
-                                  </div>
                                 </div>
-                              ))}
-                              {/* 追加ボタン */}
-                              <button onClick={()=>{
-                                const entries=[...(projectInfo.manifestEntries||[{discharger:'',disposal:'',count:'1'}]),{discharger:projectInfo.discharger||'',disposal:'',count:'1'}];
-                                setProjectInfo({...projectInfo,manifestEntries:entries});
-                              }} style={{width:'100%',padding:'9px',background:'rgba(255,255,255,0.04)',border:'none',borderTop:'1px solid rgba(255,255,255,0.05)',color:'rgba(255,255,255,0.4)',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-                                ＋ 行を追加
-                              </button>
-                            </div>
-                            {/* 合計 */}
-                            {(projectInfo.manifestEntries||[]).some(e=>e.disposal) && (
-                              <div style={{marginTop:8,padding:'8px 12px',background:'rgba(255,255,255,0.04)',borderRadius:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                                <span style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>合計枚数</span>
-                                <span style={{fontSize:15,fontWeight:700,color:'#60a5fa'}}>{(projectInfo.manifestEntries||[]).reduce((s,e)=>s+(parseInt(e.count)||0),0)}枚</span>
+                                <div>
+                                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>枚数</div>
+                                  <input type="number" min="1" value={entry.count||'1'} onChange={e=>{
+                                    const entries=[...(projectInfo.manifestEntries||[])];
+                                    entries[i]={...entries[i],count:e.target.value};
+                                    setProjectInfo({...projectInfo,manifestEntries:entries});
+                                  }} style={{width:'100%',padding:'8px',background:'rgba(59,130,246,0.12)',border:'none',color:'#60a5fa',borderRadius:8,fontSize:16,fontWeight:700,outline:'none',textAlign:'center',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        )}
+                            </div>
+                          ))}
+                          <button onClick={()=>{
+                            const entries=[...(projectInfo.manifestEntries||[]),{discharger:projectInfo.discharger||'',transport:projectInfo.transportCompany||'',disposal:'',count:'1'}];
+                            setProjectInfo({...projectInfo,manifestEntries:entries});
+                          }} style={{width:'100%',padding:'11px',background:'rgba(255,255,255,0.03)',border:'1.5px dashed rgba(255,255,255,0.12)',borderRadius:12,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                            ＋ マニフェストを追加
+                          </button>
+                          {(projectInfo.manifestEntries||[]).length > 0 && (
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'rgba(255,255,255,0.04)',borderRadius:10,marginTop:8}}>
+                              <span style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>合計枚数</span>
+                              <span style={{fontSize:18,fontWeight:700,color:'#60a5fa'}}>{(projectInfo.manifestEntries||[]).reduce((s,e)=>s+(parseInt(e.count)||0),0)}枚</span>
+                            </div>
+                          )}
+                        </div>
                         {/* 保存・削除 */}
                         <div style={{ display:'flex', gap:8, marginTop:8 }}>
                           <button onClick={onSave} style={{ flex:3, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
@@ -2632,6 +2642,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
             <table className="pdf-header-table">
               <tbody>
                 <tr><th>排出事業者</th><td>{projectInfo.discharger || ''}</td></tr>
+                <tr><th>運搬会社</th><td>{projectInfo.transportCompany || ''}</td></tr>
                 <tr><th>契約処分先</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{(projectInfo.contractedDisposalSites || []).join('\n')}</td></tr>
                 <tr><th>PROJECT NO.</th><td>{projectInfo.projectNumber || ''}</td></tr>
                 <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>

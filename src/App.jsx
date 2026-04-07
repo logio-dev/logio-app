@@ -257,7 +257,7 @@ function GradChevronUp({ size = 16 }) {
 }
 
 // ========== ★ Header（リロードアイコン追加）==========
-function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onNotification, onReload, reloading = false, notificationCount = 0 }) {
+function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSearch, reloading = false }) {
   return (
     <header className="bg-transparent" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
@@ -281,9 +281,9 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
         </div>
         {/* 中央：ロゴ */}
         <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'#1C1917', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
-        {/* 右：アイコン4つ（リロード追加）*/}
+        {/* 右：アイコン3つ */}
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
-          {/* ★ リロード */}
+          {/* リロード */}
           <button onClick={onReload} title="最新データに更新"
             style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
             onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
@@ -294,28 +294,26 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
             </svg>
           </button>
-          {/* カレンダー */}
-          <button onClick={onCalendar} title="工期確認" style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+          {/* エクスポート */}
+          <button onClick={onExport} title="エクスポート"
+            style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
             onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
             onMouseLeave={e => e.currentTarget.style.color='rgba(28,25,23,0.45)'}>
-            <Calendar className="w-5 h-5" />
-          </button>
-          {/* ベル（通知） */}
-          <button onClick={onNotification} title="通知" style={{ position:'relative', color: notificationCount > 0 ? 'rgba(28,25,23,0.8)' : 'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
-            onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
-            onMouseLeave={e => e.currentTarget.style.color= notificationCount > 0 ? 'rgba(28,25,23,0.8)' : 'rgba(28,25,23,0.45)'}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            {notificationCount > 0 && (
-              <span style={{ position:'absolute', top:'4px', right:'4px', width:'8px', height:'8px', borderRadius:'50%', background:'#ef4444', border:'1.5px solid #000' }} />
-            )}
           </button>
-          {/* Export */}
-          <button onClick={onExport} title="エクスポート" style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+          {/* 検索 */}
+          <button onClick={onSearch} title="現場を検索"
+            style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
             onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
             onMouseLeave={e => e.currentTarget.style.color='rgba(28,25,23,0.45)'}>
-            <Activity className="w-5 h-5" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
           </button>
         </div>
       </div>
@@ -796,7 +794,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
                       <div>
-                        <p style={{ fontSize:11, fontWeight:700, color:'#999', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
+                        <p style={{ fontSize:11, fontWeight:700, color:'#555', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
                         <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
                           <span style={{ fontSize:'20px', fontWeight:700, color:'#1C1917', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
                           <span style={{ fontSize:'10px', color:'#999' }}>{typeCount}種類</span>
@@ -847,7 +845,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 <button onClick={()=>setReportsOpen(!reportsOpen)}
                   style={{width:'100%',padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',background:'none',border:'none',cursor:'pointer'}}>
                   <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <p style={{fontSize:10,fontWeight:700,color:'#999',letterSpacing:'.1em'}}>日報 / REPORTS</p>
+                    <p style={{fontSize:10,fontWeight:700,color:'#555',letterSpacing:'.1em'}}>日報 / REPORTS</p>
                     <span style={{fontSize:10,color:'#666',background:'rgba(0,0,0,0.08)',padding:'2px 8px',borderRadius:8,fontWeight:700}}>{reports.length}件</span>
                   </div>
                   <GradChevron open={reportsOpen} size={16}/>
@@ -2751,6 +2749,8 @@ export default function LOGIOApp() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [password, setPassword] = useState('');
   const [selectedReport, setSelectedReport] = useState(null);
   const [editingReport, setEditingReport] = useState(null);
@@ -3039,16 +3039,10 @@ export default function LOGIOApp() {
       <div className="flex flex-col flex-1 bg-transparent">
         <Header
           showMenuButton onMenuClick={() => setSidebarOpen(true)}
-          onCalendar={() => setShowCalendarModal(true)}
           onExport={() => handleNavigate('export')}
-          onNotification={() => setShowNotificationModal(true)}
           onReload={handleReload}
+          onSearch={() => setShowSearchModal(true)}
           reloading={reloading}
-          notificationCount={(() => {
-            const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
-
-            return costRatio >= 70 ? 1 : 0;
-          })()}
         />
         <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : currentPage === 'settings' ? 'auto' : 'hidden' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
@@ -3268,8 +3262,47 @@ export default function LOGIOApp() {
               </button>
             </div>
           </div>
-        );
-      })()}
+        )}
+      {/* 現場検索モーダル */}
+      {showSearchModal && (
+        <div className="fixed inset-0 flex items-end justify-center z-50" onClick={() => { setShowSearchModal(false); setSearchQuery(''); }} style={{ backdropFilter:'blur(4px)', background:'rgba(0,0,0,0.3)' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:'#fff', borderRadius:'20px 20px 0 0', width:'100%', maxWidth:'480px', padding:'24px 20px calc(24px + env(safe-area-inset-bottom, 0px))', boxShadow:'0 -8px 32px rgba(0,0,0,0.12)' }}>
+            <div style={{ width:'36px', height:'4px', background:'#E8E8E8', borderRadius:'2px', margin:'0 auto 20px' }} />
+            <p style={{ fontSize:'11px', fontWeight:700, color:'#999', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:'14px' }}>現場を検索 / Search</p>
+            <div style={{ position:'relative', marginBottom:'16px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2.2" strokeLinecap="round" style={{ position:'absolute', left:'12px', top:'50%', transform:'translateY(-50%)' }}>
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                autoFocus
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="現場名を入力..."
+                style={{ width:'100%', padding:'12px 14px 12px 36px', background:'#F4F4F4', border:'none', borderRadius:'12px', fontSize:'16px', outline:'none', color:'#1C1917', boxSizing:'border-box' }}
+              />
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:'6px', maxHeight:'240px', overflowY:'auto' }}>
+              {sites.filter(s => !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(site => (
+                <button key={site.name} onClick={() => { handleSelectSite(site.name); setShowSearchModal(false); setSearchQuery(''); }}
+                  style={{ width:'100%', padding:'12px 14px', background: selectedSite === site.name ? '#1A1A1A' : '#F4F4F4', border:'none', borderRadius:'10px', cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                  <div>
+                    <p style={{ fontSize:'14px', fontWeight:600, color: selectedSite === site.name ? '#fff' : '#1C1917' }}>{site.name}</p>
+                    {site.projectNumber && <p style={{ fontSize:'10px', color: selectedSite === site.name ? 'rgba(255,255,255,0.5)' : '#999', marginTop:'2px' }}>{site.projectNumber}</p>}
+                  </div>
+                  {selectedSite === site.name && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  )}
+                </button>
+              ))}
+              {sites.filter(s => !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                <p style={{ textAlign:'center', padding:'20px', color:'#999', fontSize:'13px' }}>「{searchQuery}」に一致する現場がありません</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

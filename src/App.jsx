@@ -262,9 +262,9 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
         {/* 左：ハンバーガー */}
         <div style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)' }}>
           {showMenuButton && (
-            <button onClick={onMenuClick} style={{ color:'rgba(255,255,255,0.55)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
-              onMouseEnter={e => e.currentTarget.style.color='white'}
-              onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.55)'}>
+            <button onClick={onMenuClick} style={{ color:'rgba(28,25,23,0.7)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
+              onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
+              onMouseLeave={e => e.currentTarget.style.color='rgba(28,25,23,0.7)'}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                 <path d="M3 8H21" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
                 <path d="M6 16H18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
@@ -278,9 +278,9 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
           {/* ★ リロード */}
           <button onClick={onReload} title="最新データに更新"
-            style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
-            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
-            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
+            style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
+            onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(28,25,23,0.45)'}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
               style={{ animation: reloading ? 'logio-spin 0.6s linear infinite' : 'none' }}>
               <polyline points="23 4 23 10 17 10"/>
@@ -288,15 +288,15 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
             </svg>
           </button>
           {/* カレンダー */}
-          <button onClick={onCalendar} title="工期確認" style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
-            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
-            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
+          <button onClick={onCalendar} title="工期確認" style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+            onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(28,25,23,0.45)'}>
             <Calendar className="w-5 h-5" />
           </button>
           {/* ベル（通知） */}
-          <button onClick={onNotification} title="通知" style={{ position:'relative', color: notificationCount > 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
-            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
-            onMouseLeave={e => e.currentTarget.style.color= notificationCount > 0 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)'}>
+          <button onClick={onNotification} title="通知" style={{ position:'relative', color: notificationCount > 0 ? 'rgba(28,25,23,0.8)' : 'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+            onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
+            onMouseLeave={e => e.currentTarget.style.color= notificationCount > 0 ? 'rgba(28,25,23,0.8)' : 'rgba(28,25,23,0.45)'}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
@@ -305,9 +305,9 @@ function Header({ showMenuButton = false, onMenuClick, onCalendar, onExport, onN
             )}
           </button>
           {/* Export */}
-          <button onClick={onExport} title="エクスポート" style={{ color:'rgba(255,255,255,0.35)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
-            onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,0.8)'}
-            onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,0.35)'}>
+          <button onClick={onExport} title="エクスポート" style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex' }}
+            onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
+            onMouseLeave={e => e.currentTarget.style.color='rgba(28,25,23,0.45)'}>
             <Activity className="w-5 h-5" />
           </button>
         </div>
@@ -626,7 +626,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const selectedSiteData = sites.find(s => s.name === selectedSite);
   const projectNumber = selectedSiteData?.projectNumber || projectInfo?.projectNumber || '';
 
-  const card = { background: 'var(--bg3)', border: '1px solid #EBEBEB', borderRadius: '12px', transition: 'border-color 0.15s ease' };
+  const card = { background: 'var(--bg3)', border: 'none', borderRadius: '12px', transition: 'border-color 0.15s ease' };
 
   // ★ ナビの maxWidth をコンテンツ(max-w-2xl=672px)と統一
   const NAV_MAX_W = '672px';
@@ -2372,7 +2372,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 bg-transparent min-h-screen">
+    <div className="max-w-2xl mx-auto px-6 py-8 min-h-screen" style={{ background: 'var(--bg)' }}>
       <div className="mb-4">
         <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
@@ -2479,17 +2479,17 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
         .pdf-container { font-family: 'Noto Sans JP', sans-serif; }
         .pdf-table { border-collapse: collapse; width: 100%; }
-        .pdf-table th, .pdf-table td { border: 1px solid #374151; padding: 2px 4px; font-size: 9px; line-height: 1.3; white-space: nowrap; }
-        .pdf-table th { background: #111827; color: #9CA3AF; font-weight: 700; text-align: center; font-size: 8px; }
+        .pdf-table th, .pdf-table td { border: 1px solid #3D3D3D; padding: 2px 4px; font-size: 9px; line-height: 1.3; white-space: nowrap; }
+        .pdf-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 700; text-align: center; font-size: 8px; }
         .pdf-table td { color: #E5E7EB; }
         .pdf-header-table { border-collapse: collapse; width: 100%; }
-        .pdf-header-table th, .pdf-header-table td { border: 1px solid #374151; padding: 3px 6px; font-size: 10px; line-height: 1.4; }
-        .pdf-header-table th { background: #111827; color: #6B7280; font-weight: 700; text-align: left; font-size: 8px; width: 80px; }
-        .pdf-header-table td { color: #F3F4F6; background: #0a0a0a; }
+        .pdf-header-table th, .pdf-header-table td { border: 1px solid #3D3D3D; padding: 3px 6px; font-size: 10px; line-height: 1.4; }
+        .pdf-header-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 700; text-align: left; font-size: 8px; width: 80px; }
+        .pdf-header-table td { color: #F3F4F6; background: #1A1A1A; }
         .result-table { border-collapse: collapse; width: 100%; }
-        .result-table th, .result-table td { border: 1px solid #374151; padding: 2px 6px; font-size: 9px; }
-        .result-table th { background: #111827; color: #6B7280; font-weight: 500; text-align: left; width: 70px; }
-        .result-table td { color: #F3F4F6; text-align: right; background: #0a0a0a; font-variant-numeric: tabular-nums; }
+        .result-table th, .result-table td { border: 1px solid #3D3D3D; padding: 2px 6px; font-size: 9px; }
+        .result-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 500; text-align: left; width: 70px; }
+        .result-table td { color: #F3F4F6; text-align: right; background: #1A1A1A; font-variant-numeric: tabular-nums; }
         @media print {
           .no-print { display: none !important; }
           @page { size: A3 landscape; margin: 8mm; }
@@ -2542,10 +2542,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 return (
                   <table className="pdf-header-table" style={{fontSize:'8px'}}>
                     <thead>
-                      <tr style={{background:'#111827'}}>
+                      <tr style={{background:'#2D2D2D'}}>
                         <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#60a5fa',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>現場外注費</th>
                       </tr>
-                      <tr style={{background:'#111827'}}>
+                      <tr style={{background:'#2D2D2D'}}>
                         <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
                       </tr>
                     </thead>
@@ -2559,10 +2559,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       </tr>
                     </tbody>
                     <thead>
-                      <tr style={{background:'#111827'}}>
+                      <tr style={{background:'#2D2D2D'}}>
                         <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#4ade80',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>現場経費</th>
                       </tr>
-                      <tr style={{background:'#111827'}}>
+                      <tr style={{background:'#2D2D2D'}}>
                         <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
                       </tr>
                     </thead>
@@ -2698,8 +2698,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   <td></td><td></td><td></td><td></td><td></td>
                 </tr>
               ))}
-              <tr style={{ background: '#111827' }}>
-                <th colSpan="8" className="text-right" style={{ background: '#111827', color: 'var(--text3)' }}>計</th>
+              <tr style={{ background: '#2D2D2D' }}>
+                <th colSpan="8" className="text-right" style={{ background: '#2D2D2D', color: 'var(--text3)' }}>計</th>
                 <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalInHouseWorkers}人</td>
                 <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalInHouseCost)}</td>
                 <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalOutsourcingWorkers}人</td>

@@ -972,8 +972,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', overflowX:'hidden' }}>
-      <div className="max-w-2xl mx-auto px-4 py-6 w-full" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box' }}>
+    <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', width:'100%', maxWidth:'100vw', overflowX:'hidden' }}>
+      <div className="max-w-2xl mx-auto px-4 py-6" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box', width:'100%', maxWidth:'100%' }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -1037,7 +1037,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           return (
             <div key={site.name} style={{
               borderRadius:12, marginBottom:8, overflow:'hidden',
-              width:'100%', boxSizing:'border-box', minWidth:0,
+              width:'100%', maxWidth:'100%', boxSizing:'border-box', minWidth:0,
               border: 'none',
               background: '#2D2D2D',
               boxShadow: 'none',
@@ -1083,8 +1083,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
               {/* 展開コンテンツ */}
               {isOpen && (
-                <div style={{ padding:'0 10px 14px', borderTop:'1px solid #EBEBEB', width:'100%', boxSizing:'border-box' }}>
-                  <div style={{ paddingTop:16, minWidth:0, width:'100%' }}>
+                <div style={{ padding:'0 10px 14px', borderTop:'1px solid #EBEBEB', width:'100%', maxWidth:'100%', boxSizing:'border-box', overflow:'hidden' }}>
+                  <div style={{ paddingTop:16, minWidth:0, width:'100%', maxWidth:'100%' }}>
                     {/* 工事番号（読み取り専用） */}
                     <div style={{ marginBottom:14 }}>
                       <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
@@ -3096,7 +3096,7 @@ export default function LOGIOApp() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden', overflowY: 'visible' }}>
+    <div className="min-h-screen bg-transparent flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       <div className="flex flex-col flex-1 bg-transparent">
         <Header
@@ -3106,7 +3106,7 @@ export default function LOGIOApp() {
           onSearch={() => setShowSearchModal(true)}
           reloading={reloading}
         />
-        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden', overflowY: 'auto' }}>
+        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
           {selectedSite && ['home','list','analysis'].includes(currentPage) && (() => {
             const navDefs = [

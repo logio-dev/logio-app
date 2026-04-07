@@ -2569,16 +2569,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           .pdf-container { zoom: 0.85; }
         }
         @media screen and (max-width: 768px) {
-          .pdf-container {
-            transform: scale(0.55);
-            transform-origin: top left;
-            width: calc(100% / 0.55) !important;
-            min-width: calc(100% / 0.55) !important;
-          }
-          .pdf-scroll-wrapper {
-            overflow-x: hidden !important;
-            overflow-y: visible !important;
-          }
+          .pdf-container { zoom: 0.55; }
         }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>
@@ -2594,7 +2585,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           </div>
         </div>
       </div>
-      <div className="pdf-scroll-wrapper" style={{ overflowX: 'hidden', width: '100%', background:'#1A1A1A' }}>
+      <div className="pdf-scroll-wrapper" style={{ overflowX: 'auto', overflowY: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#1A1A1A' }}>
       <div className="pdf-container p-6" style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#1A1A1A' }}>
         <div style={{ width: '1200px' }}>
           <div className="text-center mb-3">

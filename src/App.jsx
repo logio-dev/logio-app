@@ -1364,7 +1364,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       : { date: new Date().toISOString().split('T')[0], weather: '', recorder: '', customRecorder: '' }
   );
   const [workDetails, setWorkDetails] = useState(
-    isEditMode ? (editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], envItems:[], extItems:[], costItems:[] })
+    isEditMode ? (() => {
+      const wd = editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], envItems:[], extItems:[], costItems:[] };
+      return {
+        ...wd,
+        outsourcingLabor: (wd.outsourcingLabor || []).map(o => ({
+          ...o,
+          count: parseInt(o.count || o.workers || 0, 10)
+        }))
+      };
+    })()
     : { workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], envItems: [], extItems: [], costItems: [] }
   );
   const [wasteItems, setWasteItems] = useState(isEditMode ? (editReport.wasteItems || []) : []);
@@ -1705,13 +1714,27 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* 外注人工 */}
           <SectionLabel ja="外注人工" en="Outsourcing" />
           {workDetails.outsourcingLabor.map((o,i)=>(
-            <ItemCard key={i}
-              avatarBg="rgba(34,211,238,0.12)" avatarColor="#22d3ee"
-              avatarText={o.company.charAt(0)}
-              name={o.company}
-              meta={`${o.count}人　<span style="color:${shiftColor(o.shift)}">${shiftLabel(o.shift)}</span>`}
-              amount={`¥${formatCurrency(o.amount)}`}
-              onDel={()=>setWorkDetails({...workDetails,outsourcingLabor:workDetails.outsourcingLabor.filter((_,j)=>j!==i)})} />
+            <div key={i} style={{borderRadius:11,marginBottom:6,background:'rgba(34,211,238,0.06)',border:'1px solid rgba(34,211,238,0.15)',padding:'10px 12px',display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:36,height:36,borderRadius:9,background:'rgba(34,211,238,0.12)',color:'#22d3ee',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900,flexShrink:0}}>{o.company.charAt(0)}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:'#1C1917'}}>{o.company}</div>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
+                  <input type="number" min="1" inputMode="numeric" value={o.count||''} onChange={e=>{
+                    const entries=[...workDetails.outsourcingLabor];
+                    const newCount=parseInt(e.target.value,10)||0;
+                    const newAmount=newCount*(o.shift==='nighttime'?30000:25000);
+                    entries[i]={...entries[i],count:newCount,amount:newAmount};
+                    setWorkDetails({...workDetails,outsourcingLabor:entries});
+                  }} style={{width:56,padding:'4px 8px',background:'rgba(34,211,238,0.1)',border:'1px solid rgba(34,211,238,0.3)',color:'#0e7490',borderRadius:6,fontSize:16,fontWeight:700,textAlign:'center',outline:'none',fontFamily:'inherit'}}/>
+                  <span style={{fontSize:12,color:'#555'}}>人　<span style={{color:shiftColor(o.shift)}}>{shiftLabel(o.shift)}</span></span>
+                </div>
+              </div>
+              <div style={{textAlign:'right',flexShrink:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:'#0e7490'}}>¥{formatCurrency(o.amount)}</div>
+                <button onClick={()=>setWorkDetails({...workDetails,outsourcingLabor:workDetails.outsourcingLabor.filter((_,j)=>j!==i)})}
+                  style={{marginTop:4,width:28,height:28,borderRadius:7,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.08)',color:'#f87171',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
+              </div>
+            </div>
           ))}
           <div style={inputCardCyan}>
             <div style={grid2}>

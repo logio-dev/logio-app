@@ -954,7 +954,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#F2F2F2', minHeight:'100vh', color:'#1C1917', overflowX:'auto' }}>
+    <div style={{ background:'#1A1A1A', minHeight:'100vh', color:'#fff', overflowX:'auto' }}>
       <div style={{ maxWidth:'42rem', margin:'0 auto', padding:'16px 12px calc(160px + env(safe-area-inset-bottom,0px))', width:'100%', boxSizing:'border-box', minWidth:0 }}>
 
         {/* 閉じるボタン */}
@@ -1518,7 +1518,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const workContent_tags = ['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'];
 
   return (
-    <div style={{ background:'#F2F2F2', minHeight:'100vh', overflowX:'hidden' }}>
+    <div style={{ background:'#1A1A1A', minHeight:'100vh', overflowX:'hidden' }}>
       <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;}`}</style>
 
       {/* ヘッダー */}
@@ -1535,18 +1535,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#F2F2F2' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1A1A1A' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
-              <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
+              <label style={{ display:'block', fontSize:'11px', color:'rgba(255,255,255,0.5)', marginBottom:'8px', fontWeight:700, letterSpacing:'0.04em' }}>作業日 <span style={{color:'#f87171'}}>*</span></label>
               <input type="date" value={report.date} onChange={e=>setReport({...report,date:e.target.value})}
-                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box', background:'#DCDCDC', border:'none' }} />
+                style={{ ...inpTxt, fontSize:'16px', padding:'13px 14px', boxSizing:'border-box' }} />
             </div>
 
             <div>
-              <label style={{ display:'block', fontSize:'11px', color:'var(--text2)', marginBottom:'8px' }}>記入者 <span style={{color:'#f87171'}}>*</span></label>
-              <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px', background:'#DCDCDC', border:'none' }}>
+              <label style={{ display:'block', fontSize:'11px', color:'rgba(255,255,255,0.5)', marginBottom:'8px', fontWeight:700, letterSpacing:'0.04em' }}>記入者 <span style={{color:'#f87171'}}>*</span></label>
+              <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px' }}>
                 <option value="">選択してください</option>
                 {MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}
               </select>
@@ -1558,7 +1558,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#F2F2F2' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1A1A1A' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -1709,7 +1709,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#F2F2F2' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1A1A1A' }}>
           <p style={{ fontSize:'12px', color:'var(--text3)', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 */}
@@ -1909,16 +1909,16 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   const fmtMonth = (ym) => { const [y, m] = ym.split('-'); return `${y}年${parseInt(m)}月`; };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#F2F2F2'}}>
+    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#1A1A1A',minHeight:'100vh'}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#2D2D2D",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"rgba(255,255,255,0.1)",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
       <div className="mb-4">
         <Select label="作業区分" labelEn="Category" options={MASTER_DATA.workCategories} value={filterCategory} onChange={setFilterCategory} placeholder="全作業" />
       </div>
-      <p className="text-xs text-gray-600 mb-4">全 {filteredReports.length}件</p>
+      <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:16}}>全 {filteredReports.length}件</p>
       {months.map(month => {
         const monthReports = filteredReports.filter(r => r.date.startsWith(month)).sort((a,b) => new Date(b.date)-new Date(a.date));
         const isOpen = !!openMonths[month];
@@ -1942,7 +1942,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
               {isOpen ? <GradChevronUp size={16}/> : <GradChevron open={false} size={16}/>}
             </button>
             {isOpen && (
-              <div style={{ background:'#F4F4F4', border:'none', borderRadius:'0 0 12px 12px', overflow:'hidden' }}>
+              <div style={{ background:'#2D2D2D', border:'none', borderRadius:'0 0 12px 12px', overflow:'hidden' }}>
                 {monthReports.map((report, idx) => (
                   <ReportAccordion key={report.id} report={report} onDelete={() => onDelete(report.id)} onEdit={() => onEdit(report)} isLast={idx === monthReports.length - 1} />
                 ))}
@@ -2111,7 +2111,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
 function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8" style={{background:'#F2F2F2',minHeight:'100vh'}}>
+    <div className="max-w-2xl mx-auto px-6 py-8" style={{background:'#1A1A1A',minHeight:'100vh'}}>
       <div className="mb-4">
         <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#2D2D2D",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
           <X className="w-4 h-4" />閉じる

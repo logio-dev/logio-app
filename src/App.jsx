@@ -959,7 +959,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
-          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'#2D2D2D', border:'none', color:'var(--text3)', fontSize:13, fontWeight:600, cursor:'pointer', marginBottom:24 }}>
+          style={{ display:'flex', alignItems:'center', gap:6, padding:'10px 18px', borderRadius:10, background:'#2D2D2D', border:'1.5px solid rgba(255,255,255,0.18)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', marginBottom:24, boxShadow:'0 2px 8px rgba(0,0,0,0.18)' }}>
           <X className="w-4 h-4" />閉じる
         </button>
 
@@ -1911,7 +1911,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#F2F2F2'}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#2D2D2D",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -2113,7 +2113,7 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8" style={{background:'#F2F2F2',minHeight:'100vh'}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#2D2D2D",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -2215,7 +2215,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 bg-transparent min-h-screen" style={{paddingBottom:"calc(160px + env(safe-area-inset-bottom,0px))"}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#2D2D2D",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -2372,9 +2372,9 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 min-h-screen" style={{ background: 'var(--bg)' }}>
+    <div className="max-w-2xl mx-auto px-6 py-8 min-h-screen" style={{ background: '#1A1A1A' }}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -2474,10 +2474,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const emptyRows = MAX_ROWS - displayReports.length;
 
   return (
-    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'var(--bg)', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
+    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'#1A1A1A', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
-        .pdf-container { font-family: 'Noto Sans JP', sans-serif; }
+        .pdf-container { font-family: 'Noto Sans JP', sans-serif; background: #1A1A1A; }
         .pdf-table { border-collapse: collapse; width: 100%; }
         .pdf-table th, .pdf-table td { border: 1px solid #3D3D3D; padding: 2px 4px; font-size: 9px; line-height: 1.3; white-space: nowrap; }
         .pdf-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 700; text-align: center; font-size: 8px; }
@@ -2495,8 +2495,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           @page { size: A3 landscape; margin: 8mm; }
         }
       `}</style>
-      <div className="no-print bg-transparent border-b border-white/[0.06] p-4 flex items-center justify-between sticky top-0 z-50">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#2D2D2D",border:"none",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
+      <div className="no-print border-b p-4 flex items-center justify-between sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>
+        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
           <ChevronLeft className="w-4 h-4" />ホームに戻る
         </button>
         <div className="flex items-center gap-3">
@@ -2506,8 +2506,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           </button>
         </div>
       </div>
-      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
-      <div className="pdf-container bg-transparent p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto' }}>
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#1A1A1A' }}>
+      <div className="pdf-container p-6" style={{ minWidth: '1100px', width: '1100px', margin: '0 auto', background:'#1A1A1A' }}>
         <div style={{ width: '1100px' }}>
           <div className="text-center mb-3">
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>

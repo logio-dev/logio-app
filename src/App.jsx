@@ -972,7 +972,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', overflowX:'auto' }}>
+    <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', overflowX:'hidden' }}>
       <div className="max-w-2xl mx-auto px-4 py-6 w-full" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box' }}>
 
         {/* 閉じるボタン */}
@@ -1225,25 +1225,25 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               style={{width:'100%',padding:'9px 11px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
                           </div>
                           <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:12}}>
-                            {/* 列ヘッダー */}
-                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 60px 28px',gap:8,marginBottom:6,padding:'0 2px'}}>
-                              {['処分先','運搬会社','枚数',''].map((h,i)=>(
-                                <div key={i} style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.3)',letterSpacing:'.06em',textAlign:i===2?'center':'left'}}>{h}</div>
-                              ))}
-                            </div>
+                            {/* ヘッダー非表示（縦並びに変更） */}
                             {/* 行 */}
                             {(projectInfo.manifestRows||[]).map((row,i)=>(
-                              <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr 60px 28px',gap:8,marginBottom:6,alignItems:'center'}}>
-                                <div>
+                              <div key={i} style={{background:'rgba(255,255,255,0.04)',borderRadius:10,padding:'10px 12px',marginBottom:8,position:'relative'}}>
+                                <button onClick={()=>{
+                                  const rows=(projectInfo.manifestRows||[]).filter((_,j)=>j!==i);
+                                  setProjectInfo({...projectInfo,manifestRows:rows});
+                                }} style={{position:'absolute',top:8,right:8,width:24,height:24,borderRadius:6,border:'none',background:'rgba(239,68,68,0.15)',color:'#f87171',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,flexShrink:0}}>✕</button>
+                                {/* 処分先 */}
+                                <div style={{marginBottom:8,paddingRight:32}}>
+                                  <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.3)',letterSpacing:'.06em',marginBottom:4}}>処分先</div>
                                   <select value={row.disposal||''} onChange={e=>{
                                     const rows=[...(projectInfo.manifestRows||[])];
                                     rows[i]={...rows[i],disposal:e.target.value};
                                     setProjectInfo({...projectInfo,manifestRows:rows});
-                                  }} style={{width:'100%',padding:'9px 8px',background:'rgba(255,255,255,0.08)',border:'none',color:row.disposal?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:12,outline:'none',fontFamily:'inherit',WebkitAppearance:'none',boxSizing:'border-box'}}>
+                                  }} style={{width:'100%',padding:'9px 8px',background:'rgba(255,255,255,0.08)',border:'none',color:row.disposal?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',WebkitAppearance:'none',boxSizing:'border-box'}}>
                                     <option value="" style={{background:'#2D2D2D'}}>処分先を選択</option>
                                     {MASTER_DATA.disposalSites.map(s=><option key={s} value={s} style={{background:'#2D2D2D'}}>{s}</option>)}
                                   </select>
-                                  {/* カスタム処分先入力 */}
                                   <div style={{display:'flex',gap:4,marginTop:4}}>
                                     <input type="text" value={row._custom||''} onChange={e=>{
                                       const rows=[...(projectInfo.manifestRows||[])];
@@ -1256,33 +1256,38 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                         setProjectInfo({...projectInfo,manifestRows:rows});
                                       }
                                     }} placeholder="リストにない場合"
-                                      style={{flex:1,padding:'6px 8px',background:'rgba(255,255,255,0.05)',border:'1px dashed rgba(255,255,255,0.12)',color:'#fff',borderRadius:6,fontSize:11,outline:'none',fontFamily:'inherit',boxSizing:'border-box'}}/>
+                                      style={{flex:1,padding:'6px 8px',background:'rgba(255,255,255,0.05)',border:'1px dashed rgba(255,255,255,0.12)',color:'#fff',borderRadius:6,fontSize:12,outline:'none',fontFamily:'inherit',boxSizing:'border-box'}}/>
                                     <button onClick={()=>{
                                       const v=(row._custom||'').trim();
                                       if(!v) return;
                                       const rows=[...(projectInfo.manifestRows||[])];
                                       rows[i]={...rows[i],disposal:v,_custom:''};
                                       setProjectInfo({...projectInfo,manifestRows:rows});
-                                    }} style={{padding:'6px 8px',background:'rgba(59,130,246,0.2)',border:'1px solid rgba(59,130,246,0.3)',color:'#60a5fa',borderRadius:6,fontSize:11,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',fontFamily:'inherit'}}>＋</button>
+                                    }} style={{padding:'6px 10px',background:'rgba(59,130,246,0.2)',border:'1px solid rgba(59,130,246,0.3)',color:'#60a5fa',borderRadius:6,fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',fontFamily:'inherit'}}>＋</button>
                                   </div>
                                 </div>
-                                <select value={row.transport||''} onChange={e=>{
-                                  const rows=[...(projectInfo.manifestRows||[])];
-                                  rows[i]={...rows[i],transport:e.target.value};
-                                  setProjectInfo({...projectInfo,manifestRows:rows});
-                                }} style={{width:'100%',padding:'9px 8px',background:'rgba(255,255,255,0.08)',border:'none',color:row.transport?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:12,outline:'none',fontFamily:'inherit',WebkitAppearance:'none',boxSizing:'border-box'}}>
-                                  <option value="" style={{background:'#2D2D2D'}}>選択</option>
-                                  {['自社運搬','入間緑化','奈良商事'].map(t=><option key={t} value={t} style={{background:'#2D2D2D'}}>{t}</option>)}
-                                </select>
-                                <input type="number" min="1" value={row.count||'1'} onChange={e=>{
-                                  const rows=[...(projectInfo.manifestRows||[])];
-                                  rows[i]={...rows[i],count:e.target.value};
-                                  setProjectInfo({...projectInfo,manifestRows:rows});
-                                }} style={{padding:'9px 6px',background:'rgba(59,130,246,0.12)',border:'none',color:'#60a5fa',borderRadius:8,fontSize:15,fontWeight:700,outline:'none',textAlign:'center',width:'100%',boxSizing:'border-box',fontFamily:'inherit'}}/>
-                                <button onClick={()=>{
-                                  const rows=(projectInfo.manifestRows||[]).filter((_,j)=>j!==i);
-                                  setProjectInfo({...projectInfo,manifestRows:rows});
-                                }} style={{width:28,height:28,borderRadius:7,border:'none',background:'rgba(239,68,68,0.15)',color:'#f87171',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,flexShrink:0}}>✕</button>
+                                {/* 運搬会社 + 枚数 */}
+                                <div style={{display:'grid',gridTemplateColumns:'1fr 72px',gap:8}}>
+                                  <div>
+                                    <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.3)',letterSpacing:'.06em',marginBottom:4}}>運搬会社</div>
+                                    <select value={row.transport||''} onChange={e=>{
+                                      const rows=[...(projectInfo.manifestRows||[])];
+                                      rows[i]={...rows[i],transport:e.target.value};
+                                      setProjectInfo({...projectInfo,manifestRows:rows});
+                                    }} style={{width:'100%',padding:'9px 8px',background:'rgba(255,255,255,0.08)',border:'none',color:row.transport?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',WebkitAppearance:'none',boxSizing:'border-box'}}>
+                                      <option value="" style={{background:'#2D2D2D'}}>選択</option>
+                                      {['自社運搬','入間緑化','奈良商事'].map(t=><option key={t} value={t} style={{background:'#2D2D2D'}}>{t}</option>)}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.3)',letterSpacing:'.06em',marginBottom:4}}>枚数</div>
+                                    <input type="number" min="1" value={row.count||'1'} onChange={e=>{
+                                      const rows=[...(projectInfo.manifestRows||[])];
+                                      rows[i]={...rows[i],count:e.target.value};
+                                      setProjectInfo({...projectInfo,manifestRows:rows});
+                                    }} style={{padding:'9px 6px',background:'rgba(59,130,246,0.12)',border:'none',color:'#60a5fa',borderRadius:8,fontSize:15,fontWeight:700,outline:'none',textAlign:'center',width:'100%',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                                  </div>
+                                </div>
                               </div>
                             ))}
                             <button onClick={()=>{

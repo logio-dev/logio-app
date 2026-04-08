@@ -1404,11 +1404,6 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [isSaving, setIsSaving] = useState(false);
   const handleSave = async () => {
     if (isSaving) return;
-    // デバッグ：保存前の外注人数確認
-    if (isEditMode && workDetails.outsourcingLabor.length > 0) {
-      const counts = workDetails.outsourcingLabor.map(o => `${o.company}:${o.count}`).join(', ');
-      alert(`保存する外注人数: ${counts}`);
-    }
     setIsSaving(true);
     try {
       const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems };
@@ -3211,11 +3206,11 @@ export default function LOGIOApp() {
     const n = newName.trim();
     try {
       // sites テーブル更新
-      await sb('sites').update(`name=eq.${encodeURIComponent(oldName)}`, { name: n });
+      await sb('sites').update({ name: n }, `name=eq.${encodeURIComponent(oldName)}`);
       // project_info テーブル更新
-      await sb('project_info').update(`site_name=eq.${encodeURIComponent(oldName)}`, { site_name: n });
+      await sb('project_info').update({ site_name: n }, `site_name=eq.${encodeURIComponent(oldName)}`);
       // reports テーブル更新
-      await sb('reports').update(`site_name=eq.${encodeURIComponent(oldName)}`, { site_name: n });
+      await sb('reports').update({ site_name: n }, `site_name=eq.${encodeURIComponent(oldName)}`);
       setSites(prev => prev.map(s => s.name === oldName ? { ...s, name: n } : s));
       if (selectedSite === oldName) { setSelectedSite(n); }
       alert(`✅ 現場名を「${n}」に変更しました`);
@@ -3290,9 +3285,6 @@ export default function LOGIOApp() {
     try {
       const now = new Date().toISOString();
       const updatedBy = reportData.recorder || currentUser?.userId || '';
-      // デバッグ：受け取った外注人数確認
-      const receivedCounts = (reportData.workDetails?.outsourcingLabor || []).map(o => `${o.company}:${o.count}`).join(', ');
-      alert(`handleUpdateReport受信: ${receivedCounts}`);
       const wd = {
         ...reportData.workDetails,
         outsourcingLabor: (reportData.workDetails?.outsourcingLabor || []).map(o => ({
@@ -3301,9 +3293,9 @@ export default function LOGIOApp() {
         }))
       };
       try {
-        await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
+        await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now }, `id=eq.${reportId}`);
       } catch(e) {
-        await sb('reports').update(`id=eq.${reportId}`, { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
+        await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] }, `id=eq.${reportId}`);
       }
       await loadReports(selectedSite);
       setEditingReport(null);

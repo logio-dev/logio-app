@@ -1854,7 +1854,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       )}
 
       {/* Step 1 */}
-      {currentStep === 1 && (
+      {!isEditMode && currentStep === 1 && (
         <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
@@ -1877,7 +1877,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       )}
 
       {/* Step 2 */}
-      {currentStep === 2 && (
+      {!isEditMode && currentStep === 2 && (
         <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
 
           {/* 施工情報 */}
@@ -2059,7 +2059,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       )}
 
       {/* Step 3 */}
-      {currentStep === 3 && (
+      {/* Step 3 */}
+      {!isEditMode && currentStep === 3 && (
         <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.45)', marginBottom:'20px' }}>※ない場合はそのまま保存できます</p>
 

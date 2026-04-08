@@ -1163,35 +1163,19 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           };
                           return (
                             <div style={{marginBottom:16}}>
-                              <div style={{display:'flex',gap:4,background:'var(--bg2)',padding:4,borderRadius:11,border:'none',marginBottom:12}}>
-                                {[['out','現場外注費','直接原価','#60a5fa','rgba(59,130,246,0.15)'],['misc','リース・機材・資材・経費等','直接原価','#a855f7','rgba(168,85,247,0.15)']].map(([k,label,sub,color,bg])=>(
-                                  <button key={k} onClick={()=>setProjectInfo({...projectInfo,_costTab:k})}
-                                    style={{flex:1,padding:'8px 4px',borderRadius:8,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',background:activeTab===k?bg:'transparent',color:activeTab===k?color:'rgba(255,255,255,0.45)',fontFamily:'inherit',textAlign:'center',lineHeight:1.3}}>
-                                    {label}<br/><span style={{fontSize:9,fontWeight:400,color:activeTab===k?color:'rgba(255,255,255,0.45)'}}>{sub}</span>
-                                  </button>
-                                ))}
-                              </div>
-                              {activeTab==='out' && (<>
-                                {renderItems(projectInfo.outsourcingItems||[],(i)=>setProjectInfo({...projectInfo,outsourcingItems:(projectInfo.outsourcingItems||[]).filter((_,j)=>j!==i)}),'#60a5fa','rgba(59,130,246,0.12)')}
-                                {(projectInfo.outsourcingItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(59,130,246,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#60a5fa',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
-                                {renderForm('out',[],'#60a5fa','linear-gradient(135deg,#2563EB,#4f46e5)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,outsourcingItems:[...(projectInfo.outsourcingItems||[]),ni],_outName:'',_outDays:'',_outAmt:''});})}
-                              </>)}
-                              {activeTab==='misc' && (<>
-                                {renderItems(miscItems,(i)=>setProjectInfo({...projectInfo,miscItems:miscItems.filter((_,j)=>j!==i)}),'#a855f7','rgba(168,85,247,0.12)')}
-                                {miscItems.length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(168,85,247,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#a855f7',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
-                                {renderForm('misc',MISC_QUICK,'#a855f7','linear-gradient(135deg,#7c3aed,#a855f7)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,miscItems:[...miscItems,ni],_miscName:'',_miscDays:'',_miscAmt:''});})}
-                              </>)}
+                              {/* リース・機材・資材・経費等のみ */}
+                              {renderItems(miscItems,(i)=>setProjectInfo({...projectInfo,miscItems:miscItems.filter((_,j)=>j!==i)}),'#a855f7','rgba(168,85,247,0.12)')}
+                              {miscItems.length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(168,85,247,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#a855f7',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                              {renderForm('misc',MISC_QUICK,'#a855f7','linear-gradient(135deg,#7c3aed,#a855f7)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,miscItems:[...miscItems,ni],_miscName:'',_miscDays:'',_miscAmt:''});})}
                               <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'rgba(255,255,255,0.08)',border:'none'}}>
                                 <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8,fontFamily:'monospace'}}>コストサマリー</div>
-                                {[['現場外注費','直接原価',(projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#60a5fa'],['リース・機材・資材・経費等','直接原価',miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#a855f7']].map(([label,sub,val,color])=>(
-                                  <div key={label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
-                                    <span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{label} <span style={{fontSize:9,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>{sub}</span></span>
-                                    <span style={{fontSize:13,fontWeight:700,color,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(val)}</span>
-                                  </div>
-                                ))}
+                                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                                  <span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>リース・機材・資材・経費等 <span style={{fontSize:9,fontFamily:'monospace'}}>直接原価</span></span>
+                                  <span style={{fontSize:13,fontWeight:700,color:'#a855f7',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                                </div>
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0 0'}}>
                                   <span style={{fontSize:12,fontWeight:700,color:'rgba(255,255,255,0.45)'}}>直接原価 合計</span>
-                                  <span style={{fontSize:16,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency([...(projectInfo.outsourcingItems||[]),...miscItems].reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                                  <span style={{fontSize:16,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
                                 </div>
                               </div>
                             </div>
@@ -2907,10 +2891,9 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
   const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalTransportCost + totalWasteCost
     + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
-    + (projectInfo.outsourcingItems || []).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
-    + (projectInfo.siteExpenseItems || []).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
+    + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-  const grossProfit = totalRevenue - totalCost + totalScrapRevenue;
+  const grossProfit = totalRevenue - totalCost;
   const fmtDate = (dateStr) => { if (!dateStr) return ''; const p = dateStr.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
   const fmtDay = (dateStr) => { if (!dateStr) return ''; return ['日','月','火','水','木','金','土'][new Date(dateStr).getDay()]; };
   const MAX_ROWS = 20;
@@ -2978,49 +2961,29 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
               </tbody>
             </table>
             <div>
-              {/* 外注費・販管費テーブル */}
+              {/* リース・機材・資材・経費等テーブル */}
               {(()=>{
-                const outItems = (projectInfo.outsourcingItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
-                const siteExpItems = (projectInfo.siteExpenseItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
-                const sgaItems2 = (projectInfo.sgaItems||[]).map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
-                if(outItems.length===0 && siteExpItems.length===0 && sgaItems2.length===0) return null;
-                const maxRows = Math.max(outItems.length, siteExpItems.length, 1);
-                const outTotal = outItems.reduce((s,i)=>s+i.amount,0);
-                const siteExpTotal = siteExpItems.reduce((s,i)=>s+i.amount,0);
+                const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
+                const items = miscItems.map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
+                if(items.length===0) return null;
+                const total = items.reduce((s,i)=>s+i.amount,0);
                 return (
                   <table className="pdf-header-table" style={{fontSize:'8px'}}>
                     <thead>
                       <tr style={{background:'#2D2D2D'}}>
-                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#60a5fa',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>現場外注費</th>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#a855f7',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>リース・機材・資材・経費等</th>
                       </tr>
                       <tr style={{background:'#2D2D2D'}}>
                         <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {outItems.map((it,i)=>(
-                        <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{formatCurrency(it.amount)}</td></tr>
+                      {items.map((it,i)=>(
+                        <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{it.amount>0?formatCurrency(it.amount):'-'}</td></tr>
                       ))}
                       <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.08)'}}>
                         <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
-                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(outTotal)}</td>
-                      </tr>
-                    </tbody>
-                    <thead>
-                      <tr style={{background:'#2D2D2D'}}>
-                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#4ade80',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>現場経費</th>
-                      </tr>
-                      <tr style={{background:'#2D2D2D'}}>
-                        <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {siteExpItems.map((it,i)=>(
-                        <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{formatCurrency(it.amount)}</td></tr>
-                      ))}
-                      <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.08)'}}>
-                        <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
-                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(siteExpTotal)}</td>
+                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(total)}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -3036,7 +2999,6 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     ['見積金額', totalRevenue],
                     ['原価金額', totalCost],
                     ['追加金額', parseFloat(projectInfo.additionalAmount) || 0],
-                    ['金属売上', totalScrapRevenue],
                   ].map(([label, val]) => (
                     <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
                   ))}
@@ -3044,6 +3006,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     <th className="font-bold">粗利</th>
                     <td className="font-bold" style={{ color: grossProfit >= 0 ? '#60A5FA' : '#F87171' }}>¥{formatCurrency(grossProfit)}</td>
                   </tr>
+                  {totalScrapRevenue > 0 && (
+                    <tr style={{ borderTop: '1px dashed #374151' }}>
+                      <th style={{color:'#4ade80'}}>金属売上</th>
+                      <td style={{color:'#4ade80'}}>¥{formatCurrency(totalScrapRevenue)}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
               </div>
@@ -3413,11 +3381,9 @@ export default function LOGIOApp() {
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
     });
     accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
-      + (projectInfo.outsourcingItems || []).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
-      + (projectInfo.siteExpenseItems || []).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
-      // sgaItemsは販管費（間接費）なので粗利計算に含めない
+      + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
       + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-    const grossProfit = totalRevenue - accumulatedCost + accumulatedScrap;
+    const grossProfit = totalRevenue - accumulatedCost;
     return { totalRevenue, accumulatedCost, accumulatedScrap, grossProfit, grossProfitRateContract: totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0', grossProfitRateWithScrap: (totalRevenue + accumulatedScrap) > 0 ? (grossProfit / (totalRevenue + accumulatedScrap) * 100).toFixed(1) : '0.0' };
   };
 

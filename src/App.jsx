@@ -1136,7 +1136,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             const name=projectInfo[`_${key}Name`]||'', days=projectInfo[`_${key}Days`]||'', amt=projectInfo[`_${key}Amt`]||'';
                             const rgb=key==='out'?'59,130,246':'168,85,247';
                             return (
-                              <div style={{padding:12,borderRadius:10,background:'rgba(255,255,255,0.06)',border:'none',marginTop:8}}>
+                              <div style={{padding:12,borderRadius:10,background:'rgba(255,255,255,0.06)',border:'none',marginTop:4}}>
                                 <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>直接原価（リース・機材・資材・経費等）</label>
                                 <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Name`]:e.target.value})}
                                   placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
@@ -1165,7 +1165,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             <div style={{marginBottom:16}}>
                               {/* リース・機材・資材・経費等のみ */}
                               {renderItems(miscItems,(i)=>setProjectInfo({...projectInfo,miscItems:miscItems.filter((_,j)=>j!==i)}),'#a855f7','rgba(168,85,247,0.12)')}
-                              {miscItems.length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(168,85,247,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#a855f7',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                              {miscItems.length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'4px 4px',borderTop:'1px solid rgba(168,85,247,0.1)',marginBottom:2}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#a855f7',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
                               {renderForm('misc',MISC_QUICK,'#a855f7','linear-gradient(135deg,#7c3aed,#a855f7)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,miscItems:[...miscItems,ni],_miscName:'',_miscDays:'',_miscAmt:''});})}
                               <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'rgba(255,255,255,0.08)',border:'none'}}>
                                 <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8,fontFamily:'monospace'}}>コストサマリー</div>
@@ -1723,8 +1723,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{...grid2,marginBottom:8}}>
-              <div><label style={inpLbl}>開始</label><input type="time" step="1800" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
-              <div><label style={inpLbl}>終了</label><input type="time" step="1800" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>開始</label><input type="time" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>終了</label><input type="time" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}>
               <label style={inpLbl}>区分</label>
@@ -2030,8 +2030,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{...grid2, marginBottom:'10px'}}>
-              <div><label style={inpLbl}>開始</label><input type="time" step="1800" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
-              <div><label style={inpLbl}>終了</label><input type="time" step="1800" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>開始</label><input type="time" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>終了</label><input type="time" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
             </div>
             <div style={{ marginBottom:'10px' }}><label style={inpLbl}>区分</label>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>

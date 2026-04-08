@@ -1378,6 +1378,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
   const [wasteItems, setWasteItems] = useState(isEditMode ? (editReport.wasteItems || []) : []);
   const [scrapItems, setScrapItems] = useState(isEditMode ? (editReport.scrapItems || []) : []);
+  const [editingWasteIdx, setEditingWasteIdx] = useState(null);
+  const [editingScrapIdx, setEditingScrapIdx] = useState(null);
   // ★ 半日追加
   const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, inHouseHalfDay: 12500, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
   // ★ dept追加
@@ -1478,23 +1480,36 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     let haishiAmount=0;
     if(wasteForm.haisha==='env'&&wasteForm.haishiShift) haishiAmount=ENV_P[wasteForm.haishiShift];
     else if(wasteForm.haisha==='ext') haishiAmount=wasteForm.haishiOverride?parseFloat(wasteForm.haishiPrice)||0:(wasteForm.haishiShift?EXT_P[wasteForm.haishiShift]:0);
-    setWasteItems([...wasteItems,{
+    const newItem = {
       material:wasteForm.type, disposalSite:wasteForm.disposal,
       quantity:qty, unit:wasteForm.unit, unitPrice:0, amount:price,
       manifestNumber:wasteForm.manifest,
-      haisha:wasteForm.haisha||'',
-      driver:wasteForm.driver||'',
-      vType:wasteForm.vType||'',
-      vNumber:wasteForm.vNumber||'',
-      haishiShift:wasteForm.haishiShift||'',
-      haishiAmount,
-    }]);
+      haisha:wasteForm.haisha||'', driver:wasteForm.driver||'',
+      vType:wasteForm.vType||'', vNumber:wasteForm.vNumber||'',
+      haishiShift:wasteForm.haishiShift||'', haishiAmount,
+    };
+    if (editingWasteIdx !== null) {
+      const items = [...wasteItems];
+      items[editingWasteIdx] = newItem;
+      setWasteItems(items);
+      setEditingWasteIdx(null);
+    } else {
+      setWasteItems([...wasteItems, newItem]);
+    }
     setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''});
   };
   const addScrap = () => {
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty) return;
     const qty=parseFloat(scrapForm.qty), total=parseFloat(scrapForm.price)||0;
-    setScrapItems([...scrapItems,{type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total}]);
+    const newItem = {type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total};
+    if (editingScrapIdx !== null) {
+      const items = [...scrapItems];
+      items[editingScrapIdx] = newItem;
+      setScrapItems(items);
+      setEditingScrapIdx(null);
+    } else {
+      setScrapItems([...scrapItems, newItem]);
+    }
     setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});
   };
 
@@ -1776,12 +1791,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* 産廃 */}
           <SectionLabel ja="産廃処分費" en="Waste" />
           {wasteItems.map((w,i)=>(
-            <div key={i} style={{background:'#FFFBEB',borderRadius:10,padding:'10px 12px',marginBottom:5,border:'0.5px solid #FDE68A',display:'flex',alignItems:'center',gap:8}}>
+            <div key={i} onClick={()=>{
+              setEditingWasteIdx(i);
+              setWasteForm({type:w.material,disposal:w.disposalSite,qty:String(w.quantity),unit:w.unit||'㎥',price:String(w.amount),manifest:w.manifestNumber||'',haisha:w.haisha||'',driver:w.driver||'',vType:w.vType||'',vNumber:w.vNumber||'',haishiShift:w.haishiShift||'',haishiOverride:false,haishiPrice:''});
+            }} style={{borderRadius:10,padding:'10px 12px',marginBottom:5,cursor:'pointer',display:'flex',alignItems:'center',gap:8,
+              background: editingWasteIdx===i ? 'rgba(245,158,11,0.08)' : '#FFFBEB',
+              border: editingWasteIdx===i ? '1.5px solid rgba(245,158,11,0.5)' : '0.5px solid #FDE68A'
+            }}>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{w.material} → {w.disposalSite}</div>
                 <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　¥{formatCurrency(w.amount)}</div>
               </div>
-              <button onClick={()=>setWasteItems(wasteItems.filter((_,j)=>j!==i))}
+              {editingWasteIdx===i && <span style={{fontSize:9,background:'rgba(245,158,11,0.15)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.3)',borderRadius:4,padding:'1px 6px',flexShrink:0}}>編集中</span>}
+              <button onClick={e=>{e.stopPropagation();if(editingWasteIdx===i){setEditingWasteIdx(null);setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''});}setWasteItems(wasteItems.filter((_,j)=>j!==i));}}
                 style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
             </div>
           ))}
@@ -1807,18 +1829,34 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>金額</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}><label style={inpLbl}>マニNo. <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
-            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||(wasteForm.haisha==='env'&&(!wasteForm.driver||!wasteForm.haishiShift))||(wasteForm.haisha==='ext'&&!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
+            {editingWasteIdx !== null ? (
+              <div style={{display:'flex',gap:6,marginTop:8}}>
+                <button onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty}
+                  style={{flex:2,padding:'11px',background:'rgba(245,158,11,0.2)',border:'1px solid rgba(245,158,11,0.4)',borderRadius:9,color:'#FCD34D',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
+                <button onClick={()=>{setEditingWasteIdx(null);setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'']);}}
+                  style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:9,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>新規追加</button>
+              </div>
+            ) : (
+              <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty} />
+            )}
           </div>
 
           {/* スクラップ */}
           <SectionLabel ja="スクラップ売上" en="Scrap" />
           {scrapItems.map((s,i)=>(
-            <div key={i} style={{background:'#ECFDF5',borderRadius:10,padding:'10px 12px',marginBottom:5,border:'0.5px solid #BBF7D0',display:'flex',alignItems:'center',gap:8}}>
+            <div key={i} onClick={()=>{
+              setEditingScrapIdx(i);
+              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount))});
+            }} style={{borderRadius:10,padding:'10px 12px',marginBottom:5,cursor:'pointer',display:'flex',alignItems:'center',gap:8,
+              background: editingScrapIdx===i ? 'rgba(34,197,94,0.08)' : '#ECFDF5',
+              border: editingScrapIdx===i ? '1.5px solid rgba(34,197,94,0.5)' : '0.5px solid #BBF7D0'
+            }}>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{s.type} → {s.buyer}</div>
                 <div style={{fontSize:10,color:'#999'}}>{s.quantity}{s.unit}　¥{formatCurrency(Math.abs(s.amount))}</div>
               </div>
-              <button onClick={()=>setScrapItems(scrapItems.filter((_,j)=>j!==i))}
+              {editingScrapIdx===i && <span style={{fontSize:9,background:'rgba(34,197,94,0.15)',color:'#16A34A',border:'1px solid rgba(34,197,94,0.3)',borderRadius:4,padding:'1px 6px',flexShrink:0}}>編集中</span>}
+              <button onClick={e=>{e.stopPropagation();if(editingScrapIdx===i){setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});}setScrapItems(scrapItems.filter((_,j)=>j!==i));}}
                 style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
             </div>
           ))}
@@ -1840,7 +1878,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>合計金額</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
-            <AddBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty} />
+            {editingScrapIdx !== null ? (
+              <div style={{display:'flex',gap:6,marginTop:8}}>
+                <button onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty}
+                  style={{flex:2,padding:'11px',background:'rgba(34,197,94,0.2)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:9,color:'#4ade80',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
+                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});}}
+                  style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:9,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>新規追加</button>
+              </div>
+            ) : (
+              <AddBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty} />
+            )}
           </div>
 
           {/* 更新ボタン */}
@@ -2067,27 +2114,23 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* 産廃 */}
           <SectionLabel ja="産廃処分費" en="Waste Disposal" />
           {wasteItems.map((w,i)=>(
-            <div key={i} style={{borderRadius:11,marginBottom:6,background:'#FFFBEB',border:'1px solid #FDE68A',overflow:'hidden'}}>
+            <div key={i} onClick={()=>{
+              setEditingWasteIdx(i);
+              setWasteForm({type:w.material,disposal:w.disposalSite,qty:String(w.quantity),unit:w.unit||'㎥',price:String(w.amount),manifest:w.manifestNumber||'',haisha:w.haisha||'',driver:w.driver||'',vType:w.vType||'',vNumber:w.vNumber||'',haishiShift:w.haishiShift||'',haishiOverride:false,haishiPrice:''});
+            }} style={{borderRadius:11,marginBottom:6,overflow:'hidden',cursor:'pointer',
+              background: editingWasteIdx===i ? 'rgba(245,158,11,0.08)' : '#FFFBEB',
+              border: editingWasteIdx===i ? '1.5px solid rgba(245,158,11,0.5)' : '1px solid #FDE68A'
+            }}>
               <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px'}}>
                 <div style={{width:36,height:36,borderRadius:9,background:'rgba(245,158,11,0.15)',color:'#fbbf24',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{w.material.slice(0,2)}</div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:700}}>{w.material} → {w.disposalSite}</div>
-                  <div style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>{w.quantity}{w.unit}　¥{formatCurrency(w.unitPrice)}/{w.unit}{w.manifestNumber?`　マニ:${w.manifestNumber}`:''}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:'#1C1917'}}>{w.material} → {w.disposalSite}</div>
+                  <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　¥{formatCurrency(w.amount)}{w.manifestNumber?`　マニ:${w.manifestNumber}`:''}</div>
                 </div>
-                <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(w.amount)}</div>
-                <button onClick={()=>setWasteItems(wasteItems.filter((_,j)=>j!==i))} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
+                {editingWasteIdx===i && <span style={{fontSize:9,background:'rgba(245,158,11,0.2)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.3)',borderRadius:4,padding:'1px 6px',flexShrink:0}}>編集中</span>}
+                <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',flexShrink:0}}>¥{formatCurrency(w.amount)}</div>
+                <button onClick={e=>{e.stopPropagation();if(editingWasteIdx===i){setEditingWasteIdx(null);setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''});}setWasteItems(wasteItems.filter((_,j)=>j!==i));}} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,flexShrink:0}}>✕</button>
               </div>
-              {/* 配車バッジ */}
-              {w.haisha==='env' && (
-                <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderTop:'1px solid rgba(245,158,11,0.1)',background:'rgba(34,197,94,0.06)',fontSize:11,color:'#4ade80'}}>
-                  環境課配車 / {w.driver}{w.vType?`　${w.vType}(${w.vNumber})`:''}{w.haishiShift?`　${w.haishiShift==='day'?'昼':'夜'}　¥${formatCurrency(w.haishiAmount)}`:''}
-                </div>
-              )}
-              {w.haisha==='ext' && (
-                <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',borderTop:'1px solid rgba(245,158,11,0.1)',background:'rgba(99,102,241,0.06)',fontSize:11,color:'#a5b4fc'}}>
-                  ワイエム配車　{w.haishiShift?w.haishiShift==='day'?'昼':'夜':'例外'}　¥{formatCurrency(w.haishiAmount)}
-                </div>
-              )}
             </div>
           ))}
           <div style={inputCardGreen}>
@@ -2199,7 +2242,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
             )}
 
-            <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||(wasteForm.haisha==='env'&&(!wasteForm.driver||!wasteForm.haishiShift))||(wasteForm.haisha==='ext'&&!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
+            {editingWasteIdx !== null ? (
+              <div style={{display:'flex',gap:6,marginTop:8}}>
+                <button onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty}
+                  style={{flex:2,padding:'11px',background:'rgba(245,158,11,0.2)',border:'1px solid rgba(245,158,11,0.4)',borderRadius:9,color:'#FCD34D',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
+                <button onClick={()=>{setEditingWasteIdx(null);setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'']);}}
+                  style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:9,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>新規追加</button>
+              </div>
+            ) : (
+              <AddBtn onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||(wasteForm.haisha==='env'&&(!wasteForm.driver||!wasteForm.haishiShift))||(wasteForm.haisha==='ext'&&!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
+            )}
           </div>
           {wasteItems.length>0 && (
             <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0)} />
@@ -2208,12 +2260,23 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* スクラップ */}
           <SectionLabel ja="スクラップ売上" en="Scrap Revenue" />
           {scrapItems.map((s,i)=>(
-            <ItemCard key={i}
-              avatarBg="rgba(34,197,94,0.12)" avatarColor="#4ade80"
-              avatarText={s.type.charAt(0)}
-              name={s.type} meta={`${s.quantity}${s.unit}　${s.buyer}`}
-              amount={`¥${formatCurrency(Math.abs(s.amount))}`} amountColor="#4ade80"
-              onDel={()=>setScrapItems(scrapItems.filter((_,j)=>j!==i))} />
+            <div key={i} onClick={()=>{
+              setEditingScrapIdx(i);
+              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount))});
+            }} style={{borderRadius:11,marginBottom:6,cursor:'pointer',
+              background: editingScrapIdx===i ? 'rgba(34,197,94,0.08)' : '#ECFDF5',
+              border: editingScrapIdx===i ? '1.5px solid rgba(34,197,94,0.5)' : '0.5px solid #BBF7D0',
+              padding:'10px 12px', display:'flex', alignItems:'center', gap:8
+            }}>
+              <div style={{width:32,height:32,borderRadius:8,background:'rgba(34,197,94,0.15)',color:'#4ade80',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,flexShrink:0}}>{s.type.charAt(0)}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{s.type} → {s.buyer}</div>
+                <div style={{fontSize:10,color:'#999'}}>{s.quantity}{s.unit}　¥{formatCurrency(Math.abs(s.amount))}</div>
+              </div>
+              {editingScrapIdx===i && <span style={{fontSize:9,background:'rgba(34,197,94,0.15)',color:'#16A34A',border:'1px solid rgba(34,197,94,0.3)',borderRadius:4,padding:'1px 6px',flexShrink:0}}>編集中</span>}
+              <button onClick={e=>{e.stopPropagation();if(editingScrapIdx===i){setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});}setScrapItems(scrapItems.filter((_,j)=>j!==i));}}
+                style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+            </div>
           ))}
           <div style={inputCardRose}>
             <div style={grid2}>
@@ -2248,7 +2311,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 ¥{formatCurrency(parseFloat(scrapForm.price||0))}
               </div>
             )}
-            <AddBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty} />
+            {editingScrapIdx !== null ? (
+              <div style={{display:'flex',gap:6,marginTop:8}}>
+                <button onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty}
+                  style={{flex:2,padding:'11px',background:'rgba(34,197,94,0.2)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:9,color:'#4ade80',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
+                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});}}
+                  style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:9,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>新規追加</button>
+              </div>
+            ) : (
+              <AddBtn onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty} />
+            )}
           </div>
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}
 

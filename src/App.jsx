@@ -1137,7 +1137,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             const rgb=key==='out'?'59,130,246':'168,85,247';
                             return (
                               <div style={{padding:12,borderRadius:10,background:'rgba(255,255,255,0.06)',border:'none',marginTop:8}}>
-                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>直接原価（リース・機材・資材・経費等）</label>
                                 <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Name`]:e.target.value})}
                                   placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
                                 <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
@@ -1723,8 +1723,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{...grid2,marginBottom:8}}>
-              <div><label style={inpLbl}>開始</label><input type="time" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
-              <div><label style={inpLbl}>終了</label><input type="time" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>開始</label><input type="time" step="1800" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>終了</label><input type="time" step="1800" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}>
               <label style={inpLbl}>区分</label>
@@ -2030,8 +2030,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{...grid2, marginBottom:'10px'}}>
-              <div><label style={inpLbl}>開始</label><input type="time" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
-              <div><label style={inpLbl}>終了</label><input type="time" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>開始</label><input type="time" step="1800" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>終了</label><input type="time" step="1800" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
             </div>
             <div style={{ marginBottom:'10px' }}><label style={inpLbl}>区分</label>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>
@@ -2391,8 +2391,8 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
       <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-transparent/50 transition-colors">
         <div className="text-left flex-1">
           <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <span style={{fontSize:15,fontWeight:700,color:"#1C1917"}}>{report.date}</span>
-            <span style={{fontSize:12,color:"#888"}}>({getDayOfWeek(report.date)})</span>
+            <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>{report.date}</span>
+            <span style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>({getDayOfWeek(report.date)})</span>
             
             {/* 記入者＋更新日時 */}
             <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'rgba(255,255,255,0.65)', fontFamily:'monospace', background:'#E8E8E8', border:'none', padding:'2px 7px', borderRadius:99, color:'#555' }}>

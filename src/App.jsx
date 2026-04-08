@@ -3290,6 +3290,9 @@ export default function LOGIOApp() {
     try {
       const now = new Date().toISOString();
       const updatedBy = reportData.recorder || currentUser?.userId || '';
+      // デバッグ：受け取った外注人数確認
+      const receivedCounts = (reportData.workDetails?.outsourcingLabor || []).map(o => `${o.company}:${o.count}`).join(', ');
+      alert(`handleUpdateReport受信: ${receivedCounts}`);
       const wd = {
         ...reportData.workDetails,
         outsourcingLabor: (reportData.workDetails?.outsourcingLabor || []).map(o => ({

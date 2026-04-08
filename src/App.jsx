@@ -1114,15 +1114,16 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
                         <TextInput label="追加金額（税抜）" labelEn="Additional" type="number" value={projectInfo.additionalAmount||''} onChange={v=>setProjectInfo({...projectInfo,additionalAmount:v})} placeholder="0" />
-                        {/* ===== 経費3分類タブ ===== */}
+                        {/* ===== 経費2分類タブ ===== */}
                         {(()=>{
                           const activeTab = projectInfo._costTab||'out';
-                          const OUT_QUICK=['東リース','アクティオ','パノラマ','サンキョーテクノ','坪井','集塵機','ペッカー','発電機','高所作業車','コンプレッサー','ハンドクラッシャー','油圧ユニット','ミニユンボ','回送費','アスベスト分析費'];
-                          const SITE_QUICK=['道具代','パーキング代','資材費','消耗品'];
-                          const SGA_QUICK=['営業交通費','ガソリン代','営業パーキング代','接待費'];
-                          const renderItems=(items,delFn,color,bg,border)=>items.map((item,i)=>(
+                          const MISC_QUICK=['パーキング代','高速代','交通費','道具代','東リース','アクティオ','パノラマ','ペッカー','集塵機','高所作業車','コンプレッサー','ミニユンボ','アタッチメント','アスベスト分析費'];
+                          // 自動移行：既存の現場経費・販管費をmiscItemsに統合（初回のみ）
+                          const miscItems = projectInfo.miscItems !== undefined ? projectInfo.miscItems :
+                            [...(projectInfo.siteExpenseItems||[]), ...(projectInfo.sgaItems||[])];
+                          const renderItems=(items,delFn,color,border)=>items.map((item,i)=>(
                             <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(255,255,255,0.06)',border:'none'}}>
-                              <div style={{width:34,height:34,borderRadius:8,background:'rgba(255,255,255,0.1)',color:color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
+                              <div style={{width:34,height:34,borderRadius:8,background:'rgba(255,255,255,0.1)',color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:13,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
                                 <div style={{fontSize:10,color:'rgba(255,255,255,0.55)',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'日数未設定'}</div>
@@ -1133,7 +1134,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           ));
                           const renderForm=(key,quick,color,grad,addFn)=>{
                             const name=projectInfo[`_${key}Name`]||'', days=projectInfo[`_${key}Days`]||'', amt=projectInfo[`_${key}Amt`]||'';
-                            const rgb=key==='out'?'59,130,246':key==='site'?'34,197,94':'245,158,11';
+                            const rgb=key==='out'?'59,130,246':'168,85,247';
                             return (
                               <div style={{padding:12,borderRadius:10,background:'rgba(255,255,255,0.06)',border:'none',marginTop:8}}>
                                 <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>費用名</label>
@@ -1149,12 +1150,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                     <input type="number" value={days} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Days`]:e.target.value})} placeholder="—" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
                                   </div>
                                   <div>
-                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額</label>
+                                    <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:4}}>金額 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
                                     <input type="number" value={amt} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Amt`]:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
                                   </div>
                                 </div>
-                                <button disabled={!name||!amt} onClick={()=>addFn(name,days,amt)}
-                                  style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:(!name||!amt)?'rgba(255,255,255,0.04)':grad,color:(!name||!amt)?'#374151':'white',fontSize:13,fontWeight:700,cursor:(!name||!amt)?'not-allowed':'pointer',fontFamily:'inherit',opacity:(!name||!amt)?0.4:1}}>
+                                <button disabled={!name} onClick={()=>addFn(name,days,amt)}
+                                  style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:!name?'rgba(255,255,255,0.04)':grad,color:!name?'#374151':'white',fontSize:13,fontWeight:700,cursor:!name?'not-allowed':'pointer',fontFamily:'inherit',opacity:!name?0.4:1}}>
                                   ＋ 追加
                                 </button>
                               </div>
@@ -1163,34 +1164,26 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           return (
                             <div style={{marginBottom:16}}>
                               <div style={{display:'flex',gap:4,background:'var(--bg2)',padding:4,borderRadius:11,border:'none',marginBottom:12}}>
-                                {[['out','外注費','直接原価','#60a5fa','rgba(59,130,246,0.15)'],['site','現場経費','直接原価','#4ade80','rgba(34,197,94,0.15)'],['sga','販管費','間接費','#fbbf24','rgba(245,158,11,0.15)']].map(([k,label,sub,color,bg])=>(
+                                {[['out','現場外注費','直接原価','#60a5fa','rgba(59,130,246,0.15)'],['misc','リース・機材・資材・経費等','直接原価','#a855f7','rgba(168,85,247,0.15)']].map(([k,label,sub,color,bg])=>(
                                   <button key={k} onClick={()=>setProjectInfo({...projectInfo,_costTab:k})}
-                                    style={{flex:1,padding:'8px 2px',borderRadius:8,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',background:activeTab===k?bg:'transparent',color:activeTab===k?color:'rgba(255,255,255,0.45)',fontFamily:'inherit',textAlign:'center',lineHeight:1.3,whiteSpace:'nowrap'}}>
+                                    style={{flex:1,padding:'8px 4px',borderRadius:8,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',background:activeTab===k?bg:'transparent',color:activeTab===k?color:'rgba(255,255,255,0.45)',fontFamily:'inherit',textAlign:'center',lineHeight:1.3}}>
                                     {label}<br/><span style={{fontSize:9,fontWeight:400,color:activeTab===k?color:'rgba(255,255,255,0.45)'}}>{sub}</span>
                                   </button>
                                 ))}
                               </div>
                               {activeTab==='out' && (<>
-                                {renderItems(projectInfo.outsourcingItems||[],(i)=>setProjectInfo({...projectInfo,outsourcingItems:(projectInfo.outsourcingItems||[]).filter((_,j)=>j!==i)}),'#60a5fa','rgba(59,130,246,0.05)','rgba(59,130,246,0.12)')}
+                                {renderItems(projectInfo.outsourcingItems||[],(i)=>setProjectInfo({...projectInfo,outsourcingItems:(projectInfo.outsourcingItems||[]).filter((_,j)=>j!==i)}),'#60a5fa','rgba(59,130,246,0.12)')}
                                 {(projectInfo.outsourcingItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(59,130,246,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#60a5fa',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
-                                {renderForm('out',OUT_QUICK,'#60a5fa','linear-gradient(135deg,#2563EB,#4f46e5)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,outsourcingItems:[...(projectInfo.outsourcingItems||[]),ni],_outName:'',_outDays:'',_outAmt:''});})}
+                                {renderForm('out',[],'#60a5fa','linear-gradient(135deg,#2563EB,#4f46e5)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,outsourcingItems:[...(projectInfo.outsourcingItems||[]),ni],_outName:'',_outDays:'',_outAmt:''});})}
                               </>)}
-                              {activeTab==='site' && (<>
-                                {renderItems(projectInfo.siteExpenseItems||[],(i)=>setProjectInfo({...projectInfo,siteExpenseItems:(projectInfo.siteExpenseItems||[]).filter((_,j)=>j!==i)}),'#4ade80','rgba(34,197,94,0.05)','rgba(34,197,94,0.12)')}
-                                {(projectInfo.siteExpenseItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(34,197,94,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#4ade80',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.siteExpenseItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
-                                {renderForm('site',SITE_QUICK,'#4ade80','linear-gradient(135deg,#16a34a,#22c55e)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,siteExpenseItems:[...(projectInfo.siteExpenseItems||[]),ni],_siteName:'',_siteDays:'',_siteAmt:''});})}
-                              </>)}
-                              {activeTab==='sga' && (<>
-                                <div style={{display:'flex',alignItems:'center',gap:6,padding:'5px 10px',borderRadius:8,background:'rgba(245,158,11,0.07)',border:'1px solid rgba(245,158,11,0.2)',marginBottom:10,fontSize:10,color:'#fbbf24',fontWeight:700}}>
-                                  ⚠ 間接費 — 粗利には含まれません
-                                </div>
-                                {renderItems(projectInfo.sgaItems||[],(i)=>setProjectInfo({...projectInfo,sgaItems:(projectInfo.sgaItems||[]).filter((_,j)=>j!==i)}),'#fbbf24','rgba(245,158,11,0.05)','rgba(245,158,11,0.12)')}
-                                {(projectInfo.sgaItems||[]).length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(245,158,11,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
-                                {renderForm('sga',SGA_QUICK,'#fbbf24','linear-gradient(135deg,#d97706,#f97316)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,sgaItems:[...(projectInfo.sgaItems||[]),ni],_sgaName:'',_sgaDays:'',_sgaAmt:''});})}
+                              {activeTab==='misc' && (<>
+                                {renderItems(miscItems,(i)=>setProjectInfo({...projectInfo,miscItems:miscItems.filter((_,j)=>j!==i)}),'#a855f7','rgba(168,85,247,0.12)')}
+                                {miscItems.length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'6px 4px',borderTop:'1px solid rgba(168,85,247,0.1)',marginBottom:6}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#a855f7',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
+                                {renderForm('misc',MISC_QUICK,'#a855f7','linear-gradient(135deg,#7c3aed,#a855f7)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,miscItems:[...miscItems,ni],_miscName:'',_miscDays:'',_miscAmt:''});})}
                               </>)}
                               <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'rgba(255,255,255,0.08)',border:'none'}}>
                                 <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8,fontFamily:'monospace'}}>コストサマリー</div>
-                                {[['現場外注費','直接原価',(projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#60a5fa'],['現場経費','直接原価',(projectInfo.siteExpenseItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#4ade80']].map(([label,sub,val,color])=>(
+                                {[['現場外注費','直接原価',(projectInfo.outsourcingItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#60a5fa'],['リース・機材・資材・経費等','直接原価',miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0),'#a855f7']].map(([label,sub,val,color])=>(
                                   <div key={label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
                                     <span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>{label} <span style={{fontSize:9,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>{sub}</span></span>
                                     <span style={{fontSize:13,fontWeight:700,color,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(val)}</span>
@@ -1198,17 +1191,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                 ))}
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0 0'}}>
                                   <span style={{fontSize:12,fontWeight:700,color:'rgba(255,255,255,0.45)'}}>直接原価 合計</span>
-                                  <span style={{fontSize:16,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency([...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[])].reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
+                                  <span style={{fontSize:16,fontWeight:900,color:'#fff',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency([...(projectInfo.outsourcingItems||[]),...miscItems].reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
                                 </div>
-                                {(projectInfo.sgaItems||[]).length>0&&(
-                                  <div style={{marginTop:8,paddingTop:8,borderTop:'1px dashed rgba(255,255,255,0.05)'}}>
-                                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                                      <span style={{fontSize:11,color:'rgba(255,255,255,0.65)'}}>販管費 <span style={{fontSize:9,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>間接費・参考</span></span>
-                                      <span style={{fontSize:13,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency((projectInfo.sgaItems||[]).reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span>
-                                    </div>
-                                    <div style={{fontSize:9,color:'rgba(255,255,255,0.45)',marginTop:3,fontFamily:'monospace'}}>※ 粗利の計算には含まれません</div>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           );
@@ -3210,7 +3194,7 @@ export default function LOGIOApp() {
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
     contractAmount: '', additionalAmount: '', status: '進行中',
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
-    outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: ''
+    outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: []
   });
   const [reports, setReports] = useState([]);
   // ★ 追加 state
@@ -3281,7 +3265,7 @@ export default function LOGIOApp() {
       await sb('project_info').insert({ site_name: siteName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
       setSites(prev => [...prev, { name: siteName, projectNumber, status: '進行中' }]);
       setSelectedSite(siteName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '' });
+      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [] });
       alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); }
   };
@@ -3327,7 +3311,11 @@ export default function LOGIOApp() {
       const data = await sb('project_info').select(`site_name=eq.${encodeURIComponent(siteName)}`);
       if (Array.isArray(data) && data.length > 0) {
         const d = data[0];
-        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '' };
+        const rawMiscItems = d.misc_items;
+        const miscItems = rawMiscItems !== undefined && rawMiscItems !== null
+          ? rawMiscItems
+          : [...(d.site_expense_items||[]), ...(d.sga_items||[])];
+        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], miscItems, manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '' };
         setProjectInfo(info);
         return info;
       }
@@ -3346,7 +3334,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', updated_at: new Date().toISOString() }, 'site_name');
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: projectInfo.miscItems || [], manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', updated_at: new Date().toISOString() }, 'site_name');
       await sb('sites').update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');

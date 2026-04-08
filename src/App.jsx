@@ -1404,6 +1404,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [isSaving, setIsSaving] = useState(false);
   const handleSave = async () => {
     if (isSaving) return;
+    // デバッグ：保存前の外注人数確認
+    if (isEditMode && workDetails.outsourcingLabor.length > 0) {
+      const counts = workDetails.outsourcingLabor.map(o => `${o.company}:${o.count}`).join(', ');
+      alert(`保存する外注人数: ${counts}`);
+    }
     setIsSaving(true);
     try {
       const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems };

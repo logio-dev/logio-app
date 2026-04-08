@@ -1587,7 +1587,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const workContent_tags = ['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'];
 
   return (
-    <div style={{ background:'#fff', minHeight:'100vh', overflowX:'hidden' }}>
+    <div style={{ background: isEditMode ? '#111' : '#fff', minHeight:'100vh', overflowX:'hidden' }}>
       <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;}`}</style>
 
       {/* ヘッダー */}
@@ -1607,7 +1607,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* 編集モード：1画面 */}
       {isEditMode && (
-        <div className="b-panel" style={{ padding:'16px 16px 120px', background:'#F8F7F5', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 120px', background:'#1C1C1E', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
 
           {/* 基本情報 */}
           <SectionLabel ja="基本情報" en="Basic Info" />
@@ -1620,8 +1620,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div>
               <label style={{ display:'block', fontSize:'11px', color:'rgba(255,255,255,0.5)', marginBottom:'8px', fontWeight:700, letterSpacing:'0.04em' }}>記入者</label>
               <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px' }}>
-                <option value="">選択してください</option>
-                {MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}
+                <option value="" style={{color:"#000",background:"#fff"}}>選択してください</option>
+                {MASTER_DATA.employees.map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
               </select>
             </div>
           </div>
@@ -1750,8 +1750,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCard}>
             <div style={grid2}>
-              <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({...vForm,type:e.target.value,number:''})} style={inpSel}><option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></div>
-              <div><label style={inpLbl}>車番 <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} style={inpSel}><option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></div>
+              <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({...vForm,type:e.target.value,number:''})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}</select></div>
+              <div><label style={inpLbl}>車番 <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}</select></div>
             </div>
             <AddBtn onClick={addVehicle} disabled={!vForm.type} />
           </div>
@@ -1801,7 +1801,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             </div>
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
-              <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={inpSel}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select></div>
+              <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={inpSel}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg">kg</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>金額</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}><label style={inpLbl}>マニNo. <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
@@ -1859,7 +1859,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             </div>
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm({...scrapForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
-              <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
+              <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>合計金額</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             {editingScrapIdx !== null ? (
@@ -1898,8 +1898,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div>
               <label style={{ display:'block', fontSize:'11px', color:'rgba(255,255,255,0.5)', marginBottom:'8px', fontWeight:700, letterSpacing:'0.04em' }}>記入者 <span style={{color:'#f87171'}}>*</span></label>
               <select value={report.recorder} onChange={e=>setReport({...report,recorder:e.target.value,customRecorder:''})} style={{ ...inpSel, padding:'13px 14px', fontSize:'16px' }}>
-                <option value="">選択してください</option>
-                {MASTER_DATA.employees.map(n=><option key={n}>{n}</option>)}
+                <option value="" style={{color:"#000",background:"#fff"}}>選択してください</option>
+                {MASTER_DATA.employees.map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
               </select>
             </div>
           </div>
@@ -1966,8 +1966,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <ShiftBtns4 value={wForm.shift} onChange={v=>setWForm({...wForm,shift:v})} />
             </div>
             <div style={grid2}>
-              <div><label style={inpLbl}>開始</label><select value={wForm.start} onChange={e=>setWForm({...wForm,start:e.target.value})} style={inpSel}><option value="">--:--</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t}>{t}</option>)}</select></div>
-              <div><label style={inpLbl}>終了</label><select value={wForm.end} onChange={e=>setWForm({...wForm,end:e.target.value})} style={inpSel}><option value="">--:--</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t}>{t}</option>)}</select></div>
+              <div><label style={inpLbl}>開始</label><select value={wForm.start} onChange={e=>setWForm({...wForm,start:e.target.value})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>--:--</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t} style={{color:"#000",background:"#fff"}}>{t}</option>)}</select></div>
+              <div><label style={inpLbl}>終了</label><select value={wForm.end} onChange={e=>setWForm({...wForm,end:e.target.value})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>--:--</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t} style={{color:"#000",background:"#fff"}}>{t}</option>)}</select></div>
             </div>
             <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>
               適用単価: ¥{formatCurrency(getShiftAmount(wForm.shift))}
@@ -2058,8 +2058,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCardAmber}>
             <div style={grid2}>
-              <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:''})} style={inpSel}><option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}</select></div>
-              <div><label style={inpLbl}>車番</label><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} style={inpSel}><option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n}>{n}</option>)}</select></div>
+              <div><label style={inpLbl}>車種</label><select value={vForm.type} onChange={e=>setVForm({type:e.target.value,number:''})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}</select></div>
+              <div><label style={inpLbl}>車番</label><select value={vForm.number} onChange={e=>setVForm({...vForm,number:e.target.value})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[vForm.type]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}</select></div>
             </div>
             {vForm.type && <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>¥{formatCurrency(VEHICLE_UNIT_PRICES[vForm.type]||0)}</div>}
             <AddBtn onClick={addVehicle} disabled={!vForm.type} />
@@ -2078,7 +2078,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCardAmber}>
             <div style={grid2}>
-              <div><label style={inpLbl}>機種</label><select value={mForm.type} onChange={e=>setMForm({...mForm,type:e.target.value})} style={inpSel}><option value="">選択</option>{MASTER_DATA.heavyMachinery.map(m=><option key={m}>{m}</option>)}</select></div>
+              <div><label style={inpLbl}>機種</label><select value={mForm.type} onChange={e=>setMForm({...mForm,type:e.target.value})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.heavyMachinery.map(m=><option key={m} style={{color:"#000",background:"#fff"}}>{m}</option>)}</select></div>
               <div><label style={inpLbl}>単価</label><input type="number" value={mForm.price} onChange={e=>setMForm({...mForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <AddBtn onClick={addMachinery} disabled={!mForm.type||!mForm.price} />
@@ -2147,7 +2147,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             </div>
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
-              <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={inpSel}><option value="㎥">㎥</option><option value="kg">kg</option><option value="t">t</option></select></div>
+              <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={inpSel}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg">kg</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>金額</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.45)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
@@ -2186,13 +2186,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <div>
                     <label style={inpLbl}>車種</label>
                     <select value={wasteForm.vType} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
-                      <option value="">選択</option>{MASTER_DATA.vehicles.map(v=><option key={v}>{v}</option>)}
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={inpLbl}>車番</label>
                     <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
-                      <option value="">選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n}>{n}</option>)}
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2295,7 +2295,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             </div>
             <div style={grid3}>
               <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={scrapForm.qty} onChange={e=>setScrapForm({...scrapForm,qty:e.target.value})} placeholder="0" style={inpTxt} /></div>
-              <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg">kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
+              <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>合計金額</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             {scrapForm.price && (

@@ -1670,8 +1670,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <input type="text" value={wForm.name} onChange={e=>setWForm({...wForm,name:e.target.value})} placeholder="直接入力も可" style={inpTxt} />
             </div>
             <div style={{...grid2,marginBottom:8}}>
-              <div><label style={inpLbl}>開始</label><input type="time" value={wForm.start} onChange={e=>setWForm({...wForm,start:e.target.value})} style={inpTxt} /></div>
-              <div><label style={inpLbl}>終了</label><input type="time" value={wForm.end} onChange={e=>setWForm({...wForm,end:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>開始</label><input type="time" step="1800" value={wForm.start} onChange={e=>setWForm({...wForm,start:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>終了</label><input type="time" step="1800" value={wForm.end} onChange={e=>setWForm({...wForm,end:e.target.value})} style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}>
               <label style={inpLbl}>区分</label>
@@ -1710,8 +1710,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             </div>
           ))}
           <div style={inputCardCyan}>
-            <div style={grid2}>
-              <div><label style={inpLbl}>会社名</label>
+            <div style={{...grid2,marginBottom:8}}>
+              <div>
+                <label style={inpLbl}>会社名</label>
                 <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:5}}>
                   {MASTER_DATA.outsourcingCompanies.map(c=>(
                     <button key={c} onClick={()=>setOForm({...oForm,company:c})}
@@ -1723,8 +1724,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{...grid2,marginBottom:8}}>
-              <div><label style={inpLbl}>開始</label><input type="time" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
-              <div><label style={inpLbl}>終了</label><input type="time" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>開始</label><input type="time" step="1800" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>終了</label><input type="time" step="1800" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}>
               <label style={inpLbl}>区分</label>
@@ -2015,8 +2016,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             </div>
           )}
           <div style={inputCardCyan}>
-            <div style={grid2}>
-              <div><label style={inpLbl}>会社名</label>
+            <div style={{...grid2,marginBottom:8}}>
+              <div>
+                <label style={inpLbl}>会社名</label>
                 <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
                   {MASTER_DATA.outsourcingCompanies.map(c=>(
                     <button key={c} onClick={()=>setOForm({...oForm,company:c})}
@@ -2029,18 +2031,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
-            <div style={{...grid2, marginBottom:'10px'}}>
-              <div><label style={inpLbl}>開始</label><input type="time" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
-              <div><label style={inpLbl}>終了</label><input type="time" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
+            <div style={{...grid2,marginBottom:8}}>
+              <div><label style={inpLbl}>開始</label><input type="time" step="1800" value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpTxt} /></div>
+              <div><label style={inpLbl}>終了</label><input type="time" step="1800" value={oForm.end} onChange={e=>setOForm({...oForm,end:e.target.value})} style={inpTxt} /></div>
             </div>
-            <div style={{ marginBottom:'10px' }}><label style={inpLbl}>区分</label>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>
+            <div style={{marginBottom:8}}>
+              <label style={inpLbl}>区分</label>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
                 {[['daytime','日勤','#3b82f6'],['nighttime','夜間','#8b5cf6']].map(([v,label,color])=>(
-                  <button key={v} onClick={()=>setOForm({...oForm,shift:v})} style={{ padding:'11px', borderRadius:'9px', border:`1px solid ${oForm.shift===v?color:'var(--border)'}`, background: oForm.shift===v?`${color}18`:'var(--bg3)', color: oForm.shift===v?color:'rgba(255,255,255,0.45)', fontSize:'12px', fontWeight:'600', cursor:'pointer' }}>{label}</button>
+                  <button key={v} onClick={()=>setOForm({...oForm,shift:v})} style={{padding:'11px',borderRadius:'9px',border:`1px solid ${oForm.shift===v?color:'var(--border)'}`,background:oForm.shift===v?`${color}18`:'var(--bg3)',color:oForm.shift===v?color:'rgba(255,255,255,0.45)',fontSize:'12px',fontWeight:'600',cursor:'pointer'}}>{label}</button>
                 ))}
               </div>
             </div>
-            {oForm.count && <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>¥{formatCurrency(parseInt(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
+            {oForm.count && <div style={{textAlign:'right',fontSize:'12px',color:'#60a5fa',fontWeight:'600',marginBottom:'8px'}}>¥{formatCurrency(parseInt(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
             <AddBtn onClick={addOutsource} disabled={!oForm.company.trim()||!oForm.count} />
           </div>
           {workDetails.outsourcingLabor.length>0 && <SubTotal label="外注人工" value={workDetails.outsourcingLabor.reduce((s,o)=>s+o.amount,0)} />}

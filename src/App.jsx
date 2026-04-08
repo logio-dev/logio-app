@@ -1790,19 +1790,27 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
           {/* 産廃 */}
           <SectionLabel ja="産廃処分費" en="Waste" />
+          {editingWasteIdx === null && wasteItems.length > 0 && (
+            <div style={{fontSize:11,color:'rgba(245,158,11,0.8)',marginBottom:6,padding:'5px 10px',background:'rgba(245,158,11,0.06)',borderRadius:7,border:'1px dashed rgba(245,158,11,0.2)'}}>
+              ✏️ 行をタップすると編集できます
+            </div>
+          )}
           {wasteItems.map((w,i)=>(
             <div key={i} onClick={()=>{
               setEditingWasteIdx(i);
               setWasteForm({type:w.material,disposal:w.disposalSite,qty:String(w.quantity),unit:w.unit||'㎥',price:String(w.amount),manifest:w.manifestNumber||'',haisha:w.haisha||'',driver:w.driver||'',vType:w.vType||'',vNumber:w.vNumber||'',haishiShift:w.haishiShift||'',haishiOverride:false,haishiPrice:''});
             }} style={{borderRadius:10,padding:'10px 12px',marginBottom:5,cursor:'pointer',display:'flex',alignItems:'center',gap:8,
               background: editingWasteIdx===i ? 'rgba(245,158,11,0.08)' : '#FFFBEB',
-              border: editingWasteIdx===i ? '1.5px solid rgba(245,158,11,0.5)' : '0.5px solid #FDE68A'
+              border: editingWasteIdx===i ? '2px solid rgba(245,158,11,0.6)' : '1px solid #FDE68A'
             }}>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{w.material} → {w.disposalSite}</div>
                 <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　¥{formatCurrency(w.amount)}</div>
               </div>
-              {editingWasteIdx===i && <span style={{fontSize:9,background:'rgba(245,158,11,0.15)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.3)',borderRadius:4,padding:'1px 6px',flexShrink:0}}>編集中</span>}
+              {editingWasteIdx===i
+                ? <span style={{fontSize:9,background:'rgba(245,158,11,0.2)',color:'#B45309',border:'1px solid rgba(245,158,11,0.4)',borderRadius:4,padding:'2px 7px',flexShrink:0,fontWeight:700}}>編集中</span>
+                : <span style={{fontSize:11,color:'rgba(245,158,11,0.6)',flexShrink:0}}>✏️</span>
+              }
               <button onClick={e=>{e.stopPropagation();if(editingWasteIdx===i){setEditingWasteIdx(null);setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''});}setWasteItems(wasteItems.filter((_,j)=>j!==i));}}
                 style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
             </div>
@@ -1843,19 +1851,27 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
           {/* スクラップ */}
           <SectionLabel ja="スクラップ売上" en="Scrap" />
+          {editingScrapIdx === null && scrapItems.length > 0 && (
+            <div style={{fontSize:11,color:'rgba(34,197,94,0.8)',marginBottom:6,padding:'5px 10px',background:'rgba(34,197,94,0.06)',borderRadius:7,border:'1px dashed rgba(34,197,94,0.2)'}}>
+              ✏️ 行をタップすると編集できます
+            </div>
+          )}
           {scrapItems.map((s,i)=>(
             <div key={i} onClick={()=>{
               setEditingScrapIdx(i);
               setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount))});
             }} style={{borderRadius:10,padding:'10px 12px',marginBottom:5,cursor:'pointer',display:'flex',alignItems:'center',gap:8,
               background: editingScrapIdx===i ? 'rgba(34,197,94,0.08)' : '#ECFDF5',
-              border: editingScrapIdx===i ? '1.5px solid rgba(34,197,94,0.5)' : '0.5px solid #BBF7D0'
+              border: editingScrapIdx===i ? '2px solid rgba(34,197,94,0.6)' : '1px solid #BBF7D0'
             }}>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{s.type} → {s.buyer}</div>
                 <div style={{fontSize:10,color:'#999'}}>{s.quantity}{s.unit}　¥{formatCurrency(Math.abs(s.amount))}</div>
               </div>
-              {editingScrapIdx===i && <span style={{fontSize:9,background:'rgba(34,197,94,0.15)',color:'#16A34A',border:'1px solid rgba(34,197,94,0.3)',borderRadius:4,padding:'1px 6px',flexShrink:0}}>編集中</span>}
+              {editingScrapIdx===i
+                ? <span style={{fontSize:9,background:'rgba(34,197,94,0.2)',color:'#15803D',border:'1px solid rgba(34,197,94,0.4)',borderRadius:4,padding:'2px 7px',flexShrink:0,fontWeight:700}}>編集中</span>
+                : <span style={{fontSize:11,color:'rgba(34,197,94,0.6)',flexShrink:0}}>✏️</span>
+              }
               <button onClick={e=>{e.stopPropagation();if(editingScrapIdx===i){setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});}setScrapItems(scrapItems.filter((_,j)=>j!==i));}}
                 style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
             </div>
@@ -2113,13 +2129,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
           {/* 産廃 */}
           <SectionLabel ja="産廃処分費" en="Waste Disposal" />
+          {editingWasteIdx === null && wasteItems.length > 0 && (
+            <div style={{fontSize:11,color:'rgba(245,158,11,0.8)',marginBottom:6,padding:'5px 10px',background:'rgba(245,158,11,0.06)',borderRadius:7,border:'1px dashed rgba(245,158,11,0.2)'}}>
+              ✏️ 行をタップすると編集できます
+            </div>
+          )}
           {wasteItems.map((w,i)=>(
             <div key={i} onClick={()=>{
               setEditingWasteIdx(i);
               setWasteForm({type:w.material,disposal:w.disposalSite,qty:String(w.quantity),unit:w.unit||'㎥',price:String(w.amount),manifest:w.manifestNumber||'',haisha:w.haisha||'',driver:w.driver||'',vType:w.vType||'',vNumber:w.vNumber||'',haishiShift:w.haishiShift||'',haishiOverride:false,haishiPrice:''});
             }} style={{borderRadius:11,marginBottom:6,overflow:'hidden',cursor:'pointer',
               background: editingWasteIdx===i ? 'rgba(245,158,11,0.08)' : '#FFFBEB',
-              border: editingWasteIdx===i ? '1.5px solid rgba(245,158,11,0.5)' : '1px solid #FDE68A'
+              border: editingWasteIdx===i ? '2px solid rgba(245,158,11,0.6)' : '1px solid #FDE68A'
             }}>
               <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px'}}>
                 <div style={{width:36,height:36,borderRadius:9,background:'rgba(245,158,11,0.15)',color:'#fbbf24',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{w.material.slice(0,2)}</div>
@@ -2127,7 +2148,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <div style={{fontSize:13,fontWeight:700,color:'#1C1917'}}>{w.material} → {w.disposalSite}</div>
                   <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　¥{formatCurrency(w.amount)}{w.manifestNumber?`　マニ:${w.manifestNumber}`:''}</div>
                 </div>
-                {editingWasteIdx===i && <span style={{fontSize:9,background:'rgba(245,158,11,0.2)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.3)',borderRadius:4,padding:'1px 6px',flexShrink:0}}>編集中</span>}
+                {editingWasteIdx===i
+                  ? <span style={{fontSize:9,background:'rgba(245,158,11,0.2)',color:'#B45309',border:'1px solid rgba(245,158,11,0.4)',borderRadius:4,padding:'2px 7px',flexShrink:0,fontWeight:700}}>編集中</span>
+                  : <span style={{fontSize:11,color:'rgba(245,158,11,0.5)',flexShrink:0}}>✏️</span>
+                }
                 <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',flexShrink:0}}>¥{formatCurrency(w.amount)}</div>
                 <button onClick={e=>{e.stopPropagation();if(editingWasteIdx===i){setEditingWasteIdx(null);setWasteForm({type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''});}setWasteItems(wasteItems.filter((_,j)=>j!==i));}} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,flexShrink:0}}>✕</button>
               </div>

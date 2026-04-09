@@ -2526,11 +2526,15 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
               <FileText className="w-4 h-4" />PDF
             </button>
             <button onClick={() => onEdit && onEdit(report)}
-              className="py-3 px-2 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-1"
-              style={{ background:'rgba(245,158,11,0.15)', border:'1px solid rgba(245,158,11,0.3)', color:'#fbbf24' }}>
-              編集
+              className="flex-1 py-3 px-4 text-white rounded-lg transition-colors font-bold text-sm flex items-center justify-center gap-1"
+              style={{ background:'rgba(245,158,11,0.2)', border:'1px solid rgba(245,158,11,0.4)', color:'#fbbf24' }}>
+              <Settings className="w-4 h-4" />編集
             </button>
-            <Button variant="danger" onClick={onDelete} icon={Trash2}>削除</Button>
+            <button onClick={onDelete}
+              className="py-3 px-3 text-white rounded-lg transition-colors font-medium text-sm flex items-center justify-center gap-1"
+              style={{ background:'rgba(239,68,68,0.15)', border:'1px solid rgba(239,68,68,0.3)', color:'#f87171' }}>
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -3145,8 +3149,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 // ========== メインApp ==========
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    try { return !!localStorage.getItem('wac_user'); } catch { return false; }
+  });
+  const [currentUser, setCurrentUser] = useState(() => {
+    try { const u = localStorage.getItem('wac_user'); return u ? JSON.parse(u) : null; } catch { return null; }
+  });
   const [currentPage, setCurrentPage] = useState('home');
   const [navHoverId, setNavHoverId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -3204,10 +3212,16 @@ export default function LOGIOApp() {
     return `${currentYear}-${(Math.max(...nums, 0) + 1).toString().padStart(3, '0')}`;
   };
 
-  const handleLogin = (user) => { setCurrentUser(user); setIsLoggedIn(true); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    setIsLoggedIn(true);
+    try { localStorage.setItem('wac_user', JSON.stringify(user)); } catch {}
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
   const handleLogout = () => {
     if (confirm('ログアウトしますか？')) {
       if (selectedSite && currentUser) siteLocks.release(selectedSite, currentUser.userId);
+      try { localStorage.removeItem('wac_user'); } catch {}
       setIsLoggedIn(false); setCurrentUser(null); setSelectedSite(''); setSidebarOpen(false); setLockStatus(null);
       window.scrollTo({ top: 0, behavior: 'instant' });
     }

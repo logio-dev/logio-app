@@ -2378,7 +2378,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
           (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
           (r.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
           (r.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0), 0);
+          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
         return (
           <div key={month} className="mb-3">
             <button onClick={() => toggleMonth(month)}
@@ -2441,7 +2441,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
                 (report.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
                 (report.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
                 (report.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-                (report.wasteItems?.reduce((s,w)=>s+(w.amount||0)+(w.haishiAmount||0),0)||0);
+                (report.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0);
               return totalCost > 0 && <span style={{color:"#B45309",fontWeight:700,fontSize:13,fontVariantNumeric:"tabular-nums"}}>¥{formatCurrency(totalCost)}</span>;
             })()}
           </div>
@@ -3158,16 +3158,16 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   <td></td><td></td><td></td><td></td>
                 </tr>
               ))}
-              <tr style={{ background: '#2D2D2D' }}>
-                <th colSpan="6" className="text-right" style={{ background: '#2D2D2D', color: 'var(--text3)' }}>計</th>
-                <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalInHouseWorkers}人</td>
-                <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalInHouseCost)}</td>
-                <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalOutsourcingWorkers}人</td>
-                <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
-                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
-                <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalMachineryCost)}</td>
-                <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalWasteCost)}</td>
-                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: 'var(--text3)' }}>原価小計：</td>
+              <tr style={{ background: '#374151' }}>
+                <th colSpan="6" className="text-right" style={{ background: '#374151', color: '#fff' }}>計</th>
+                <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{totalInHouseWorkers}人</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalInHouseCost)}</td>
+                <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{totalOutsourcingWorkers}人</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
+                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalMachineryCost)}</td>
+                <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalWasteCost)}</td>
+                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計：</td>
               </tr>
             </tbody>
           </table>

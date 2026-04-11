@@ -109,9 +109,8 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
         .logio-char { display: inline-block; opacity: ${animated ? 0 : 1}; }
         ${animated ? `
         .logio-char-animated { animation: charFloatUpCinematic 1.8s ease-in-out forwards; }
-        .logio-char-0 { animation-delay: 0s; } .logio-char-1 { animation-delay: 0.25s; }
-        .logio-char-2 { animation-delay: 0.5s; } .logio-char-3 { animation-delay: 0.75s; }
-        .logio-char-4 { animation-delay: 1.0s; }
+        .logio-char-0 { animation-delay: 0s; } .logio-char-1 { animation-delay: 0.3s; }
+        .logio-char-2 { animation-delay: 0.6s; }
         @keyframes charFloatUpCinematic {
           0% { opacity: 0; transform: translateY(40px) scale(0.95); }
           50% { opacity: 0.5; }
@@ -144,8 +143,8 @@ function LOGIOLogo({ className = "", size = "md", animated = false }) {
           </svg>
         </div>
         <span className={`${sizeStyles[size]} relative z-10`}
-          style={{ fontFamily: 'Roboto Condensed, -apple-system, sans-serif', fontWeight: 900, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#1C1917' }}>
-          {['L','O','G','I','O'].map((c, i) => (
+          style={{ fontFamily: 'Roboto Condensed, -apple-system, sans-serif', fontWeight: 900, letterSpacing: '0.05em', color: '#1C1917' }}>
+          {['W','a','c'].map((c, i) => (
             <span key={i} className={`logio-char ${animated ? `logio-char-animated logio-char-${i}` : ''}`}>{c}</span>
           ))}
         </span>
@@ -280,7 +279,7 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
           )}
         </div>
         {/* 中央：ロゴ */}
-        <span style={{ fontSize:'18px', fontWeight:800, letterSpacing:'-0.02em', color:'#1C1917', fontFamily:'Inter, -apple-system, BlinkMacSystemFont, sans-serif', userSelect:'none' }}>LOGIO</span>
+        <span style={{ fontSize:'18px', fontWeight:900, letterSpacing:'0.05em', color:'#1C1917', fontFamily:'Roboto Condensed, -apple-system, sans-serif', userSelect:'none' }}>Wac</span>
         {/* 右：アイコン3つ */}
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
           {/* リロード */}
@@ -478,7 +477,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
             </div>
             <div className="flex-1 h-0 overflow-y-auto" style={{ paddingTop:'calc(env(safe-area-inset-top, 0px) + 20px)', paddingBottom:'16px' }}>
               <div className="flex items-center flex-shrink-0 px-4 mb-8">
-                <span style={{fontSize:20,fontWeight:800,letterSpacing:'-0.02em',color:'#1C1917',fontFamily:'Inter,-apple-system,sans-serif'}}>LOGIO</span>
+                <span style={{fontSize:20,fontWeight:900,letterSpacing:'0.05em',color:'#1C1917',fontFamily:'Roboto Condensed,-apple-system,sans-serif'}}>Wac</span>
               </div>
               <nav className="px-2 space-y-1">
                 {navItems.map((item) => {
@@ -579,7 +578,7 @@ function LoginPage({ onLogin }) {
         </div>
       </div>
       <div style={{textAlign:'center', padding:'24px 0'}}>
-        <p style={{fontSize:11, color:'rgba(255,255,255,0.45)'}}>© 2026 LOGIO</p>
+        <p style={{fontSize:11, color:'rgba(255,255,255,0.45)'}}>© 2026 Wac</p>
       </div>
     </div>
   );
@@ -1333,7 +1332,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
   const [workDetails, setWorkDetails] = useState(
     isEditMode ? (() => {
-      const wd = editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], envItems:[], extItems:[], costItems:[] };
+      const wd = editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], envItems:[], extItems:[], costItems:[], dailyExpenses:[] };
       return {
         ...wd,
         outsourcingLabor: (wd.outsourcingLabor || []).map(o => ({
@@ -1342,7 +1341,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         }))
       };
     })()
-    : { workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], envItems: [], extItems: [], costItems: [] }
+    : { workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], envItems: [], extItems: [], costItems: [], dailyExpenses: [] }
   );
   const [wasteItems, setWasteItems] = useState(isEditMode ? (editReport.wasteItems || []) : []);
   const [scrapItems, setScrapItems] = useState(isEditMode ? (editReport.scrapItems || []) : []);
@@ -2179,6 +2178,58 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
           {workDetails.machinery.length>0 && <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />}
 
+          {/* 経費 */}
+          <SectionLabel ja="経費" en="Expenses" />
+          {(workDetails.dailyExpenses||[]).map((e,i)=>(
+            <div key={i} style={{background:'#fff',borderRadius:10,padding:'10px 12px',marginBottom:5,display:'flex',alignItems:'center',gap:8,border:'0.5px solid #E8E8E8'}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{e.name}</div>
+                <div style={{fontSize:10,color:'#999'}}>{e.days ? `${e.days}日` : ''}　¥{formatCurrency(e.amount)}</div>
+              </div>
+              <button onClick={()=>setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)})}
+                style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+            </div>
+          ))}
+          <div style={{...inputCard,border:'1px solid rgba(168,85,247,0.25)'}}>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
+              {['パーキング代','高速代','交通費','経費','道具代','アスベスト分析費'].map(n=>(
+                <button key={n} onClick={()=>{
+                  const existing = (workDetails.dailyExpenses||[]).find(e=>e.name===n);
+                  if(existing) {
+                    setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).map(e=>e.name===n?{...e,days:(e.days||0)+1,amount:(e.amount||0)}:e)});
+                  } else {
+                    setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name:n,days:1,amount:0}]});
+                  }
+                }} style={{padding:'4px 9px',borderRadius:7,border:'1px solid rgba(168,85,247,0.25)',background:'rgba(168,85,247,0.08)',color:'#a855f7',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
+              ))}
+            </div>
+            <div style={{...grid2,marginBottom:8}}>
+              <div>
+                <label style={inpLbl}>項目名</label>
+                <input type="text" value={workDetails._expName||''} onChange={e=>setWorkDetails({...workDetails,_expName:e.target.value})} placeholder="例）パーキング代" style={inpTxt} />
+              </div>
+              <div>
+                <label style={inpLbl}>金額</label>
+                <input type="number" value={workDetails._expAmt||''} onChange={e=>setWorkDetails({...workDetails,_expAmt:e.target.value})} placeholder="0" style={inpTxt} />
+              </div>
+            </div>
+            <button onClick={()=>{
+              const name=(workDetails._expName||'').trim();
+              const amt=parseFloat(workDetails._expAmt)||0;
+              if(!name) return;
+              const existing=(workDetails.dailyExpenses||[]).find(e=>e.name===name);
+              if(existing){
+                setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).map(e=>e.name===name?{...e,days:(e.days||0)+1,amount:(e.amount||0)+amt}:e),_expName:'',_expAmt:''});
+              } else {
+                setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,days:1,amount:amt}],_expName:'',_expAmt:''});
+              }
+            }} disabled={!(workDetails._expName||'').trim()}
+              style={{width:'100%',padding:'11px',background:'rgba(168,85,247,0.15)',border:'1px solid rgba(168,85,247,0.35)',borderRadius:9,color:'#c084fc',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:!(workDetails._expName||'').trim()?0.4:1}}>
+              ＋ 追加（同じ項目は加算）
+            </button>
+          </div>
+          {(workDetails.dailyExpenses||[]).length>0 && <SubTotal label="経費" value={(workDetails.dailyExpenses||[]).reduce((s,e)=>s+(e.amount||0),0)} />}
+
           <BFooter onBack={()=>setCurrentStep(1)} onNext={()=>setCurrentStep(3)} nextLabel="次へ →" />
         </div>
       )}
@@ -3003,9 +3054,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
   const totalHaishiCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0), 0);
   const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.envItems || []).reduce((s,t)=>s+(t.amount||0),0) + (r.workDetails?.extItems || []).reduce((s,t)=>s+(t.amount||0),0), 0);
+  const totalDailyExpenses = allReports.reduce((sum, r) => sum + (r.workDetails?.dailyExpenses || []).reduce((s,e)=>s+(e.amount||0),0), 0);
   const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-  const totalCost = totalInHouseCost + totalOutsourcingCost + (totalVehicleCost + totalHaishiCost) + totalMachineryCost + totalTransportCost + totalWasteCost
+  const totalCost = totalInHouseCost + totalOutsourcingCost + (totalVehicleCost + totalHaishiCost) + totalMachineryCost + totalTransportCost + totalWasteCost + totalDailyExpenses
     + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
     + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
@@ -3080,14 +3132,22 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
               {/* リース・機材・資材・経費等テーブル */}
               {(()=>{
                 const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
-                const items = miscItems.map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0}));
+                // 日報の経費を集計（同項目は加算）
+                const dailyExpMap = {};
+                allReports.forEach(r=>(r.workDetails?.dailyExpenses||[]).forEach(e=>{
+                  if(!dailyExpMap[e.name]) dailyExpMap[e.name]={name:e.name,days:0,amount:0};
+                  dailyExpMap[e.name].days += (e.days||1);
+                  dailyExpMap[e.name].amount += (e.amount||0);
+                }));
+                const dailyExpItems = Object.values(dailyExpMap);
+                const items = [...miscItems.map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0})), ...dailyExpItems];
                 if(items.length===0) return null;
                 const total = items.reduce((s,i)=>s+i.amount,0);
                 return (
                   <table className="pdf-header-table" style={{fontSize:'8px'}}>
                     <thead>
                       <tr style={{background:'#F3F4F6'}}>
-                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#fff',letterSpacing:'.06em',borderBottom:'1px solid #D1D5DB',padding:'4px',background:'#374151'}}>リース・機材・資材・経費等</th>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#C4B5FD',letterSpacing:'.06em',borderBottom:'1px solid #D1D5DB',padding:'4px',background:'#374151',fontWeight:700}}>リース・機材・資材・経費等</th>
                       </tr>
                       <tr style={{background:'#F3F4F6'}}>
                         <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
@@ -3108,7 +3168,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
             </div>
             <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
               <div style={{width:'100%'}}>
-              <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#fff',border:'1px solid #374151'}}>【　収　支　結　果　】</div>
+              <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#EAB308',border:'1px solid #374151'}}>【　収　支　結　果　】</div>
               <table className="result-table" style={{width:'100%'}}>
                 <tbody>
                   {[
@@ -3527,6 +3587,7 @@ export default function LOGIOApp() {
         report.workDetails.machinery?.forEach(m => accumulatedCost += m.unitPrice || 0);
         report.workDetails.envItems?.forEach(t => accumulatedCost += t.amount || 0);
         report.workDetails.extItems?.forEach(t => accumulatedCost += t.amount || 0);
+        report.workDetails.dailyExpenses?.forEach(e => accumulatedCost += e.amount || 0);
       }
       report.wasteItems?.forEach(w => accumulatedCost += (w.amount || 0));
       report.wasteItems?.forEach(w => accumulatedCost += (w.haishiAmount || 0)); // 配車費は車両費扱い

@@ -1506,7 +1506,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const inputCardAmber = mkCard('#f59e0b');
   const inputCardGreen = mkCard('#34d399');
   const inputCardRose  = mkCard('#f43f5e');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpTxt = { width:'100%', padding:'12px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box', WebkitAppearance:'none', appearance:'none' };
   const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'rgba(255,255,255,0.5)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
@@ -1806,6 +1806,96 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>金額</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}><label style={inpLbl}>マニNo. <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
+            {/* 配車選択 */}
+            <div style={{marginBottom:8}}>
+              <label style={inpLbl}>配車</label>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6}}>
+                {[['','なし','#6B7280'],['env','環境課','#4ade80'],['ext','ワイエム','#a5b4fc']].map(([v,label,color])=>(
+                  <button key={v} onClick={()=>setWasteForm({...wasteForm,haisha:v,driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:''})}
+                    style={{padding:'8px',borderRadius:8,border:`1px solid ${wasteForm.haisha===v?color:'var(--border)'}`,background:wasteForm.haisha===v?`rgba(${v==='env'?'34,197,94':v==='ext'?'99,102,241':'107,114,128'},0.1)`:'var(--bg3)',color:wasteForm.haisha===v?color:'rgba(255,255,255,0.45)',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{label}</button>
+                ))}
+              </div>
+            </div>
+            {/* 環境課展開 */}
+            {wasteForm.haisha==='env' && (
+              <div style={{padding:12,borderRadius:9,background:'#F0FDF4',border:'1px solid #BBF7D0',marginBottom:10}}>
+                <label style={{...inpLbl,color:'#4ade80',marginBottom:6}}>運転者（環境課）</label>
+                <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:8}}>
+                  {['小峯朋宏','松橋信行','浅見勇弥','石田竜二','古山慎祐','尾崎奈帆'].map(d=>(
+                    <button key={d} onClick={()=>setWasteForm({...wasteForm,driver:d})}
+                      style={{padding:'5px 9px',borderRadius:7,border:`1px solid ${wasteForm.driver===d?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.07)'}`,background:wasteForm.driver===d?'rgba(34,197,94,0.15)':'rgba(255,255,255,0.02)',color:wasteForm.driver===d?'#4ade80':'#6B7280',fontSize:11,fontWeight:wasteForm.driver===d?700:600,cursor:'pointer',fontFamily:'inherit'}}>
+                      {d.slice(0,2)}
+                    </button>
+                  ))}
+                </div>
+                <input type="text" value={wasteForm.driver} onChange={e=>setWasteForm({...wasteForm,driver:e.target.value})} placeholder="その他：名前を入力" style={{...inpTxt,marginBottom:10}}/>
+                <label style={{...inpLbl,marginBottom:6}}>使用車両</label>
+                <div style={{...grid2,marginBottom:10}}>
+                  <div>
+                    <label style={inpLbl}>車種</label>
+                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={inpLbl}>車番</label>
+                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <label style={{...inpLbl,marginBottom:6}}>シフト</label>
+                <div style={grid2}>
+                  {[['day','昼',20000],['night','夜',30000]].map(([v,label,price])=>(
+                    <button key={v} onClick={()=>setWasteForm({...wasteForm,haishiShift:v})}
+                      style={{padding:'10px',borderRadius:9,border:`1px solid ${wasteForm.haishiShift===v?'rgba(34,197,94,0.5)':'rgba(255,255,255,0.08)'}`,background:wasteForm.haishiShift===v?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.02)',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                      <div style={{fontSize:13,fontWeight:800,color:wasteForm.haishiShift===v?'#4ade80':'#6B7280'}}>{label}</div>
+                      <div style={{fontSize:10,fontFamily:'monospace',color:wasteForm.haishiShift===v?'#4ade80':'#374151'}}>¥{formatCurrency(price)}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* ワイエム展開 */}
+            {wasteForm.haisha==='ext' && (
+              <div style={{padding:12,borderRadius:9,background:'#EEF2FF',border:'1px solid #C7D2FE',marginBottom:10}}>
+                <div style={{marginBottom:10,padding:'6px 10px',borderRadius:7,background:'rgba(99,102,241,0.1)',fontSize:12,fontWeight:700,color:'#a5b4fc'}}>ワイエムエコフューチャー</div>
+                <label style={{...inpLbl,marginBottom:6}}>シフト</label>
+                <div style={{...grid2,marginBottom:8}}>
+                  {[['day','昼',22000],['night','夜',32000]].map(([v,label,price])=>(
+                    <button key={v} onClick={()=>setWasteForm({...wasteForm,haishiShift:v,haishiOverride:false})}
+                      style={{padding:'10px',borderRadius:9,border:`1px solid ${!wasteForm.haishiOverride&&wasteForm.haishiShift===v?'rgba(99,102,241,0.5)':'rgba(255,255,255,0.08)'}`,background:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?'rgba(99,102,241,0.1)':'rgba(255,255,255,0.02)',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                      <div style={{fontSize:13,fontWeight:800,color:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?'#a5b4fc':'#6B7280'}}>{label}</div>
+                      <div style={{fontSize:10,fontFamily:'monospace',color:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?'#a5b4fc':'#374151'}}>¥{formatCurrency(price)}</div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{...grid2,marginBottom:8}}>
+                  <div>
+                    <label style={{...inpLbl,marginBottom:4}}>車種 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
+                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
+                      {MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{...inpLbl,marginBottom:4}}>車番 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
+                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
+                      {(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button onClick={()=>setWasteForm({...wasteForm,haishiOverride:!wasteForm.haishiOverride,haishiShift:''})}
+                  style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',marginBottom:6}}>
+                  <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${wasteForm.haishiOverride?'#6366f1':'#374151'}`,background:wasteForm.haishiOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',flexShrink:0}}>{wasteForm.haishiOverride?'✓':''}</div>
+                  <span style={{fontSize:11,color:wasteForm.haishiOverride?'#a5b4fc':'#4B5563'}}>遠方・例外あり（金額を手入力）</span>
+                </button>
+                {wasteForm.haishiOverride && (
+                  <input type="number" value={wasteForm.haishiPrice} onChange={e=>setWasteForm({...wasteForm,haishiPrice:e.target.value})} placeholder="配車費を入力" style={{...inpTxt,borderColor:'rgba(99,102,241,0.3)'}}/>
+                )}
+              </div>
+            )}
             {editingWasteIdx !== null ? (
               <div style={{display:'flex',gap:6,marginTop:8}}>
                 <button onClick={addWaste} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty}

@@ -3130,12 +3130,18 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         {/* 産廃：環境課行はwaste、ワイエム行はextWaste、通常行はwasteAndScrap */}
                         {(()=>{
                           const envW = effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].waste : null;
-                          const extW = !effectiveWorkers[subIdx]?.isEnv ? extWasteRows[subIdx] : null;
-                          // normWのインデックスは環境課行数を除いた通常行のインデックス
-                          const normIdx = subIdx - envWorkerRows.length;
-                          const normW = !effectiveWorkers[subIdx]?.isEnv && normIdx >= 0 ? wasteAndScrap[normIdx] : 
-                                        !effectiveWorkers[subIdx]?.isEnv && subIdx >= 0 ? wasteAndScrap[subIdx] : null;
-                          const w = envW || extW || normW;
+                          const extW = !effectiveWorkers[subIdx]?.isEnv && !effectiveWorkers[subIdx]?.isDitto ? extWasteRows[subIdx] : null;
+                          // subIdxまでの通常行（isEnvでもisDittoでもない行 + isDitto行）のインデックス
+                          // effectiveWorkersの中でisEnvでない行の順番を数える
+                          let normIdx = -1;
+                          if (!effectiveWorkers[subIdx]?.isEnv) {
+                            normIdx = 0;
+                            for (let k = 0; k < subIdx; k++) {
+                              if (!effectiveWorkers[k]?.isEnv) normIdx++;
+                            }
+                          }
+                          const normW = (!effectiveWorkers[subIdx]?.isEnv) ? wasteAndScrap[normIdx] : null;
+                          const w = envW || normW;
                           const isScrap = w?.manifestNumber==='-';
                           return (<>
                             <td className="text-[8px]">{w?.material||''}</td>

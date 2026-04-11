@@ -2266,7 +2266,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             )}
           </div>
           {wasteItems.length>0 && (
-            <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0)} />
+            <SubTotal label="産廃" value={wasteItems.reduce((s,w)=>s+w.amount,0)} />
           )}
 
           {/* スクラップ */}
@@ -2509,7 +2509,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
           )}
           {report.wasteItems?.length > 0 && (
             <div className="mb-4 rounded p-2" style={{ background: '#2D2D2D' }}>
-              <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount+(w.haishiAmount||0),0))}</p>
+              <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount,0))}</p>
               {report.wasteItems.map((waste, idx) => (
                 <div key={idx} className="text-sm text-gray-300 ml-3 mb-1">
                   <p>• {waste.material} <span className="text-gray-500">{waste.quantity}{waste.unit}</span> - {waste.disposalSite}</p>

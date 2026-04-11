@@ -3083,6 +3083,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 const extWasteRows = extWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:true, vType:'', vNumber:'' }));
                 // 通常産廃＋スクラップ
                 const normWasteRows = [...normWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'' })), ...scrapRows];
+                const wasteAndScrap = normWasteRows;
 
                 const allWorkers = [ ...workers, ...envWorkerRows ];
                 // 通常産廃が自社人工より多い場合、自社人工を〃で補完
@@ -3090,15 +3091,13 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 if (wasteAndScrap.length > workers.length) {
                   for (let i = workers.length; i < wasteAndScrap.length; i++) {
                     if (!effectiveWorkers[i] || effectiveWorkers[i]?.isEnv) {
-                      // 通常産廃行に対して前の自社人工を〃で表示
                       const lastWorker = workers[workers.length - 1];
-                      if (lastWorker && i < wasteAndScrap.length + envWorkerRows.length) {
+                      if (lastWorker) {
                         effectiveWorkers.splice(i, 0, { ...lastWorker, isDitto: true, amount: 0 });
                       }
                     }
                   }
                 }
-                const wasteAndScrap = normWasteRows;
                 const maxSubRows = Math.max(1, effectiveWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, envWorkerRows.length + wasteAndScrap.length);
                 const allStartTimes = [...workers.map(w => w.start || w.startTime), ...outsourcing.map(o => o.start || o.startTime)].filter(Boolean).sort();
                 const allEndTimes = [...workers.map(w => w.end || w.endTime), ...outsourcing.map(o => o.end || o.endTime)].filter(Boolean).sort().reverse();

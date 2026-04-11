@@ -3067,7 +3067,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 
                 const allWorkers = [ ...workers, ...envWorkerRows ];
                 const wasteAndScrap = normWasteRows;
-                const maxSubRows = Math.max(1, allWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, wasteAndScrap.length);
+                const maxSubRows = Math.max(1, allWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, envWorkerRows.length + wasteAndScrap.length);
                 const allStartTimes = [...workers.map(w => w.start || w.startTime), ...outsourcing.map(o => o.start || o.startTime)].filter(Boolean).sort();
                 const allEndTimes = [...workers.map(w => w.end || w.endTime), ...outsourcing.map(o => o.end || o.endTime)].filter(Boolean).sort().reverse();
                 return (
@@ -3096,7 +3096,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         {(()=>{
                           const envW = allWorkers[subIdx]?.isEnv ? allWorkers[subIdx].waste : null;
                           const extW = !allWorkers[subIdx]?.isEnv ? extWasteRows[subIdx] : null;
-                          const normW = !allWorkers[subIdx]?.isEnv ? wasteAndScrap[subIdx] : null;
+                          // normWのインデックスは環境課行数を除いた通常行のインデックス
+                          const normIdx = subIdx - envWorkerRows.length;
+                          const normW = !allWorkers[subIdx]?.isEnv && normIdx >= 0 ? wasteAndScrap[normIdx] : 
+                                        !allWorkers[subIdx]?.isEnv && subIdx >= 0 ? wasteAndScrap[subIdx] : null;
                           const w = envW || extW || normW;
                           const isScrap = w?.manifestNumber==='-';
                           return (<>

@@ -2933,15 +2933,15 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         .pdf-container { font-family: 'Noto Sans JP', sans-serif; background: #fff; }
         .pdf-table { border-collapse: collapse; width: 100%; }
         .pdf-table th, .pdf-table td { border: 1px solid #D1D5DB; padding: 2px 4px; font-size: 9px; line-height: 1.3; white-space: nowrap; }
-        .pdf-table th { background: #F3F4F6; color: #374151; font-weight: 700; text-align: center; font-size: 8px; }
-        .pdf-table td { color: #111827; }
+        .pdf-table th { background: #374151; color: #fff; font-weight: 700; text-align: center; font-size: 8px; }
+        .pdf-table td { color: #111827; background: #fff; }
         .pdf-header-table { border-collapse: collapse; width: 100%; }
         .pdf-header-table th, .pdf-header-table td { border: 1px solid #D1D5DB; padding: 3px 6px; font-size: 10px; line-height: 1.4; }
-        .pdf-header-table th { background: #F3F4F6; color: #374151; font-weight: 700; text-align: left; font-size: 8px; width: 80px; }
+        .pdf-header-table th { background: #374151; color: #fff; font-weight: 700; text-align: left; font-size: 8px; width: 80px; }
         .pdf-header-table td { color: #111827; background: #fff; }
         .result-table { border-collapse: collapse; width: 100%; }
         .result-table th, .result-table td { border: 1px solid #D1D5DB; padding: 2px 8px; font-size: 9px; }
-        .result-table th { background: #F3F4F6; color: #374151; font-weight: 500; text-align: left; width: 70px; white-space: nowrap; }
+        .result-table th { background: #FEF9C3; color: #854D0E; font-weight: 700; text-align: left; width: 70px; white-space: nowrap; }
         .result-table td { color: #111827; text-align: right; background: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 90px; }
         @media print {
           .no-print { display: none !important; }
@@ -2966,7 +2966,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
       <div className="pdf-container p-6" style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#fff' }}>
         <div style={{ width: '1200px' }}>
           <div className="text-center mb-3">
-            <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
+            <h1 className="pdf-title text-xl font-black tracking-[0.3em] border-b-2 pb-2 inline-block px-8" style={{color:'#111827',borderColor:'#374151'}}>解　体　作　業　日　報</h1>
             <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
           </div>
           <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '300px 200px 240px 1fr', width:'1152px' }}>
@@ -2997,7 +2997,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   <table className="pdf-header-table" style={{fontSize:'8px'}}>
                     <thead>
                       <tr style={{background:'#F3F4F6'}}>
-                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#7C3AED',letterSpacing:'.06em',borderBottom:'1px solid #D1D5DB',padding:'4px',background:'#F5F3FF'}}>リース・機材・資材・経費等</th>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#fff',letterSpacing:'.06em',borderBottom:'1px solid #D1D5DB',padding:'4px',background:'#374151'}}>リース・機材・資材・経費等</th>
                       </tr>
                       <tr style={{background:'#F3F4F6'}}>
                         <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
@@ -3018,7 +3018,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
             </div>
             <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
               <div style={{width:'100%'}}>
-              <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#FEF9C3',color:'#854D0E',border:'1px solid #FDE68A'}}>【　収　支　結　果　】</div>
+              <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#fff',border:'1px solid #374151'}}>【　収　支　結　果　】</div>
               <table className="result-table" style={{width:'100%'}}>
                 <tbody>
                   {[
@@ -3028,14 +3028,18 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   ].map(([label, val]) => (
                     <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
                   ))}
-                  <tr style={{ borderTop: '2px solid #374151' }}>
-                    <th className="font-bold">粗利</th>
-                    <td className="font-bold" style={{ color: grossProfit >= 0 ? '#60A5FA' : '#F87171' }}>¥{formatCurrency(grossProfit)}</td>
+                  <tr style={{ borderTop: '2px solid #374151', background:'#FEF08A' }}>
+                    <th style={{background:'#FEF08A',color:'#713F12',fontWeight:700}}>粗利</th>
+                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700, background:'#FEF08A' }}>¥{formatCurrency(grossProfit)}</td>
+                  </tr>
+                  <tr style={{ background:'#FFFBEB' }}>
+                    <th style={{background:'#FFFBEB',color:'#92400E'}}>粗利率</th>
+                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700, background:'#FFFBEB' }}>{totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0'}%</td>
                   </tr>
                   {totalScrapRevenue > 0 && (
-                    <tr style={{ borderTop: '1px dashed #374151' }}>
-                      <th style={{color:'#4ade80'}}>金属売上</th>
-                      <td style={{color:'#4ade80'}}>¥{formatCurrency(totalScrapRevenue)}</td>
+                    <tr style={{ borderTop: '1px dashed #D1D5DB' }}>
+                      <th style={{color:'#065F46'}}>金属売上</th>
+                      <td style={{color:'#065F46',fontWeight:700}}>¥{formatCurrency(totalScrapRevenue)}</td>
                     </tr>
                   )}
                 </tbody>
@@ -3168,9 +3172,9 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
             </tbody>
           </table>
           <div className="mt-2 flex justify-end">
-            <div className="border border-white/[0.08] bg-transparent px-6 py-2 flex items-center gap-4">
-              <span className="text-gray-400 text-xs font-bold">原価合計</span>
-              <span className="text-white text-lg font-black tabular-nums">¥{formatCurrency(totalCost)}</span>
+            <div style={{border:'1px solid #374151',background:'#374151',padding:'6px 24px',display:'flex',alignItems:'center',gap:16}}>
+              <span style={{color:'#9CA3AF',fontSize:12,fontWeight:700}}>原価合計</span>
+              <span style={{color:'#fff',fontSize:18,fontWeight:900,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(totalCost)}</span>
             </div>
           </div>
         </div>

@@ -279,7 +279,7 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
           )}
         </div>
         {/* 中央：ロゴ */}
-        <span style={{ fontSize:'18px', fontWeight:900, letterSpacing:'0.05em', color:'#1C1917', fontFamily:'Roboto Condensed, -apple-system, sans-serif', userSelect:'none' }}>Wac</span>
+        <span style={{ fontSize:'22px', fontWeight:900, letterSpacing:'0.05em', color:'#1C1917', fontFamily:'Roboto Condensed, -apple-system, sans-serif', userSelect:'none' }}>Wac</span>
         {/* 右：アイコン3つ */}
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
           {/* リロード */}
@@ -477,7 +477,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
             </div>
             <div className="flex-1 h-0 overflow-y-auto" style={{ paddingTop:'calc(env(safe-area-inset-top, 0px) + 20px)', paddingBottom:'16px' }}>
               <div className="flex items-center flex-shrink-0 px-4 mb-8">
-                <span style={{fontSize:20,fontWeight:900,letterSpacing:'0.05em',color:'#1C1917',fontFamily:'Roboto Condensed,-apple-system,sans-serif'}}>Wac</span>
+                <span style={{fontSize:24,fontWeight:900,letterSpacing:'0.05em',color:'#1C1917',fontFamily:'Roboto Condensed,-apple-system,sans-serif'}}>Wac</span>
               </div>
               <nav className="px-2 space-y-1">
                 {navItems.map((item) => {
@@ -2184,23 +2184,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div key={i} style={{background:'#fff',borderRadius:10,padding:'10px 12px',marginBottom:5,display:'flex',alignItems:'center',gap:8,border:'0.5px solid #E8E8E8'}}>
               <div style={{flex:1}}>
                 <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{e.name}</div>
-                <div style={{fontSize:10,color:'#999'}}>{e.days ? `${e.days}日` : ''}　¥{formatCurrency(e.amount)}</div>
+                <div style={{fontSize:10,color:'#999'}}>¥{formatCurrency(e.amount)}</div>
               </div>
               <button onClick={()=>setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)})}
                 style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
             </div>
           ))}
-          <div style={{...inputCard,border:'1px solid rgba(168,85,247,0.25)'}}>
+          <div style={inputCard}>
             <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
               {['パーキング代','高速代','交通費','経費','道具代','アスベスト分析費'].map(n=>(
-                <button key={n} onClick={()=>{
-                  const existing = (workDetails.dailyExpenses||[]).find(e=>e.name===n);
-                  if(existing) {
-                    setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).map(e=>e.name===n?{...e,days:(e.days||0)+1,amount:(e.amount||0)}:e)});
-                  } else {
-                    setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name:n,days:1,amount:0}]});
-                  }
-                }} style={{padding:'4px 9px',borderRadius:7,border:'1px solid rgba(168,85,247,0.25)',background:'rgba(168,85,247,0.08)',color:'#a855f7',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
+                <button key={n} onClick={()=>setWorkDetails({...workDetails,_expName:n})}
+                  style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${workDetails._expName===n?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.1)'}`,background:workDetails._expName===n?'rgba(59,130,246,0.3)':'rgba(255,255,255,0.08)',color:workDetails._expName===n?'#93C5FD':'rgba(255,255,255,0.5)',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
               ))}
             </div>
             <div style={{...grid2,marginBottom:8}}>
@@ -2213,20 +2207,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <input type="number" value={workDetails._expAmt||''} onChange={e=>setWorkDetails({...workDetails,_expAmt:e.target.value})} placeholder="0" style={inpTxt} />
               </div>
             </div>
-            <button onClick={()=>{
+            <AddBtn onClick={()=>{
               const name=(workDetails._expName||'').trim();
               const amt=parseFloat(workDetails._expAmt)||0;
               if(!name) return;
-              const existing=(workDetails.dailyExpenses||[]).find(e=>e.name===name);
-              if(existing){
-                setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).map(e=>e.name===name?{...e,days:(e.days||0)+1,amount:(e.amount||0)+amt}:e),_expName:'',_expAmt:''});
-              } else {
-                setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,days:1,amount:amt}],_expName:'',_expAmt:''});
-              }
-            }} disabled={!(workDetails._expName||'').trim()}
-              style={{width:'100%',padding:'11px',background:'rgba(168,85,247,0.15)',border:'1px solid rgba(168,85,247,0.35)',borderRadius:9,color:'#c084fc',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:!(workDetails._expName||'').trim()?0.4:1}}>
-              ＋ 追加（同じ項目は加算）
-            </button>
+              setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt}],_expName:'',_expAmt:''});
+            }} disabled={!(workDetails._expName||'').trim()} />
           </div>
           {(workDetails.dailyExpenses||[]).length>0 && <SubTotal label="経費" value={(workDetails.dailyExpenses||[]).reduce((s,e)=>s+(e.amount||0),0)} />}
 
@@ -3178,13 +3164,13 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   ].map(([label, val]) => (
                     <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
                   ))}
-                  <tr style={{ borderTop: '2px solid #374151', background:'#FEF08A' }}>
-                    <th style={{background:'#FEF08A',color:'#713F12',fontWeight:700}}>粗利</th>
-                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700, background:'#FEF08A' }}>¥{formatCurrency(grossProfit)}</td>
+                  <tr style={{ borderTop: '2px solid #374151' }}>
+                    <th style={{color:'#B45309',fontWeight:700}}>粗利</th>
+                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>¥{formatCurrency(grossProfit)}</td>
                   </tr>
-                  <tr style={{ background:'#FFFBEB' }}>
-                    <th style={{background:'#FFFBEB',color:'#92400E'}}>粗利率</th>
-                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700, background:'#FFFBEB' }}>{totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0'}%</td>
+                  <tr>
+                    <th style={{color:'#B45309'}}>粗利率</th>
+                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>{totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0'}%</td>
                   </tr>
                   {totalScrapRevenue > 0 && (
                     <tr style={{ borderTop: '1px dashed #D1D5DB' }}>

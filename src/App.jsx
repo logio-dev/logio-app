@@ -330,8 +330,8 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
       <select value={value} onChange={(e) => onChange(e.target.value)}
         style={{ width:'100%', padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit', WebkitAppearance:'none' }}
         required={required}>
-        <option value="" style={{background:'#2D2D2D'}}>{placeholder}</option>
-        {options.map((opt) => <option key={opt} value={opt} style={{background:'#2D2D2D'}}>{opt}</option>)}
+        <option value="" style={{background:'#F3F4F6'}}>{placeholder}</option>
+        {options.map((opt) => <option key={opt} value={opt} style={{background:'#F3F4F6'}}>{opt}</option>)}
       </select>
     </div>
   );
@@ -1209,8 +1209,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                     rows[i]={...rows[i],disposal:e.target.value};
                                     setProjectInfo({...projectInfo,manifestRows:rows});
                                   }} style={{width:'100%',padding:'9px 8px',background:'rgba(255,255,255,0.08)',border:'none',color:row.disposal?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',WebkitAppearance:'none',boxSizing:'border-box'}}>
-                                    <option value="" style={{background:'#2D2D2D'}}>処分先を選択</option>
-                                    {MASTER_DATA.disposalSites.map(s=><option key={s} value={s} style={{background:'#2D2D2D'}}>{s}</option>)}
+                                    <option value="" style={{background:'#F3F4F6'}}>処分先を選択</option>
+                                    {MASTER_DATA.disposalSites.map(s=><option key={s} value={s} style={{background:'#F3F4F6'}}>{s}</option>)}
                                   </select>
                                   <div style={{display:'flex',gap:4,marginTop:4}}>
                                     <input type="text" value={row._custom||''} onChange={e=>{
@@ -1243,8 +1243,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                       rows[i]={...rows[i],transport:e.target.value};
                                       setProjectInfo({...projectInfo,manifestRows:rows});
                                     }} style={{width:'100%',padding:'9px 8px',background:'rgba(255,255,255,0.08)',border:'none',color:row.transport?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',WebkitAppearance:'none',boxSizing:'border-box'}}>
-                                      <option value="" style={{background:'#2D2D2D'}}>選択</option>
-                                      {['自社運搬','入間緑化','奈良商事'].map(t=><option key={t} value={t} style={{background:'#2D2D2D'}}>{t}</option>)}
+                                      <option value="" style={{background:'#F3F4F6'}}>選択</option>
+                                      {['自社運搬','入間緑化','奈良商事'].map(t=><option key={t} value={t} style={{background:'#F3F4F6'}}>{t}</option>)}
                                     </select>
                                   </div>
                                   <div>
@@ -1356,7 +1356,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
   const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'' });
-  const [scrapForm, setScrapForm] = useState({ type:'金属くず', buyer:'', qty:'', unit:'kg', price:'' });
+  const [scrapForm, setScrapForm] = useState({ type:'金属くず', buyer:'', qty:'', unit:'kg', price:'', manifest:'' });
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
 
@@ -1469,7 +1469,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const addScrap = () => {
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty) return;
     const qty=parseFloat(scrapForm.qty), total=parseFloat(scrapForm.price)||0;
-    const newItem = {type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total};
+    const newItem = {type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total,manifestNumber:scrapForm.manifest||''};
     if (editingScrapIdx !== null) {
       const items = [...scrapItems];
       items[editingScrapIdx] = newItem;
@@ -1478,7 +1478,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setScrapItems([...scrapItems, newItem]);
     }
-    setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});
+    setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:''});
   };
 
   const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':s==='halfDay'?'半日':'日勤';
@@ -1828,7 +1828,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {scrapItems.map((s,i)=>(
             <div key={i} onClick={()=>{
               setEditingScrapIdx(i);
-              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount))});
+              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount)),manifest:s.manifestNumber||''});
             }} style={{borderRadius:10,padding:'10px 12px',marginBottom:5,cursor:'pointer',display:'flex',alignItems:'center',gap:8,
               background: editingScrapIdx===i ? 'rgba(34,197,94,0.08)' : '#ECFDF5',
               border: editingScrapIdx===i ? '2px solid rgba(34,197,94,0.6)' : '1px solid #BBF7D0'
@@ -1863,11 +1863,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>合計金額</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
+            <div style={{marginBottom:8}}><label style={inpLbl}>マニ伝No. <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="text" value={scrapForm.manifest||''} onChange={e=>setScrapForm({...scrapForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
             {editingScrapIdx !== null ? (
               <div style={{display:'flex',gap:6,marginTop:8}}>
                 <button onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty}
                   style={{flex:2,padding:'11px',background:'rgba(34,197,94,0.2)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:9,color:'#4ade80',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
-                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});}}
+                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:''});}}
                   style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:9,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>新規追加</button>
               </div>
             ) : (
@@ -2226,6 +2227,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     </button>
                   ))}
                 </div>
+                <div style={{...grid2,marginBottom:8}}>
+                  <div>
+                    <label style={{...inpLbl,marginBottom:4}}>車種 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
+                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
+                      {MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{...inpLbl,marginBottom:4}}>車番 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
+                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
+                      {(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
                 <button onClick={()=>setWasteForm({...wasteForm,haishiOverride:!wasteForm.haishiOverride,haishiShift:''})}
                   style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',marginBottom:6}}>
                   <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${wasteForm.haishiOverride?'#6366f1':'#374151'}`,background:wasteForm.haishiOverride?'#6366f1':'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',flexShrink:0}}>{wasteForm.haishiOverride?'✓':''}</div>
@@ -2257,7 +2274,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {scrapItems.map((s,i)=>(
             <div key={i} onClick={()=>{
               setEditingScrapIdx(i);
-              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount))});
+              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount)),manifest:s.manifestNumber||''});
             }} style={{borderRadius:11,marginBottom:6,cursor:'pointer',
               background: editingScrapIdx===i ? 'rgba(34,197,94,0.08)' : '#ECFDF5',
               border: editingScrapIdx===i ? '1.5px solid rgba(34,197,94,0.5)' : '0.5px solid #BBF7D0',
@@ -2301,6 +2318,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>単位</label><select value={scrapForm.unit} onChange={e=>setScrapForm({...scrapForm,unit:e.target.value})} style={inpSel}><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="㎥">㎥</option><option value="t">t</option></select></div>
               <div><label style={inpLbl}>合計金額</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
+            <div style={{marginBottom:8}}><label style={inpLbl}>マニ伝No. <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="text" value={scrapForm.manifest} onChange={e=>setScrapForm({...scrapForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
             {scrapForm.price && (
               <div style={{ textAlign:'right', fontSize:'12px', color:'#4ade80', fontWeight:'600', marginBottom:'8px' }}>
                 ¥{formatCurrency(parseFloat(scrapForm.price||0))}
@@ -2310,7 +2328,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={{display:'flex',gap:6,marginTop:8}}>
                 <button onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty}
                   style={{flex:2,padding:'11px',background:'rgba(34,197,94,0.2)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:9,color:'#4ade80',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
-                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:''});}}
+                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:''});}}
                   style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:9,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>新規追加</button>
               </div>
             ) : (
@@ -2892,11 +2910,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const totalOutsourcingCost = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (o.amount || 0), 0), 0);
   const totalVehicleCost = allReports.reduce((sum, r) => sum + (r.workDetails?.vehicles || []).reduce((s, v) => s + (v.amount || 0), 0), 0);
   const totalMachineryCost = allReports.reduce((sum, r) => sum + (r.workDetails?.machinery || []).reduce((s, m) => s + (m.unitPrice || 0), 0), 0);
-  const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0) + (w.haishiAmount || 0), 0), 0);
+  const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
+  const totalHaishiCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0), 0);
   const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.envItems || []).reduce((s,t)=>s+(t.amount||0),0) + (r.workDetails?.extItems || []).reduce((s,t)=>s+(t.amount||0),0), 0);
   const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-  const totalCost = totalInHouseCost + totalOutsourcingCost + totalVehicleCost + totalMachineryCost + totalTransportCost + totalWasteCost
+  const totalCost = totalInHouseCost + totalOutsourcingCost + (totalVehicleCost + totalHaishiCost) + totalMachineryCost + totalTransportCost + totalWasteCost
     + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
     + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
@@ -2908,43 +2927,43 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const emptyRows = MAX_ROWS - displayReports.length;
 
   return (
-    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'#1A1A1A', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
+    <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'#f5f5f5', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
-        .pdf-container { font-family: 'Noto Sans JP', sans-serif; background: #1A1A1A; }
+        .pdf-container { font-family: 'Noto Sans JP', sans-serif; background: #fff; }
         .pdf-table { border-collapse: collapse; width: 100%; }
-        .pdf-table th, .pdf-table td { border: 1px solid #3D3D3D; padding: 2px 4px; font-size: 9px; line-height: 1.3; white-space: nowrap; }
-        .pdf-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 700; text-align: center; font-size: 8px; }
-        .pdf-table td { color: #E5E7EB; }
+        .pdf-table th, .pdf-table td { border: 1px solid #D1D5DB; padding: 2px 4px; font-size: 9px; line-height: 1.3; white-space: nowrap; }
+        .pdf-table th { background: #F3F4F6; color: #374151; font-weight: 700; text-align: center; font-size: 8px; }
+        .pdf-table td { color: #111827; }
         .pdf-header-table { border-collapse: collapse; width: 100%; }
-        .pdf-header-table th, .pdf-header-table td { border: 1px solid #3D3D3D; padding: 3px 6px; font-size: 10px; line-height: 1.4; }
-        .pdf-header-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 700; text-align: left; font-size: 8px; width: 80px; }
-        .pdf-header-table td { color: #F3F4F6; background: #1A1A1A; }
+        .pdf-header-table th, .pdf-header-table td { border: 1px solid #D1D5DB; padding: 3px 6px; font-size: 10px; line-height: 1.4; }
+        .pdf-header-table th { background: #F3F4F6; color: #374151; font-weight: 700; text-align: left; font-size: 8px; width: 80px; }
+        .pdf-header-table td { color: #111827; background: #fff; }
         .result-table { border-collapse: collapse; width: 100%; }
-        .result-table th, .result-table td { border: 1px solid #3D3D3D; padding: 2px 8px; font-size: 9px; }
-        .result-table th { background: #2D2D2D; color: #9CA3AF; font-weight: 500; text-align: left; width: 70px; white-space: nowrap; }
-        .result-table td { color: #F3F4F6; text-align: right; background: #1A1A1A; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 90px; }
+        .result-table th, .result-table td { border: 1px solid #D1D5DB; padding: 2px 8px; font-size: 9px; }
+        .result-table th { background: #F3F4F6; color: #374151; font-weight: 500; text-align: left; width: 70px; white-space: nowrap; }
+        .result-table td { color: #111827; text-align: right; background: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 90px; }
         @media print {
           .no-print { display: none !important; }
           @page { size: A3 landscape; margin: 6mm; }
           .pdf-container { zoom: 0.85; }
         }
       `}</style>
-      <div className="no-print border-b sticky top-0 z-50" style={{ background:'#2D2D2D', borderColor:'rgba(255,255,255,0.08)' }}>
+      <div className="no-print border-b sticky top-0 z-50" style={{ background:'#fff', borderColor:'#E5E7EB' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', gap:8, flexWrap:'wrap' }}>
-          <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer",flexShrink:0}}>
+          <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:8,fontSize:12,fontWeight:600,color:"#374151",cursor:"pointer",flexShrink:0}}>
             <ChevronLeft className="w-4 h-4" />ホームに戻る
           </button>
           <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
-            <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',whiteSpace:'nowrap'}}>全{allReports.length}件</span>
+            <span style={{fontSize:11,color:'#9CA3AF',whiteSpace:'nowrap'}}>全{allReports.length}件</span>
             <button onClick={() => window.print()} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#2563EB',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
               <FileText className="w-4 h-4" />PDF出力
             </button>
           </div>
         </div>
       </div>
-      <div className="pdf-scroll-wrapper" style={{ overflowX: 'auto', overflowY: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#1A1A1A' }}>
-      <div className="pdf-container p-6" style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#1A1A1A' }}>
+      <div className="pdf-scroll-wrapper" style={{ overflowX: 'auto', overflowY: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#f5f5f5' }}>
+      <div className="pdf-container p-6" style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#fff' }}>
         <div style={{ width: '1200px' }}>
           <div className="text-center mb-3">
             <h1 className="pdf-title text-xl font-black tracking-[0.3em] text-white border-b-2 border-gray-600 pb-2 inline-block px-8">解　体　作　業　日　報</h1>
@@ -2977,10 +2996,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 return (
                   <table className="pdf-header-table" style={{fontSize:'8px'}}>
                     <thead>
-                      <tr style={{background:'#2D2D2D'}}>
-                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#a855f7',letterSpacing:'.06em',borderBottom:'1px solid #374151',padding:'4px'}}>リース・機材・資材・経費等</th>
+                      <tr style={{background:'#F3F4F6'}}>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#7C3AED',letterSpacing:'.06em',borderBottom:'1px solid #D1D5DB',padding:'4px',background:'#F5F3FF'}}>リース・機材・資材・経費等</th>
                       </tr>
-                      <tr style={{background:'#2D2D2D'}}>
+                      <tr style={{background:'#F3F4F6'}}>
                         <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
                       </tr>
                     </thead>
@@ -2999,7 +3018,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
             </div>
             <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
               <div style={{width:'100%'}}>
-              <div className="text-center py-1 font-bold text-[10px] tracking-widest bg-yellow-500/20 text-yellow-400 border border-gray-600">【　収　支　結　果　】</div>
+              <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#FEF9C3',color:'#854D0E',border:'1px solid #FDE68A'}}>【　収　支　結　果　】</div>
               <table className="result-table" style={{width:'100%'}}>
                 <tbody>
                   {[
@@ -3038,7 +3057,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 <th style={{ width: '65px' }}>会社・人数</th><th style={{ width: '50px' }}>金額</th>
                 <th style={{ width: '33px' }}>車種</th><th style={{ width: '36px' }}>車番</th>
                 <th style={{ width: '55px' }}>発生材</th><th style={{ width: '36px' }}>数量</th>
-                <th style={{ width: '52px' }}>金額</th><th style={{ width: '90px', textAlign:'right' }}>搬出先</th><th style={{ width: '90px', textAlign:'right' }}>マニNo.</th>
+                <th style={{ width: '52px' }}>金額</th><th style={{ width: '90px', textAlign:'center' }}>搬出先</th><th style={{ width: '90px', textAlign:'center' }}>マニNo.</th>
               </tr>
             </thead>
             <tbody>
@@ -3066,8 +3085,21 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 const normWasteRows = [...normWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'' })), ...scrapRows];
 
                 const allWorkers = [ ...workers, ...envWorkerRows ];
+                // 通常産廃が自社人工より多い場合、自社人工を〃で補完
+                const effectiveWorkers = [...allWorkers];
+                if (wasteAndScrap.length > workers.length) {
+                  for (let i = workers.length; i < wasteAndScrap.length; i++) {
+                    if (!effectiveWorkers[i] || effectiveWorkers[i]?.isEnv) {
+                      // 通常産廃行に対して前の自社人工を〃で表示
+                      const lastWorker = workers[workers.length - 1];
+                      if (lastWorker && i < wasteAndScrap.length + envWorkerRows.length) {
+                        effectiveWorkers.splice(i, 0, { ...lastWorker, isDitto: true, amount: 0 });
+                      }
+                    }
+                  }
+                }
                 const wasteAndScrap = normWasteRows;
-                const maxSubRows = Math.max(1, allWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, envWorkerRows.length + wasteAndScrap.length);
+                const maxSubRows = Math.max(1, effectiveWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, envWorkerRows.length + wasteAndScrap.length);
                 const allStartTimes = [...workers.map(w => w.start || w.startTime), ...outsourcing.map(o => o.start || o.startTime)].filter(Boolean).sort();
                 const allEndTimes = [...workers.map(w => w.end || w.endTime), ...outsourcing.map(o => o.end || o.endTime)].filter(Boolean).sort().reverse();
                 return (
@@ -3084,22 +3116,22 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{allEndTimes[0] || '-'}</td>
                           </>
                         )}
-                        <td className="text-[8px]" style={allWorkers[subIdx]?.isEnv?{color:'rgba(255,255,255,0.65)'}:{}}>{allWorkers[subIdx]?.name||''}</td>
-                        <td className="text-right text-[8px]">{allWorkers[subIdx]&&!allWorkers[subIdx].isEnv?`¥${formatCurrency(allWorkers[subIdx].amount)}`:''}</td>
+                        <td className="text-[8px]" style={effectiveWorkers[subIdx]?.isEnv?{color:'#374151'}:{}}>{effectiveWorkers[subIdx]?.isDitto ? '〃' : (effectiveWorkers[subIdx]?.name||'')}</td>
+                        <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!effectiveWorkers[subIdx].isEnv&&!effectiveWorkers[subIdx].isDitto?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
                         <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseInt(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
-                        {/* 車両：通常車両 or 環境課車両 or ワイエム */}
-                        <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (allWorkers[subIdx]?.isEnv ? allWorkers[subIdx].vType : '') || (extWasteRows[subIdx] ? '配車' : '')}</td>
-                        <td className="text-center text-[8px]">{vehicles[subIdx] ? vehicles[subIdx].number : (allWorkers[subIdx]?.isEnv ? allWorkers[subIdx].vNumber : '') || (extWasteRows[subIdx] ? 'ワイエム' : '')}</td>
+                        {/* 車両：通常車両 or 環境課車両 or ワイエム or 〃 */}
+                        <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vType : '') || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '') || (extWasteRows[subIdx] ? '配車' : '')}</td>
+                        <td className="text-center text-[8px]">{vehicles[subIdx] ? vehicles[subIdx].number : (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vNumber : '') || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '') || (extWasteRows[subIdx] ? 'ワイエム' : '')}</td>
                         <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>
                         {/* 産廃：環境課行はwaste、ワイエム行はextWaste、通常行はwasteAndScrap */}
                         {(()=>{
-                          const envW = allWorkers[subIdx]?.isEnv ? allWorkers[subIdx].waste : null;
-                          const extW = !allWorkers[subIdx]?.isEnv ? extWasteRows[subIdx] : null;
+                          const envW = effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].waste : null;
+                          const extW = !effectiveWorkers[subIdx]?.isEnv ? extWasteRows[subIdx] : null;
                           // normWのインデックスは環境課行数を除いた通常行のインデックス
                           const normIdx = subIdx - envWorkerRows.length;
-                          const normW = !allWorkers[subIdx]?.isEnv && normIdx >= 0 ? wasteAndScrap[normIdx] : 
-                                        !allWorkers[subIdx]?.isEnv && subIdx >= 0 ? wasteAndScrap[subIdx] : null;
+                          const normW = !effectiveWorkers[subIdx]?.isEnv && normIdx >= 0 ? wasteAndScrap[normIdx] : 
+                                        !effectiveWorkers[subIdx]?.isEnv && subIdx >= 0 ? wasteAndScrap[subIdx] : null;
                           const w = envW || extW || normW;
                           const isScrap = w?.manifestNumber==='-';
                           return (<>
@@ -3129,7 +3161,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalInHouseCost)}</td>
                 <td className="text-center text-[8px] font-bold" style={{ color: '#E5E7EB' }}>{totalOutsourcingWorkers}人</td>
                 <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
-                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalVehicleCost)}</td>
+                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
                 <td className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalMachineryCost)}</td>
                 <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#60A5FA' }}>¥{formatCurrency(totalWasteCost)}</td>
                 <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: 'var(--text3)' }}>原価小計：</td>
@@ -3397,7 +3429,8 @@ export default function LOGIOApp() {
         report.workDetails.envItems?.forEach(t => accumulatedCost += t.amount || 0);
         report.workDetails.extItems?.forEach(t => accumulatedCost += t.amount || 0);
       }
-      report.wasteItems?.forEach(w => accumulatedCost += (w.amount || 0) + (w.haishiAmount || 0));
+      report.wasteItems?.forEach(w => accumulatedCost += (w.amount || 0));
+      report.wasteItems?.forEach(w => accumulatedCost += (w.haishiAmount || 0)); // 配車費は車両費扱い
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
     });
     accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)

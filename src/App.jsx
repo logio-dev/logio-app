@@ -1506,7 +1506,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const inputCardAmber = mkCard('#f59e0b');
   const inputCardGreen = mkCard('#34d399');
   const inputCardRose  = mkCard('#f43f5e');
-  const inpSel = { width:'100%', padding:'12px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box' };
+  const inpSel = { width:'100%', padding:'12px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', fontSize:'15px', borderRadius:'9px', outline:'none', WebkitAppearance:'none', fontFamily:'inherit', boxSizing:'border-box' };
   const inpTxt = { width:'100%', padding:'12px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', fontSize:'15px', borderRadius:'9px', outline:'none', fontFamily:'inherit', boxSizing:'border-box', WebkitAppearance:'none', appearance:'none' };
   const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'rgba(255,255,255,0.5)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
@@ -1833,13 +1833,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{...grid2,marginBottom:10}}>
                   <div>
                     <label style={inpLbl}>車種</label>
-                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
+                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
                       <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={inpLbl}>車番</label>
-                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
+                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
                       <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                     </select>
                   </div>
@@ -1873,14 +1873,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{...grid2,marginBottom:8}}>
                   <div>
                     <label style={{...inpLbl,marginBottom:4}}>車種 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
-                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
+                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
                       <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
                       {MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={{...inpLbl,marginBottom:4}}>車番 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
-                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
+                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
                       <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
                       {(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                     </select>
@@ -2279,13 +2279,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{...grid2,marginBottom:10}}>
                   <div>
                     <label style={inpLbl}>車種</label>
-                    <select value={wasteForm.vType} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
+                    <select value={wasteForm.vType} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
                       <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={inpLbl}>車番</label>
-                    <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
+                    <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:"#fff",color:"#111",border:"1px solid #D1FAE5"}}>
                       <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                     </select>
                   </div>
@@ -2320,14 +2320,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{...grid2,marginBottom:8}}>
                   <div>
                     <label style={{...inpLbl,marginBottom:4}}>車種 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
-                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={inpSel}>
+                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
                       <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
                       {MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={{...inpLbl,marginBottom:4}}>車番 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
-                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={inpSel}>
+                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
                       <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
                       {(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                     </select>

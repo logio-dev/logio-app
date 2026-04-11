@@ -3120,13 +3120,20 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
                 // 日報の経費を集計（同項目は加算）
                 const dailyExpMap = {};
+                // miscItemsを先に登録
+                miscItems.forEach(i=>{
+                  const name = i.name;
+                  if(!dailyExpMap[name]) dailyExpMap[name]={name,days:0,amount:0};
+                  dailyExpMap[name].days += (i.days||0);
+                  dailyExpMap[name].amount += parseFloat(i.amount)||0;
+                });
+                // 日報経費を同じキーで加算
                 allReports.forEach(r=>(r.workDetails?.dailyExpenses||[]).forEach(e=>{
                   if(!dailyExpMap[e.name]) dailyExpMap[e.name]={name:e.name,days:0,amount:0};
-                  dailyExpMap[e.name].days += (e.days||1);
+                  dailyExpMap[e.name].days += 1;
                   dailyExpMap[e.name].amount += (e.amount||0);
                 }));
-                const dailyExpItems = Object.values(dailyExpMap);
-                const items = [...miscItems.map(i=>({name:i.name,days:i.days,amount:parseFloat(i.amount)||0})), ...dailyExpItems];
+                const items = Object.values(dailyExpMap);
                 if(items.length===0) return null;
                 const total = items.reduce((s,i)=>s+i.amount,0);
                 return (

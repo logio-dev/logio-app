@@ -1117,7 +1117,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         {/* ===== 経費2分類タブ ===== */}
                         {(()=>{
                           const activeTab = projectInfo._costTab||'out';
-                          const MISC_QUICK=['パーキング代','高速代','交通費','道具代','東リース','アクティオ','パノラマ','ペッカー','集塵機','高所作業車','コンプレッサー','ミニユンボ','アタッチメント','アスベスト分析費'];
+                          const MISC_QUICK=['パーキング代','高速代','交通費','経費','道具代','東リース','アクティオ','パノラマ','ペッカー','集塵機','高所作業車','コンプレッサー','ミニユンボ','アタッチメント','アスベスト分析費'];
                           // 自動移行：既存の現場経費・販管費をmiscItemsに統合（初回のみ）
                           const miscItems = projectInfo.miscItems !== undefined ? projectInfo.miscItems :
                             [...(projectInfo.siteExpenseItems||[]), ...(projectInfo.sgaItems||[])];
@@ -1834,13 +1834,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <div>
                     <label style={inpLbl}>車種</label>
                     <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
+                      <option value="" style={{color:"#000",background:"#fff"}}>車種を選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={inpLbl}>車番</label>
                     <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
+                      <option value="" style={{color:"#000",background:"#fff"}}>車番を選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2280,13 +2280,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <div>
                     <label style={inpLbl}>車種</label>
                     <select value={wasteForm.vType} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
+                      <option value="" style={{color:"#000",background:"#fff"}}>車種を選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={inpLbl}>車番</label>
                     <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:"#fff",color:"#111",border:"1px solid #D1FAE5"}}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
+                      <option value="" style={{color:"#000",background:"#fff"}}>車番を選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2320,15 +2320,15 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{...grid2,marginBottom:8}}>
                   <div>
                     <label style={{...inpLbl,marginBottom:4}}>車種 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
-                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
+                    <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #C7D2FE'}}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>車種を選択</option>
                       {MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={{...inpLbl,marginBottom:4}}>車番 <span style={{fontWeight:400,color:'rgba(255,255,255,0.3)'}}>(任意)</span></label>
-                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #D1FAE5'}}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
+                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:'#fff',color:'#111',border:'1px solid #C7D2FE'}}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>車番を選択</option>
                       {(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                     </select>
                   </div>

@@ -199,7 +199,7 @@ const MASTER_DATA = {
     '4td': ['6994'], '4tc': ['2265', '11', '3214', '858', '8000', '4000', '5000', '8025', '88'],
     '8tc': ['7000'], '増td': ['22'], '10tc': ['181', '381']
   },
-  heavyMachinery: ['PC78US', 'PC138US'],
+  heavyMachinery: ['PC30', 'PC78US', 'PC138US'],
   workingHoursOptions: (() => {
     const options = [];
     for (let hours = 0; hours <= 24; hours++) {
@@ -544,23 +544,23 @@ function LoginPage({ onLogin }) {
   };
 
   return (
-    <div style={{minHeight:'100vh', background:'var(--bg)', display:'flex', flexDirection:'column'}}>
+    <div style={{minHeight:'100vh', background:'#fff', display:'flex', flexDirection:'column'}}>
       <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 16px'}}>
         <div style={{width:'100%', maxWidth:360}}>
           <div style={{textAlign:'center', marginBottom:32}}>
             <LOGIOLogo size="md" />
-            <p style={{fontSize:13, color:'rgba(255,255,255,0.45)', marginTop:8, fontFamily:'DM Sans,sans-serif'}}>現場管理をスマートに</p>
+            <p style={{fontSize:13, color:'#6B7280', marginTop:8, fontFamily:'DM Sans,sans-serif', letterSpacing:'.04em'}}>現場管理をスマートに</p>
           </div>
-          <div style={{borderRadius:16, padding:24, background:'#2D2D2D', border:'none'}}>
+          <div style={{borderRadius:16, padding:24, background:'#F8F7F5', border:'1px solid #E8E8E8'}}>
             {[['ID', 'text', userId, setUserId], ['パスワード', 'password', password, setPassword]].map(([lbl, tp, val, setter]) => (
               <div key={lbl} style={{marginBottom:20}}>
-                <label style={{display:'block', fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.65)', marginBottom:8}}>{lbl}</label>
+                <label style={{display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:8}}>{lbl}</label>
                 <input type={tp} value={val} onChange={(e) => setter(e.target.value)}
                   onKeyDown={tp === 'password' ? (e) => e.key === 'Enter' && handleLogin() : undefined}
                   placeholder={`${lbl}を入力`}
-                  style={{width:'100%', padding:'12px 14px', background:'#2D2D2D', border:'none', color:'#fff', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
-                  onFocus={(e) => e.target.style.borderColor = '#78716C'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--border)'} />
+                  style={{width:'100%', padding:'12px 14px', background:'#fff', border:'1px solid #E5E7EB', color:'#1C1917', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
+                  onFocus={(e) => e.target.style.borderColor = '#6B7280'}
+                  onBlur={(e) => e.target.style.borderColor = '#E5E7EB'} />
               </div>
             ))}
             {error && (
@@ -569,16 +569,16 @@ function LoginPage({ onLogin }) {
               </div>
             )}
             <button onClick={handleLogin}
-              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background:'#fff', color:'#1C1917', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'background .15s'}}
-              onMouseEnter={e=>e.target.style.background='#44403C'}
-              onMouseLeave={e=>e.target.style.background='#2C2825'}>
+              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background:'#1C1917', color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'background .15s'}}
+              onMouseEnter={e=>e.target.style.background='#374151'}
+              onMouseLeave={e=>e.target.style.background='#1C1917'}>
               ログイン
             </button>
           </div>
         </div>
       </div>
       <div style={{textAlign:'center', padding:'24px 0'}}>
-        <p style={{fontSize:11, color:'rgba(255,255,255,0.45)'}}>© 2026 Wac</p>
+        <p style={{fontSize:11, color:'#9CA3AF'}}>© 2026 Wac</p>
       </div>
     </div>
   );
@@ -994,11 +994,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           </button>
         ) : (
           <div style={{ marginBottom:24, padding:16, borderRadius:12, border:'1.5px dashed rgba(59,130,246,0.3)', background:'#EFF6FF' }}>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:8 }}>新規現場名 / Site Name</label>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'#1D4ED8', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:8 }}>新規現場名 / Site Name</label>
             <input type="text" value={newSiteName} onChange={e=>setNewSiteName(e.target.value)}
               onKeyDown={e=>e.key==='Enter'&&handleAddSite()}
               placeholder="例: 渋谷〇〇ビル解体工事"
-              style={{ width:'100%', padding:'12px 14px', background:'var(--bg)', border:'none', color:'#fff', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box', maxWidth:'100%' }} />
+              style={{ width:'100%', padding:'12px 14px', background:'#fff', border:'1px solid #BFDBFE', color:'#1C1917', borderRadius:9, fontSize:16, outline:'none', marginBottom:12, boxSizing:'border-box', maxWidth:'100%' }} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
               <button onClick={handleAddSite} style={{ padding:12, background:'#2563EB', border:'none', color:'#fff', borderRadius:9, fontSize:14, fontWeight:700, cursor:'pointer' }}>追加する</button>
               <button onClick={()=>{setShowAddSite(false);setNewSiteName('');}} style={{ padding:12, background:'#2D2D2D', border:'none', color:'rgba(255,255,255,0.65)', borderRadius:9, fontSize:14, fontWeight:600, cursor:'pointer' }}>キャンセル</button>
@@ -1415,8 +1415,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     setVForm({type:'',number:'',driver:''});
   };
   const addMachinery = () => {
-    if (!mForm.type||!mForm.price) return;
-    setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)}]});
+    if (!mForm.type) return;
+    setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)||0}]});
     setMForm({type:'',price:''});
   };
   const addEnv = () => {
@@ -2171,10 +2171,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           ))}
           <div style={inputCardAmber}>
             <div style={grid2}>
-              <div><label style={inpLbl}>機種</label><select value={mForm.type} onChange={e=>setMForm({...mForm,type:e.target.value})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.heavyMachinery.map(m=><option key={m} style={{color:"#000",background:"#fff"}}>{m}</option>)}</select></div>
-              <div><label style={inpLbl}>単価</label><input type="number" value={mForm.price} onChange={e=>setMForm({...mForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
+              <div>
+                <label style={inpLbl}>機種</label>
+                <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:5}}>
+                  {MASTER_DATA.heavyMachinery.map(m=>(
+                    <button key={m} onClick={()=>setMForm({...mForm,type:m})}
+                      style={{padding:'3px 8px',borderRadius:6,border:`1px solid ${mForm.type===m?'rgba(245,158,11,0.5)':'rgba(255,255,255,0.1)'}`,background:mForm.type===m?'rgba(245,158,11,0.2)':'rgba(255,255,255,0.06)',color:mForm.type===m?'#fbbf24':'rgba(255,255,255,0.5)',fontSize:10,cursor:'pointer',fontFamily:'inherit'}}>{m}</button>
+                  ))}
+                </div>
+                <input type="text" value={mForm.type} onChange={e=>setMForm({...mForm,type:e.target.value})} placeholder="直接入力も可" style={inpTxt} />
+              </div>
+              <div><label style={inpLbl}>単価 <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="number" value={mForm.price} onChange={e=>setMForm({...mForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
-            <AddBtn onClick={addMachinery} disabled={!mForm.type||!mForm.price} />
+            <AddBtn onClick={addMachinery} disabled={!mForm.type} />
           </div>
           {workDetails.machinery.length>0 && <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />}
 
@@ -3316,14 +3325,15 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
                 <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalMachineryCost)}</td>
                 <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalWasteCost)}</td>
-                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計：</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>¥{formatCurrency(totalCost)}</td>
               </tr>
             </tbody>
           </table>
-          <div className="mt-2 flex justify-end">
-            <div style={{border:'1px solid #374151',background:'#374151',padding:'6px 24px',display:'flex',alignItems:'center',gap:16}}>
-              <span style={{color:'#9CA3AF',fontSize:12,fontWeight:700}}>原価合計</span>
-              <span style={{color:'#fff',fontSize:18,fontWeight:900,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(totalCost)}</span>
+          <div style={{display:'flex',justifyContent:'flex-end',marginTop:4,width:'1152px'}}>
+            <div style={{border:'1px solid #374151',background:'#374151',padding:'6px 16px',display:'flex',alignItems:'center',gap:12,borderRadius:2}}>
+              <span style={{color:'#9CA3AF',fontSize:11,fontWeight:700,letterSpacing:'.04em'}}>原価合計</span>
+              <span style={{color:'#fff',fontSize:16,fontWeight:900,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(totalCost)}</span>
             </div>
           </div>
         </div>

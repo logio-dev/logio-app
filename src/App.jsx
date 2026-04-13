@@ -578,7 +578,7 @@ function LoginPage({ onLogin }) {
         </div>
       </div>
       <div style={{textAlign:'center', padding:'24px 0'}}>
-        <p style={{fontSize:11, color:'#9CA3AF'}}>© 2026 Wac</p>
+        <p style={{fontSize:11, color:'#9CA3AF'}}>© 2026 FREAKS lab.</p>
       </div>
     </div>
   );

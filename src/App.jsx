@@ -517,17 +517,42 @@ function SplashScreen() {
   return (
     <>
       <style>{`
-        @keyframes fadeInOut { 0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;} }
-        .splash-container { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:black; animation:fadeInOut 3s ease-in-out forwards; }
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@900&display=swap');
+        @keyframes bounceKun  { 0%{opacity:0;transform:translateY(-160px)} 55%{opacity:1;transform:translateY(14px)} 70%{transform:translateY(-20px)} 82%{transform:translateY(10px)} 91%{transform:translateY(-6px)} 97%{transform:translateY(3px)} 100%{opacity:1;transform:translateY(0)} }
+        @keyframes bounceChan { 0%{opacity:0;transform:translateY(-160px)} 55%{opacity:1;transform:translateY(14px)} 70%{transform:translateY(-20px)} 82%{transform:translateY(10px)} 91%{transform:translateY(-6px)} 97%{transform:translateY(3px)} 100%{opacity:1;transform:translateY(0)} }
+        @keyframes wacFade    { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
+        @keyframes tagFade    { 0%{opacity:0} 100%{opacity:1} }
+        @keyframes dotPulse   { 0%,100%{opacity:0.2;transform:scale(0.7)} 50%{opacity:1;transform:scale(1.3)} }
+        .splash-wrap { position:fixed; inset:0; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; }
+        .sp-kun  { width:110px; height:110px; object-fit:contain; opacity:0; animation:bounceKun  2.2s cubic-bezier(0.2,0,0.4,1) 0.3s both; }
+        .sp-chan { width:110px; height:110px; object-fit:contain; opacity:0; animation:bounceChan 2.2s cubic-bezier(0.2,0,0.4,1) 0.7s both; }
+        .sp-logo { font-size:76px; font-weight:900; color:#fff; font-family:'Roboto Condensed',Arial Black,sans-serif; letter-spacing:-2px; line-height:1; opacity:0; animation:wacFade 1.2s ease 1.8s forwards; }
+        .sp-tag  { font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:0.2em; font-family:sans-serif; opacity:0; margin:0; animation:tagFade 1s ease 2.6s forwards; }
+        .sp-dot  { width:5px; height:5px; border-radius:50%; background:#fff; opacity:0.2; }
+        .sp-dot1 { animation:dotPulse 1.4s ease 3.0s infinite; }
+        .sp-dot2 { animation:dotPulse 1.4s ease 3.2s infinite; }
+        .sp-dot3 { animation:dotPulse 1.4s ease 3.4s infinite; }
       `}</style>
-      <div className="splash-container"><LOGIOLogo size="md" animated={true} /></div>
+      <div className="splash-wrap">
+        <div style={{display:'flex', alignItems:'flex-end', gap:'6px', marginBottom:'18px'}}>
+          <img src="/face_kun.png"  className="sp-kun"  alt="" />
+          <span className="sp-logo">Wac</span>
+          <img src="/face_chan.png" className="sp-chan" alt="" />
+        </div>
+        <p className="sp-tag">現場管理をスマートに</p>
+        <div style={{display:'flex', gap:'6px', alignItems:'center', marginTop:'24px'}}>
+          <div className="sp-dot sp-dot1" />
+          <div className="sp-dot sp-dot2" />
+          <div className="sp-dot sp-dot3" />
+        </div>
+      </div>
     </>
   );
 }
 
 // ========== LoginPage ==========
 function LoginPage({ onLogin }) {
-  const [userId, setUserId] = useState('');s
+  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -2552,14 +2577,14 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             <span style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>({getDayOfWeek(report.date)})</span>
             
             {/* 記入者＋更新日時 */}
-            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'rgba(255,255,255,0.65)', fontFamily:'monospace', background:'#E8E8E8', border:'none', padding:'2px 7px', borderRadius:99, color:'#555' }}>
-              {report.updatedBy || report.recorder || ''}
-              {report.updatedAt && (
-                <span style={{ color:'rgba(255,255,255,0.45)' }}>
-                  {' · '}{new Date(report.updatedAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
-                </span>
-              )}
-            </span>
+            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'#555', fontFamily:'monospace', background:'#E8E8E8', border:'none', padding:'2px 7px', borderRadius:99 }}>
+  {report.updatedBy || report.recorder || ''}
+  {report.updatedAt && (
+    <span style={{ color:'rgba(255,255,255,0.45)' }}>
+      {' · '}{new Date(report.updatedAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+    </span>
+  )}
+</span>
           </div>
           <div className="flex items-center gap-2 text-sm flex-wrap">
             <span style={{padding:"2px 8px",borderRadius:6,background:"#EFF6FF",color:"#1D4ED8",fontSize:10,fontWeight:700}}>{report.workDetails?.workCategory || report.workCategory}</span>
@@ -3387,7 +3412,7 @@ export default function LOGIOApp() {
 
   useEffect(() => {
     if (!showSplash) return;
-    const timer = setTimeout(() => setShowSplash(false), 2000);
+    const timer = setTimeout(() => setShowSplash(false), 5000);
     return () => clearTimeout(timer);
   }, [showSplash]);
 

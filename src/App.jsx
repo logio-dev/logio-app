@@ -517,40 +517,17 @@ function SplashScreen() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@900&display=swap');
-        @keyframes splashBg { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
-        @keyframes faceSlide { 0%{opacity:0;transform:translateX(-70px) scale(0.6)} 35%{opacity:1;transform:translateX(0) scale(1)} 100%{opacity:1;transform:translateX(0) scale(1)} }
-        @keyframes logoUp { 0%{opacity:0;transform:translateY(24px) scale(0.85)} 40%{opacity:1;transform:translateY(0) scale(1.06)} 60%{transform:scale(1)} 100%{opacity:1;transform:scale(1)} }
-        @keyframes tagIn { 0%{opacity:0;transform:translateY(8px)} 100%{opacity:1;transform:translateY(0)} }
-        @keyframes dotPulse { 0%,100%{opacity:0.25;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }
-        .splash-wrap { position:fixed; inset:0; background:#111; display:flex; flex-direction:column; align-items:center; justify-content:center; animation:splashBg 3s ease-in-out forwards; z-index:9999; }
-        .splash-face { width:100px; height:100px; object-fit:contain; mix-blend-mode:multiply; animation:faceSlide 1.1s cubic-bezier(0.34,1.3,0.64,1) 0.1s both; }
-        .splash-logo { font-size:76px; font-weight:900; color:#fff; font-family:'Roboto Condensed',Arial Black,sans-serif; letter-spacing:-2px; line-height:1; opacity:0; animation:logoUp 1s cubic-bezier(0.34,1.4,0.64,1) 0.3s forwards; }
-        .splash-tag { font-size:11px; color:rgba(255,255,255,0.45); letter-spacing:0.18em; font-family:sans-serif; opacity:0; animation:tagIn 0.7s ease 0.9s forwards; margin:0; }
-        .splash-dot { width:5px; height:5px; border-radius:50%; background:#fff; opacity:0.25; }
-        .splash-dot1 { animation:dotPulse 1.2s ease 1.2s infinite; }
-        .splash-dot2 { animation:dotPulse 1.2s ease 1.4s infinite; }
-        .splash-dot3 { animation:dotPulse 1.2s ease 1.6s infinite; }
+        @keyframes fadeInOut { 0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;} }
+        .splash-container { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:black; animation:fadeInOut 3s ease-in-out forwards; }
       `}</style>
-      <div className="splash-wrap">
-        <div style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', marginBottom:'16px'}}>
-          <img src="/face_kun.jpg" className="splash-face" alt="" />
-          <span className="splash-logo">Wac</span>
-        </div>
-        <p className="splash-tag">現場管理をスマートに</p>
-        <div style={{display:'flex', gap:'6px', alignItems:'center', marginTop:'22px'}}>
-          <div className="splash-dot splash-dot1" />
-          <div className="splash-dot splash-dot2" />
-          <div className="splash-dot splash-dot3" />
-        </div>
-      </div>
+      <div className="splash-container"><LOGIOLogo size="md" animated={true} /></div>
     </>
   );
 }
 
 // ========== LoginPage ==========
 function LoginPage({ onLogin }) {
-  const [userId, setUserId] = useState('');
+  const [userId, setUserId] = useState('');s
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 

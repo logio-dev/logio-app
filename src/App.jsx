@@ -3342,7 +3342,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 const envWaste  = waste.filter(w=>w.haisha==='env');
                 const extWaste  = waste.filter(w=>w.haisha==='ext');
                 const normWaste = waste.filter(w=>!w.haisha||w.haisha==='');
-                const scrapRows = scrap.map(s=>({ material:s.type, quantity:s.quantity, unit:s.unit, amount:Math.abs(s.amount), disposalSite:s.buyer, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'' }));
+                const scrapRows = scrap.map(s=>({ material:s.type, quantity:s.quantity, unit:s.unit, volumeM3:s.volumeM3||null, amount:Math.abs(s.amount), disposalSite:s.buyer, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'' }));
 
                 // 行データ統合：自社人工、外注、車両、重機、産廃を行単位で対応
                 // 環境課配車行は (運転者) + 車両 + その産廃 を同じ行に

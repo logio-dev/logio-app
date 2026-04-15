@@ -1383,7 +1383,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
   const [wasteForm, setWasteForm] = useState({ type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'' });
-  const [scrapForm, setScrapForm] = useState({ type:'金属くず', buyer:'', qty:'', unit:'kg', price:'', manifest:'' });
+  const [scrapForm, setScrapForm] = useState({ type:'金属くず', buyer:'', qty:'', unit:'kg', price:'', manifest:'', volumeM3:'' });
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
 
@@ -1497,7 +1497,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const addScrap = () => {
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty) return;
     const qty=parseFloat(scrapForm.qty), total=parseFloat(scrapForm.price)||0;
-    const newItem = {type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total,manifestNumber:scrapForm.manifest||''};
+    const newItem = {type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total,manifestNumber:scrapForm.manifest||'',volumeM3:scrapForm.volumeM3?parseFloat(scrapForm.volumeM3):null};
     if (editingScrapIdx !== null) {
       const items = [...scrapItems];
       items[editingScrapIdx] = newItem;
@@ -1506,7 +1506,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setScrapItems([...scrapItems, newItem]);
     }
-    setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:''});
+    setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:'',volumeM3:''});
   };
 
   const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':s==='halfDay'?'半日':'日勤';
@@ -1955,7 +1955,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {scrapItems.map((s,i)=>(
             <div key={i} onClick={()=>{
               setEditingScrapIdx(i);
-              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount)),manifest:s.manifestNumber||''});
+              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount)),manifest:s.manifestNumber||'',volumeM3:s.volumeM3!=null?String(s.volumeM3):''});
             }} style={{borderRadius:10,padding:'10px 12px',marginBottom:5,cursor:'pointer',display:'flex',alignItems:'center',gap:8,
               background: editingScrapIdx===i ? 'rgba(34,197,94,0.08)' : '#ECFDF5',
               border: editingScrapIdx===i ? '2px solid rgba(34,197,94,0.6)' : '1px solid #BBF7D0'
@@ -1991,11 +1991,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>合計金額</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}><label style={inpLbl}>マニ伝No. <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="text" value={scrapForm.manifest||''} onChange={e=>setScrapForm({...scrapForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
+            <div style={{marginBottom:8}}><label style={inpLbl}>㎥換算 <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意・単価計算用)</span></label><input type="number" step="0.01" value={scrapForm.volumeM3||''} onChange={e=>setScrapForm({...scrapForm,volumeM3:e.target.value})} placeholder="例）1.5" style={inpTxt} /></div>
             {editingScrapIdx !== null ? (
               <div style={{display:'flex',gap:6,marginTop:8}}>
                 <button onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty}
                   style={{flex:2,padding:'11px',background:'rgba(34,197,94,0.2)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:9,color:'#4ade80',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
-                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:''});}}
+                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:'',volumeM3:''});}}
                   style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:9,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>新規追加</button>
               </div>
             ) : (
@@ -2495,7 +2496,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {scrapItems.map((s,i)=>(
             <div key={i} onClick={()=>{
               setEditingScrapIdx(i);
-              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount)),manifest:s.manifestNumber||''});
+              setScrapForm({type:s.type,buyer:s.buyer,qty:String(s.quantity),unit:s.unit||'kg',price:String(Math.abs(s.amount)),manifest:s.manifestNumber||'',volumeM3:s.volumeM3!=null?String(s.volumeM3):''});
             }} style={{borderRadius:11,marginBottom:6,cursor:'pointer',
               background: editingScrapIdx===i ? 'rgba(34,197,94,0.08)' : '#ECFDF5',
               border: editingScrapIdx===i ? '1.5px solid rgba(34,197,94,0.5)' : '0.5px solid #BBF7D0',
@@ -2540,6 +2541,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div><label style={inpLbl}>合計金額</label><input type="number" value={scrapForm.price} onChange={e=>setScrapForm({...scrapForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
             <div style={{marginBottom:8}}><label style={inpLbl}>マニ伝No. <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="text" value={scrapForm.manifest} onChange={e=>setScrapForm({...scrapForm,manifest:e.target.value})} placeholder="例）A-12345" style={inpTxt} /></div>
+            <div style={{marginBottom:8}}><label style={inpLbl}>㎥換算 <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意・単価計算用)</span></label><input type="number" step="0.01" value={scrapForm.volumeM3||''} onChange={e=>setScrapForm({...scrapForm,volumeM3:e.target.value})} placeholder="例）1.5" style={inpTxt} /></div>
             {scrapForm.price && (
               <div style={{ textAlign:'right', fontSize:'12px', color:'#4ade80', fontWeight:'600', marginBottom:'8px' }}>
                 ¥{formatCurrency(parseFloat(scrapForm.price||0))}
@@ -2549,7 +2551,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={{display:'flex',gap:6,marginTop:8}}>
                 <button onClick={addScrap} disabled={!scrapForm.type||!scrapForm.buyer||!scrapForm.qty}
                   style={{flex:2,padding:'11px',background:'rgba(34,197,94,0.2)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:9,color:'#4ade80',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
-                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:''});}}
+                <button onClick={()=>{setEditingScrapIdx(null);setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:'',volumeM3:''});}}
                   style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:9,color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>新規追加</button>
               </div>
             ) : (
@@ -3437,7 +3439,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageOutCost)}</td>
                     <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageVehicleCost + pageHaishiCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageMachineryCost)}</td>
-                    <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageWasteCost)}</td>
+                    <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{(pageRows.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+pageRows.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageWasteCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>¥{formatCurrency(pageTotal)}</td>
                   </tr>
@@ -3450,7 +3452,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
                       <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalMachineryCost)}</td>
-                      <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalWasteCost)}</td>
+                      <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{(allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalWasteCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#1a1a2e' }}>原価合計</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>¥{formatCurrency(totalCost)}</td>
                     </tr>
@@ -3655,7 +3657,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: projectInfo.miscItems || [], manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined, manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
         site_tsubo: projectInfo.siteTsubo ? parseFloat(projectInfo.siteTsubo) : null,
         site_use_type: projectInfo.siteUseType || null,
         work_condition: projectInfo.workCondition || null,

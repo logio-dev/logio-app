@@ -327,10 +327,10 @@ function Select({ label, labelEn, options, value, onChange, placeholder = "選�
         {label} / {labelEn} {required && <span style={{color:'#f87171'}}>*</span>}
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
-        style={{ width:'100%', padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit', WebkitAppearance:'none' }}
+        style={{ width:'100%', padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'none', color:'#111', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit', WebkitAppearance:'none' }}
         required={required}>
-        <option value="" style={{background:'#F3F4F6'}}>{placeholder}</option>
-        {options.map((opt) => <option key={opt} value={opt} style={{background:'#F3F4F6'}}>{opt}</option>)}
+        <option value="" style={{background:'#F3F4F6',color:'#111'}}>{placeholder}</option>
+        {options.map((opt) => <option key={opt} value={opt} style={{background:'#F3F4F6',color:'#111'}}>{opt}</option>)}
       </select>
     </div>
   );
@@ -1567,7 +1567,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const AddBtn = ({ onClick, disabled, label, pulse }) => (
-    <button onClick={onClick} disabled={disabled} className={!disabled && pulse ? 'btn-pulse' : ''} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)':'rgba(59,130,246,0.2)', border:`1px solid ${disabled?'rgba(255,255,255,0.08)':'rgba(59,130,246,0.4)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)':'#93C5FD', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px' }}>{label || '＋ 追加する'}</button>
+    <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)': pulse?'rgba(234,179,8,0.25)':'rgba(59,130,246,0.2)', border:`1px solid ${disabled?'rgba(255,255,255,0.08)': pulse?'rgba(234,179,8,0.6)':'rgba(59,130,246,0.4)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)': pulse?'#EAB308':'#93C5FD', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px', transition:'all 0.3s ease' }}>{label || '＋ 追加する'}</button>
   );
 
   const SectionLabel = ({ ja, en }) => (

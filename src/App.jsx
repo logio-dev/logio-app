@@ -3276,14 +3276,14 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     </tbody>
                   </table>
                   <div style={{display:'flex', flexDirection:'column'}}>
-                    <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#C4B5FD',border:'1px solid #374151'}}>【　現　場　詳　細　】</div>
+                    <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#C4B5FD',border:'1px solid #374151'}}>現　場　詳　細</div>
                     <table className="pdf-header-table" style={{flex:1,fontSize:'9px'}}>
                       <tbody>
                         <tr><th style={{fontSize:'9px'}}>面積</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteAreaM2 ? `${projectInfo.siteAreaM2} ㎡` : '—'}</td></tr>
                         <tr><th style={{fontSize:'9px'}}>坪数</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteTsubo  ? `${projectInfo.siteTsubo} 坪`  : '—'}</td></tr>
                         <tr><th style={{fontSize:'9px'}}>業態</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteUseType || '—'}</td></tr>
-                        <tr><th style={{fontSize:'9px',whiteSpace:'nowrap'}}>工事条件</th><td style={{fontSize:'9px',textAlign:'right',whiteSpace:'pre-wrap',lineHeight:1.5}}>{projectInfo.workCondition || '—'}</td></tr>
-                        <tr style={{borderTop:'1px solid #374151'}}><th colSpan={2} style={{textAlign:'center',color:'#F9A8D4',background:'#374151',fontSize:'9px',fontWeight:700,letterSpacing:'.05em'}}>原　価　単　価</th></tr>
+                        <tr><th style={{fontSize:'9px',whiteSpace:'nowrap'}}>工事条件</th><td style={{fontSize:'8px',textAlign:'right',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'80px'}}>{projectInfo.workCondition || '—'}</td></tr>
+                        <tr style={{borderTop:'1px solid #374151'}}><th colSpan={2} style={{textAlign:'center',color:'#C4B5FD',background:'#374151',fontSize:'9px',fontWeight:700,letterSpacing:'.05em'}}>原　価　単　価</th></tr>
                         <tr><th style={{fontSize:'9px'}}>処分費㎥単価</th><td style={{fontSize:'9px',textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitWaste   > 0 ? `¥${formatCurrency(unitWaste)}`   : '—'}</td></tr>
                         <tr><th style={{fontSize:'9px'}}>人件費㎡単価</th><td style={{fontSize:'9px',textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitLaborM2 > 0 ? `¥${formatCurrency(unitLaborM2)}` : '—'}</td></tr>
                         <tr><th style={{fontSize:'9px'}}>解体原価㎡単価</th><td style={{fontSize:'9px',textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitCostM2  > 0 ? `¥${formatCurrency(unitCostM2)}`  : '—'}</td></tr>
@@ -3330,7 +3330,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <th style={{ width: '68px' }}>氏名</th><th style={{ width: '50px' }}>金額</th>
                       <th style={{ width: '65px' }}>会社・人数</th><th style={{ width: '50px' }}>金額</th>
                       <th style={{ width: '33px' }}>車種</th><th style={{ width: '36px' }}>車番</th>
-                      <th style={{ width: '55px' }}>発生材</th><th style={{ width: '70px' }}>数量</th>
+                      <th style={{ width: '55px' }}>発生材</th><th style={{ width: '82px' }}>数量</th>
                       <th style={{ width: '52px' }}>金額</th><th style={{ width: '90px', textAlign:'center' }}>搬出先</th><th style={{ width: '90px', textAlign:'center' }}>マニNo.</th>
                     </tr>
                   </thead>

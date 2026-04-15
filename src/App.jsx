@@ -1404,8 +1404,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const addOutsource = () => {
     const actualCompany = oForm.company.trim();
     if (!actualCompany||!oForm.count) return;
-    const count = parseInt(oForm.count, 10) || 0;
-    const amount = count*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime);
+    const count = parseFloat(oForm.count) || 0;
+    const basePrice = oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime;
+    const amount = count * basePrice;
     setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,count,amount}]});
     setOForm({company:'',count:'',shift:'daytime',start:'',end:''});
   };
@@ -1565,8 +1566,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     </div>
   );
 
-  const AddBtn = ({ onClick, disabled, label }) => (
-    <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)':'rgba(59,130,246,0.2)', border:`1px solid ${disabled?'rgba(255,255,255,0.08)':'rgba(59,130,246,0.4)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)':'#93C5FD', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px' }}>{label || '＋ 追加する'}</button>
+  const AddBtn = ({ onClick, disabled, label, pulse }) => (
+    <button onClick={onClick} disabled={disabled} className={!disabled && pulse ? 'btn-pulse' : ''} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)':'rgba(59,130,246,0.2)', border:`1px solid ${disabled?'rgba(255,255,255,0.08)':'rgba(59,130,246,0.4)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)':'#93C5FD', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px' }}>{label || '＋ 追加する'}</button>
   );
 
   const SectionLabel = ({ ja, en }) => (
@@ -1587,7 +1588,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   return (
     <div style={{ background: isEditMode ? '#111' : '#fff', minHeight:'100vh', overflowX:'hidden' }}>
-      <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;} input[type="time"]::-webkit-calendar-picker-indicator { opacity:0; width:0; padding:0; margin:0; }`}</style>
+      <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;} input[type="time"]::-webkit-calendar-picker-indicator { opacity:0; width:0; padding:0; margin:0; } @keyframes addPulse { 0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.5)} 50%{box-shadow:0 0 0 8px rgba(59,130,246,0)} } .btn-pulse { animation: addPulse 1.5s ease-in-out infinite; }`}</style>
 
       {/* ヘッダー */}
       <div style={{ position:'sticky', top:0, zIndex:50, background:'#fff', backdropFilter:'blur(4px)', borderBottom:'1px solid #E8E8E8', padding:'12px 16px 0' }}>
@@ -1680,7 +1681,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 ))}
               </div>
             </div>
-            <AddBtn onClick={addWorker} disabled={!wForm.name.trim()||!wForm.start||!wForm.end} />
+            <AddBtn onClick={addWorker} disabled={!wForm.name.trim()||!wForm.start||!wForm.end} pulse={!!wForm.name.trim()} />
           </div>
 
           {/* 外注人工 */}
@@ -1720,7 +1721,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 </div>
                 <input type="text" value={oForm.company} onChange={e=>setOForm({...oForm,company:e.target.value})} placeholder="直接入力も可" style={inpTxt} />
               </div>
-              <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
+              <div>
+                <label style={inpLbl}>人数</label>
+                <div style={{display:'flex',alignItems:'center',gap:4}}>
+                  <button onClick={()=>setOForm({...oForm,count:String(Math.max(0.25,parseFloat(oForm.count||0)-0.25))})}
+                    style={{width:32,height:44,borderRadius:8,background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:'inherit'}}>−</button>
+                  <input type="number" min="0.25" step="0.25" inputMode="decimal" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={{...inpTxt,textAlign:'center',flex:1}} />
+                  <button onClick={()=>setOForm({...oForm,count:String(parseFloat(oForm.count||0)+1)})}
+                    style={{width:32,height:44,borderRadius:8,background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:'inherit'}}>＋</button>
+                </div>
+                {oForm.count&&parseFloat(oForm.count)>0&&<div style={{fontSize:10,color:'#60a5fa',textAlign:'right',marginTop:2}}>¥{new Intl.NumberFormat('ja-JP').format(parseFloat(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
+              </div>
             </div>
             <div style={{...grid2,marginBottom:8}}>
               <div><label style={inpLbl}>開始</label><select value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>--:--</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t} style={{color:"#000",background:"#fff"}}>{t}</option>)}</select></div>
@@ -2063,7 +2074,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>
               適用単価: ¥{formatCurrency(getShiftAmount(wForm.shift))}
             </div>
-            <AddBtn onClick={addWorker} disabled={!wForm.name.trim()||!wForm.start||!wForm.end} />
+            <AddBtn onClick={addWorker} disabled={!wForm.name.trim()||!wForm.start||!wForm.end} pulse={!!wForm.name.trim()} />
           </div>
           {workDetails.inHouseWorkers.length>0 && <SubTotal label="自社人工" value={workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0)} />}
 
@@ -2119,7 +2130,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 </div>
                 <input type="text" value={oForm.company} onChange={e=>setOForm({...oForm,company:e.target.value})} placeholder="直接入力も可" style={inpTxt} />
               </div>
-              <div><label style={inpLbl}>人数</label><input type="number" min="1" inputMode="numeric" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={inpTxt} /></div>
+              <div>
+                <label style={inpLbl}>人数</label>
+                <div style={{display:'flex',alignItems:'center',gap:4}}>
+                  <button onClick={()=>setOForm({...oForm,count:String(Math.max(0.25,parseFloat(oForm.count||0)-0.25))})}
+                    style={{width:32,height:44,borderRadius:8,background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:'inherit'}}>−</button>
+                  <input type="number" min="0.25" step="0.25" inputMode="decimal" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={{...inpTxt,textAlign:'center',flex:1}} />
+                  <button onClick={()=>setOForm({...oForm,count:String(parseFloat(oForm.count||0)+1)})}
+                    style={{width:32,height:44,borderRadius:8,background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:'inherit'}}>＋</button>
+                </div>
+                {oForm.count&&parseFloat(oForm.count)>0&&<div style={{fontSize:10,color:'#60a5fa',textAlign:'right',marginTop:2}}>¥{new Intl.NumberFormat('ja-JP').format(parseFloat(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
+              </div>
             </div>
             <div style={{...grid2,marginBottom:8}}>
               <div><label style={inpLbl}>開始</label><select value={oForm.start} onChange={e=>setOForm({...oForm,start:e.target.value})} style={inpSel}><option value="" style={{color:"#000",background:"#fff"}}>--:--</option>{MASTER_DATA.workingHoursOptions.map(t=><option key={t} style={{color:"#000",background:"#fff"}}>{t}</option>)}</select></div>
@@ -3365,13 +3386,14 @@ export default function LOGIOApp() {
   const [editingReport, setEditingReport] = useState(null);
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState('');
-  const [projectInfo, setProjectInfo] = useState({
+  const defaultProjectInfo = {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
     contractAmount: '', additionalAmount: '', status: '進行中',
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: []
-  });
+  };
+  const [projectInfo, setProjectInfo] = useState(defaultProjectInfo);
   const [reports, setReports] = useState([]);
   // ★ 追加 state
   const [reloading, setReloading] = useState(false);
@@ -3482,6 +3504,8 @@ export default function LOGIOApp() {
   // ★ 現場選択時にロック状態確認
   const handleSelectSite = async (siteName) => {
     setSelectedSite(siteName);
+    setProjectInfo(defaultProjectInfo);
+    setReports([]);
     await loadProjectInfo(siteName);
     await loadReports(siteName);
     const locker = await siteLocks.check(siteName);

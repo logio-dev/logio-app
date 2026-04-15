@@ -1976,6 +1976,44 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             )}
           </div>
 
+          {/* 経費 */}
+          <SectionLabel ja="経費" en="Expenses" />
+          {(workDetails.dailyExpenses||[]).map((e,i)=>(
+            <div key={i} style={{background:'#fff',borderRadius:10,padding:'10px 12px',marginBottom:5,display:'flex',alignItems:'center',gap:8,border:'0.5px solid #E8E8E8'}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{e.name}</div>
+                <div style={{fontSize:10,color:'#999'}}>¥{formatCurrency(e.amount)}</div>
+              </div>
+              <button onClick={()=>setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)})}
+                style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+            </div>
+          ))}
+          <div style={inputCard}>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
+              {['パーキング代','高速代','交通費','経費','道具代','アスベスト分析費'].map(n=>(
+                <button key={n} onClick={()=>setWorkDetails({...workDetails,_expName:n})}
+                  style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${workDetails._expName===n?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.1)'}`,background:workDetails._expName===n?'rgba(59,130,246,0.3)':'rgba(255,255,255,0.08)',color:workDetails._expName===n?'#93C5FD':'rgba(255,255,255,0.5)',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
+              ))}
+            </div>
+            <div style={{...grid2,marginBottom:8}}>
+              <div>
+                <label style={inpLbl}>項目名</label>
+                <input type="text" value={workDetails._expName||''} onChange={e=>setWorkDetails({...workDetails,_expName:e.target.value})} placeholder="例）パーキング代" style={inpTxt} />
+              </div>
+              <div>
+                <label style={inpLbl}>金額</label>
+                <input type="number" value={workDetails._expAmt||''} onChange={e=>setWorkDetails({...workDetails,_expAmt:e.target.value})} placeholder="0" style={inpTxt} />
+              </div>
+            </div>
+            <AddBtn onClick={()=>{
+              const name=(workDetails._expName||'').trim();
+              const amt=parseFloat(workDetails._expAmt)||0;
+              if(!name) return;
+              setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt}],_expName:'',_expAmt:''});
+            }} disabled={!(workDetails._expName||'').trim()} />
+          </div>
+          {(workDetails.dailyExpenses||[]).length>0 && <SubTotal label="経費" value={(workDetails.dailyExpenses||[]).reduce((s,e)=>s+(e.amount||0),0)} />}
+
           {/* 更新ボタン */}
           <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'42rem',padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`,background:'#fff',borderTop:'1px solid #E8E8E8',zIndex:40}}>
             <button onClick={handleSave} disabled={isSaving}
@@ -3785,7 +3823,7 @@ export default function LOGIOApp() {
               onViewPdf={(report)=>{ window.__navigatePdf && window.__navigatePdf(report); }}
             />
           )}
-          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={handleNavigate} onSelectSite={setSelectedSite} />}
+          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={handleNavigate} onSelectSite={handleSelectSite} />}
           {currentPage === 'input' && (
             <ReportInputPage
               key={editingReport ? editingReport.id : 'new'}

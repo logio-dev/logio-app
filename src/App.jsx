@@ -3603,7 +3603,7 @@ export default function LOGIOApp() {
       await loadReports(selectedSite);
       alert('✅ 日報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
-      setCurrentPage('list');
+      setCurrentPage('home');
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + error.message); }
   };
 
@@ -3626,7 +3626,7 @@ export default function LOGIOApp() {
       await loadReports(selectedSite);
       setEditingReport(null);
       alert('✅ 日報を更新しました');
-      setCurrentPage('list');
+      setCurrentPage('home');
     } catch (error) { console.error(error); alert('❌ 更新に失敗しました: ' + error.message); }
   };
 

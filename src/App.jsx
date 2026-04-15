@@ -1113,34 +1113,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         </div>
                         <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
                         <TextInput label="追加金額（税抜）" labelEn="Additional" type="number" value={projectInfo.additionalAmount||''} onChange={v=>setProjectInfo({...projectInfo,additionalAmount:v})} placeholder="0" />
-
-                        {/* ★ 現場詳細 */}
-                        <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'rgba(59,130,246,0.06)', border:'1px solid rgba(59,130,246,0.2)' }}>
-                          <div style={{ fontSize:10, fontWeight:700, color:'#60a5fa', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:12 }}>現場詳細 / Site Details</div>
-                          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:12 }}>
-                            <div>
-                              <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>面積 (㎡)</label>
-                              <input type="number" value={projectInfo.siteAreaM2||''} onChange={e=>setProjectInfo({...projectInfo,siteAreaM2:e.target.value})} placeholder="例) 150"
-                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
-                            </div>
-                            <div>
-                              <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>坪数 (坪)</label>
-                              <input type="number" value={projectInfo.siteTsubo||''} onChange={e=>setProjectInfo({...projectInfo,siteTsubo:e.target.value})} placeholder="例) 45"
-                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
-                            </div>
-                            <div>
-                              <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>業態</label>
-                              <input type="text" value={projectInfo.siteUseType||''} onChange={e=>setProjectInfo({...projectInfo,siteUseType:e.target.value})} placeholder="例) 商業"
-                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
-                            </div>
-                          </div>
-                          <div>
-                            <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>工事条件</label>
-                            <textarea value={projectInfo.workCondition||''} onChange={e=>setProjectInfo({...projectInfo,workCondition:e.target.value})} placeholder="例) アスベスト有り、夜間作業あり..."
-                              style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:'inherit', minHeight:64, resize:'vertical' }} />
-                          </div>
-                        </div>
-
                         {/* ===== 経費2分類タブ ===== */}
                         {(()=>{
                           const activeTab = projectInfo._costTab||'out';
@@ -3144,12 +3116,9 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const grossProfit = totalRevenue - totalCost;
   const fmtDate = (dateStr) => { if (!dateStr) return ''; const p = dateStr.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
   const fmtDay = (dateStr) => { if (!dateStr) return ''; return ['日','月','火','水','木','金','土'][new Date(dateStr).getDay()]; };
-  const ROWS_PER_PAGE = 20;
-  const pages = [];
-  for (let i = 0; i < allReports.length; i += ROWS_PER_PAGE) {
-    pages.push(allReports.slice(i, i + ROWS_PER_PAGE));
-  }
-  if (pages.length === 0) pages.push([]);
+  const MAX_ROWS = 20;
+  const displayReports = allReports.slice(0, MAX_ROWS);
+  const emptyRows = MAX_ROWS - displayReports.length;
 
   return (
     <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'#f5f5f5', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
@@ -3172,7 +3141,6 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           .no-print { display: none !important; }
           @page { size: A3 landscape; margin: 6mm; }
           .pdf-container { zoom: 0.85; }
-          .pdf-page-break { page-break-before: always; }
         }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#fff', borderColor:'#E5E7EB' }}>
@@ -3188,146 +3156,125 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           </div>
         </div>
       </div>
-      <div style={{ overflowX: 'auto', overflowY: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#f5f5f5' }}>
-        {pages.map((pageRows, pageIdx) => {
-          const isLastPage = pageIdx === pages.length - 1;
-          const pageOffset = pageIdx * ROWS_PER_PAGE;
-          const pageEmptyRows = ROWS_PER_PAGE - pageRows.length;
-          const pageInHouseWorkers = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).length,0);
-          const pageInHouseCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0),0);
-          const pageOutWorkers     = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(parseInt(o.count||o.workers)||0),0),0);
-          const pageOutCost        = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
-          const pageVehicleCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.vehicles||[]).reduce((a,v)=>a+(v.amount||0),0),0);
-          const pageHaishiCost     = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.haishiAmount||0),0),0);
-          const pageMachineryCost  = pageRows.reduce((s,r)=>s+(r.workDetails?.machinery||[]).reduce((a,m)=>a+(m.unitPrice||0),0),0);
-          const pageWasteCost      = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),0),0);
-          const pageTotal          = pageInHouseCost+pageOutCost+pageVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost;
-
-          // リース等アイテム集計
-          const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
-          const dailyExpMap = {};
-          miscItems.forEach(i=>{ if(!dailyExpMap[i.name]) dailyExpMap[i.name]={name:i.name,days:0,amount:0}; dailyExpMap[i.name].days+=(i.days||0); dailyExpMap[i.name].amount+=parseFloat(i.amount)||0; });
-          allReports.forEach(r=>(r.workDetails?.dailyExpenses||[]).forEach(e=>{ if(!dailyExpMap[e.name]) dailyExpMap[e.name]={name:e.name,days:0,amount:0}; dailyExpMap[e.name].days+=1; dailyExpMap[e.name].amount+=(e.amount||0); }));
-          const leaseItems = Object.values(dailyExpMap);
-          const leaseTotal = leaseItems.reduce((s,i)=>s+i.amount,0);
-          const hasLease = leaseItems.length > 0;
-
-          // 現場詳細・単価計算
-          const areaM2 = parseFloat(projectInfo.siteAreaM2) || 0;
-          const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0);
-          const wCost  = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),s),0);
-          const laborC = allReports.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0)+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
-          const unitWaste   = wQty   > 0 ? Math.round(wCost/wQty)       : 0;
-          const unitLaborM2 = areaM2 > 0 ? Math.round(laborC/areaM2)    : 0;
-          const unitCostM2  = areaM2 > 0 ? Math.round(totalCost/areaM2) : 0;
-
-          // ヘッダー列幅: リースあり=5列、なし=4列
-          const headerCols = hasLease ? '300px 200px 200px 160px 1fr' : '300px 200px 160px 1fr';
-
-          return (
-            <div key={pageIdx} className={`pdf-container p-6${pageIdx > 0 ? ' pdf-page-break' : ''}`} style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#fff', marginBottom: isLastPage ? 0 : 16 }}>
-              <div style={{ width: '1200px' }}>
-                {pageIdx === 0 ? (
-                  <div className="text-center mb-3">
-                    <h1 className="pdf-title text-xl font-black tracking-[0.3em] border-b-2 pb-2 inline-block px-8" style={{color:'#111827',borderColor:'#374151'}}>解　体　作　業　日　報</h1>
-                    <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
-                  </div>
-                ) : (
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                    <span style={{fontSize:11,fontWeight:700,color:'#374151'}}>解体作業日報（続き）</span>
-                    <span style={{fontSize:10,color:'#9CA3AF'}}>{pageIdx+1} / {pages.length} ページ</span>
-                  </div>
-                )}
-                <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: headerCols, width:'1152px' }}>
-                  <table className="pdf-header-table">
+      <div className="pdf-scroll-wrapper" style={{ overflowX: 'auto', overflowY: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#f5f5f5' }}>
+      <div className="pdf-container p-6" style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#fff' }}>
+        <div style={{ width: '1200px' }}>
+          <div className="text-center mb-3">
+            <h1 className="pdf-title text-xl font-black tracking-[0.3em] border-b-2 pb-2 inline-block px-8" style={{color:'#111827',borderColor:'#374151'}}>解　体　作　業　日　報</h1>
+            <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
+          </div>
+          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: '300px 200px 240px 1fr', width:'1152px' }}>
+            <table className="pdf-header-table">
+              <tbody>
+                {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName || report.site_name || ''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
+                  <tr key={k}><th>{k}</th><td>{v || ''}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            <table className="pdf-header-table">
+              <tbody>
+                <tr><th>排出事業者</th><td>{projectInfo.manifestDischarger || projectInfo.discharger || ''}</td></tr>
+                <tr><th>運搬会社</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{[...new Set((projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean))].join('\n') || projectInfo.transportCompany || ''}</td></tr>
+                <tr><th>契約処分先</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{[...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))].join('\n') || (projectInfo.contractedDisposalSites||[]).join('\n')}</td></tr>
+                <tr><th>PROJECT NO.</th><td>{projectInfo.projectNumber || ''}</td></tr>
+                <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>
+              </tbody>
+            </table>
+            <div>
+              {/* リース・機材・資材・経費等テーブル */}
+              {(()=>{
+                const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
+                // 日報の経費を集計（同項目は加算）
+                const dailyExpMap = {};
+                // miscItemsを先に登録
+                miscItems.forEach(i=>{
+                  const name = i.name;
+                  if(!dailyExpMap[name]) dailyExpMap[name]={name,days:0,amount:0};
+                  dailyExpMap[name].days += (i.days||0);
+                  dailyExpMap[name].amount += parseFloat(i.amount)||0;
+                });
+                // 日報経費を同じキーで加算
+                allReports.forEach(r=>(r.workDetails?.dailyExpenses||[]).forEach(e=>{
+                  if(!dailyExpMap[e.name]) dailyExpMap[e.name]={name:e.name,days:0,amount:0};
+                  dailyExpMap[e.name].days += 1;
+                  dailyExpMap[e.name].amount += (e.amount||0);
+                }));
+                const items = Object.values(dailyExpMap);
+                if(items.length===0) return null;
+                const total = items.reduce((s,i)=>s+i.amount,0);
+                return (
+                  <table className="pdf-header-table" style={{fontSize:'8px'}}>
+                    <thead>
+                      <tr style={{background:'#F3F4F6'}}>
+                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#C4B5FD',letterSpacing:'.06em',borderBottom:'1px solid #D1D5DB',padding:'4px',background:'#374151',fontWeight:700}}>リース・機材・資材・経費等</th>
+                      </tr>
+                      <tr style={{background:'#F3F4F6'}}>
+                        <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName || report.site_name || ''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
-                        <tr key={k}><th>{k}</th><td>{v || ''}</td></tr>
+                      {items.map((it,i)=>(
+                        <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{it.amount>0?formatCurrency(it.amount):'-'}</td></tr>
                       ))}
+                      <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.08)'}}>
+                        <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
+                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(total)}</td>
+                      </tr>
                     </tbody>
                   </table>
-                  <table className="pdf-header-table">
-                    <tbody>
-                      <tr><th>排出事業者</th><td>{projectInfo.manifestDischarger || projectInfo.discharger || ''}</td></tr>
-                      <tr><th>運搬会社</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{[...new Set((projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean))].join('\n') || projectInfo.transportCompany || ''}</td></tr>
-                      <tr><th>契約処分先</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{[...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))].join('\n') || (projectInfo.contractedDisposalSites||[]).join('\n')}</td></tr>
-                      <tr><th>PROJECT NO.</th><td>{projectInfo.projectNumber || ''}</td></tr>
-                      <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>
-                    </tbody>
-                  </table>
-                  {hasLease && (
-                    <table className="pdf-header-table" style={{fontSize:'8px'}}>
-                      <thead>
-                        <tr><th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#C4B5FD',background:'#374151',fontWeight:700}}>リース・機材・資材・経費等</th></tr>
-                        <tr style={{background:'#F3F4F6'}}><th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th></tr>
-                      </thead>
-                      <tbody>
-                        {leaseItems.map((it,i)=>(<tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{it.amount>0?formatCurrency(it.amount):'-'}</td></tr>))}
-                        <tr style={{borderTop:'1px solid #374151'}}><td colSpan="2" style={{textAlign:'right',fontWeight:700}}>小計</td><td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(leaseTotal)}</td></tr>
-                      </tbody>
-                    </table>
+                );
+              })()}
+            </div>
+            <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
+              <div style={{width:'100%'}}>
+              <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#EAB308',border:'1px solid #374151'}}>【　収　支　結　果　】</div>
+              <table className="result-table" style={{width:'100%'}}>
+                <tbody>
+                  {[
+                    ['見積金額', totalRevenue],
+                    ['原価金額', totalCost],
+                    ['追加金額', parseFloat(projectInfo.additionalAmount) || 0],
+                  ].map(([label, val]) => (
+                    <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
+                  ))}
+                  <tr style={{ borderTop: '2px solid #374151' }}>
+                    <th style={{color:'#B45309',fontWeight:700}}>粗利</th>
+                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>¥{formatCurrency(grossProfit)}</td>
+                  </tr>
+                  <tr>
+                    <th style={{color:'#B45309'}}>粗利率</th>
+                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>{totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0'}%</td>
+                  </tr>
+                  {totalScrapRevenue > 0 && (
+                    <tr style={{ borderTop: '1px dashed #D1D5DB' }}>
+                      <th style={{color:'#065F46'}}>金属売上</th>
+                      <td style={{color:'#065F46',fontWeight:700}}>¥{formatCurrency(totalScrapRevenue)}</td>
+                    </tr>
                   )}
-                  <div style={{display:'flex', flexDirection:'column'}}>
-                    <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#C4B5FD',border:'1px solid #374151'}}>【　現　場　詳　細　】</div>
-                    <table className="pdf-header-table" style={{flex:1}}>
-                      <tbody>
-                        <tr><th>面積</th><td>{projectInfo.siteAreaM2 ? `${projectInfo.siteAreaM2} ㎡` : '—'}</td></tr>
-                        <tr><th>坪数</th><td>{projectInfo.siteTsubo  ? `${projectInfo.siteTsubo} 坪`  : '—'}</td></tr>
-                        <tr><th>業態</th><td>{projectInfo.siteUseType || '—'}</td></tr>
-                        <tr><th style={{whiteSpace:'nowrap'}}>工事条件</th><td style={{fontSize:8,whiteSpace:'pre-wrap',lineHeight:1.5}}>{projectInfo.workCondition || '—'}</td></tr>
-                        <tr style={{borderTop:'1px solid #374151'}}><th colSpan={2} style={{textAlign:'center',color:'#C4B5FD',background:'#374151',fontSize:8}}>原価単価</th></tr>
-                        <tr><th style={{fontSize:8}}>処分費㎥単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitWaste   > 0 ? `¥${formatCurrency(unitWaste)}`   : '—'}</td></tr>
-                        <tr><th style={{fontSize:8}}>人件費㎡単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitLaborM2 > 0 ? `¥${formatCurrency(unitLaborM2)}` : '—'}</td></tr>
-                        <tr><th style={{fontSize:8}}>解体原価㎡単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitCostM2  > 0 ? `¥${formatCurrency(unitCostM2)}`  : '—'}</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
-                    <div style={{width:'100%'}}>
-                      <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#EAB308',border:'1px solid #374151'}}>【　収　支　結　果　】</div>
-                      <table className="result-table" style={{width:'100%'}}>
-                        <tbody>
-                          {[['見積金額', totalRevenue],['原価金額', totalCost],['追加金額', parseFloat(projectInfo.additionalAmount) || 0]].map(([label, val]) => (
-                            <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
-                          ))}
-                          <tr style={{ borderTop: '2px solid #374151' }}>
-                            <th style={{color:'#B45309',fontWeight:700}}>粗利</th>
-                            <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>¥{formatCurrency(grossProfit)}</td>
-                          </tr>
-                          <tr>
-                            <th style={{color:'#B45309'}}>粗利率</th>
-                            <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>{totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0'}%</td>
-                          </tr>
-                          {totalScrapRevenue > 0 && (
-                            <tr style={{ borderTop: '1px dashed #D1D5DB' }}>
-                              <th style={{color:'#065F46'}}>金属売上</th>
-                              <td style={{color:'#065F46',fontWeight:700}}>¥{formatCurrency(totalScrapRevenue)}</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-                <table className="pdf-table" style={{ width:'1152px' }}>
-                  <thead>
-                    <tr>
-                      <th rowSpan="2" style={{ width: '28px' }}>日数</th><th rowSpan="2" style={{ width: '52px' }}>日付</th>
-                      <th rowSpan="2" style={{ width: '18px' }}>曜</th><th rowSpan="2" style={{ minWidth: '150px' }}>施工内容</th>
-                      <th colSpan="2">作業時間</th><th colSpan="2">自社人工</th><th colSpan="2">外注人工</th>
-                      <th colSpan="2">車両</th><th rowSpan="2" style={{ width: '50px' }}>重機</th><th colSpan="5">産廃・スクラップ</th>
-                    </tr>
-                    <tr>
-                      <th style={{ width: '35px' }}>開始</th><th style={{ width: '35px' }}>終了</th>
-                      <th style={{ width: '68px' }}>氏名</th><th style={{ width: '50px' }}>金額</th>
-                      <th style={{ width: '65px' }}>会社・人数</th><th style={{ width: '50px' }}>金額</th>
-                      <th style={{ width: '33px' }}>車種</th><th style={{ width: '36px' }}>車番</th>
-                      <th style={{ width: '55px' }}>発生材</th><th style={{ width: '36px' }}>数量</th>
-                      <th style={{ width: '52px' }}>金額</th><th style={{ width: '90px', textAlign:'center' }}>搬出先</th><th style={{ width: '90px', textAlign:'center' }}>マニNo.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-              {pageRows.map((r, idx) => {
+                </tbody>
+              </table>
+              </div>
+            </div>
+          </div>
+          <table className="pdf-table" style={{ width:'1152px' }}>
+            <thead>
+              <tr>
+                <th rowSpan="2" style={{ width: '28px' }}>日数</th><th rowSpan="2" style={{ width: '52px' }}>日付</th>
+                <th rowSpan="2" style={{ width: '18px' }}>曜</th><th rowSpan="2" style={{ minWidth: '150px' }}>施工内容</th>
+                <th colSpan="2">作業時間</th><th colSpan="2">自社人工</th><th colSpan="2">外注人工</th>
+                <th colSpan="2">車両</th><th rowSpan="2" style={{ width: '50px' }}>重機</th><th colSpan="5">産廃・スクラップ</th>
+              </tr>
+              <tr>
+                <th style={{ width: '35px' }}>開始</th><th style={{ width: '35px' }}>終了</th>
+                <th style={{ width: '68px' }}>氏名</th><th style={{ width: '50px' }}>金額</th>
+                <th style={{ width: '65px' }}>会社・人数</th><th style={{ width: '50px' }}>金額</th>
+                <th style={{ width: '33px' }}>車種</th><th style={{ width: '36px' }}>車番</th>
+                <th style={{ width: '55px' }}>発生材</th><th style={{ width: '36px' }}>数量</th>
+                <th style={{ width: '52px' }}>金額</th><th style={{ width: '90px', textAlign:'center' }}>搬出先</th><th style={{ width: '90px', textAlign:'center' }}>マニNo.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayReports.map((r, idx) => {
                 const workers = r.workDetails?.inHouseWorkers || [];
                 const outsourcing = r.workDetails?.outsourcingLabor || [];
                 const vehicles = r.workDetails?.vehicles || [];
@@ -3373,7 +3320,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <tr key={`${r.id}-${subIdx}`}>
                         {subIdx === 0 && (
                           <>
-                            <td rowSpan={maxSubRows} className="text-center">{pageOffset + idx + 1}</td>
+                            <td rowSpan={maxSubRows} className="text-center">{idx + 1}</td>
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDate(r.date)}</td>
                             <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDay(r.date)}</td>
                             <td rowSpan={maxSubRows} className="text-[8px]" style={{ whiteSpace: 'normal', maxWidth: '120px' }}>{r.workDetails?.workContent || ''}</td>
@@ -3418,63 +3365,42 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   </Fragment>
                 );
               })}
-
-                  {Array.from({ length: pageEmptyRows }, (_, idx) => (
-                    <tr key={`empty-${idx}`}>
-                      <td className="text-center" style={{ height: '18px' }}>{pageOffset + pageRows.length + idx + 1}</td>
-                      <td></td><td></td><td></td><td></td><td></td><td></td>
-                      <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                      <td></td><td></td><td></td><td></td>
-                    </tr>
-                  ))}
-                  <tr style={{ background: '#374151' }}>
-                    <th colSpan="6" className="text-right" style={{ background: '#374151', color: '#fff' }}>
-                      {pages.length > 1 ? `${pageIdx+1}/${pages.length}ページ 小計` : '計'}
-                    </th>
-                    <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{pageInHouseWorkers}人</td>
-                    <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageInHouseCost)}</td>
-                    <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{pageOutWorkers}人</td>
-                    <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageOutCost)}</td>
-                    <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageVehicleCost + pageHaishiCost)}</td>
-                    <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageMachineryCost)}</td>
-                    <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageWasteCost)}</td>
-                    <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
-                    <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>¥{formatCurrency(pageTotal)}</td>
-                  </tr>
-                  {isLastPage && pages.length > 1 && (
-                    <tr style={{ background: '#1a1a2e' }}>
-                      <th colSpan="6" className="text-right" style={{ background: '#1a1a2e', color: '#fff' }}>合　計</th>
-                      <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{totalInHouseWorkers}人</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalInHouseCost)}</td>
-                      <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{totalOutsourcingWorkers}人</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
-                      <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalMachineryCost)}</td>
-                      <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalWasteCost)}</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#1a1a2e' }}>原価合計</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>¥{formatCurrency(totalCost)}</td>
-                    </tr>
-                  )}
-                  </tbody>
-                </table>
-                {isLastPage && (
-                  <div style={{display:'flex',justifyContent:'flex-end',marginTop:4,width:'1152px'}}>
-                    <div style={{border:'1px solid #374151',background:'#374151',padding:'6px 16px',display:'flex',alignItems:'center',gap:12,borderRadius:2}}>
-                      <span style={{color:'#9CA3AF',fontSize:11,fontWeight:700,letterSpacing:'.04em'}}>原価合計</span>
-                      <span style={{color:'#fff',fontSize:16,fontWeight:900,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(totalCost)}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {Array.from({ length: emptyRows }, (_, idx) => (
+                <tr key={`empty-${idx}`}>
+                  <td className="text-center" style={{ height: '18px' }}>{displayReports.length + idx + 1}</td>
+                  <td></td><td></td><td></td><td></td><td></td><td></td>
+                  <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                  <td></td><td></td><td></td><td></td>
+                </tr>
+              ))}
+              <tr style={{ background: '#374151' }}>
+                <th colSpan="6" className="text-right" style={{ background: '#374151', color: '#fff' }}>計</th>
+                <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{totalInHouseWorkers}人</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalInHouseCost)}</td>
+                <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{totalOutsourcingWorkers}人</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
+                <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalMachineryCost)}</td>
+                <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(totalWasteCost)}</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
+                <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>¥{formatCurrency(totalCost)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style={{display:'flex',justifyContent:'flex-end',marginTop:4,width:'1152px'}}>
+            <div style={{border:'1px solid #374151',background:'#374151',padding:'6px 16px',display:'flex',alignItems:'center',gap:12,borderRadius:2}}>
+              <span style={{color:'#9CA3AF',fontSize:11,fontWeight:700,letterSpacing:'.04em'}}>原価合計</span>
+              <span style={{color:'#fff',fontSize:16,fontWeight:900,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(totalCost)}</span>
             </div>
-          );
-        })}
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   );
 }
 
-
+// ========== メインApp ==========
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -3631,12 +3557,7 @@ export default function LOGIOApp() {
         const miscItems = rawMiscItems !== undefined && rawMiscItems !== null
           ? rawMiscItems
           : [...(d.site_expense_items||[]), ...(d.sga_items||[])];
-        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], miscItems, manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '',
-          siteAreaM2: d.site_area_m2 != null ? String(d.site_area_m2) : '',
-          siteTsubo:  d.site_tsubo  != null ? String(d.site_tsubo)  : '',
-          siteUseType: d.site_use_type  || '',
-          workCondition: d.work_condition || '',
-        };
+        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], miscItems, manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '' };
         setProjectInfo(info);
         return info;
       }
@@ -3655,11 +3576,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: projectInfo.miscItems || [], manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
-        site_tsubo: projectInfo.siteTsubo ? parseFloat(projectInfo.siteTsubo) : null,
-        site_use_type: projectInfo.siteUseType || null,
-        work_condition: projectInfo.workCondition || null,
-        updated_at: new Date().toISOString() }, 'site_name');
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: projectInfo.miscItems || [], manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', updated_at: new Date().toISOString() }, 'site_name');
       await sb('sites').update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
       alert('✅ プロジェクト情報を保存しました');

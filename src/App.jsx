@@ -3216,7 +3216,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 
           // 現場詳細・単価計算
           const areaM2 = parseFloat(projectInfo.siteAreaM2) || 0;
-          const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0);
+          const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)
+                       + allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0);
           const wCost  = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),s),0);
           const laborC = allReports.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0)+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
           const unitWaste   = wQty   > 0 ? Math.round(wCost/wQty)       : 0;
@@ -3224,7 +3225,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const unitCostM2  = areaM2 > 0 ? Math.round(totalCost/areaM2) : 0;
 
           // ヘッダー列幅: リースあり=5列、なし=4列
-          const headerCols = hasLease ? '300px 200px 200px 160px 1fr' : '300px 200px 160px 1fr';
+          const headerCols = '290px 185px 185px 155px 1fr';
 
           return (
             <div key={pageIdx} className={`pdf-container p-6${pageIdx > 0 ? ' pdf-page-break' : ''}`} style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#fff', marginBottom: isLastPage ? 0 : 16 }}>
@@ -3257,18 +3258,19 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>
                     </tbody>
                   </table>
-                  {hasLease && (
-                    <table className="pdf-header-table" style={{fontSize:'8px'}}>
-                      <thead>
-                        <tr><th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#C4B5FD',background:'#374151',fontWeight:700}}>リース・機材・資材・経費等</th></tr>
-                        <tr style={{background:'#F3F4F6'}}><th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th></tr>
-                      </thead>
-                      <tbody>
-                        {leaseItems.map((it,i)=>(<tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{it.amount>0?formatCurrency(it.amount):'-'}</td></tr>))}
-                        <tr style={{borderTop:'1px solid #374151'}}><td colSpan="2" style={{textAlign:'right',fontWeight:700}}>小計</td><td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(leaseTotal)}</td></tr>
-                      </tbody>
-                    </table>
-                  )}
+                  <table className="pdf-header-table" style={{fontSize:'8px'}}>
+                    <thead>
+                      <tr><th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#C4B5FD',background:'#374151',fontWeight:700}}>リース・機材・資材・経費等</th></tr>
+                      <tr style={{background:'#F3F4F6'}}><th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th></tr>
+                    </thead>
+                    <tbody>
+                      {hasLease
+                        ? leaseItems.map((it,i)=>(<tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{it.amount>0?formatCurrency(it.amount):'-'}</td></tr>))
+                        : <tr><td colSpan="3" style={{textAlign:'center',color:'#9CA3AF',padding:'6px'}}>—</td></tr>
+                      }
+                      {hasLease && <tr style={{borderTop:'1px solid #374151'}}><td colSpan="2" style={{textAlign:'right',fontWeight:700}}>小計</td><td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(leaseTotal)}</td></tr>}
+                    </tbody>
+                  </table>
                   <div style={{display:'flex', flexDirection:'column'}}>
                     <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#C4B5FD',border:'1px solid #374151'}}>【　現　場　詳　細　】</div>
                     <table className="pdf-header-table" style={{flex:1}}>

@@ -3258,16 +3258,20 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>
                     </tbody>
                   </table>
-                  <table className="pdf-header-table" style={{fontSize:'8px'}}>
+                  <table className="pdf-header-table" style={{fontSize:'8px', height:'100%'}}>
                     <thead>
                       <tr><th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#C4B5FD',background:'#374151',fontWeight:700}}>リース・機材・資材・経費等</th></tr>
                       <tr style={{background:'#F3F4F6'}}><th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th></tr>
                     </thead>
-                    <tbody>
+                    <tbody style={{verticalAlign:'top'}}>
                       {hasLease
                         ? leaseItems.map((it,i)=>(<tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{it.amount>0?formatCurrency(it.amount):'-'}</td></tr>))
                         : <tr><td colSpan="3" style={{textAlign:'center',color:'#9CA3AF',padding:'6px'}}>—</td></tr>
                       }
+                      {/* 空行で高さを発注者ブロックに合わせる */}
+                      {hasLease && Array.from({length: Math.max(0, 7 - leaseItems.length)}).map((_,i)=>(
+                        <tr key={`pad-${i}`}><td colSpan="3" style={{padding:'3px 6px'}}>&nbsp;</td></tr>
+                      ))}
                       {hasLease && <tr style={{borderTop:'1px solid #374151'}}><td colSpan="2" style={{textAlign:'right',fontWeight:700}}>小計</td><td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(leaseTotal)}</td></tr>}
                     </tbody>
                   </table>
@@ -3326,7 +3330,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <th style={{ width: '68px' }}>氏名</th><th style={{ width: '50px' }}>金額</th>
                       <th style={{ width: '65px' }}>会社・人数</th><th style={{ width: '50px' }}>金額</th>
                       <th style={{ width: '33px' }}>車種</th><th style={{ width: '36px' }}>車番</th>
-                      <th style={{ width: '55px' }}>発生材</th><th style={{ width: '36px' }}>数量</th>
+                      <th style={{ width: '55px' }}>発生材</th><th style={{ width: '70px' }}>数量</th>
                       <th style={{ width: '52px' }}>金額</th><th style={{ width: '90px', textAlign:'center' }}>搬出先</th><th style={{ width: '90px', textAlign:'center' }}>マニNo.</th>
                     </tr>
                   </thead>

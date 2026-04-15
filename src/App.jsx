@@ -3415,7 +3415,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           const isScrap = w?.manifestNumber==='-';
                           return (<>
                             <td className="text-[8px]">{w?.material||''}</td>
-                            <td className="text-right text-[8px]" style={{whiteSpace:'nowrap'}}>{w ? (w.volumeM3 ? `${w.quantity}${w.unit}（${w.volumeM3}㎥）` : `${w.quantity}${w.unit}`) : ''}</td>
+                            <td className="text-right text-[8px]" style={{whiteSpace:'nowrap'}}>{w ? (w.volumeM3 ? `${w.quantity}${w.unit}/${w.volumeM3}㎥` : `${w.quantity}${w.unit}`) : ''}</td>
                             <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?`¥${formatCurrency(w.amount)}`:''}</td>
                             <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?.disposalSite||''}</td>
                             <td className="text-right text-[8px]">{isScrap?'スクラップ':(w?.manifestNumber||'')}</td>

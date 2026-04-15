@@ -3234,7 +3234,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   dailyExpMap[e.name].amount += (e.amount||0);
                 }));
                 const items = Object.values(dailyExpMap);
-                if(items.length===0) return null;
+                if(items.length===0) return <div><div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#C4B5FD',border:'1px solid #374151'}}>リース・機材・資材・経費等</div><table className="pdf-header-table"><tbody><tr><td style={{fontSize:9,color:'#9CA3AF',padding:'6px'}}>登録なし</td></tr></tbody></table></div>;
                 const total = items.reduce((s,i)=>s+i.amount,0);
                 return (
                   <table className="pdf-header-table" style={{fontSize:'8px'}}>

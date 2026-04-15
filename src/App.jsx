@@ -3277,16 +3277,16 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   </table>
                   <div style={{display:'flex', flexDirection:'column'}}>
                     <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#C4B5FD',border:'1px solid #374151'}}>【　現　場　詳　細　】</div>
-                    <table className="pdf-header-table" style={{flex:1}}>
+                    <table className="pdf-header-table" style={{flex:1,fontSize:'9px'}}>
                       <tbody>
-                        <tr><th>面積</th><td>{projectInfo.siteAreaM2 ? `${projectInfo.siteAreaM2} ㎡` : '—'}</td></tr>
-                        <tr><th>坪数</th><td>{projectInfo.siteTsubo  ? `${projectInfo.siteTsubo} 坪`  : '—'}</td></tr>
-                        <tr><th>業態</th><td>{projectInfo.siteUseType || '—'}</td></tr>
-                        <tr><th style={{whiteSpace:'nowrap'}}>工事条件</th><td style={{fontSize:8,whiteSpace:'pre-wrap',lineHeight:1.5}}>{projectInfo.workCondition || '—'}</td></tr>
-                        <tr style={{borderTop:'1px solid #374151'}}><th colSpan={2} style={{textAlign:'center',color:'#C4B5FD',background:'#374151',fontSize:8}}>原価単価</th></tr>
-                        <tr><th style={{fontSize:8}}>処分費㎥単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitWaste   > 0 ? `¥${formatCurrency(unitWaste)}`   : '—'}</td></tr>
-                        <tr><th style={{fontSize:8}}>人件費㎡単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitLaborM2 > 0 ? `¥${formatCurrency(unitLaborM2)}` : '—'}</td></tr>
-                        <tr><th style={{fontSize:8}}>解体原価㎡単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitCostM2  > 0 ? `¥${formatCurrency(unitCostM2)}`  : '—'}</td></tr>
+                        <tr><th style={{fontSize:'9px'}}>面積</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteAreaM2 ? `${projectInfo.siteAreaM2} ㎡` : '—'}</td></tr>
+                        <tr><th style={{fontSize:'9px'}}>坪数</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteTsubo  ? `${projectInfo.siteTsubo} 坪`  : '—'}</td></tr>
+                        <tr><th style={{fontSize:'9px'}}>業態</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteUseType || '—'}</td></tr>
+                        <tr><th style={{fontSize:'9px',whiteSpace:'nowrap'}}>工事条件</th><td style={{fontSize:'9px',textAlign:'right',whiteSpace:'pre-wrap',lineHeight:1.5}}>{projectInfo.workCondition || '—'}</td></tr>
+                        <tr style={{borderTop:'1px solid #374151'}}><th colSpan={2} style={{textAlign:'center',color:'#F9A8D4',background:'#374151',fontSize:'9px',fontWeight:700,letterSpacing:'.05em'}}>原　価　単　価</th></tr>
+                        <tr><th style={{fontSize:'9px'}}>処分費㎥単価</th><td style={{fontSize:'9px',textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitWaste   > 0 ? `¥${formatCurrency(unitWaste)}`   : '—'}</td></tr>
+                        <tr><th style={{fontSize:'9px'}}>人件費㎡単価</th><td style={{fontSize:'9px',textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitLaborM2 > 0 ? `¥${formatCurrency(unitLaborM2)}` : '—'}</td></tr>
+                        <tr><th style={{fontSize:'9px'}}>解体原価㎡単価</th><td style={{fontSize:'9px',textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitCostM2  > 0 ? `¥${formatCurrency(unitCostM2)}`  : '—'}</td></tr>
                       </tbody>
                     </table>
                   </div>
@@ -3415,7 +3415,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           const isScrap = w?.manifestNumber==='-';
                           return (<>
                             <td className="text-[8px]">{w?.material||''}</td>
-                            <td className="text-right text-[8px]">{w ? (w.volumeM3 ? `${w.quantity}${w.unit}（${w.volumeM3}㎥）` : `${w.quantity}${w.unit}`) : ''}</td>
+                            <td className="text-right text-[8px]" style={{whiteSpace:'nowrap'}}>{w ? (w.volumeM3 ? `${w.quantity}${w.unit}（${w.volumeM3}㎥）` : `${w.quantity}${w.unit}`) : ''}</td>
                             <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?`¥${formatCurrency(w.amount)}`:''}</td>
                             <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?.disposalSite||''}</td>
                             <td className="text-right text-[8px]">{isScrap?'スクラップ':(w?.manifestNumber||'')}</td>

@@ -1121,23 +1121,23 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             <div>
                               <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>面積 (㎡)</label>
                               <input type="number" value={projectInfo.siteAreaM2||''} onChange={e=>setProjectInfo({...projectInfo,siteAreaM2:e.target.value})} placeholder="例) 150"
-                                style={{ width:'100%', padding:'10px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
+                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
                             </div>
                             <div>
                               <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>坪数 (坪)</label>
                               <input type="number" value={projectInfo.siteTsubo||''} onChange={e=>setProjectInfo({...projectInfo,siteTsubo:e.target.value})} placeholder="例) 45"
-                                style={{ width:'100%', padding:'10px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
+                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
                             </div>
                             <div>
                               <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>業態</label>
                               <input type="text" value={projectInfo.siteUseType||''} onChange={e=>setProjectInfo({...projectInfo,siteUseType:e.target.value})} placeholder="例) 商業"
-                                style={{ width:'100%', padding:'10px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
+                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
                             </div>
                           </div>
                           <div>
                             <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>工事条件</label>
                             <textarea value={projectInfo.workCondition||''} onChange={e=>setProjectInfo({...projectInfo,workCondition:e.target.value})} placeholder="例) アスベスト有り、夜間作業あり..."
-                              style={{ width:'100%', padding:'10px 10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:'inherit', minHeight:64, resize:'vertical' }} />
+                              style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:'inherit', minHeight:64, resize:'vertical' }} />
                           </div>
                         </div>
 
@@ -3150,9 +3150,6 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
     pages.push(allReports.slice(i, i + ROWS_PER_PAGE));
   }
   if (pages.length === 0) pages.push([]);
-  // 後方互換: displayReports は最初のページ（既存の表示ロジックに使用）
-  const displayReports = pages[0] || [];
-  const emptyRows = ROWS_PER_PAGE - displayReports.length;
 
   return (
     <div style={{ position:'fixed', top:0, left:0, right:0, bottom:0, background:'#f5f5f5', overflowX:'auto', overflowY:'auto', zIndex:100, WebkitOverflowScrolling:'touch' }}>
@@ -3175,6 +3172,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           .no-print { display: none !important; }
           @page { size: A3 landscape; margin: 6mm; }
           .pdf-container { zoom: 0.85; }
+          .pdf-page-break { page-break-before: always; }
         }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#fff', borderColor:'#E5E7EB' }}>
@@ -3190,158 +3188,127 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           </div>
         </div>
       </div>
-      <div className="pdf-scroll-wrapper" style={{ overflowX: 'auto', overflowY: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#f5f5f5' }}>
-      <div className="pdf-container p-6" style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#fff' }}>
-        <div style={{ width: '1200px' }}>
-          <div className="text-center mb-3">
-            <h1 className="pdf-title text-xl font-black tracking-[0.3em] border-b-2 pb-2 inline-block px-8" style={{color:'#111827',borderColor:'#374151'}}>解　体　作　業　日　報</h1>
-            <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
-          </div>
-          <div className="mb-3" style={{ display:'grid', gridTemplateColumns: '260px 180px 200px 170px 1fr', gap:'6px', width:'1152px' }}>
-            <table className="pdf-header-table">
-              <tbody>
-                {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName || report.site_name || ''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
-                  <tr key={k}><th>{k}</th><td>{v || ''}</td></tr>
-                ))}
-              </tbody>
-            </table>
-            <table className="pdf-header-table">
-              <tbody>
-                <tr><th>排出事業者</th><td>{projectInfo.manifestDischarger || projectInfo.discharger || ''}</td></tr>
-                <tr><th>運搬会社</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{[...new Set((projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean))].join('\n') || projectInfo.transportCompany || ''}</td></tr>
-                <tr><th>契約処分先</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{[...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))].join('\n') || (projectInfo.contractedDisposalSites||[]).join('\n')}</td></tr>
-                <tr><th>PROJECT NO.</th><td>{projectInfo.projectNumber || ''}</td></tr>
-                <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>
-              </tbody>
-            </table>
-            <div>
-              {/* リース・機材・資材・経費等テーブル */}
-              {(()=>{
-                const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
-                // 日報の経費を集計（同項目は加算）
-                const dailyExpMap = {};
-                // miscItemsを先に登録
-                miscItems.forEach(i=>{
-                  const name = i.name;
-                  if(!dailyExpMap[name]) dailyExpMap[name]={name,days:0,amount:0};
-                  dailyExpMap[name].days += (i.days||0);
-                  dailyExpMap[name].amount += parseFloat(i.amount)||0;
-                });
-                // 日報経費を同じキーで加算
-                allReports.forEach(r=>(r.workDetails?.dailyExpenses||[]).forEach(e=>{
-                  if(!dailyExpMap[e.name]) dailyExpMap[e.name]={name:e.name,days:0,amount:0};
-                  dailyExpMap[e.name].days += 1;
-                  dailyExpMap[e.name].amount += (e.amount||0);
-                }));
-                const items = Object.values(dailyExpMap);
-                if(items.length===0) return null;
-                const total = items.reduce((s,i)=>s+i.amount,0);
-                return (
-                  <table className="pdf-header-table" style={{fontSize:'8px'}}>
-                    <thead>
-                      <tr style={{background:'#F3F4F6'}}>
-                        <th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#C4B5FD',letterSpacing:'.06em',borderBottom:'1px solid #D1D5DB',padding:'4px',background:'#374151',fontWeight:700}}>リース・機材・資材・経費等</th>
-                      </tr>
-                      <tr style={{background:'#F3F4F6'}}>
-                        <th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((it,i)=>(
-                        <tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{it.amount>0?formatCurrency(it.amount):'-'}</td></tr>
-                      ))}
-                      <tr style={{borderTop:'1px solid #374151',background:'rgba(255,255,255,0.08)'}}>
-                        <td colSpan="2" style={{textAlign:'right',fontWeight:700,fontSize:'8px'}}>小計</td>
-                        <td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(total)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                );
-              })()}
-            </div>
-            {/* ★ 現場詳細 + 単価 */}
-            {(()=>{
-              const areaM2 = parseFloat(projectInfo.siteAreaM2) || 0;
-              const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0);
-              const wCost  = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),s),0);
-              const laborC = allReports.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0)+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
-              const unitWaste   = wQty   > 0 ? Math.round(wCost  / wQty)   : 0;
-              const unitLaborM2 = areaM2 > 0 ? Math.round(laborC / areaM2) : 0;
-              const unitCostM2  = areaM2 > 0 ? Math.round(totalCost / areaM2) : 0;
-              return (
-                <div style={{display:'flex', flexDirection:'column'}}>
-                  <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#C4B5FD',border:'1px solid #374151'}}>【　現　場　詳　細　】</div>
-                  <table className="pdf-header-table" style={{flex:1}}>
-                    <tbody>
-                      <tr><th>面積</th><td>{projectInfo.siteAreaM2 ? `${projectInfo.siteAreaM2} ㎡` : '—'}</td></tr>
-                      <tr><th>坪数</th><td>{projectInfo.siteTsubo  ? `${projectInfo.siteTsubo} 坪`  : '—'}</td></tr>
-                      <tr><th>業態</th><td>{projectInfo.siteUseType || '—'}</td></tr>
-                      <tr><th style={{whiteSpace:'nowrap'}}>工事条件</th><td style={{fontSize:8,whiteSpace:'pre-wrap',lineHeight:1.5}}>{projectInfo.workCondition || '—'}</td></tr>
-                      <tr style={{borderTop:'1px solid #374151'}}><th colSpan={2} style={{textAlign:'center',color:'#C4B5FD',background:'#374151',fontSize:8}}>原価単価</th></tr>
-                      <tr><th style={{fontSize:8}}>処分費㎥単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitWaste   > 0 ? `¥${formatCurrency(unitWaste)}`   : '—'}</td></tr>
-                      <tr><th style={{fontSize:8}}>人件費㎡単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitLaborM2 > 0 ? `¥${formatCurrency(unitLaborM2)}` : '—'}</td></tr>
-                      <tr><th style={{fontSize:8}}>解体原価㎡単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitCostM2  > 0 ? `¥${formatCurrency(unitCostM2)}`  : '—'}</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()}
-            <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
-              <div style={{width:'100%'}}>
-              <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#EAB308',border:'1px solid #374151'}}>【　収　支　結　果　】</div>
-              <table className="result-table" style={{width:'100%'}}>
-                <tbody>
-                  {[
-                    ['見積金額', totalRevenue],
-                    ['原価金額', totalCost],
-                    ['追加金額', parseFloat(projectInfo.additionalAmount) || 0],
-                  ].map(([label, val]) => (
-                    <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
-                  ))}
-                  <tr style={{ borderTop: '2px solid #374151' }}>
-                    <th style={{color:'#B45309',fontWeight:700}}>粗利</th>
-                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>¥{formatCurrency(grossProfit)}</td>
-                  </tr>
-                  <tr>
-                    <th style={{color:'#B45309'}}>粗利率</th>
-                    <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>{totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0'}%</td>
-                  </tr>
-                  {totalScrapRevenue > 0 && (
-                    <tr style={{ borderTop: '1px dashed #D1D5DB' }}>
-                      <th style={{color:'#065F46'}}>金属売上</th>
-                      <td style={{color:'#065F46',fontWeight:700}}>¥{formatCurrency(totalScrapRevenue)}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              </div>
-            </div>
-          </div>
-          {/* ★ 複数ページ対応: pages配列をループ */}
-        </div>{/* width:1200px */}
-      </div>{/* pdf-container */}
-      {pages.map((pageRows, pageIdx) => {
-            const isLastPage = pageIdx === pages.length - 1;
-            const pageInHouseWorkers   = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).length,0);
-            const pageInHouseCost      = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0),0);
-            const pageOutWorkers       = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>s+(parseInt(o.count||o.workers)||0),0),0);
-            const pageOutCost          = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
-            const pageVehicleCost      = pageRows.reduce((s,r)=>s+(r.workDetails?.vehicles||[]).reduce((a,v)=>a+(v.amount||0),0),0);
-            const pageHaishiCost       = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.haishiAmount||0),0),0);
-            const pageMachineryCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.machinery||[]).reduce((a,m)=>a+(m.unitPrice||0),0),0);
-            const pageWasteCost        = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),0),0);
-            const pageExpCost          = pageRows.reduce((s,r)=>s+(r.workDetails?.dailyExpenses||[]).reduce((a,e)=>a+(e.amount||0),0),0);
-            const pageTotal            = pageInHouseCost+pageOutCost+pageVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost+pageExpCost;
-            // pageRows内のallReports上のオフセット
-            const pageOffset           = pageIdx * 20;
-            const pageEmptyRows        = 20 - pageRows.length;
-            return (
-              <div key={pageIdx} style={pageIdx > 0 ? {pageBreakBefore:'always', paddingTop:8} : {}}>
-                {pageIdx > 0 && (
-                  <div style={{fontSize:10,color:'#9CA3AF',textAlign:'right',marginBottom:4}}>
-                    {pageIdx+1} / {pages.length} ページ
+      <div style={{ overflowX: 'auto', overflowY: 'auto', WebkitOverflowScrolling: 'touch', width: '100%', background:'#f5f5f5' }}>
+        {pages.map((pageRows, pageIdx) => {
+          const isLastPage = pageIdx === pages.length - 1;
+          const pageOffset = pageIdx * ROWS_PER_PAGE;
+          const pageEmptyRows = ROWS_PER_PAGE - pageRows.length;
+          const pageInHouseWorkers = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).length,0);
+          const pageInHouseCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0),0);
+          const pageOutWorkers     = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(parseInt(o.count||o.workers)||0),0),0);
+          const pageOutCost        = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
+          const pageVehicleCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.vehicles||[]).reduce((a,v)=>a+(v.amount||0),0),0);
+          const pageHaishiCost     = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.haishiAmount||0),0),0);
+          const pageMachineryCost  = pageRows.reduce((s,r)=>s+(r.workDetails?.machinery||[]).reduce((a,m)=>a+(m.unitPrice||0),0),0);
+          const pageWasteCost      = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),0),0);
+          const pageTotal          = pageInHouseCost+pageOutCost+pageVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost;
+
+          // リース等アイテム集計
+          const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
+          const dailyExpMap = {};
+          miscItems.forEach(i=>{ if(!dailyExpMap[i.name]) dailyExpMap[i.name]={name:i.name,days:0,amount:0}; dailyExpMap[i.name].days+=(i.days||0); dailyExpMap[i.name].amount+=parseFloat(i.amount)||0; });
+          allReports.forEach(r=>(r.workDetails?.dailyExpenses||[]).forEach(e=>{ if(!dailyExpMap[e.name]) dailyExpMap[e.name]={name:e.name,days:0,amount:0}; dailyExpMap[e.name].days+=1; dailyExpMap[e.name].amount+=(e.amount||0); }));
+          const leaseItems = Object.values(dailyExpMap);
+          const leaseTotal = leaseItems.reduce((s,i)=>s+i.amount,0);
+          const hasLease = leaseItems.length > 0;
+
+          // 現場詳細・単価計算
+          const areaM2 = parseFloat(projectInfo.siteAreaM2) || 0;
+          const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0);
+          const wCost  = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),s),0);
+          const laborC = allReports.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0)+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
+          const unitWaste   = wQty   > 0 ? Math.round(wCost/wQty)       : 0;
+          const unitLaborM2 = areaM2 > 0 ? Math.round(laborC/areaM2)    : 0;
+          const unitCostM2  = areaM2 > 0 ? Math.round(totalCost/areaM2) : 0;
+
+          // ヘッダー列幅: リースあり=5列、なし=4列
+          const headerCols = hasLease ? '300px 200px 200px 160px 1fr' : '300px 200px 160px 1fr';
+
+          return (
+            <div key={pageIdx} className={`pdf-container p-6${pageIdx > 0 ? ' pdf-page-break' : ''}`} style={{ minWidth: '1200px', width: '1200px', margin: '0 auto', background:'#fff', marginBottom: isLastPage ? 0 : 16 }}>
+              <div style={{ width: '1200px' }}>
+                {pageIdx === 0 ? (
+                  <div className="text-center mb-3">
+                    <h1 className="pdf-title text-xl font-black tracking-[0.3em] border-b-2 pb-2 inline-block px-8" style={{color:'#111827',borderColor:'#374151'}}>解　体　作　業　日　報</h1>
+                    <p className="text-right text-gray-500 text-[9px] mt-1 mr-2">EMS-記-22</p>
+                  </div>
+                ) : (
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                    <span style={{fontSize:11,fontWeight:700,color:'#374151'}}>解体作業日報（続き）</span>
+                    <span style={{fontSize:10,color:'#9CA3AF'}}>{pageIdx+1} / {pages.length} ページ</span>
                   </div>
                 )}
+                <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: headerCols, width:'1152px' }}>
+                  <table className="pdf-header-table">
+                    <tbody>
+                      {[['発注者', projectInfo.client], ['プロジェクト名', report.siteName || report.site_name || ''], ['工事種別', projectInfo.workType||''], ['住所', projectInfo.workLocation], ['工期', `${projectInfo.startDate} ～ ${projectInfo.endDate}`], ['営業担当', projectInfo.salesPerson], ['責任者', projectInfo.siteManager]].map(([k, v]) => (
+                        <tr key={k}><th>{k}</th><td>{v || ''}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <table className="pdf-header-table">
+                    <tbody>
+                      <tr><th>排出事業者</th><td>{projectInfo.manifestDischarger || projectInfo.discharger || ''}</td></tr>
+                      <tr><th>運搬会社</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{[...new Set((projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean))].join('\n') || projectInfo.transportCompany || ''}</td></tr>
+                      <tr><th>契約処分先</th><td className="text-[8px]" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{[...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))].join('\n') || (projectInfo.contractedDisposalSites||[]).join('\n')}</td></tr>
+                      <tr><th>PROJECT NO.</th><td>{projectInfo.projectNumber || ''}</td></tr>
+                      <tr><th>ステータス</th><td>{projectInfo.status || ''}</td></tr>
+                    </tbody>
+                  </table>
+                  {hasLease && (
+                    <table className="pdf-header-table" style={{fontSize:'8px'}}>
+                      <thead>
+                        <tr><th colSpan="3" style={{textAlign:'center',fontSize:'8px',color:'#C4B5FD',background:'#374151',fontWeight:700}}>リース・機材・資材・経費等</th></tr>
+                        <tr style={{background:'#F3F4F6'}}><th style={{width:'55%'}}>項目</th><th style={{width:'15%',textAlign:'center'}}>日</th><th style={{width:'30%',textAlign:'right'}}>金額</th></tr>
+                      </thead>
+                      <tbody>
+                        {leaseItems.map((it,i)=>(<tr key={i}><td>{it.name}</td><td style={{textAlign:'center'}}>{it.days||''}</td><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{it.amount>0?formatCurrency(it.amount):'-'}</td></tr>))}
+                        <tr style={{borderTop:'1px solid #374151'}}><td colSpan="2" style={{textAlign:'right',fontWeight:700}}>小計</td><td style={{textAlign:'right',fontWeight:700,fontVariantNumeric:'tabular-nums'}}>{formatCurrency(leaseTotal)}</td></tr>
+                      </tbody>
+                    </table>
+                  )}
+                  <div style={{display:'flex', flexDirection:'column'}}>
+                    <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#C4B5FD',border:'1px solid #374151'}}>【　現　場　詳　細　】</div>
+                    <table className="pdf-header-table" style={{flex:1}}>
+                      <tbody>
+                        <tr><th>面積</th><td>{projectInfo.siteAreaM2 ? `${projectInfo.siteAreaM2} ㎡` : '—'}</td></tr>
+                        <tr><th>坪数</th><td>{projectInfo.siteTsubo  ? `${projectInfo.siteTsubo} 坪`  : '—'}</td></tr>
+                        <tr><th>業態</th><td>{projectInfo.siteUseType || '—'}</td></tr>
+                        <tr><th style={{whiteSpace:'nowrap'}}>工事条件</th><td style={{fontSize:8,whiteSpace:'pre-wrap',lineHeight:1.5}}>{projectInfo.workCondition || '—'}</td></tr>
+                        <tr style={{borderTop:'1px solid #374151'}}><th colSpan={2} style={{textAlign:'center',color:'#C4B5FD',background:'#374151',fontSize:8}}>原価単価</th></tr>
+                        <tr><th style={{fontSize:8}}>処分費㎥単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitWaste   > 0 ? `¥${formatCurrency(unitWaste)}`   : '—'}</td></tr>
+                        <tr><th style={{fontSize:8}}>人件費㎡単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitLaborM2 > 0 ? `¥${formatCurrency(unitLaborM2)}` : '—'}</td></tr>
+                        <tr><th style={{fontSize:8}}>解体原価㎡単価</th><td style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitCostM2  > 0 ? `¥${formatCurrency(unitCostM2)}`  : '—'}</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
+                    <div style={{width:'100%'}}>
+                      <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#EAB308',border:'1px solid #374151'}}>【　収　支　結　果　】</div>
+                      <table className="result-table" style={{width:'100%'}}>
+                        <tbody>
+                          {[['見積金額', totalRevenue],['原価金額', totalCost],['追加金額', parseFloat(projectInfo.additionalAmount) || 0]].map(([label, val]) => (
+                            <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
+                          ))}
+                          <tr style={{ borderTop: '2px solid #374151' }}>
+                            <th style={{color:'#B45309',fontWeight:700}}>粗利</th>
+                            <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>¥{formatCurrency(grossProfit)}</td>
+                          </tr>
+                          <tr>
+                            <th style={{color:'#B45309'}}>粗利率</th>
+                            <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>{totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0'}%</td>
+                          </tr>
+                          {totalScrapRevenue > 0 && (
+                            <tr style={{ borderTop: '1px dashed #D1D5DB' }}>
+                              <th style={{color:'#065F46'}}>金属売上</th>
+                              <td style={{color:'#065F46',fontWeight:700}}>¥{formatCurrency(totalScrapRevenue)}</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
                 <table className="pdf-table" style={{ width:'1152px' }}>
                   <thead>
                     <tr>
@@ -3360,119 +3327,134 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {pageRows.map((r, idx) => {
-                      const workers = r.workDetails?.inHouseWorkers || [];
-                      const outsourcing = r.workDetails?.outsourcingLabor || [];
-                      const vehicles = r.workDetails?.vehicles || [];
-                      const machinery = r.workDetails?.machinery || [];
-                      const transport = [...(r.workDetails?.envItems||[]).map(t=>({...t,name:t.driver})), ...(r.workDetails?.extItems||[]).map(t=>({...t,name:t.company}))];
-                      const waste = r.wasteItems || [];
-                      const scrap = r.scrapItems || [];
-                      const envWaste  = waste.filter(w=>w.haisha==='env');
-                      const extWaste  = waste.filter(w=>w.haisha==='ext');
-                      const normWaste = waste.filter(w=>!w.haisha||w.haisha==='');
-                      const scrapRows = scrap.map(s=>({ material:s.type, quantity:s.quantity, unit:s.unit, amount:Math.abs(s.amount), disposalSite:s.buyer, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'' }));
-                      const envWorkerRows = envWaste.map(w=>({ name:`(${w.driver})`, amount:0, isEnv:true, vType:w.vType||'', vNumber:w.vNumber||'', waste:{ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:w.driver, extHaisha:false, vType:w.vType||'', vNumber:w.vNumber||'' } }));
-                      const extWasteRows = extWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:true, vType:'', vNumber:'' }));
-                      const normWasteRows = [...normWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'' })), ...scrapRows];
-                      const wasteAndScrap = normWasteRows;
-                      const allWorkers = [ ...workers, ...envWorkerRows ];
-                      const effectiveWorkers = [...allWorkers];
-                      if (wasteAndScrap.length > workers.length) {
-                        for (let i = workers.length; i < wasteAndScrap.length; i++) {
-                          if (!effectiveWorkers[i] || effectiveWorkers[i]?.isEnv) {
-                            const lastWorker = workers[workers.length - 1];
-                            if (lastWorker) { effectiveWorkers.splice(i, 0, { ...lastWorker, isDitto: true, amount: 0 }); }
-                          }
-                        }
+              {pageRows.map((r, idx) => {
+                const workers = r.workDetails?.inHouseWorkers || [];
+                const outsourcing = r.workDetails?.outsourcingLabor || [];
+                const vehicles = r.workDetails?.vehicles || [];
+                const machinery = r.workDetails?.machinery || [];
+                const transport = [...(r.workDetails?.envItems||[]).map(t=>({...t,name:t.driver})), ...(r.workDetails?.extItems||[]).map(t=>({...t,name:t.company}))];
+                const waste = r.wasteItems || [];
+                const scrap = r.scrapItems || [];
+
+                // 環境課配車の産廃と通常産廃を分離
+                const envWaste  = waste.filter(w=>w.haisha==='env');
+                const extWaste  = waste.filter(w=>w.haisha==='ext');
+                const normWaste = waste.filter(w=>!w.haisha||w.haisha==='');
+                const scrapRows = scrap.map(s=>({ material:s.type, quantity:s.quantity, unit:s.unit, amount:Math.abs(s.amount), disposalSite:s.buyer, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'' }));
+
+                // 行データ統合：自社人工、外注、車両、重機、産廃を行単位で対応
+                // 環境課配車行は (運転者) + 車両 + その産廃 を同じ行に
+                const envWorkerRows = envWaste.map(w=>({ name:`(${w.driver})`, amount:0, isEnv:true, vType:w.vType||'', vNumber:w.vNumber||'', waste:{ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:w.driver, extHaisha:false, vType:w.vType||'', vNumber:w.vNumber||'' } }));
+                // ワイエム配車産廃行
+                const extWasteRows = extWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:true, vType:'', vNumber:'' }));
+                // 通常産廃＋スクラップ
+                const normWasteRows = [...normWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'' })), ...scrapRows];
+                const wasteAndScrap = normWasteRows;
+
+                const allWorkers = [ ...workers, ...envWorkerRows ];
+                // 通常産廃が自社人工より多い場合、自社人工を〃で補完
+                const effectiveWorkers = [...allWorkers];
+                if (wasteAndScrap.length > workers.length) {
+                  for (let i = workers.length; i < wasteAndScrap.length; i++) {
+                    if (!effectiveWorkers[i] || effectiveWorkers[i]?.isEnv) {
+                      const lastWorker = workers[workers.length - 1];
+                      if (lastWorker) {
+                        effectiveWorkers.splice(i, 0, { ...lastWorker, isDitto: true, amount: 0 });
                       }
-                      const maxSubRows = Math.max(1, effectiveWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, envWorkerRows.length + wasteAndScrap.length);
-                      const allStartTimes = [...workers.map(w => w.start || w.startTime), ...outsourcing.map(o => o.start || o.startTime)].filter(Boolean).sort();
-                      const allEndTimes = [...workers.map(w => w.end || w.endTime), ...outsourcing.map(o => o.end || o.endTime)].filter(Boolean).sort().reverse();
-                      return (
-                        <Fragment key={r.id}>
-                          {Array.from({ length: maxSubRows }, (_, subIdx) => (
-                            <tr key={`${r.id}-${subIdx}`}>
-                              {subIdx === 0 && (
-                                <>
-                                  <td rowSpan={maxSubRows} className="text-center">{pageOffset + idx + 1}</td>
-                                  <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDate(r.date)}</td>
-                                  <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDay(r.date)}</td>
-                                  <td rowSpan={maxSubRows} className="text-[8px]" style={{ whiteSpace: 'normal', maxWidth: '120px' }}>{r.workDetails?.workContent || ''}</td>
-                                  <td rowSpan={maxSubRows} className="text-center text-[8px]">{allStartTimes[0] || '-'}</td>
-                                  <td rowSpan={maxSubRows} className="text-center text-[8px]">{allEndTimes[0] || '-'}</td>
-                                </>
-                              )}
-                              <td className="text-[8px]" style={effectiveWorkers[subIdx]?.isEnv?{color:'#374151'}:{}}>{effectiveWorkers[subIdx]?.isDitto ? '〃' : (effectiveWorkers[subIdx]?.name||'')}</td>
-                              <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!effectiveWorkers[subIdx].isEnv&&!effectiveWorkers[subIdx].isDitto?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
-                              <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseFloat(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>
-                              <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
-                              <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vType : '') || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '') || (extWasteRows[subIdx] ? '配車' : '')}</td>
-                              <td className="text-center text-[8px]">{vehicles[subIdx] ? vehicles[subIdx].number : (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vNumber : '') || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '') || (extWasteRows[subIdx] ? 'ワイエム' : '')}</td>
-                              <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>
-                              {(()=>{
-                                const envW = effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].waste : null;
-                                const extW = !effectiveWorkers[subIdx]?.isEnv && !effectiveWorkers[subIdx]?.isDitto ? extWasteRows[subIdx] : null;
-                                let normIdx = -1;
-                                if (!effectiveWorkers[subIdx]?.isEnv) {
-                                  normIdx = 0;
-                                  for (let k = 0; k < subIdx; k++) { if (!effectiveWorkers[k]?.isEnv) normIdx++; }
-                                }
-                                const normW = (!effectiveWorkers[subIdx]?.isEnv) ? wasteAndScrap[normIdx] : null;
-                                const w = envW || normW;
-                                const isScrap = w?.manifestNumber==='-';
-                                return (<>
-                                  <td className="text-[8px]">{w?.material||''}</td>
-                                  <td className="text-right text-[8px]">{w?`${w.quantity}${w.unit}`:''}</td>
-                                  <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?`¥${formatCurrency(w.amount)}`:''}</td>
-                                  <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?.disposalSite||''}</td>
-                                  <td className="text-right text-[8px]">{isScrap?'スクラップ':(w?.manifestNumber||'')}</td>
-                                </>);
-                              })()}
-                            </tr>
-                          ))}
-                        </Fragment>
-                      );
-                    })}
-                    {/* 空行パディング */}
-                    {Array.from({ length: pageEmptyRows }, (_, idx) => (
-                      <tr key={`empty-${idx}`}>
-                        <td className="text-center" style={{ height: '18px' }}>{pageOffset + pageRows.length + idx + 1}</td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                        <td></td><td></td><td></td><td></td>
+                    }
+                  }
+                }
+                const maxSubRows = Math.max(1, effectiveWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, envWorkerRows.length + wasteAndScrap.length);
+                const allStartTimes = [...workers.map(w => w.start || w.startTime), ...outsourcing.map(o => o.start || o.startTime)].filter(Boolean).sort();
+                const allEndTimes = [...workers.map(w => w.end || w.endTime), ...outsourcing.map(o => o.end || o.endTime)].filter(Boolean).sort().reverse();
+                return (
+                  <Fragment key={r.id}>
+                    {Array.from({ length: maxSubRows }, (_, subIdx) => (
+                      <tr key={`${r.id}-${subIdx}`}>
+                        {subIdx === 0 && (
+                          <>
+                            <td rowSpan={maxSubRows} className="text-center">{pageOffset + idx + 1}</td>
+                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDate(r.date)}</td>
+                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{fmtDay(r.date)}</td>
+                            <td rowSpan={maxSubRows} className="text-[8px]" style={{ whiteSpace: 'normal', maxWidth: '120px' }}>{r.workDetails?.workContent || ''}</td>
+                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{allStartTimes[0] || '-'}</td>
+                            <td rowSpan={maxSubRows} className="text-center text-[8px]">{allEndTimes[0] || '-'}</td>
+                          </>
+                        )}
+                        <td className="text-[8px]" style={effectiveWorkers[subIdx]?.isEnv?{color:'#374151'}:{}}>{effectiveWorkers[subIdx]?.isDitto ? '〃' : (effectiveWorkers[subIdx]?.name||'')}</td>
+                        <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!effectiveWorkers[subIdx].isEnv&&!effectiveWorkers[subIdx].isDitto?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
+                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseFloat(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>
+                        <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
+                        {/* 車両：通常車両 or 環境課車両 or ワイエム or 〃 */}
+                        <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vType : '') || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '') || (extWasteRows[subIdx] ? '配車' : '')}</td>
+                        <td className="text-center text-[8px]">{vehicles[subIdx] ? vehicles[subIdx].number : (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vNumber : '') || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '') || (extWasteRows[subIdx] ? 'ワイエム' : '')}</td>
+                        <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>
+                        {/* 産廃：環境課行はwaste、ワイエム行はextWaste、通常行はwasteAndScrap */}
+                        {(()=>{
+                          const envW = effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].waste : null;
+                          const extW = !effectiveWorkers[subIdx]?.isEnv && !effectiveWorkers[subIdx]?.isDitto ? extWasteRows[subIdx] : null;
+                          // subIdxまでの通常行（isEnvでもisDittoでもない行 + isDitto行）のインデックス
+                          // effectiveWorkersの中でisEnvでない行の順番を数える
+                          let normIdx = -1;
+                          if (!effectiveWorkers[subIdx]?.isEnv) {
+                            normIdx = 0;
+                            for (let k = 0; k < subIdx; k++) {
+                              if (!effectiveWorkers[k]?.isEnv) normIdx++;
+                            }
+                          }
+                          const normW = (!effectiveWorkers[subIdx]?.isEnv) ? wasteAndScrap[normIdx] : null;
+                          const w = envW || normW;
+                          const isScrap = w?.manifestNumber==='-';
+                          return (<>
+                            <td className="text-[8px]">{w?.material||''}</td>
+                            <td className="text-right text-[8px]">{w?`${w.quantity}${w.unit}`:''}</td>
+                            <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?`¥${formatCurrency(w.amount)}`:''}</td>
+                            <td className="text-right text-[8px]" style={isScrap?{color:'#ef4444'}:{}}>{w?.disposalSite||''}</td>
+                            <td className="text-right text-[8px]">{isScrap?'スクラップ':(w?.manifestNumber||'')}</td>
+                          </>);
+                        })()}
                       </tr>
                     ))}
-                    {/* ページ小計行 */}
-                    <tr style={{ background: '#374151' }}>
-                      <th colSpan="6" className="text-right" style={{ background: '#374151', color: '#fff' }}>
-                        {pages.length > 1 ? `${pageIdx+1}/${pages.length}ページ 小計` : '計'}
-                      </th>
-                      <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{pageInHouseWorkers}人</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageInHouseCost)}</td>
-                      <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{pageOutWorkers}人</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageOutCost)}</td>
-                      <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageVehicleCost + pageHaishiCost)}</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageMachineryCost)}</td>
-                      <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageWasteCost)}</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
-                      <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>¥{formatCurrency(pageTotal)}</td>
+                  </Fragment>
+                );
+              })}
+
+                  {Array.from({ length: pageEmptyRows }, (_, idx) => (
+                    <tr key={`empty-${idx}`}>
+                      <td className="text-center" style={{ height: '18px' }}>{pageOffset + pageRows.length + idx + 1}</td>
+                      <td></td><td></td><td></td><td></td><td></td><td></td>
+                      <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                      <td></td><td></td><td></td><td></td>
                     </tr>
-                    {/* 最終ページのみ合計行を追加 */}
-                    {isLastPage && pages.length > 1 && (
-                      <tr style={{ background: '#1a1a2e' }}>
-                        <th colSpan="6" className="text-right" style={{ background: '#1a1a2e', color: '#fff' }}>合　計</th>
-                        <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{totalInHouseWorkers}人</td>
-                        <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalInHouseCost)}</td>
-                        <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{totalOutsourcingWorkers}人</td>
-                        <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
-                        <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
-                        <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalMachineryCost)}</td>
-                        <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalWasteCost)}</td>
-                        <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#1a1a2e' }}>原価合計</td>
-                        <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>¥{formatCurrency(totalCost)}</td>
-                      </tr>
-                    )}
+                  ))}
+                  <tr style={{ background: '#374151' }}>
+                    <th colSpan="6" className="text-right" style={{ background: '#374151', color: '#fff' }}>
+                      {pages.length > 1 ? `${pageIdx+1}/${pages.length}ページ 小計` : '計'}
+                    </th>
+                    <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{pageInHouseWorkers}人</td>
+                    <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageInHouseCost)}</td>
+                    <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{pageOutWorkers}人</td>
+                    <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageOutCost)}</td>
+                    <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageVehicleCost + pageHaishiCost)}</td>
+                    <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageMachineryCost)}</td>
+                    <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageWasteCost)}</td>
+                    <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
+                    <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>¥{formatCurrency(pageTotal)}</td>
+                  </tr>
+                  {isLastPage && pages.length > 1 && (
+                    <tr style={{ background: '#1a1a2e' }}>
+                      <th colSpan="6" className="text-right" style={{ background: '#1a1a2e', color: '#fff' }}>合　計</th>
+                      <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{totalInHouseWorkers}人</td>
+                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalInHouseCost)}</td>
+                      <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{totalOutsourcingWorkers}人</td>
+                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
+                      <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
+                      <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalMachineryCost)}</td>
+                      <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalWasteCost)}</td>
+                      <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#1a1a2e' }}>原価合計</td>
+                      <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>¥{formatCurrency(totalCost)}</td>
+                    </tr>
+                  )}
                   </tbody>
                 </table>
                 {isLastPage && (
@@ -3484,14 +3466,15 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   </div>
                 )}
               </div>
-            );
-          })}
-      </div>{/* pdf-scroll-wrapper */}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-// ========== メインApp ==========
+
 export default function LOGIOApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -3672,8 +3655,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async () => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: projectInfo.miscItems || [], manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '',
-        site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: projectInfo.miscItems || [], manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
         site_tsubo: projectInfo.siteTsubo ? parseFloat(projectInfo.siteTsubo) : null,
         site_use_type: projectInfo.siteUseType || null,
         work_condition: projectInfo.workCondition || null,

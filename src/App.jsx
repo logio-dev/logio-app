@@ -1337,7 +1337,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         ...wd,
         outsourcingLabor: (wd.outsourcingLabor || []).map(o => ({
           ...o,
-          count: parseInt(o.count || o.workers || 0, 10)
+          count: parseFloat(o.count || o.workers || 0)
         }))
       };
     })()
@@ -1723,13 +1723,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div>
                 <label style={inpLbl}>人数</label>
-                <div style={{display:'flex',alignItems:'center',gap:4}}>
-                  <button onClick={()=>setOForm({...oForm,count:String(Math.max(0.25,parseFloat(oForm.count||0)-0.25))})}
-                    style={{width:32,height:44,borderRadius:8,background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:'inherit'}}>−</button>
-                  <input type="number" min="0.25" step="0.25" inputMode="decimal" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={{...inpTxt,textAlign:'center',flex:1}} />
-                  <button onClick={()=>setOForm({...oForm,count:String(parseFloat(oForm.count||0)+1)})}
-                    style={{width:32,height:44,borderRadius:8,background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:'inherit'}}>＋</button>
-                </div>
+                <select value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} style={inpSel}>
+                  <option value="" style={{color:"#000",background:"#fff"}}>人数を選択</option>
+                  {[0.25,0.5,0.75,1,2,3,4,5,6,7,8,9,10].map(n=>(
+                    <option key={n} value={String(n)} style={{color:"#000",background:"#fff"}}>{n === 0.25 ? '0.25人 (¼)' : n === 0.5 ? '0.5人 (½)' : n === 0.75 ? '0.75人 (¾)' : `${n}人`}</option>
+                  ))}
+                </select>
                 {oForm.count&&parseFloat(oForm.count)>0&&<div style={{fontSize:10,color:'#60a5fa',textAlign:'right',marginTop:2}}>¥{new Intl.NumberFormat('ja-JP').format(parseFloat(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
               </div>
             </div>
@@ -1745,7 +1744,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 ))}
               </div>
             </div>
-            {oForm.count && <div style={{textAlign:'right',fontSize:12,color:'#60a5fa',fontWeight:600,marginBottom:8}}>¥{formatCurrency(parseInt(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
+            {oForm.count && <div style={{textAlign:'right',fontSize:12,color:'#60a5fa',fontWeight:600,marginBottom:8}}>¥{formatCurrency(parseFloat(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
             <AddBtn onClick={addOutsource} disabled={!oForm.company.trim()||!oForm.count} />
           </div>
 
@@ -2170,13 +2169,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div>
                 <label style={inpLbl}>人数</label>
-                <div style={{display:'flex',alignItems:'center',gap:4}}>
-                  <button onClick={()=>setOForm({...oForm,count:String(Math.max(0.25,parseFloat(oForm.count||0)-0.25))})}
-                    style={{width:32,height:44,borderRadius:8,background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:'inherit'}}>−</button>
-                  <input type="number" min="0.25" step="0.25" inputMode="decimal" value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="0" style={{...inpTxt,textAlign:'center',flex:1}} />
-                  <button onClick={()=>setOForm({...oForm,count:String(parseFloat(oForm.count||0)+1)})}
-                    style={{width:32,height:44,borderRadius:8,background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontFamily:'inherit'}}>＋</button>
-                </div>
+                <select value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} style={inpSel}>
+                  <option value="" style={{color:"#000",background:"#fff"}}>人数を選択</option>
+                  {[0.25,0.5,0.75,1,2,3,4,5,6,7,8,9,10].map(n=>(
+                    <option key={n} value={String(n)} style={{color:"#000",background:"#fff"}}>{n === 0.25 ? '0.25人 (¼)' : n === 0.5 ? '0.5人 (½)' : n === 0.75 ? '0.75人 (¾)' : `${n}人`}</option>
+                  ))}
+                </select>
                 {oForm.count&&parseFloat(oForm.count)>0&&<div style={{fontSize:10,color:'#60a5fa',textAlign:'right',marginTop:2}}>¥{new Intl.NumberFormat('ja-JP').format(parseFloat(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
               </div>
             </div>
@@ -2192,7 +2190,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 ))}
               </div>
             </div>
-            {oForm.count && <div style={{textAlign:'right',fontSize:'12px',color:'#60a5fa',fontWeight:'600',marginBottom:'8px'}}>¥{formatCurrency(parseInt(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
+            {oForm.count && <div style={{textAlign:'right',fontSize:'12px',color:'#60a5fa',fontWeight:'600',marginBottom:'8px'}}>¥{formatCurrency(parseFloat(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
             <AddBtn onClick={addOutsource} disabled={!oForm.company.trim()||!oForm.count} />
           </div>
           {workDetails.outsourcingLabor.length>0 && <SubTotal label="外注人工" value={workDetails.outsourcingLabor.reduce((s,o)=>s+o.amount,0)} />}
@@ -3332,7 +3330,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         )}
                         <td className="text-[8px]" style={effectiveWorkers[subIdx]?.isEnv?{color:'#374151'}:{}}>{effectiveWorkers[subIdx]?.isDitto ? '〃' : (effectiveWorkers[subIdx]?.name||'')}</td>
                         <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!effectiveWorkers[subIdx].isEnv&&!effectiveWorkers[subIdx].isDitto?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
-                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseInt(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>
+                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseFloat(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
                         {/* 車両：通常車両 or 環境課車両 or ワイエム or 〃 */}
                         <td className="text-center text-[8px]">{vehicles[subIdx]?.type || (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vType : '') || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '') || (extWasteRows[subIdx] ? '配車' : '')}</td>
@@ -3617,7 +3615,7 @@ export default function LOGIOApp() {
         ...reportData.workDetails,
         outsourcingLabor: (reportData.workDetails?.outsourcingLabor || []).map(o => ({
           ...o,
-          count: parseInt(o.count || o.workers || 0, 10),
+          count: parseFloat(o.count || o.workers || 0),
         }))
       };
       try {

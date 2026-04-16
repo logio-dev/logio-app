@@ -985,10 +985,10 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                           return (
                             <div key={name}>
                               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
-                                <span style={{ fontSize:'12px', color:'#1C1917', fontWeight:'700' }}>{name}</span>
-                                <span style={{ fontSize:'11px', color:'#1C1917', fontWeight:'700' }}>¥{formatCurrency(val)}</span>
+                                <span style={{ fontSize:'12px', color:'#fff', fontWeight:'700' }}>{name}</span>
+                                <span style={{ fontSize:'11px', color:'rgba(255,255,255,0.7)', fontWeight:'700' }}>¥{formatCurrency(val)}</span>
                               </div>
-                              <div style={{ height:'5px', background:'rgba(0,0,0,0.08)', borderRadius:'3px' }}>
+                              <div style={{ height:'5px', background:'rgba(255,255,255,0.1)', borderRadius:'3px' }}>
                                 <div style={{ height:'5px', width:`${pct}%`, background:color, borderRadius:'3px', transition:'width 0.4s ease' }}/>
                               </div>
                             </div>
@@ -2753,7 +2753,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
         return (
           <div key={month} className="mb-3">
             <button onClick={() => toggleMonth(month)}
-              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#2D2D2D', border:'none', borderRadius: isOpen ? '12px 12px 0 0' : '12px', cursor:'pointer' }}>
+              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#2C2825', border:'none', borderRadius: isOpen ? '12px 12px 0 0' : '12px', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
                 <span style={{ fontSize:'14px', fontWeight:700, color:'#fff' }}>{fmtMonth(month)}</span>
                 <span style={{ fontSize:'11px', color:'#aaa', background:'rgba(255,255,255,0.1)', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
@@ -3136,7 +3136,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             </div>
             {totals.accumulatedScrap > 0 && <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>スクラップ売上 ¥{formatCurrency(totals.accumulatedScrap)}</div>}
           </div>
-          <div style={{background:'#F4F4F4',borderRadius:12,padding:14}}>
+          <div style={{background:'#2C2825',borderRadius:12,padding:14}}>
             <div style={{fontSize:12,color:'#888',marginBottom:10}}>収支内訳</div>
             {[
               {label:'売上',value:totals.totalRevenue,color:'#378ADD'},

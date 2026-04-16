@@ -2732,7 +2732,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   const fmtMonth = (ym) => { const [y, m] = ym.split('-'); return `${y}年${parseInt(m)}月`; };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',background:'#1A1A1A',minHeight:'100vh'}}>
+    <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(180px + env(safe-area-inset-bottom,0px))',background:'#1A1A1A',minHeight:'100vh'}}>
       <div className="mb-4">
         <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"rgba(255,255,255,0.1)",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
           <X className="w-4 h-4" />閉じる
@@ -3096,7 +3096,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const maxBar = Math.max(...pieData.map(d=>d.value), 1);
 
   return (
-    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(140px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#1A1A1A'}}>
+    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(180px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#1A1A1A'}}>
       {/* 戻るボタン */}
       <button onClick={()=>onNavigate('home')}
         style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:8,fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.7)',cursor:'pointer',marginBottom:12}}>

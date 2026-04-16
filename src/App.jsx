@@ -903,7 +903,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 <div style={{width:1,height:50,background:'rgba(255,255,255,0.1)',flexShrink:0,alignSelf:'flex-end',marginBottom:4}}/>
                 <div>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:2}}>WORKERS</div>
-                  <span className="workers-breathe" style={{fontSize:54,fontWeight:700,color:'#EAB308',lineHeight:1,fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
+                  <span className="workers-breathe" style={{fontSize:54,fontWeight:700,color:'#22D3EE',lineHeight:1,fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
                   <span style={{fontSize:12,color:'rgba(255,255,255,0.5)',marginLeft:3}}>人</span>
                 </div>
               </div>
@@ -1020,14 +1020,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                         {latestDate && <span style={{fontSize:10,fontWeight:700,color:'#4ade80',background:'rgba(34,197,94,0.15)',padding:'2px 8px',borderRadius:20}}>最新 {mo}/{da}（{dayName}）</span>}
                       </div>
                     </div>
-                    <style>{`@keyframes pdf-ripple{0%{box-shadow:0 0 0 0 rgba(220,38,38,0.7)}100%{box-shadow:0 0 0 22px rgba(220,38,38,0)}}`}</style>
+                    <style>{`@keyframes pdf-shimmer{0%{background-position:-200%}100%{background-position:300%}}`}</style>
                     <button onClick={()=>onViewPdf&&onViewPdf(latest)}
-                      style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',background:'#DC2626',border:'none',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-ripple 1.8s ease-out infinite'}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',background:'linear-gradient(90deg,#1C1917 0%,#1C1917 35%,rgba(34,211,238,0.35) 50%,#1C1917 65%,#1C1917 100%)',backgroundSize:'200%',border:'1px solid rgba(34,211,238,0.3)',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-shimmer 2s linear infinite'}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                         <polyline points="14 2 14 8 20 8"/>
                       </svg>
-                      <span style={{fontSize:12,fontWeight:700,color:'#fff'}}>PDF</span>
+                      <span style={{fontSize:12,fontWeight:700,color:'#22D3EE'}}>PDF</span>
                     </button>
                   </div>
                 </div>
@@ -3096,7 +3096,13 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const maxBar = Math.max(...pieData.map(d=>d.value), 1);
 
   return (
-    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#1A1A1A'}}>
+    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(120px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#1A1A1A'}}>
+      {/* 戻るボタン */}
+      <button onClick={()=>onNavigate('home')}
+        style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:8,fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.7)',cursor:'pointer',marginBottom:12}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        ホームに戻る
+      </button>
       {/* タブ */}
       <div style={{display:'flex',gap:4,background:'#2C2825',borderRadius:10,padding:4,marginBottom:16}}>
         {['財務','原価内訳','月別推移'].map((t,i) => (
@@ -3112,9 +3118,9 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         <>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
             {[
-              {label:'売上',value:`¥${formatCurrency(totals.totalRevenue)}`,color:'#378ADD'},
-              {label:'原価',value:`¥${formatCurrency(totals.accumulatedCost)}`,color:'#D85A30'},
-              {label:'粗利',value:`¥${formatCurrency(totals.grossProfit)}`,color:marginColor},
+              {label:'売上',value:`¥${formatCurrency(totals.totalRevenue)}`,color:'#fff'},
+              {label:'原価',value:`¥${formatCurrency(totals.accumulatedCost)}`,color:'rgba(255,255,255,0.7)'},
+              {label:'粗利',value:`¥${formatCurrency(totals.grossProfit)}`,color:'#22D3EE'},
             ].map((k,i) => (
               <div key={i} style={{background:'#3D3830',borderRadius:10,padding:'12px 10px'}}>
                 <div style={{fontSize:11,color:'rgba(255,255,255,0.5)',marginBottom:4}}>{k.label}</div>

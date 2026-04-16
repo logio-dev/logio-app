@@ -517,10 +517,27 @@ function SplashScreen() {
   return (
     <>
       <style>{`
-        @keyframes fadeInOut { 0%{opacity:0;} 50%{opacity:1;} 100%{opacity:0;} }
-        .splash-container { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:black; animation:fadeInOut 3s ease-in-out forwards; }
+        @keyframes splashFadeIn  { 0%{opacity:0;transform:scale(0.8) translateY(30px)} 60%{opacity:1;transform:scale(1.05) translateY(-8px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+        @keyframes splashFadeOut { 0%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.1)} }
+        @keyframes mascotBounce  { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-18px) rotate(2deg)} }
+        @keyframes mascotWave    { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(15deg)} 75%{transform:rotate(-10deg)} }
+        @keyframes titleSlide    { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
+        .splash-bg { position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999; }
+        .splash-mascot { animation:splashFadeIn 0.8s ease-out forwards, mascotBounce 2s ease-in-out 0.8s infinite; transform-origin:center bottom; }
+        .splash-title { animation:titleSlide 0.6s ease-out 0.5s both; }
+        .splash-sub   { animation:titleSlide 0.6s ease-out 0.8s both; }
       `}</style>
-      <div className="splash-container"><LOGIOLogo size="md" animated={true} /></div>
+      <div className="splash-bg">
+        <div className="splash-mascot">
+          <img src="/フェイスくん.svg" alt="フェイスくん" style={{width:160,height:160,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
+        </div>
+        <div className="splash-title" style={{marginTop:24,textAlign:'center'}}>
+          <span style={{fontSize:42,fontWeight:900,letterSpacing:'0.1em',color:'#fff',fontFamily:'Roboto Condensed,-apple-system,sans-serif',textShadow:'0 2px 12px rgba(0,0,0,0.4)'}}>Wac</span>
+        </div>
+        <div className="splash-sub" style={{marginTop:8}}>
+          <span style={{fontSize:13,color:'rgba(255,255,255,0.6)',letterSpacing:'0.08em'}}>現場管理をスマートに</span>
+        </div>
+      </div>
     </>
   );
 }
@@ -530,9 +547,13 @@ function LoginPage({ onLogin }) {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [mascot, setMascot] = useState('kun'); // 'kun' or 'chan'
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleLogin = async () => {
     setError('');
+    setIsLoggingIn(true);
+    await new Promise(r => setTimeout(r, 300)); // アニメーション用ちょっと待つ
     if ((userId === 'face1991' && password === 'face1991') || (userId === 'ryokuka2005' && password === 'ryokuka2005')) {
       onLogin({ type: 'company', userId }); return;
     }
@@ -540,49 +561,81 @@ function LoginPage({ onLogin }) {
     if (validPartnerIds.includes(userId) && password === userId.toLowerCase()) {
       onLogin({ type: 'partner', userId }); return;
     }
+    setIsLoggingIn(false);
     setError('IDまたはパスワードが正しくありません');
   };
 
   return (
-    <div style={{minHeight:'100vh', background:'#fff', display:'flex', flexDirection:'column'}}>
-      <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 16px'}}>
-        <div style={{width:'100%', maxWidth:360}}>
-          <div style={{textAlign:'center', marginBottom:32}}>
-            <LOGIOLogo size="md" />
-            <p style={{fontSize:13, color:'#6B7280', marginTop:8, fontFamily:'DM Sans,sans-serif', letterSpacing:'.04em'}}>現場管理をスマートに</p>
+    <>
+      <style>{`
+        @keyframes loginMascotIdle { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-8px) rotate(1deg)} }
+        @keyframes loginMascotError { 0%{transform:translateX(0)} 20%{transform:translateX(-10px) rotate(-5deg)} 40%{transform:translateX(10px) rotate(5deg)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} 100%{transform:translateX(0)} }
+        @keyframes loginMascotSuccess { 0%{transform:scale(1) rotate(0)} 30%{transform:scale(1.2) rotate(-10deg)} 60%{transform:scale(1.1) rotate(8deg)} 100%{transform:scale(1) rotate(0)} }
+        @keyframes loginFadeIn { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+        .mascot-idle    { animation: loginMascotIdle 2.5s ease-in-out infinite; transform-origin:center bottom; }
+        .mascot-error   { animation: loginMascotError 0.5s ease-in-out; transform-origin:center bottom; }
+        .mascot-success { animation: loginMascotSuccess 0.6s ease-in-out; transform-origin:center bottom; }
+        .login-card { animation: loginFadeIn 0.5s ease-out; }
+        .mascot-toggle { cursor:pointer; transition:opacity .2s; }
+        .mascot-toggle:hover { opacity:0.8; }
+      `}</style>
+      <div style={{minHeight:'100vh', background:'linear-gradient(160deg,#f0f4ff 0%,#faf8ff 60%,#fff0f8 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'0 16px'}}>
+        {/* マスコット */}
+        <div style={{marginBottom:16, position:'relative'}}>
+          <img
+            src={mascot === 'kun' ? '/フェイスくん.svg' : '/フェイスちゃん.svg'}
+            alt={mascot === 'kun' ? 'フェイスくん' : 'フェイスちゃん'}
+            className={`mascot-idle${error ? ' mascot-error' : ''}${isLoggingIn ? ' mascot-success' : ''}`}
+            style={{width:120, height:120, filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.15))', display:'block', margin:'0 auto'}}
+          />
+          {/* 切り替えボタン */}
+          <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:10}}>
+            <button className="mascot-toggle" onClick={()=>setMascot('kun')}
+              style={{width:32,height:32,borderRadius:'50%',border:`2px solid ${mascot==='kun'?'#6366F1':'#E5E7EB'}`,background:mascot==='kun'?'#EEF2FF':'#fff',overflow:'hidden',padding:2}}>
+              <img src="/フェイスくん.svg" alt="くん" style={{width:'100%',height:'100%'}} />
+            </button>
+            <button className="mascot-toggle" onClick={()=>setMascot('chan')}
+              style={{width:32,height:32,borderRadius:'50%',border:`2px solid ${mascot==='chan'?'#EC4899':'#E5E7EB'}`,background:mascot==='chan'?'#FDF2F8':'#fff',overflow:'hidden',padding:2}}>
+              <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:'100%',height:'100%'}} />
+            </button>
           </div>
-          <div style={{borderRadius:16, padding:24, background:'#F8F7F5', border:'1px solid #E8E8E8'}}>
+        </div>
+
+        {/* ログインカード */}
+        <div className="login-card" style={{width:'100%', maxWidth:360}}>
+          <div style={{textAlign:'center', marginBottom:24}}>
+            <span style={{fontSize:32, fontWeight:900, letterSpacing:'0.08em', color:'#1C1917', fontFamily:'Roboto Condensed,-apple-system,sans-serif'}}>Wac</span>
+            <p style={{fontSize:12, color:'#9CA3AF', marginTop:4}}>現場管理をスマートに</p>
+          </div>
+          <div style={{borderRadius:20, padding:24, background:'#fff', boxShadow:'0 8px 32px rgba(0,0,0,0.08)', border:'1px solid rgba(0,0,0,0.06)'}}>
             {[['ID', 'text', userId, setUserId], ['パスワード', 'password', password, setPassword]].map(([lbl, tp, val, setter]) => (
-              <div key={lbl} style={{marginBottom:20}}>
-                <label style={{display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:8}}>{lbl}</label>
+              <div key={lbl} style={{marginBottom:16}}>
+                <label style={{display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:6}}>{lbl}</label>
                 <input type={tp} value={val} onChange={(e) => setter(e.target.value)}
                   onKeyDown={tp === 'password' ? (e) => e.key === 'Enter' && handleLogin() : undefined}
                   placeholder={`${lbl}を入力`}
-                  style={{width:'100%', padding:'12px 14px', background:'#fff', border:'1px solid #E5E7EB', color:'#1C1917', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
-                  onFocus={(e) => e.target.style.borderColor = '#6B7280'}
+                  style={{width:'100%', padding:'12px 14px', background:'#F9FAFB', border:'1px solid #E5E7EB', color:'#1C1917', borderRadius:10, fontSize:16, outline:'none', fontFamily:'inherit', boxSizing:'border-box', transition:'border-color .15s'}}
+                  onFocus={(e) => e.target.style.borderColor = mascot === 'kun' ? '#6366F1' : '#EC4899'}
                   onBlur={(e) => e.target.style.borderColor = '#E5E7EB'} />
               </div>
             ))}
             {error && (
-              <div style={{marginBottom:20, padding:'10px 14px', borderRadius:10, fontSize:13, background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', color:'#DC2626'}}>
+              <div style={{marginBottom:16, padding:'10px 14px', borderRadius:10, fontSize:13, background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', color:'#DC2626'}}>
                 {error}
               </div>
             )}
-            <button onClick={handleLogin}
-              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background:'#1C1917', color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'background .15s'}}
-              onMouseEnter={e=>e.target.style.background='#374151'}
-              onMouseLeave={e=>e.target.style.background='#1C1917'}>
-              ログイン
+            <button onClick={handleLogin} disabled={isLoggingIn}
+              style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background: mascot === 'kun' ? (isLoggingIn ? '#A5B4FC' : '#6366F1') : (isLoggingIn ? '#F9A8D4' : '#EC4899'), color:'#fff', border:'none', cursor: isLoggingIn ? 'not-allowed' : 'pointer', fontFamily:'inherit', transition:'all .2s', boxShadow:'0 4px 12px rgba(0,0,0,0.15)'}}>
+              {isLoggingIn ? '...' : 'ログイン'}
             </button>
           </div>
         </div>
+        <p style={{fontSize:11, color:'#9CA3AF', marginTop:24}}>© 2026 FREAKS lab.</p>
       </div>
-      <div style={{textAlign:'center', padding:'24px 0'}}>
-        <p style={{fontSize:11, color:'#9CA3AF'}}>© 2026 FREAKS lab.</p>
-      </div>
-    </div>
+    </>
   );
 }
+
 
 // ========== HomePage ==========
 function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId, sitesReady, currentPage, onViewPdf }) {
@@ -3445,7 +3498,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageOutCost)}</td>
                     <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageVehicleCost + pageHaishiCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageMachineryCost)}</td>
-                    <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151', whiteSpace:'nowrap' }}><span style={{color:'#fff',marginRight:6}}>{(pageRows.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+pageRows.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</span>¥{formatCurrency(pageWasteCost)}</td>
+                    <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151', whiteSpace:'nowrap' }}>{(pageRows.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+pageRows.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151', whiteSpace:'nowrap' }}>¥{formatCurrency(pageWasteCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>¥{formatCurrency(pageTotal)}</td>
                   </tr>
@@ -3458,7 +3511,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
                       <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalMachineryCost)}</td>
-                      <td colSpan="3" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e', whiteSpace:'nowrap' }}><span style={{color:'#fff',marginRight:6}}>{(allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</span>¥{formatCurrency(totalWasteCost)}</td>
+                      <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e', whiteSpace:'nowrap' }}>{(allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e', whiteSpace:'nowrap' }}>¥{formatCurrency(totalWasteCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#1a1a2e' }}>原価合計</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>¥{formatCurrency(totalCost)}</td>
                     </tr>

@@ -711,9 +711,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   // ========== マスコット常駐ロジック ==========
   const [kunPopup, setKunPopup] = React.useState(null);
   const [chanPopup,setChanPopup]= React.useState(null);
-  const isMobile = () => window.innerWidth <= 768;
-  const initKunPos  = () => isMobile() ? {x:48, y:10} : {x:window.innerWidth-240, y:10};
-  const initChanPos = () => isMobile() ? {x:90, y:10} : {x:window.innerWidth-196, y:10};
+  const initKunPos  = () => ({x:window.innerWidth/2 - 70, y:10});
+  const initChanPos = () => ({x:window.innerWidth/2 + 30, y:10});
   const [kunPos,  setKunPos]  = React.useState(initKunPos);
   const [chanPos, setChanPos] = React.useState(initChanPos);
   const kunDrag  = React.useRef({ dragging:false, moved:false, ox:0, oy:0 });
@@ -815,7 +814,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-5 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
+      <div className="max-w-2xl mx-auto px-5 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(180px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -1535,7 +1534,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
 
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [currentStep]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [currentStep]);
 
   // ★ キャンセル時にロック解放
   const handleCancel = async () => {
@@ -2719,7 +2718,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   const [filterCategory, setFilterCategory] = useState('');
   const [openMonths, setOpenMonths] = useState({});
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
 
   const filteredReports = reports.filter(r => {
     const category = r.workDetails?.workCategory || r.workCategory;
@@ -2734,7 +2733,7 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6" style={{paddingBottom:'calc(180px + env(safe-area-inset-bottom,0px))',background:'#F5F7FA',minHeight:'100vh'}}>
       <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#fff",border:"0.5px solid #E8E8E8",borderRadius:10,fontSize:12,fontWeight:600,color:"#1E3A5F",cursor:"pointer"}}>
+        <button onClick={() => { window.scrollTo({top:0,behavior:'instant'}); onNavigate('home'); }} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"#fff",border:"0.5px solid #E8E8E8",borderRadius:10,fontSize:12,fontWeight:600,color:"#1E3A5F",cursor:"pointer"}}>
           <X className="w-4 h-4" />閉じる
         </button>
       </div>
@@ -3098,7 +3097,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-4" style={{paddingBottom:'calc(180px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#F5F7FA'}}>
       {/* 戻るボタン */}
-      <button onClick={()=>onNavigate('home')}
+      <button onClick={()=>{ window.scrollTo({top:0,behavior:'instant'}); onNavigate('home'); }}
         style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:12,fontWeight:600,color:'#1E3A5F',cursor:'pointer',marginBottom:12}}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         閉じる

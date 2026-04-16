@@ -706,9 +706,9 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const NAV_MAX_W = '672px';
 
   // ========== マスコット常駐ロジック ==========
-  const M_SIZE = 50;
-  const initKun  = React.useMemo(() => ({ x: window.innerWidth/2 - 68, y: 14 }), []);
-  const initChan = React.useMemo(() => ({ x: window.innerWidth/2 + 18, y: 14 }), []);
+  const M_SIZE = 40;
+  const initKun  = React.useMemo(() => ({ x: window.innerWidth/2 - 72, y: 8 }), []);
+  const initChan = React.useMemo(() => ({ x: window.innerWidth/2 + 32, y: 8 }), []);
   const [kunPos,    setKunPos]    = React.useState(initKun);
   const [chanPos,   setChanPos]   = React.useState(initChan);
   const [kunFlip,   setKunFlip]   = React.useState(false);

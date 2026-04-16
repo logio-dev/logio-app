@@ -387,37 +387,7 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
         </div>
       )}
 
-      {/* ★ マスコット常駐（ホーム・日報一覧・分析のみ） */}
-      {M_PAGES.includes(currentPage) && (<>
-        <style>{`
-          @keyframes mascotIdle { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-5px) rotate(2deg)} }
-          @keyframes mascotMove { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
-          @keyframes mascotWinkFx { 0%,100%{filter:drop-shadow(0 3px 6px rgba(0,0,0,0.15))} 50%{filter:drop-shadow(0 6px 16px rgba(236,72,153,0.8))} }
-          .m-idle { animation: mascotIdle 2s ease-in-out infinite; }
-          .m-move { animation: mascotMove 0.5s ease-in-out infinite; }
-          .m-wink { animation: mascotWinkFx 0.4s ease-in-out 3; }
-        `}</style>
-        {/* フェイスくん */}
-        <div onClick={handleKunTap} style={{
-          position:'fixed', left:kunPos.x, top:kunPos.y, zIndex:50,
-          cursor:'pointer', userSelect:'none',
-          transform:kunFlip?'scaleX(-1)':'scaleX(1)', transition:'transform 0.15s',
-          display: kunHidden ? 'none' : 'block'
-        }}>
-          <img src="/フェイスくん.svg" alt="くん" className={kunMoving?'m-move':'m-idle'}
-            style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
-        </div>
-        {/* フェイスちゃん */}
-        <div onClick={handleChanTap} style={{
-          position:'fixed', left:chanPos.x, top:chanPos.y, zIndex:50,
-          cursor:'pointer', userSelect:'none',
-          transform:chanFlip?'scaleX(-1)':'scaleX(1)', transition:'transform 0.15s',
-          display: chanHidden ? 'none' : 'block'
-        }}>
-          <img src="/フェイスちゃん.svg" alt="ちゃん" className={chanMoving?(chanWink?'m-wink':'m-move'):'m-idle'}
-            style={{width:M_SIZE,height:M_SIZE,display:'block',filter:chanWink?'drop-shadow(0 4px 14px rgba(236,72,153,0.7))':'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
-        </div>
-      </>)}
+
     </div>
   );
 }
@@ -735,6 +705,104 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   // ★ ナビの maxWidth をコンテンツ(max-w-2xl=672px)と統一
   const NAV_MAX_W = '672px';
 
+  // ========== マスコット常駐ロジック ==========
+  const M_SIZE = 50;
+  const initKun  = React.useMemo(() => ({ x: window.innerWidth/2 - 68, y: 14 }), []);
+  const initChan = React.useMemo(() => ({ x: window.innerWidth/2 + 18, y: 14 }), []);
+  const [kunPos,    setKunPos]    = React.useState(initKun);
+  const [chanPos,   setChanPos]   = React.useState(initChan);
+  const [kunFlip,   setKunFlip]   = React.useState(false);
+  const [chanFlip,  setChanFlip]  = React.useState(true);
+  const [chanWink,  setChanWink]  = React.useState(false);
+  const [kunMoving,  setKunMoving]  = React.useState(false);
+  const [chanMoving, setChanMoving] = React.useState(false);
+  const kunRef  = React.useRef({ x: initKun.x,  y: initKun.y,  vx: 0, vy: 0, moving: false, tapCount: 0 });
+  const chanRef = React.useRef({ x: initChan.x, y: initChan.y, vx: 0, vy: 0, moving: false, tapCount: 0 });
+
+  const randomVel = (speed) => {
+    const angle = Math.random() * Math.PI * 2;
+    return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
+  };
+
+  React.useEffect(() => {
+    const W = () => window.innerWidth, H = () => window.innerHeight;
+    const minY = 0, maxY = () => H() - M_SIZE;
+    const tick = () => {
+      const k = kunRef.current;
+      if (k.moving) {
+        k.x += k.vx; k.y += k.vy;
+        if (k.x <= 0)           { k.x = 0;        k.vx = Math.abs(k.vx); }
+        if (k.x >= W() - M_SIZE){ k.x = W()-M_SIZE; k.vx = -Math.abs(k.vx); }
+        if (k.y <= minY)         { k.y = minY;      k.vy = Math.abs(k.vy); }
+        if (k.y >= maxY())       { k.y = maxY();    k.vy = -Math.abs(k.vy); }
+        setKunPos({ x: k.x, y: k.y });
+        setKunFlip(k.vx < 0);
+      }
+      const c = chanRef.current;
+      if (c.moving) {
+        c.x += c.vx; c.y += c.vy;
+        if (c.x <= 0)           { c.x = 0;        c.vx = Math.abs(c.vx); }
+        if (c.x >= W() - M_SIZE){ c.x = W()-M_SIZE; c.vx = -Math.abs(c.vx); }
+        if (c.y <= minY)         { c.y = minY;      c.vy = Math.abs(c.vy); }
+        if (c.y >= maxY())       { c.y = maxY();    c.vy = -Math.abs(c.vy); }
+        setChanPos({ x: c.x, y: c.y });
+        setChanFlip(c.vx < 0);
+      }
+    };
+    const interval = setInterval(tick, 16);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleKunTap = (e) => {
+    e.stopPropagation();
+    const k = kunRef.current;
+    k.tapCount = (k.tapCount || 0) + 1;
+    if (k.tapCount >= 2) {
+      // 2回タップ → スタート位置に戻る
+      k.x = initKun.x; k.y = initKun.y;
+      k.vx = 0; k.vy = 0; k.moving = false; k.tapCount = 0;
+      setKunPos({ x: initKun.x, y: initKun.y });
+      setKunFlip(false); setKunMoving(false);
+    } else if (!k.moving) {
+      // 初回タップ → 動き出す
+      const vel = randomVel(1.0);
+      k.vx = vel.vx; k.vy = vel.vy; k.moving = true;
+      setKunMoving(true);
+    } else {
+      // 移動中タップ → 逃げる
+      k.vx = -k.vx * 2.0; k.vy = -k.vy * 2.0;
+      const maxV = 3;
+      if (Math.abs(k.vx) > maxV) k.vx = maxV * Math.sign(k.vx);
+      if (Math.abs(k.vy) > maxV) k.vy = maxV * Math.sign(k.vy);
+      setTimeout(() => { k.vx *= 0.4; k.vy *= 0.4; }, 1500);
+    }
+    // タップカウントを一定時間後にリセット
+    setTimeout(() => { k.tapCount = 0; }, 500);
+  };
+
+  const handleChanTap = (e) => {
+    e.stopPropagation();
+    const c = chanRef.current;
+    c.tapCount = (c.tapCount || 0) + 1;
+    if (c.tapCount >= 2) {
+      // 2回タップ → スタート位置に戻る
+      c.x = initChan.x; c.y = initChan.y;
+      c.vx = 0; c.vy = 0; c.moving = false; c.tapCount = 0;
+      setChanPos({ x: initChan.x, y: initChan.y });
+      setChanFlip(true); setChanMoving(false); setChanWink(false);
+    } else if (!c.moving) {
+      // 初回タップ → 動き出す
+      const vel = randomVel(0.8);
+      c.vx = vel.vx; c.vy = vel.vy; c.moving = true;
+      setChanMoving(true);
+    } else {
+      // 移動中タップ → ウィンク
+      setChanWink(true);
+      setTimeout(() => setChanWink(false), 1000);
+    }
+    setTimeout(() => { c.tapCount = 0; }, 500);
+  };
+
 
   return (
     <div className="bg-transparent text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
@@ -1013,6 +1081,22 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
 
     </div>
+
+      {/* ★ マスコット常駐 */}
+      <style>{`
+        @keyframes mascotIdle { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-5px) rotate(2deg)} }
+        @keyframes mascotMove { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
+        @keyframes mascotWinkFx { 0%,100%{filter:drop-shadow(0 3px 6px rgba(0,0,0,0.15))} 50%{filter:drop-shadow(0 6px 16px rgba(236,72,153,0.8))} }
+        .m-idle { animation: mascotIdle 2s ease-in-out infinite; }
+        .m-move { animation: mascotMove 0.5s ease-in-out infinite; }
+        .m-wink { animation: mascotWinkFx 0.4s ease-in-out 3; }
+      `}</style>
+      <div onClick={handleKunTap} style={{position:'fixed',left:kunPos.x,top:kunPos.y,zIndex:50,cursor:'pointer',userSelect:'none',transform:kunFlip?'scaleX(-1)':'scaleX(1)',transition:'transform 0.15s'}}>
+        <img src="/フェイスくん.svg" alt="くん" className={kunMoving?'m-move':'m-idle'} style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
+      </div>
+      <div onClick={handleChanTap} style={{position:'fixed',left:chanPos.x,top:chanPos.y,zIndex:50,cursor:'pointer',userSelect:'none',transform:chanFlip?'scaleX(-1)':'scaleX(1)',transition:'transform 0.15s'}}>
+        <img src="/フェイスちゃん.svg" alt="ちゃん" className={chanMoving?(chanWink?'m-wink':'m-move'):'m-idle'} style={{width:M_SIZE,height:M_SIZE,display:'block',filter:chanWink?'drop-shadow(0 4px 14px rgba(236,72,153,0.7))':'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
+      </div>
   );
 }
 
@@ -3593,111 +3677,6 @@ export default function LOGIOApp() {
   });
   const [currentPage, setCurrentPage] = useState('home');
 
-  // ★ マスコットstate（LOGIOApp管理 - ページ跨ぎ）
-  const M_SIZE = 50;
-  const M_PAGES = ['home', 'list', 'analysis'];
-  const mkInitKun  = () => ({ x: window.innerWidth/2 - 68, y: 14 });
-  const mkInitChan = () => ({ x: window.innerWidth/2 + 18, y: 14 });
-  const [kunPos,    setKunPos]    = useState(mkInitKun);
-  const [chanPos,   setChanPos]   = useState(mkInitChan);
-  const [kunFlip,   setKunFlip]   = useState(false);
-  const [chanFlip,  setChanFlip]  = useState(true);
-  const [chanWink,  setChanWink]  = useState(false);
-  const [kunMoving,  setKunMoving]  = useState(false);
-  const [chanMoving, setChanMoving] = useState(false);
-  const [kunHidden,  setKunHidden]  = useState(false);
-  const [chanHidden, setChanHidden] = useState(false);
-  const kunMRef  = useRef({ ...mkInitKun(),  vx: 0, vy: 0, moving: false, hidden: false });
-  const chanMRef = useRef({ ...mkInitChan(), vx: 0, vy: 0, moving: false, hidden: false });
-
-  const randomMVel = (speed = 1.0) => {
-    const angle = Math.random() * Math.PI * 2;
-    return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
-  };
-
-  const spawnRandom = (ref, setPos, setFlip, setHidden) => {
-    const W = window.innerWidth, H = window.innerHeight;
-    const side = Math.floor(Math.random() * 4);
-    let x, y, vx, vy;
-    const speed = 1.0;
-    if (side === 0) { x = Math.random()*(W-M_SIZE); y = -M_SIZE; vx = (Math.random()-0.5)*speed; vy = speed; }
-    else if (side === 1) { x = W; y = Math.random()*(H-M_SIZE); vx = -speed; vy = (Math.random()-0.5)*speed; }
-    else if (side === 2) { x = Math.random()*(W-M_SIZE); y = H; vx = (Math.random()-0.5)*speed; vy = -speed; }
-    else { x = -M_SIZE; y = Math.random()*(H-M_SIZE); vx = speed; vy = (Math.random()-0.5)*speed; }
-    ref.current.x = x; ref.current.y = y;
-    ref.current.vx = vx; ref.current.vy = vy;
-    ref.current.hidden = false;
-    setHidden(false);
-    setPos({ x, y });
-    setFlip(vx < 0);
-  };
-
-  useEffect(() => {
-    const tick = () => {
-      const W = window.innerWidth, H = window.innerHeight;
-      const minY = 0, maxY = H - M_SIZE;
-
-      const k = kunMRef.current;
-      if (k.moving && !k.hidden) {
-        k.x += k.vx; k.y += k.vy;
-        // 画面外に出たら消えて、ランダム時間後に別の端から出現
-        if (k.x < -M_SIZE || k.x > W + M_SIZE || k.y < -M_SIZE || k.y > H + M_SIZE) {
-          k.hidden = true;
-          setKunHidden(true);
-          const delay = 2000 + Math.random() * 3000;
-          setTimeout(() => { if (k.moving) spawnRandom(kunMRef, setKunPos, setKunFlip, setKunHidden); }, delay);
-        } else {
-          setKunPos({ x: k.x, y: k.y });
-          setKunFlip(k.vx < 0);
-        }
-      }
-
-      const c = chanMRef.current;
-      if (c.moving && !c.hidden) {
-        c.x += c.vx; c.y += c.vy;
-        if (c.x < -M_SIZE || c.x > W + M_SIZE || c.y < -M_SIZE || c.y > H + M_SIZE) {
-          c.hidden = true;
-          setChanHidden(true);
-          const delay = 2000 + Math.random() * 3000;
-          setTimeout(() => { if (c.moving) spawnRandom(chanMRef, setChanPos, setChanFlip, setChanHidden); }, delay);
-        } else {
-          setChanPos({ x: c.x, y: c.y });
-          setChanFlip(c.vx < 0);
-        }
-      }
-    };
-    const interval = setInterval(tick, 16);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleKunTap = (e) => {
-    e.stopPropagation();
-    const k = kunMRef.current;
-    if (!k.moving) {
-      const vel = randomMVel(1.0);
-      k.vx = vel.vx; k.vy = vel.vy; k.moving = true;
-      setKunMoving(true);
-    } else {
-      k.vx = -k.vx * 2.0; k.vy = -k.vy * 2.0;
-      const maxV = 3;
-      if (Math.abs(k.vx) > maxV) k.vx = maxV * Math.sign(k.vx);
-      if (Math.abs(k.vy) > maxV) k.vy = maxV * Math.sign(k.vy);
-      setTimeout(() => { k.vx *= 0.4; k.vy *= 0.4; }, 1500);
-    }
-  };
-
-  const handleChanTap = (e) => {
-    e.stopPropagation();
-    const c = chanMRef.current;
-    if (!c.moving) {
-      const vel = randomMVel(0.8);
-      c.vx = vel.vx; c.vy = vel.vy; c.moving = true;
-      setChanMoving(true);
-    } else {
-      setChanWink(true);
-      setTimeout(() => setChanWink(false), 1000);
-    }
-  };
   const [navHoverId, setNavHoverId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);

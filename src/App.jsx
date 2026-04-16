@@ -1080,8 +1080,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       </div>
 
 
-    </div>
-
       {/* ★ マスコット常駐 */}
       <style>{`
         @keyframes mascotIdle { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-5px) rotate(2deg)} }
@@ -1097,6 +1095,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       <div onClick={handleChanTap} style={{position:'fixed',left:chanPos.x,top:chanPos.y,zIndex:50,cursor:'pointer',userSelect:'none',transform:chanFlip?'scaleX(-1)':'scaleX(1)',transition:'transform 0.15s'}}>
         <img src="/フェイスちゃん.svg" alt="ちゃん" className={chanMoving?(chanWink?'m-wink':'m-move'):'m-idle'} style={{width:M_SIZE,height:M_SIZE,display:'block',filter:chanWink?'drop-shadow(0 4px 14px rgba(236,72,153,0.7))':'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
       </div>
+    </div>
   );
 }
 

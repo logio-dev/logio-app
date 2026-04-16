@@ -709,8 +709,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const NAV_H = 80;
 
   // Wacロゴの左右に初期配置（画面中央付近）
-  const initKun  = React.useMemo(() => ({ x: window.innerWidth/2 - 80, y: window.innerHeight/2 - 30 }), []);
-  const initChan = React.useMemo(() => ({ x: window.innerWidth/2 + 30, y: window.innerHeight/2 - 30 }), []);
+  const initKun  = React.useMemo(() => ({ x: window.innerWidth/2 - 75, y: 58 }), []);
+  const initChan = React.useMemo(() => ({ x: window.innerWidth/2 + 25, y: 58 }), []);
 
   const [kunPos,    setKunPos]    = React.useState(initKun);
   const [chanPos,   setChanPos]   = React.useState(initChan);
@@ -774,14 +774,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
     setKunBubble(true);
     setTimeout(() => setKunBubble(false), 1800);
     if (!k.moving) {
-      const vel = randomVel(2.5);
+      const vel = randomVel(1.0);
       k.vx = vel.vx; k.vy = vel.vy;
       k.moving = true;
       setKunMoving(true);
     } else {
-      k.vx = -k.vx * 2.5;
-      k.vy = -k.vy * 2.5;
-      const maxV = 6;
+      k.vx = -k.vx * 2.0;
+      k.vy = -k.vy * 2.0;
+      const maxV = 3;
       if (Math.abs(k.vx) > maxV) k.vx = maxV * Math.sign(k.vx);
       if (Math.abs(k.vy) > maxV) k.vy = maxV * Math.sign(k.vy);
       setTimeout(() => { k.vx *= 0.4; k.vy *= 0.4; }, 1500);
@@ -794,7 +794,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
     setChanBubble(true);
     setTimeout(() => setChanBubble(false), 1800);
     if (!c.moving) {
-      const vel = randomVel(1.8);
+      const vel = randomVel(0.8);
       c.vx = vel.vx; c.vy = vel.vy;
       c.moving = true;
       setChanMoving(true);
@@ -1102,8 +1102,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         <img src="/フェイスくん.svg" alt="くん"
           className={kunMoving ? 'm-move' : 'm-idle'}
           style={{width:SIZE,height:SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
-        {!kunMoving && <div className="m-hint">タップ</div>}
-        {kunBubble && <div className="m-bubble" style={{color:'#6366F1',border:'1.5px solid #6366F1'}}>お疲れ様です！<span style={{position:'absolute',top:'100%',left:'50%',transform:'translateX(-50%)',borderLeft:'5px solid transparent',borderRight:'5px solid transparent',borderTop:'5px solid #6366F1',width:0,height:0,display:'block'}}></span></div>}
+        
+        {kunBubble && <div className="m-bubble" style={{color:'#6366F1',border:'1.5px solid #6366F1',transform:kunFlip?'translateX(-50%) scaleX(-1)':' translateX(-50%)'}}>お疲れ様です！<span style={{position:'absolute',top:'100%',left:'50%',transform:'translateX(-50%)',borderLeft:'5px solid transparent',borderRight:'5px solid transparent',borderTop:'5px solid #6366F1',width:0,height:0,display:'block'}}></span></div>}
       </div>
 
       {/* フェイスちゃん */}
@@ -1113,8 +1113,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         <img src="/フェイスちゃん.svg" alt="ちゃん"
           className={chanMoving ? (chanWink ? 'm-wink' : 'm-move') : 'm-idle'}
           style={{width:SIZE,height:SIZE,display:'block',filter: chanWink ? 'drop-shadow(0 4px 14px rgba(236,72,153,0.7))' : 'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
-        {!chanMoving && <div className="m-hint">タップ</div>}
-        {chanBubble && <div className="m-bubble" style={{color:'#EC4899',border:'1.5px solid #EC4899'}}>お疲れ様です♪<span style={{position:'absolute',top:'100%',left:'50%',transform:'translateX(-50%)',borderLeft:'5px solid transparent',borderRight:'5px solid transparent',borderTop:'5px solid #EC4899',width:0,height:0,display:'block'}}></span></div>}
+        
+        {chanBubble && <div className="m-bubble" style={{color:'#EC4899',border:'1.5px solid #EC4899',transform:chanFlip?'translateX(-50%) scaleX(-1)':' translateX(-50%)'}}>お疲れ様です♪<span style={{position:'absolute',top:'100%',left:'50%',transform:'translateX(-50%)',borderLeft:'5px solid transparent',borderRight:'5px solid transparent',borderTop:'5px solid #EC4899',width:0,height:0,display:'block'}}></span></div>}
       </div>
 
     </div>

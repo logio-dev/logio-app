@@ -256,7 +256,7 @@ function GradChevronUp({ size = 16 }) {
 }
 
 // ========== ★ Header（リロードアイコン追加）==========
-function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSearch, reloading = false }) {
+function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSearch, reloading = false, mascots = null }) {
   return (
     <header className="bg-transparent" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
@@ -280,8 +280,10 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
         </div>
         {/* 中央：ロゴ */}
         <span style={{ fontSize:'22px', fontWeight:900, letterSpacing:'0.05em', color:'#1C1917', fontFamily:'Roboto Condensed, -apple-system, sans-serif', userSelect:'none' }}>Wac</span>
-        {/* 右：アイコン3つ */}
+        {/* 右：マスコット＋アイコン */}
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
+          {/* マスコット */}
+          {mascots}
           {/* リロード */}
           <button onClick={onReload} title="最新データに更新"
             style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
@@ -706,52 +708,13 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const NAV_MAX_W = '672px';
 
   // ========== マスコット常駐ロジック ==========
-  const M_SIZE = 44;
-  const initKun  = React.useMemo(() => ({ x: window.innerWidth - 100, y: 60 }), []);
-  const initChan = React.useMemo(() => ({ x: window.innerWidth - 52,  y: 60 }), []);
-  const [kunPos,   setKunPos]   = React.useState(initKun);
-  const [chanPos,  setChanPos]  = React.useState(initChan);
   const [kunPopup, setKunPopup] = React.useState(null);
   const [chanPopup,setChanPopup]= React.useState(null);
-  const kunDrag  = React.useRef({ dragging:false, startX:0, startY:0, moved:false });
-  const chanDrag = React.useRef({ dragging:false, startX:0, startY:0, moved:false });
-
-  // ドラッグ処理（共通）
-  const makeDragHandlers = (dragRef, posRef, setPos) => ({
-    onPointerDown: (e) => {
-      e.stopPropagation();
-      dragRef.current.dragging = true;
-      dragRef.current.moved = false;
-      dragRef.current.startX = e.clientX - posRef.current.x;
-      dragRef.current.startY = e.clientY - posRef.current.y;
-      e.currentTarget.setPointerCapture(e.pointerId);
-    },
-    onPointerMove: (e) => {
-      if (!dragRef.current.dragging) return;
-      const x = Math.max(0, Math.min(window.innerWidth - M_SIZE, e.clientX - dragRef.current.startX));
-      const y = Math.max(0, Math.min(window.innerHeight - M_SIZE, e.clientY - dragRef.current.startY));
-      posRef.current = { x, y };
-      setPos({ x, y });
-      dragRef.current.moved = true;
-    },
-    onPointerUp: (e) => {
-      dragRef.current.dragging = false;
-    },
-  });
-
-  const kunPosRef  = React.useRef(initKun);
-  const chanPosRef = React.useRef(initChan);
-
-  // kunPosとchanPosをrefと同期
-  React.useEffect(() => { kunPosRef.current = kunPos; }, [kunPos]);
-  React.useEffect(() => { chanPosRef.current = chanPos; }, [chanPos]);
-
-  const kunDragHandlers  = React.useMemo(() => makeDragHandlers(kunDrag,  kunPosRef,  setKunPos),  []);
-  const chanDragHandlers = React.useMemo(() => makeDragHandlers(chanDrag, chanPosRef, setChanPos), []);
+  const kunDrag  = React.useRef({ moved:false });
+  const chanDrag = React.useRef({ moved:false });
 
   const handleKunTap = (e) => {
     e.stopPropagation();
-    if (kunDrag.current.moved) return; // ドラッグ後はタップ無視
     const now = new Date();
     const h = String(now.getHours()).padStart(2,'0');
     const m = String(now.getMinutes()).padStart(2,'0');
@@ -763,7 +726,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
   const handleChanTap = (e) => {
     e.stopPropagation();
-    if (chanDrag.current.moved) return;
     setChanPopup('取得中...');
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -782,6 +744,34 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
     );
   };
 
+
+  const mascotsJSX = (
+    <>
+      {/* PC：右のアイコン群の左 */}
+      <div style={{position:'fixed',top:0,right:120,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:45,paddingTop:'env(safe-area-inset-top,0px)'}} className="mascot-pc">
+        <div onClick={handleKunTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
+          <img src="/フェイスくん.svg" alt="くん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
+          {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
+        </div>
+        <div onClick={handleChanTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
+          <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
+          {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
+        </div>
+      </div>
+      {/* スマホ：ハンバーガーの右 */}
+      <div style={{position:'fixed',top:0,left:48,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:45,paddingTop:'env(safe-area-inset-top,0px)'}} className="mascot-sp">
+        <div onClick={handleKunTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
+          <img src="/フェイスくん.svg" alt="くん" style={{width:30,height:30,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
+          {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
+        </div>
+        <div onClick={handleChanTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
+          <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:30,height:30,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
+          {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
+        </div>
+      </div>
+      <style>{`.mascot-pc{display:flex} .mascot-sp{display:none} @media(max-width:768px){.mascot-pc{display:none} .mascot-sp{display:flex}}`}</style>
+    </>
+  );
 
   return (
     <div className="bg-transparent text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
@@ -1058,18 +1048,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         )}
       </div>
 
-
-      {/* ★ マスコット常駐（ドラッグ移動・タップで機能） */}
-      <div {...kunDragHandlers} onClick={handleKunTap}
-        style={{position:'fixed',left:kunPos.x,top:kunPos.y,zIndex:50,cursor:'grab',userSelect:'none',touchAction:'none'}}>
-        <img src="/フェイスくん.svg" alt="くん" style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))',pointerEvents:'none'}} />
-        {kunPopup && <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:10,padding:'5px 10px',fontSize:12,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none'}}>{kunPopup}</div>}
-      </div>
-      <div {...chanDragHandlers} onClick={handleChanTap}
-        style={{position:'fixed',left:chanPos.x,top:chanPos.y,zIndex:50,cursor:'grab',userSelect:'none',touchAction:'none'}}>
-        <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))',pointerEvents:'none'}} />
-        {chanPopup && <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:10,padding:'5px 10px',fontSize:12,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none'}}>{chanPopup}</div>}
-      </div>
     </div>
   );
 }

@@ -711,8 +711,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   // ========== マスコット常駐ロジック ==========
   const [kunPopup, setKunPopup] = React.useState(null);
   const [chanPopup,setChanPopup]= React.useState(null);
-  const initKunPos  = () => ({x:window.innerWidth/2 - 70, y:10});
-  const initChanPos = () => ({x:window.innerWidth/2 + 30, y:10});
+  const initKunPos  = () => ({x:window.innerWidth/2 - 58, y:10});
+  const initChanPos = () => ({x:window.innerWidth/2 + 26, y:10});
   const [kunPos,  setKunPos]  = React.useState(initKunPos);
   const [chanPos, setChanPos] = React.useState(initChanPos);
   const kunDrag  = React.useRef({ dragging:false, moved:false, ox:0, oy:0 });
@@ -814,7 +814,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-5 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(180px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
+      <div className="max-w-2xl mx-auto px-5 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(200px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>

@@ -533,10 +533,10 @@ function SplashScreen() {
       <div className="splash-bg">
         <div style={{display:'flex', gap:24, alignItems:'flex-end', marginBottom:0}}>
           <div className="splash-mascot-kun">
-            <img src="/フェイスくん.svg" alt="フェイスくん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
+            <img src="/face-kun.svg" alt="フェイスくん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
           </div>
           <div className="splash-mascot-chan">
-            <img src="/フェイスちゃん.svg" alt="フェイスちゃん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
+            <img src="/face-chan.svg" alt="フェイスちゃん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
           </div>
         </div>
         <div className="splash-title" style={{marginTop:24,textAlign:'center'}}>
@@ -594,7 +594,7 @@ function LoginPage({ onLogin }) {
         {/* マスコット */}
         <div style={{marginBottom:16, position:'relative'}}>
           <img
-            src={mascot === 'kun' ? '/フェイスくん.svg' : '/フェイスちゃん.svg'}
+            src={mascot === 'kun' ? '/face-kun.svg' : '/face-chan.svg'}
             alt={mascot === 'kun' ? 'フェイスくん' : 'フェイスちゃん'}
             className={`mascot-idle${error ? ' mascot-error' : ''}${isLoggingIn ? ' mascot-success' : ''}`}
             style={{width:120, height:120, filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.15))', display:'block', margin:'0 auto'}}
@@ -603,11 +603,11 @@ function LoginPage({ onLogin }) {
           <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:10}}>
             <button className="mascot-toggle" onClick={()=>{setMascot('kun');setUserId('');setPassword('');setError('');}}
               style={{width:32,height:32,borderRadius:'50%',border:`2px solid ${mascot==='kun'?'#6366F1':'#E5E7EB'}`,background:mascot==='kun'?'#EEF2FF':'#fff',overflow:'hidden',padding:2}}>
-              <img src="/フェイスくん.svg" alt="くん" style={{width:'100%',height:'100%'}} />
+              <img src="/face-kun.svg" alt="くん" style={{width:'100%',height:'100%'}} />
             </button>
             <button className="mascot-toggle" onClick={()=>{setMascot('chan');setUserId('');setPassword('');setError('');}}
               style={{width:32,height:32,borderRadius:'50%',border:`2px solid ${mascot==='chan'?'#EC4899':'#E5E7EB'}`,background:mascot==='chan'?'#FDF2F8':'#fff',overflow:'hidden',padding:2}}>
-              <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:'100%',height:'100%'}} />
+              <img src="/face-chan.svg" alt="ちゃん" style={{width:'100%',height:'100%'}} />
             </button>
           </div>
           <div style={{display:'flex',gap:24,justifyContent:'center',marginTop:6}}>
@@ -727,47 +727,25 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const handleChanTap = (e) => {
     e.stopPropagation();
     setChanPopup('取得中...');
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude: lat, longitude: lon } = pos.coords;
-          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=Asia%2FTokyo`);
-          const data = await res.json();
-          const wc = data.current_weather?.weathercode;
-          const temp = data.current_weather?.temperature;
-          const icons = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'🌧',95:'⛈',96:'⛈',99:'⛈'};
-          setChanPopup(`${icons[wc]||'🌡'} ${temp}°C`);
-          setTimeout(() => setChanPopup(null), 4000);
-        } catch { setChanPopup('取得失敗'); setTimeout(() => setChanPopup(null), 2000); }
-      },
-      () => { setChanPopup('位置情報NG'); setTimeout(() => setChanPopup(null), 2000); }
-    );
+    const fetchWeather = async (lat, lon) => {
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=Asia%2FTokyo`);
+        const data = await res.json();
+        const wc = data.current_weather?.weathercode;
+        const temp = data.current_weather?.temperature;
+        const icons = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'🌧',95:'⛈',96:'⛈',99:'⛈'};
+        setChanPopup(`${icons[wc]||'🌡'} ${temp}°C`);
+        setTimeout(() => setChanPopup(null), 4000);
+      } catch { setChanPopup('取得失敗'); setTimeout(() => setChanPopup(null), 2000); }
+    };
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+        () => fetchWeather(35.6762, 139.6503)
+      );
+    } else { fetchWeather(35.6762, 139.6503); }
   };
 
-
-  const mascotsJSX = (
-    <>
-      {/* PC：右のアイコン群の左 / スマホ：ハンバーガー右で切り替え */}
-      {(() => {
-        const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
-        const style = isMobile
-          ? {position:'fixed',top:0,left:48,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:60,paddingTop:'env(safe-area-inset-top,0px)'}
-          : {position:'fixed',top:0,right:120,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:60,paddingTop:'env(safe-area-inset-top,0px)'};
-        return (
-          <div style={style}>
-        <div onClick={handleKunTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
-          <img src="/フェイスくん.svg" alt="くん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
-          {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
-        </div>
-        <div onClick={handleChanTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
-          <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
-          {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
-        </div>
-          </div>
-        );
-      })()}
-    </>
-  );
 
   return (
     <div className="bg-transparent text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
@@ -1044,7 +1022,17 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         )}
       </div>
 
-      {mascotsJSX}
+      {/* ★ マスコット */}
+      <div style={{position:'fixed',top:0,right:window.innerWidth>768?120:undefined,left:window.innerWidth<=768?48:undefined,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:60,paddingTop:'env(safe-area-inset-top,0px)'}}>
+        <div onClick={handleKunTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
+          <img src="/face-kun.svg" alt="くん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
+          {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
+        </div>
+        <div onClick={handleChanTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
+          <img src="/face-chan.svg" alt="ちゃん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
+          {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
+        </div>
+      </div>
     </div>
   );
 }

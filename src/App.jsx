@@ -561,6 +561,9 @@ function LoginPage({ onLogin }) {
     if ((userId === 'face1991' && password === 'face1991') || (userId === 'ryokuka2005' && password === 'ryokuka2005')) {
       onLogin({ type: 'company', userId }); return;
     }
+    if (userId === 'admin2026' && password === 'admin2026') {
+      onLogin({ type: 'admin', userId }); return;
+    }
     const validPartnerIds = ['TCY001', 'ALT001', 'YMD001', 'KWD001', 'MRK001', 'MM001'];
     if (validPartnerIds.includes(userId) && password === userId.toLowerCase()) {
       onLogin({ type: 'partner', userId }); return;
@@ -594,14 +597,18 @@ function LoginPage({ onLogin }) {
           />
           {/* 切り替えボタン */}
           <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:10}}>
-            <button className="mascot-toggle" onClick={()=>setMascot('kun')}
+            <button className="mascot-toggle" onClick={()=>{setMascot('kun');setUserId('');setPassword('');setError('');}}
               style={{width:32,height:32,borderRadius:'50%',border:`2px solid ${mascot==='kun'?'#6366F1':'#E5E7EB'}`,background:mascot==='kun'?'#EEF2FF':'#fff',overflow:'hidden',padding:2}}>
               <img src="/フェイスくん.svg" alt="くん" style={{width:'100%',height:'100%'}} />
             </button>
-            <button className="mascot-toggle" onClick={()=>setMascot('chan')}
+            <button className="mascot-toggle" onClick={()=>{setMascot('chan');setUserId('');setPassword('');setError('');}}
               style={{width:32,height:32,borderRadius:'50%',border:`2px solid ${mascot==='chan'?'#EC4899':'#E5E7EB'}`,background:mascot==='chan'?'#FDF2F8':'#fff',overflow:'hidden',padding:2}}>
               <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:'100%',height:'100%'}} />
             </button>
+          </div>
+          <div style={{display:'flex',gap:24,justifyContent:'center',marginTop:6}}>
+            <span style={{fontSize:10,color:mascot==='kun'?'#6366F1':'#9CA3AF',fontWeight:mascot==='kun'?700:400}}>一般</span>
+            <span style={{fontSize:10,color:mascot==='chan'?'#EC4899':'#9CA3AF',fontWeight:mascot==='chan'?700:400}}>管理者</span>
           </div>
         </div>
 
@@ -609,7 +616,9 @@ function LoginPage({ onLogin }) {
         <div className="login-card" style={{width:'100%', maxWidth:360}}>
           <div style={{textAlign:'center', marginBottom:24}}>
             <span style={{fontSize:32, fontWeight:900, letterSpacing:'0.08em', color:'#1C1917', fontFamily:'Roboto Condensed,-apple-system,sans-serif'}}>Wac</span>
-            <p style={{fontSize:12, color:'#9CA3AF', marginTop:4}}>現場管理をスマートに</p>
+            <p style={{fontSize:12, color: mascot === 'chan' ? '#EC4899' : '#9CA3AF', marginTop:4, fontWeight: mascot === 'chan' ? 700 : 400}}>
+              {mascot === 'chan' ? '管理者ログイン' : '現場管理をスマートに'}
+            </p>
           </div>
           <div style={{borderRadius:20, padding:24, background:'#fff', boxShadow:'0 8px 32px rgba(0,0,0,0.08)', border:'1px solid rgba(0,0,0,0.06)'}}>
             {[['ID', 'text', userId, setUserId], ['パスワード', 'password', password, setPassword]].map(([lbl, tp, val, setter]) => (
@@ -630,7 +639,7 @@ function LoginPage({ onLogin }) {
             )}
             <button onClick={handleLogin} disabled={isLoggingIn}
               style={{width:'100%', padding:'13px', borderRadius:10, fontWeight:700, fontSize:14, background: mascot === 'kun' ? (isLoggingIn ? '#A5B4FC' : '#6366F1') : (isLoggingIn ? '#F9A8D4' : '#EC4899'), color:'#fff', border:'none', cursor: isLoggingIn ? 'not-allowed' : 'pointer', fontFamily:'inherit', transition:'all .2s', boxShadow:'0 4px 12px rgba(0,0,0,0.15)'}}>
-              {isLoggingIn ? '...' : 'ログイン'}
+              {isLoggingIn ? '...' : (mascot === 'chan' ? '管理者ログイン' : 'ログイン')}
             </button>
           </div>
         </div>
@@ -695,42 +704,66 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const NAV_MAX_W = '672px';
 
   // ========== マスコット常駐ロジック ==========
-  const [kunPos, setKunPos] = React.useState({ x: 40, y: 200 });
-  const [kunDir, setKunDir] = React.useState(1);
-  const [kunAction, setKunAction] = React.useState('walk'); // 'walk' | 'flee'
-  const [chanPos, setChanPos] = React.useState({ x: 200, y: 300 });
-  const [chanDir, setChanDir] = React.useState(-1);
-  const [chanAction, setChanAction] = React.useState('walk'); // 'walk' | 'wink'
-  const [chanWink, setChanWink] = React.useState(false);
-  const kunRef = React.useRef({ x: 40, y: 200, dir: 1, vy: 0, fleeing: false });
-  const chanRef = React.useRef({ x: 200, y: 300, dir: -1, vy: 0 });
+  const SIZE = 50;
+  const HEADER_H = 100;
+  const NAV_H = 80;
+
+  // Wacロゴの左右に初期配置（画面中央付近）
+  const initKun  = React.useMemo(() => ({ x: window.innerWidth/2 - 80, y: window.innerHeight/2 - 30 }), []);
+  const initChan = React.useMemo(() => ({ x: window.innerWidth/2 + 30, y: window.innerHeight/2 - 30 }), []);
+
+  const [kunPos,    setKunPos]    = React.useState(initKun);
+  const [chanPos,   setChanPos]   = React.useState(initChan);
+  const [kunFlip,   setKunFlip]   = React.useState(false);
+  const [chanFlip,  setChanFlip]  = React.useState(true);
+  const [chanWink,  setChanWink]  = React.useState(false);
+  const [kunMoving,  setKunMoving]  = React.useState(false);
+  const [chanMoving, setChanMoving] = React.useState(false);
+  const [kunBubble,  setKunBubble]  = React.useState(false);
+  const [chanBubble, setChanBubble] = React.useState(false);
+
+  const kunRef  = React.useRef({ ...initKun,  vx: 0, vy: 0, moving: false, fleeing: false });
+  const chanRef = React.useRef({ ...initChan, vx: 0, vy: 0, moving: false });
+
+  // ランダムな速度ベクトル生成
+  const randomVel = (speed = 1.5) => {
+    const angle = Math.random() * Math.PI * 2;
+    return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
+  };
 
   React.useEffect(() => {
-    const W = () => window.innerWidth;
-    const H = () => window.innerHeight;
-    const SIZE = 70;
-    const SPEED = 0.8;
-    const FLEE_SPEED = 5;
-
     const tick = () => {
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const minY = HEADER_H;
+      const maxY = H - NAV_H - SIZE;
+
       // くん
       const k = kunRef.current;
-      const speed = k.fleeing ? FLEE_SPEED : SPEED;
-      k.x += k.dir * speed;
-      if (k.x <= 0) { k.x = 0; k.dir = 1; }
-      if (k.x >= W() - SIZE) { k.x = W() - SIZE; k.dir = -1; }
-      setKunPos({ x: k.x, y: k.y });
-      setKunDir(k.dir);
+      if (k.moving) {
+        k.x += k.vx;
+        k.y += k.vy;
+        if (k.x <= 0)       { k.x = 0;          k.vx = Math.abs(k.vx); }
+        if (k.x >= W - SIZE){ k.x = W - SIZE;    k.vx = -Math.abs(k.vx); }
+        if (k.y <= minY)     { k.y = minY;        k.vy = Math.abs(k.vy); }
+        if (k.y >= maxY)     { k.y = maxY;        k.vy = -Math.abs(k.vy); }
+        setKunPos({ x: k.x, y: k.y });
+        setKunFlip(k.vx < 0);
+      }
 
       // ちゃん
       const c = chanRef.current;
-      c.x += c.dir * SPEED * 0.7;
-      if (c.x <= 0) { c.x = 0; c.dir = 1; }
-      if (c.x >= W() - SIZE) { c.x = W() - SIZE; c.dir = -1; }
-      setChanPos({ x: c.x, y: c.y });
-      setChanDir(c.dir);
+      if (c.moving) {
+        c.x += c.vx;
+        c.y += c.vy;
+        if (c.x <= 0)       { c.x = 0;          c.vx = Math.abs(c.vx); }
+        if (c.x >= W - SIZE){ c.x = W - SIZE;    c.vx = -Math.abs(c.vx); }
+        if (c.y <= minY)     { c.y = minY;        c.vy = Math.abs(c.vy); }
+        if (c.y >= maxY)     { c.y = maxY;        c.vy = -Math.abs(c.vy); }
+        setChanPos({ x: c.x, y: c.y });
+        setChanFlip(c.vx < 0);
+      }
     };
-
     const interval = setInterval(tick, 16);
     return () => clearInterval(interval);
   }, []);
@@ -738,17 +771,38 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const handleKunTap = (e) => {
     e.stopPropagation();
     const k = kunRef.current;
-    k.fleeing = true;
-    k.dir = k.dir * -1; // 反転して逃げる
-    setKunAction('flee');
-    setTimeout(() => { k.fleeing = false; setKunAction('walk'); }, 2000);
+    setKunBubble(true);
+    setTimeout(() => setKunBubble(false), 1800);
+    if (!k.moving) {
+      const vel = randomVel(2.5);
+      k.vx = vel.vx; k.vy = vel.vy;
+      k.moving = true;
+      setKunMoving(true);
+    } else {
+      k.vx = -k.vx * 2.5;
+      k.vy = -k.vy * 2.5;
+      const maxV = 6;
+      if (Math.abs(k.vx) > maxV) k.vx = maxV * Math.sign(k.vx);
+      if (Math.abs(k.vy) > maxV) k.vy = maxV * Math.sign(k.vy);
+      setTimeout(() => { k.vx *= 0.4; k.vy *= 0.4; }, 1500);
+    }
   };
 
   const handleChanTap = (e) => {
     e.stopPropagation();
-    setChanWink(true);
-    setKunAction('wink');
-    setTimeout(() => { setChanWink(false); setKunAction('walk'); }, 1500);
+    const c = chanRef.current;
+    setChanBubble(true);
+    setTimeout(() => setChanBubble(false), 1800);
+    if (!c.moving) {
+      const vel = randomVel(1.8);
+      c.vx = vel.vx; c.vy = vel.vy;
+      c.moving = true;
+      setChanMoving(true);
+    } else {
+      // ウィンク
+      setChanWink(true);
+      setTimeout(() => setChanWink(false), 1000);
+    }
   };
 
   return (
@@ -1028,34 +1082,39 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
       {/* ★ マスコット常駐 */}
       <style>{`
-        @keyframes mascotWalk { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-6px) rotate(3deg)} }
-        @keyframes mascotFlee { 0%,100%{transform:translateY(0) rotate(-8deg) scaleX(-1)} 50%{transform:translateY(-10px) rotate(8deg) scaleX(-1)} }
-        @keyframes mascotWink { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
-        @keyframes winkBubble { 0%{opacity:0;transform:scale(0)} 20%{opacity:1;transform:scale(1.1)} 80%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(0)} }
-        .mascot-walk { animation: mascotWalk 0.6s ease-in-out infinite; }
-        .mascot-flee { animation: mascotFlee 0.3s ease-in-out infinite; }
-        .mascot-wink { animation: mascotWink 0.4s ease-in-out 3; }
-        .wink-bubble { animation: winkBubble 1.5s ease-in-out forwards; }
+        @keyframes mascotIdle   { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-5px) rotate(2deg)} }
+        @keyframes mascotMove   { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
+        @keyframes mascotWinkFx { 0%,100%{filter:drop-shadow(0 3px 6px rgba(0,0,0,0.15))} 50%{filter:drop-shadow(0 6px 16px rgba(236,72,153,0.8)) brightness(1.2)} }
+        @keyframes bubblePop    { 0%{opacity:0;transform:translateX(-50%) scale(0)} 15%{opacity:1;transform:translateX(-50%) scale(1.1)} 80%{opacity:1;transform:translateX(-50%) scale(1)} 100%{opacity:0;transform:translateX(-50%) scale(0.8)} }
+        .m-idle { animation: mascotIdle 2s ease-in-out infinite; }
+        .m-move { animation: mascotMove 0.5s ease-in-out infinite; }
+        .m-wink { animation: mascotWinkFx 0.4s ease-in-out 3; }
+        .m-tap  { cursor:pointer; user-select:none; }
+        .m-hint { position:absolute; bottom:-16px; left:50%; transform:translateX(-50%); font-size:9px; color:#999; white-space:nowrap; pointer-events:none; }
+        .m-bubble { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:#fff; border-radius:12px; padding:4px 10px; font-size:11px; font-weight:700; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.15); animation:bubblePop 1.8s ease-in-out forwards; pointer-events:none; }
+        .m-bubble::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; }
       `}</style>
 
       {/* フェイスくん */}
-      <div onClick={handleKunTap} style={{ position:'fixed', left:kunPos.x, bottom:80, zIndex:50, cursor:'pointer', userSelect:'none', transform: kunDir < 0 ? 'scaleX(-1)' : 'scaleX(1)', transition:'transform 0.1s' }}>
-        <img src="/フェイスくん.svg" alt="くん" className={kunAction === 'flee' ? 'mascot-flee' : 'mascot-walk'} style={{width:70,height:70,filter:'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'}} />
-        {kunAction === 'flee' && (
-          <div className="wink-bubble" style={{position:'absolute',top:-30,left:'50%',transform:'translateX(-50%)',background:'#fff',border:'2px solid #6366F1',borderRadius:12,padding:'3px 8px',fontSize:11,fontWeight:700,color:'#6366F1',whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.15)'}}>
-            きゃっ！
-          </div>
-        )}
+      <div className="m-tap" onClick={handleKunTap}
+        style={{ position:'fixed', left:kunPos.x, top:kunPos.y, zIndex:50,
+          transform: kunFlip ? 'scaleX(-1)' : 'scaleX(1)', transition:'transform 0.15s' }}>
+        <img src="/フェイスくん.svg" alt="くん"
+          className={kunMoving ? 'm-move' : 'm-idle'}
+          style={{width:SIZE,height:SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
+        {!kunMoving && <div className="m-hint">タップ</div>}
+        {kunBubble && <div className="m-bubble" style={{color:'#6366F1',border:'1.5px solid #6366F1'}}>お疲れ様です！<span style={{position:'absolute',top:'100%',left:'50%',transform:'translateX(-50%)',borderLeft:'5px solid transparent',borderRight:'5px solid transparent',borderTop:'5px solid #6366F1',width:0,height:0,display:'block'}}></span></div>}
       </div>
 
       {/* フェイスちゃん */}
-      <div onClick={handleChanTap} style={{ position:'fixed', left:chanPos.x, bottom:80, zIndex:50, cursor:'pointer', userSelect:'none', transform: chanDir < 0 ? 'scaleX(-1)' : 'scaleX(1)', transition:'transform 0.1s' }}>
-        <img src="/フェイスちゃん.svg" alt="ちゃん" className={chanWink ? 'mascot-wink' : 'mascot-walk'} style={{width:70,height:70,filter:'drop-shadow(0 4px 8px rgba(0,0,0,0.2))',transition:'filter 0.2s', filter: chanWink ? 'drop-shadow(0 4px 12px rgba(236,72,153,0.6))' : 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'}} />
-        {chanWink && (
-          <div className="wink-bubble" style={{position:'absolute',top:-30,left:'50%',transform:'translateX(-50%)',background:'#fff',border:'2px solid #EC4899',borderRadius:12,padding:'3px 8px',fontSize:11,fontWeight:700,color:'#EC4899',whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.15)'}}>
-            お疲れ様です♪
-          </div>
-        )}
+      <div className="m-tap" onClick={handleChanTap}
+        style={{ position:'fixed', left:chanPos.x, top:chanPos.y, zIndex:50,
+          transform: chanFlip ? 'scaleX(-1)' : 'scaleX(1)', transition:'transform 0.15s' }}>
+        <img src="/フェイスちゃん.svg" alt="ちゃん"
+          className={chanMoving ? (chanWink ? 'm-wink' : 'm-move') : 'm-idle'}
+          style={{width:SIZE,height:SIZE,display:'block',filter: chanWink ? 'drop-shadow(0 4px 14px rgba(236,72,153,0.7))' : 'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
+        {!chanMoving && <div className="m-hint">タップ</div>}
+        {chanBubble && <div className="m-bubble" style={{color:'#EC4899',border:'1.5px solid #EC4899'}}>お疲れ様です♪<span style={{position:'absolute',top:'100%',left:'50%',transform:'translateX(-50%)',borderLeft:'5px solid transparent',borderRight:'5px solid transparent',borderTop:'5px solid #EC4899',width:0,height:0,display:'block'}}></span></div>}
       </div>
 
     </div>

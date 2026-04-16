@@ -1048,6 +1048,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         )}
       </div>
 
+      {mascotsJSX}
     </div>
   );
 }

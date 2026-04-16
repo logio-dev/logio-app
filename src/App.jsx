@@ -390,33 +390,33 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
       {/* ★ マスコット常駐（ホーム・日報一覧・分析のみ） */}
       {M_PAGES.includes(currentPage) && (<>
         <style>{`
-          @keyframes mascotIdle   { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-5px) rotate(2deg)} }
-          @keyframes mascotMove   { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
+          @keyframes mascotIdle { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-5px) rotate(2deg)} }
+          @keyframes mascotMove { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
           @keyframes mascotWinkFx { 0%,100%{filter:drop-shadow(0 3px 6px rgba(0,0,0,0.15))} 50%{filter:drop-shadow(0 6px 16px rgba(236,72,153,0.8))} }
-          @keyframes bubblePop    { 0%{opacity:0;transform:scale(0)} 15%{opacity:1;transform:scale(1.1)} 80%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(0.8)} }
           .m-idle { animation: mascotIdle 2s ease-in-out infinite; }
           .m-move { animation: mascotMove 0.5s ease-in-out infinite; }
           .m-wink { animation: mascotWinkFx 0.4s ease-in-out 3; }
-          .m-tap  { cursor:pointer; user-select:none; position:fixed; zIndex:50; }
         `}</style>
         {/* フェイスくん */}
-        {!kunMRef.current.hidden && (
-          <div className="m-tap" onClick={handleKunTap}
-            style={{ left:kunPos.x, top:kunPos.y, transform:kunFlip?'scaleX(-1)':'scaleX(1)', transition:'transform 0.15s' }}>
-            <img src="/フェイスくん.svg" alt="くん" className={kunMoving?'m-move':'m-idle'}
-              style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
-            {kunBubble && <div style={{position:'absolute',bottom:'calc(100%+6px)',left:kunFlip?'auto':'50%',right:kunFlip?'50%':'auto',transform:kunFlip?'translateX(50%)':'translateX(-50%)',background:'#fff',border:'1.5px solid #6366F1',borderRadius:12,padding:'4px 10px',fontSize:11,fontWeight:700,color:'#6366F1',whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.15)',animation:'bubblePop 1.8s ease-in-out forwards',pointerEvents:'none'}}>お疲れ様です！</div>}
-          </div>
-        )}
+        <div onClick={handleKunTap} style={{
+          position:'fixed', left:kunPos.x, top:kunPos.y, zIndex:50,
+          cursor:'pointer', userSelect:'none',
+          transform:kunFlip?'scaleX(-1)':'scaleX(1)', transition:'transform 0.15s',
+          display: kunHidden ? 'none' : 'block'
+        }}>
+          <img src="/フェイスくん.svg" alt="くん" className={kunMoving?'m-move':'m-idle'}
+            style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
+        </div>
         {/* フェイスちゃん */}
-        {!chanMRef.current.hidden && (
-          <div className="m-tap" onClick={handleChanTap}
-            style={{ left:chanPos.x, top:chanPos.y, transform:chanFlip?'scaleX(-1)':'scaleX(1)', transition:'transform 0.15s' }}>
-            <img src="/フェイスちゃん.svg" alt="ちゃん" className={chanMoving?(chanWink?'m-wink':'m-move'):'m-idle'}
-              style={{width:M_SIZE,height:M_SIZE,display:'block',filter:chanWink?'drop-shadow(0 4px 14px rgba(236,72,153,0.7))':'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
-            {chanBubble && <div style={{position:'absolute',bottom:'calc(100%+6px)',left:chanFlip?'auto':'50%',right:chanFlip?'50%':'auto',transform:chanFlip?'translateX(50%)':'translateX(-50%)',background:'#fff',border:'1.5px solid #EC4899',borderRadius:12,padding:'4px 10px',fontSize:11,fontWeight:700,color:'#EC4899',whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.15)',animation:'bubblePop 1.8s ease-in-out forwards',pointerEvents:'none'}}>お疲れ様です♪</div>}
-          </div>
-        )}
+        <div onClick={handleChanTap} style={{
+          position:'fixed', left:chanPos.x, top:chanPos.y, zIndex:50,
+          cursor:'pointer', userSelect:'none',
+          transform:chanFlip?'scaleX(-1)':'scaleX(1)', transition:'transform 0.15s',
+          display: chanHidden ? 'none' : 'block'
+        }}>
+          <img src="/フェイスちゃん.svg" alt="ちゃん" className={chanMoving?(chanWink?'m-wink':'m-move'):'m-idle'}
+            style={{width:M_SIZE,height:M_SIZE,display:'block',filter:chanWink?'drop-shadow(0 4px 14px rgba(236,72,153,0.7))':'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
+        </div>
       </>)}
     </div>
   );
@@ -3605,17 +3605,17 @@ export default function LOGIOApp() {
   const [chanWink,  setChanWink]  = useState(false);
   const [kunMoving,  setKunMoving]  = useState(false);
   const [chanMoving, setChanMoving] = useState(false);
-  const [kunBubble,  setKunBubble]  = useState(false);
-  const [chanBubble, setChanBubble] = useState(false);
-  const kunMRef  = useRef({ ...mkInitKun(),  vx: 0, vy: 0, moving: false, hidden: false, hideTimer: null });
-  const chanMRef = useRef({ ...mkInitChan(), vx: 0, vy: 0, moving: false, hidden: false, hideTimer: null });
+  const [kunHidden,  setKunHidden]  = useState(false);
+  const [chanHidden, setChanHidden] = useState(false);
+  const kunMRef  = useRef({ ...mkInitKun(),  vx: 0, vy: 0, moving: false, hidden: false });
+  const chanMRef = useRef({ ...mkInitChan(), vx: 0, vy: 0, moving: false, hidden: false });
 
   const randomMVel = (speed = 1.0) => {
     const angle = Math.random() * Math.PI * 2;
     return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
   };
 
-  const spawnRandom = (ref, setPos, setFlip) => {
+  const spawnRandom = (ref, setPos, setFlip, setHidden) => {
     const W = window.innerWidth, H = window.innerHeight;
     const side = Math.floor(Math.random() * 4);
     let x, y, vx, vy;
@@ -3627,6 +3627,7 @@ export default function LOGIOApp() {
     ref.current.x = x; ref.current.y = y;
     ref.current.vx = vx; ref.current.vy = vy;
     ref.current.hidden = false;
+    setHidden(false);
     setPos({ x, y });
     setFlip(vx < 0);
   };
@@ -3642,8 +3643,9 @@ export default function LOGIOApp() {
         // 画面外に出たら消えて、ランダム時間後に別の端から出現
         if (k.x < -M_SIZE || k.x > W + M_SIZE || k.y < -M_SIZE || k.y > H + M_SIZE) {
           k.hidden = true;
+          setKunHidden(true);
           const delay = 2000 + Math.random() * 3000;
-          setTimeout(() => { if (k.moving) spawnRandom(kunMRef, setKunPos, setKunFlip); }, delay);
+          setTimeout(() => { if (k.moving) spawnRandom(kunMRef, setKunPos, setKunFlip, setKunHidden); }, delay);
         } else {
           setKunPos({ x: k.x, y: k.y });
           setKunFlip(k.vx < 0);
@@ -3655,8 +3657,9 @@ export default function LOGIOApp() {
         c.x += c.vx; c.y += c.vy;
         if (c.x < -M_SIZE || c.x > W + M_SIZE || c.y < -M_SIZE || c.y > H + M_SIZE) {
           c.hidden = true;
+          setChanHidden(true);
           const delay = 2000 + Math.random() * 3000;
-          setTimeout(() => { if (c.moving) spawnRandom(chanMRef, setChanPos, setChanFlip); }, delay);
+          setTimeout(() => { if (c.moving) spawnRandom(chanMRef, setChanPos, setChanFlip, setChanHidden); }, delay);
         } else {
           setChanPos({ x: c.x, y: c.y });
           setChanFlip(c.vx < 0);
@@ -3670,8 +3673,6 @@ export default function LOGIOApp() {
   const handleKunTap = (e) => {
     e.stopPropagation();
     const k = kunMRef.current;
-    setKunBubble(true);
-    setTimeout(() => setKunBubble(false), 1800);
     if (!k.moving) {
       const vel = randomMVel(1.0);
       k.vx = vel.vx; k.vy = vel.vy; k.moving = true;
@@ -3688,8 +3689,6 @@ export default function LOGIOApp() {
   const handleChanTap = (e) => {
     e.stopPropagation();
     const c = chanMRef.current;
-    setChanBubble(true);
-    setTimeout(() => setChanBubble(false), 1800);
     if (!c.moving) {
       const vel = randomMVel(0.8);
       c.vx = vel.vx; c.vy = vel.vy; c.moving = true;

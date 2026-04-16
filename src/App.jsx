@@ -706,133 +706,80 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const NAV_MAX_W = '672px';
 
   // ========== マスコット常駐ロジック ==========
-  const M_SIZE = 40;
-  const initKun  = React.useMemo(() => ({ x: window.innerWidth/2 - 72, y: 8 }), []);
-  const initChan = React.useMemo(() => ({ x: window.innerWidth/2 + 32, y: 8 }), []);
-  const [kunPos,    setKunPos]    = React.useState(initKun);
-  const [chanPos,   setChanPos]   = React.useState(initChan);
-  const [kunFlip,   setKunFlip]   = React.useState(false);
-  const [chanFlip,  setChanFlip]  = React.useState(true);
-  const [chanWink,  setChanWink]  = React.useState(false);
-  const [kunMoving,  setKunMoving]  = React.useState(false);
-  const [chanMoving, setChanMoving] = React.useState(false);
-  const [kunPopup,  setKunPopup]  = React.useState(null); // 時刻表示
-  const [chanPopup, setChanPopup] = React.useState(null); // 天気表示
-  const kunRef  = React.useRef({ x: initKun.x,  y: initKun.y,  vx: 0, vy: 0, moving: false, tapCount: 0 });
-  const chanRef = React.useRef({ x: initChan.x, y: initChan.y, vx: 0, vy: 0, moving: false, tapCount: 0 });
+  const M_SIZE = 44;
+  const initKun  = React.useMemo(() => ({ x: window.innerWidth - 100, y: 60 }), []);
+  const initChan = React.useMemo(() => ({ x: window.innerWidth - 52,  y: 60 }), []);
+  const [kunPos,   setKunPos]   = React.useState(initKun);
+  const [chanPos,  setChanPos]  = React.useState(initChan);
+  const [kunPopup, setKunPopup] = React.useState(null);
+  const [chanPopup,setChanPopup]= React.useState(null);
+  const kunDrag  = React.useRef({ dragging:false, startX:0, startY:0, moved:false });
+  const chanDrag = React.useRef({ dragging:false, startX:0, startY:0, moved:false });
 
-  const randomVel = (speed) => {
-    const angle = Math.random() * Math.PI * 2;
-    return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
-  };
+  // ドラッグ処理（共通）
+  const makeDragHandlers = (dragRef, posRef, setPos) => ({
+    onPointerDown: (e) => {
+      e.stopPropagation();
+      dragRef.current.dragging = true;
+      dragRef.current.moved = false;
+      dragRef.current.startX = e.clientX - posRef.current.x;
+      dragRef.current.startY = e.clientY - posRef.current.y;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    onPointerMove: (e) => {
+      if (!dragRef.current.dragging) return;
+      const x = Math.max(0, Math.min(window.innerWidth - M_SIZE, e.clientX - dragRef.current.startX));
+      const y = Math.max(0, Math.min(window.innerHeight - M_SIZE, e.clientY - dragRef.current.startY));
+      posRef.current = { x, y };
+      setPos({ x, y });
+      dragRef.current.moved = true;
+    },
+    onPointerUp: (e) => {
+      dragRef.current.dragging = false;
+    },
+  });
 
-  React.useEffect(() => {
-    const W = () => window.innerWidth, H = () => window.innerHeight;
-    const minY = 0, maxY = () => H() - M_SIZE;
-    const tick = () => {
-      const k = kunRef.current;
-      if (k.moving) {
-        k.x += k.vx; k.y += k.vy;
-        if (k.x <= 0)           { k.x = 0;        k.vx = Math.abs(k.vx); }
-        if (k.x >= W() - M_SIZE){ k.x = W()-M_SIZE; k.vx = -Math.abs(k.vx); }
-        if (k.y <= minY)         { k.y = minY;      k.vy = Math.abs(k.vy); }
-        if (k.y >= maxY())       { k.y = maxY();    k.vy = -Math.abs(k.vy); }
-        setKunPos({ x: k.x, y: k.y });
-        setKunFlip(k.vx < 0);
-      }
-      const c = chanRef.current;
-      if (c.moving) {
-        c.x += c.vx; c.y += c.vy;
-        if (c.x <= 0)           { c.x = 0;        c.vx = Math.abs(c.vx); }
-        if (c.x >= W() - M_SIZE){ c.x = W()-M_SIZE; c.vx = -Math.abs(c.vx); }
-        if (c.y <= minY)         { c.y = minY;      c.vy = Math.abs(c.vy); }
-        if (c.y >= maxY())       { c.y = maxY();    c.vy = -Math.abs(c.vy); }
-        setChanPos({ x: c.x, y: c.y });
-        setChanFlip(c.vx < 0);
-      }
-    };
-    const interval = setInterval(tick, 16);
-    return () => clearInterval(interval);
-  }, []);
+  const kunPosRef  = React.useRef(initKun);
+  const chanPosRef = React.useRef(initChan);
+
+  // kunPosとchanPosをrefと同期
+  React.useEffect(() => { kunPosRef.current = kunPos; }, [kunPos]);
+  React.useEffect(() => { chanPosRef.current = chanPos; }, [chanPos]);
+
+  const kunDragHandlers  = React.useMemo(() => makeDragHandlers(kunDrag,  kunPosRef,  setKunPos),  []);
+  const chanDragHandlers = React.useMemo(() => makeDragHandlers(chanDrag, chanPosRef, setChanPos), []);
 
   const handleKunTap = (e) => {
     e.stopPropagation();
-    const k = kunRef.current;
-    k.tapCount = (k.tapCount || 0) + 1;
-    if (k.tapCount >= 2) {
-      // 2回タップ → スタート位置に戻る
-      k.x = initKun.x; k.y = initKun.y;
-      k.vx = 0; k.vy = 0; k.moving = false; k.tapCount = 0;
-      setKunPos({ x: initKun.x, y: initKun.y });
-      setKunFlip(false); setKunMoving(false);
-    } else if (!k.moving) {
-      // 止まっている時タップ → 時刻表示
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2,'0');
-      const m = String(now.getMinutes()).padStart(2,'0');
-      const s = String(now.getSeconds()).padStart(2,'0');
-      const d = ['日','月','火','水','木','金','土'][now.getDay()];
-      setKunPopup(`${now.getMonth()+1}/${now.getDate()}(${d}) ${h}:${m}:${s}`);
-      setTimeout(() => setKunPopup(null), 2500);
-    } else {
-      // 移動中タップ → 逃げる
-      k.vx = -k.vx * 2.0; k.vy = -k.vy * 2.0;
-      const maxV = 3;
-      if (Math.abs(k.vx) > maxV) k.vx = maxV * Math.sign(k.vx);
-      if (Math.abs(k.vy) > maxV) k.vy = maxV * Math.sign(k.vy);
-      setTimeout(() => { k.vx *= 0.4; k.vy *= 0.4; }, 1500);
-      // 移動中でも時刻表示
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2,'0');
-      const m = String(now.getMinutes()).padStart(2,'0');
-      setKunPopup(`${h}:${m}`);
-      setTimeout(() => setKunPopup(null), 2000);
-    }
-    setTimeout(() => { k.tapCount = 0; }, 500);
+    if (kunDrag.current.moved) return; // ドラッグ後はタップ無視
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    const d = ['日','月','火','水','木','金','土'][now.getDay()];
+    setKunPopup(`${now.getMonth()+1}/${now.getDate()}(${d}) ${h}:${m}:${s}`);
+    setTimeout(() => setKunPopup(null), 3000);
   };
 
   const handleChanTap = (e) => {
     e.stopPropagation();
-    const c = chanRef.current;
-    c.tapCount = (c.tapCount || 0) + 1;
-    if (c.tapCount >= 2) {
-      // 2回タップ → スタート位置に戻る
-      c.x = initChan.x; c.y = initChan.y;
-      c.vx = 0; c.vy = 0; c.moving = false; c.tapCount = 0;
-      setChanPos({ x: initChan.x, y: initChan.y });
-      setChanFlip(true); setChanMoving(false); setChanWink(false);
-      setChanPopup(null);
-    } else {
-      // タップ → 天気取得・表示
-      setChanPopup('取得中...');
-      setChanWink(true);
-      setTimeout(() => setChanWink(false), 1000);
-      if (!c.moving) {
-        const vel = randomVel(0.8);
-        c.vx = vel.vx; c.vy = vel.vy; c.moving = true;
-        setChanMoving(true);
-      }
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const { latitude: lat, longitude: lon } = pos.coords;
-            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=Asia%2FTokyo`);
-            const data = await res.json();
-            const wc = data.current_weather?.weathercode;
-            const temp = data.current_weather?.temperature;
-            const icons = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'🌧',95:'⛈',96:'⛈',99:'⛈'};
-            const icon = icons[wc] || '🌡';
-            setChanPopup(`${icon} ${temp}°C`);
-            setTimeout(() => setChanPopup(null), 4000);
-          } catch {
-            setChanPopup('取得失敗');
-            setTimeout(() => setChanPopup(null), 2000);
-          }
-        },
-        () => { setChanPopup('位置情報NG'); setTimeout(() => setChanPopup(null), 2000); }
-      );
-    }
-    setTimeout(() => { c.tapCount = 0; }, 500);
+    if (chanDrag.current.moved) return;
+    setChanPopup('取得中...');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=Asia%2FTokyo`);
+          const data = await res.json();
+          const wc = data.current_weather?.weathercode;
+          const temp = data.current_weather?.temperature;
+          const icons = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'🌧',95:'⛈',96:'⛈',99:'⛈'};
+          setChanPopup(`${icons[wc]||'🌡'} ${temp}°C`);
+          setTimeout(() => setChanPopup(null), 4000);
+        } catch { setChanPopup('取得失敗'); setTimeout(() => setChanPopup(null), 2000); }
+      },
+      () => { setChanPopup('位置情報NG'); setTimeout(() => setChanPopup(null), 2000); }
+    );
   };
 
 
@@ -1112,22 +1059,16 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       </div>
 
 
-      {/* ★ マスコット常駐 */}
-      <style>{`
-        @keyframes mascotIdle { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-5px) rotate(2deg)} }
-        @keyframes mascotMove { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
-        @keyframes mascotWinkFx { 0%,100%{filter:drop-shadow(0 3px 6px rgba(0,0,0,0.15))} 50%{filter:drop-shadow(0 6px 16px rgba(236,72,153,0.8))} }
-        .m-idle { animation: mascotIdle 2s ease-in-out infinite; }
-        .m-move { animation: mascotMove 0.5s ease-in-out infinite; }
-        .m-wink { animation: mascotWinkFx 0.4s ease-in-out 3; }
-      `}</style>
-      <div onClick={handleKunTap} style={{position:'fixed',left:kunPos.x,top:kunPos.y,zIndex:50,cursor:'pointer',userSelect:'none',transform:kunFlip?'scaleX(-1)':'scaleX(1)',transition:'transform 0.15s'}}>
-        <img src="/フェイスくん.svg" alt="くん" className={kunMoving?'m-move':'m-idle'} style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
-        {kunPopup && <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:kunFlip?'auto':'50%',right:kunFlip?'50%':'auto',transform:kunFlip?'translateX(50%) scaleX(-1)':'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:10,padding:'5px 10px',fontSize:12,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none'}}>{kunPopup}</div>}
+      {/* ★ マスコット常駐（ドラッグ移動・タップで機能） */}
+      <div {...kunDragHandlers} onClick={handleKunTap}
+        style={{position:'fixed',left:kunPos.x,top:kunPos.y,zIndex:50,cursor:'grab',userSelect:'none',touchAction:'none'}}>
+        <img src="/フェイスくん.svg" alt="くん" style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))',pointerEvents:'none'}} />
+        {kunPopup && <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:10,padding:'5px 10px',fontSize:12,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none'}}>{kunPopup}</div>}
       </div>
-      <div onClick={handleChanTap} style={{position:'fixed',left:chanPos.x,top:chanPos.y,zIndex:50,cursor:'pointer',userSelect:'none',transform:chanFlip?'scaleX(-1)':'scaleX(1)',transition:'transform 0.15s'}}>
-        <img src="/フェイスちゃん.svg" alt="ちゃん" className={chanMoving?(chanWink?'m-wink':'m-move'):'m-idle'} style={{width:M_SIZE,height:M_SIZE,display:'block',filter:chanWink?'drop-shadow(0 4px 14px rgba(236,72,153,0.7))':'drop-shadow(0 3px 8px rgba(0,0,0,0.2))'}} />
-        {chanPopup && <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:chanFlip?'auto':'50%',right:chanFlip?'50%':'auto',transform:chanFlip?'translateX(50%) scaleX(-1)':'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:10,padding:'5px 10px',fontSize:12,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none'}}>{chanPopup}</div>}
+      <div {...chanDragHandlers} onClick={handleChanTap}
+        style={{position:'fixed',left:chanPos.x,top:chanPos.y,zIndex:50,cursor:'grab',userSelect:'none',touchAction:'none'}}>
+        <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:M_SIZE,height:M_SIZE,display:'block',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.2))',pointerEvents:'none'}} />
+        {chanPopup && <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:10,padding:'5px 10px',fontSize:12,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none'}}>{chanPopup}</div>}
       </div>
     </div>
   );

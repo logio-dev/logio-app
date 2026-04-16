@@ -903,7 +903,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 <div style={{width:1,height:50,background:'rgba(255,255,255,0.1)',flexShrink:0,alignSelf:'flex-end',marginBottom:4}}/>
                 <div>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:2}}>WORKERS</div>
-                  <span className="workers-breathe" style={{fontSize:42,fontWeight:700,color:'#CBD5E1',lineHeight:1,fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
+                  <span className="workers-breathe" style={{fontSize:54,fontWeight:700,color:'#EAB308',lineHeight:1,fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
                   <span style={{fontSize:12,color:'rgba(255,255,255,0.5)',marginLeft:3}}>人</span>
                 </div>
               </div>
@@ -1010,23 +1010,22 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               const dayNames = ['日','月','火','水','木','金','土'];
               const dayName = latestDate ? dayNames[new Date(latestDate).getDay()] : '';
               return (
-                <div className="mb-4" style={{background:'#F4F4F4',borderRadius:14,padding:'14px 16px'}}>
+                <div className="mb-4" style={{background:'#2C2825',borderRadius:14,padding:'14px 16px'}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                     <div>
-                      <p style={{fontSize:9,fontWeight:700,color:'#999',letterSpacing:'.1em',marginBottom:5}}>REPORT</p>
-                      <p style={{fontSize:15,fontWeight:800,color:'#1C1917',marginBottom:5}}>解体作業日報</p>
+                      <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',letterSpacing:'.1em',marginBottom:5}}>REPORT</p>
+                      <p style={{fontSize:15,fontWeight:800,color:'#fff',marginBottom:5}}>解体作業日報</p>
                       <div style={{display:'flex',gap:6}}>
-                        <span style={{fontSize:10,fontWeight:700,color:'#555',background:'rgba(0,0,0,0.07)',padding:'2px 8px',borderRadius:20}}>{reports.length}件</span>
-                        {latestDate && <span style={{fontSize:10,fontWeight:700,color:'#16A34A',background:'rgba(34,197,94,0.12)',padding:'2px 8px',borderRadius:20}}>最新 {mo}/{da}（{dayName}）</span>}
+                        <span style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.6)',background:'rgba(255,255,255,0.1)',padding:'2px 8px',borderRadius:20}}>{reports.length}件</span>
+                        {latestDate && <span style={{fontSize:10,fontWeight:700,color:'#4ade80',background:'rgba(34,197,94,0.15)',padding:'2px 8px',borderRadius:20}}>最新 {mo}/{da}（{dayName}）</span>}
                       </div>
                     </div>
+                    <style>{`@keyframes pdf-ripple{0%{box-shadow:0 0 0 0 rgba(220,38,38,0.7)}100%{box-shadow:0 0 0 22px rgba(220,38,38,0)}}`}</style>
                     <button onClick={()=>onViewPdf&&onViewPdf(latest)}
-                      style={{display:'flex',alignItems:'center',gap:7,padding:'10px 16px',background:'#1A1A1A',border:'none',borderRadius:10,cursor:'pointer',flexShrink:0}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',background:'#DC2626',border:'none',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-ripple 1.8s ease-out infinite'}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                         <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
                       </svg>
                       <span style={{fontSize:12,fontWeight:700,color:'#fff'}}>PDF</span>
                     </button>
@@ -3097,12 +3096,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const maxBar = Math.max(...pieData.map(d=>d.value), 1);
 
   return (
-    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
+    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#1A1A1A'}}>
       {/* タブ */}
-      <div style={{display:'flex',gap:4,background:'#F4F4F4',borderRadius:10,padding:4,marginBottom:16}}>
+      <div style={{display:'flex',gap:4,background:'#2C2825',borderRadius:10,padding:4,marginBottom:16}}>
         {['財務','原価内訳','月別推移'].map((t,i) => (
           <button key={i} onClick={()=>setActiveTab(i)}
-            style={{flex:1,padding:'8px',border: i===activeTab?'0.5px solid #E8E8E8':'none',borderRadius:7,fontSize:13,fontWeight:500,cursor:'pointer',background:i===activeTab?'#fff':'transparent',color:i===activeTab?'#1C1917':'#888',transition:'all 0.15s'}}>
+            style={{flex:1,padding:'8px',border: i===activeTab?'0.5px solid #E8E8E8':'none',borderRadius:7,fontSize:13,fontWeight:500,cursor:'pointer',background:i===activeTab?'#3D3830':'transparent',color:i===activeTab?'#fff':'rgba(255,255,255,0.4)',transition:'all 0.15s'}}>
             {t}
           </button>
         ))}
@@ -3117,19 +3116,19 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
               {label:'原価',value:`¥${formatCurrency(totals.accumulatedCost)}`,color:'#D85A30'},
               {label:'粗利',value:`¥${formatCurrency(totals.grossProfit)}`,color:marginColor},
             ].map((k,i) => (
-              <div key={i} style={{background:'#F4F4F4',borderRadius:10,padding:'12px 10px'}}>
-                <div style={{fontSize:11,color:'#888',marginBottom:4}}>{k.label}</div>
+              <div key={i} style={{background:'#3D3830',borderRadius:10,padding:'12px 10px'}}>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.5)',marginBottom:4}}>{k.label}</div>
                 <div style={{fontSize:15,fontWeight:500,color:k.color,fontVariantNumeric:'tabular-nums'}}>{k.value}</div>
               </div>
             ))}
           </div>
-          <div style={{background:'#F4F4F4',borderRadius:12,padding:16,marginBottom:12,display:'flex',flexDirection:'column',alignItems:'center'}}>
-            <div style={{fontSize:12,color:'#888',marginBottom:6}}>粗利率 / Gross Margin</div>
+          <div style={{background:'#3D3830',borderRadius:12,padding:16,marginBottom:12,display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <div style={{fontSize:12,color:'rgba(255,255,255,0.5)',marginBottom:6}}>粗利率 / Gross Margin</div>
             <div style={{fontSize:36,fontWeight:500,color:marginColor,fontVariantNumeric:'tabular-nums'}}>{grossMargin}%</div>
-            <div style={{width:'100%',height:8,background:'#E8E8E8',borderRadius:4,overflow:'hidden',margin:'10px 0 6px'}}>
+            <div style={{width:'100%',height:8,background:'rgba(255,255,255,0.12)',borderRadius:4,overflow:'hidden',margin:'10px 0 6px'}}>
               <div style={{width:`${Math.min(100,grossMarginNum)}%`,height:'100%',background:marginColor,borderRadius:4,transition:'width 0.8s ease'}}></div>
             </div>
-            {totals.accumulatedScrap > 0 && <div style={{fontSize:12,color:'#888'}}>スクラップ売上 ¥{formatCurrency(totals.accumulatedScrap)}</div>}
+            {totals.accumulatedScrap > 0 && <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>スクラップ売上 ¥{formatCurrency(totals.accumulatedScrap)}</div>}
           </div>
           <div style={{background:'#F4F4F4',borderRadius:12,padding:14}}>
             <div style={{fontSize:12,color:'#888',marginBottom:10}}>収支内訳</div>
@@ -3139,11 +3138,11 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
               {label:'粗利',value:Math.abs(totals.grossProfit),color:marginColor},
             ].map((b,i) => (
               <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                <div style={{fontSize:11,color:'#888',width:52,textAlign:'right',flexShrink:0}}>{b.label}</div>
-                <div style={{flex:1,height:10,background:'#E8E8E8',borderRadius:5,overflow:'hidden'}}>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.5)',width:52,textAlign:'right',flexShrink:0}}>{b.label}</div>
+                <div style={{flex:1,height:10,background:'rgba(255,255,255,0.12)',borderRadius:5,overflow:'hidden'}}>
                   <div style={{width:`${Math.round((b.value/Math.max(totals.totalRevenue,1))*100)}%`,height:'100%',background:b.color,borderRadius:5,transition:'width 0.8s ease'}}></div>
                 </div>
-                <div style={{fontSize:11,color:'#888',width:60,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(b.value)}</div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.5)',width:60,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(b.value)}</div>
               </div>
             ))}
           </div>
@@ -3172,7 +3171,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             <div style={{fontSize:12,color:'#888',marginBottom:10}}>カテゴリ別金額</div>
             {pieData.sort((a,b)=>b.value-a.value).map((d,i) => (
               <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                <div style={{fontSize:11,color:'#888',width:60,textAlign:'right',flexShrink:0}}>{d.name}</div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.5)',width:60,textAlign:'right',flexShrink:0}}>{d.name}</div>
                 <div style={{flex:1,height:10,background:'#E8E8E8',borderRadius:5,overflow:'hidden'}}>
                   <div style={{width:`${Math.round((d.value/maxBar)*100)}%`,height:'100%',background:COLORS[i%COLORS.length],borderRadius:5}}></div>
                 </div>

@@ -517,14 +517,14 @@ function SplashScreen() {
   return (
     <>
       <style>{`
-        @keyframes splashRotateIn { 0%{opacity:0;transform:scale(0.3) rotate(-360deg)} 70%{opacity:1;transform:scale(1.05) rotate(10deg)} 85%{transform:scale(0.97) rotate(-5deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
-        @keyframes mascotFloat    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes splashBounceIn { 0%{opacity:0;transform:translateY(60px) scale(0.8)} 60%{opacity:1;transform:translateY(-15px) scale(1.05)} 80%{transform:translateY(8px) scale(0.97)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes mascotFloat    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
         @keyframes titleSlide     { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
         .splash-bg { position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999; }
-        .splash-mascot-kun  { opacity:0; animation:splashRotateIn 2s cubic-bezier(0.25,0.46,0.45,0.94) 0.2s forwards, mascotFloat 3s ease-in-out 2.2s infinite; transform-origin:center center; }
-        .splash-mascot-chan { opacity:0; animation:splashRotateIn 2s cubic-bezier(0.25,0.46,0.45,0.94) 0.7s forwards, mascotFloat 3s ease-in-out 2.7s infinite; transform-origin:center center; }
-        .splash-title { animation:titleSlide 0.8s ease-out 1.8s both; }
-        .splash-sub   { animation:titleSlide 0.8s ease-out 2.2s both; }
+        .splash-mascot-kun  { opacity:0; animation:splashBounceIn 0.9s cubic-bezier(0.34,1.56,0.64,1) 0.2s forwards, mascotFloat 2.5s ease-in-out 1.1s infinite; transform-origin:center bottom; }
+        .splash-mascot-chan { opacity:0; animation:splashBounceIn 0.9s cubic-bezier(0.34,1.56,0.64,1) 0.5s forwards, mascotFloat 2.5s ease-in-out 1.4s infinite; transform-origin:center bottom; }
+        .splash-title { animation:titleSlide 0.6s ease-out 0.8s both; }
+        .splash-sub   { animation:titleSlide 0.6s ease-out 1.1s both; }
       `}</style>
       <div className="splash-bg">
         <div style={{display:'flex', gap:24, alignItems:'flex-end', marginBottom:0}}>
@@ -693,6 +693,63 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
   // ★ ナビの maxWidth をコンテンツ(max-w-2xl=672px)と統一
   const NAV_MAX_W = '672px';
+
+  // ========== マスコット常駐ロジック ==========
+  const [kunPos, setKunPos] = React.useState({ x: 40, y: 200 });
+  const [kunDir, setKunDir] = React.useState(1);
+  const [kunAction, setKunAction] = React.useState('walk'); // 'walk' | 'flee'
+  const [chanPos, setChanPos] = React.useState({ x: 200, y: 300 });
+  const [chanDir, setChanDir] = React.useState(-1);
+  const [chanAction, setChanAction] = React.useState('walk'); // 'walk' | 'wink'
+  const [chanWink, setChanWink] = React.useState(false);
+  const kunRef = React.useRef({ x: 40, y: 200, dir: 1, vy: 0, fleeing: false });
+  const chanRef = React.useRef({ x: 200, y: 300, dir: -1, vy: 0 });
+
+  React.useEffect(() => {
+    const W = () => window.innerWidth;
+    const H = () => window.innerHeight;
+    const SIZE = 70;
+    const SPEED = 0.8;
+    const FLEE_SPEED = 5;
+
+    const tick = () => {
+      // くん
+      const k = kunRef.current;
+      const speed = k.fleeing ? FLEE_SPEED : SPEED;
+      k.x += k.dir * speed;
+      if (k.x <= 0) { k.x = 0; k.dir = 1; }
+      if (k.x >= W() - SIZE) { k.x = W() - SIZE; k.dir = -1; }
+      setKunPos({ x: k.x, y: k.y });
+      setKunDir(k.dir);
+
+      // ちゃん
+      const c = chanRef.current;
+      c.x += c.dir * SPEED * 0.7;
+      if (c.x <= 0) { c.x = 0; c.dir = 1; }
+      if (c.x >= W() - SIZE) { c.x = W() - SIZE; c.dir = -1; }
+      setChanPos({ x: c.x, y: c.y });
+      setChanDir(c.dir);
+    };
+
+    const interval = setInterval(tick, 16);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleKunTap = (e) => {
+    e.stopPropagation();
+    const k = kunRef.current;
+    k.fleeing = true;
+    k.dir = k.dir * -1; // 反転して逃げる
+    setKunAction('flee');
+    setTimeout(() => { k.fleeing = false; setKunAction('walk'); }, 2000);
+  };
+
+  const handleChanTap = (e) => {
+    e.stopPropagation();
+    setChanWink(true);
+    setKunAction('wink');
+    setTimeout(() => { setChanWink(false); setKunAction('walk'); }, 1500);
+  };
 
   return (
     <div className="bg-transparent text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
@@ -965,6 +1022,38 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               onMouseLeave={e => e.currentTarget.style.background = '#1e2d4a'}>
               <span style={{ fontSize: '15px' }}>＋</span>現場を追加する
             </button>
+          </div>
+        )}
+      </div>
+
+      {/* ★ マスコット常駐 */}
+      <style>{`
+        @keyframes mascotWalk { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-6px) rotate(3deg)} }
+        @keyframes mascotFlee { 0%,100%{transform:translateY(0) rotate(-8deg) scaleX(-1)} 50%{transform:translateY(-10px) rotate(8deg) scaleX(-1)} }
+        @keyframes mascotWink { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+        @keyframes winkBubble { 0%{opacity:0;transform:scale(0)} 20%{opacity:1;transform:scale(1.1)} 80%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(0)} }
+        .mascot-walk { animation: mascotWalk 0.6s ease-in-out infinite; }
+        .mascot-flee { animation: mascotFlee 0.3s ease-in-out infinite; }
+        .mascot-wink { animation: mascotWink 0.4s ease-in-out 3; }
+        .wink-bubble { animation: winkBubble 1.5s ease-in-out forwards; }
+      `}</style>
+
+      {/* フェイスくん */}
+      <div onClick={handleKunTap} style={{ position:'fixed', left:kunPos.x, bottom:80, zIndex:50, cursor:'pointer', userSelect:'none', transform: kunDir < 0 ? 'scaleX(-1)' : 'scaleX(1)', transition:'transform 0.1s' }}>
+        <img src="/フェイスくん.svg" alt="くん" className={kunAction === 'flee' ? 'mascot-flee' : 'mascot-walk'} style={{width:70,height:70,filter:'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'}} />
+        {kunAction === 'flee' && (
+          <div className="wink-bubble" style={{position:'absolute',top:-30,left:'50%',transform:'translateX(-50%)',background:'#fff',border:'2px solid #6366F1',borderRadius:12,padding:'3px 8px',fontSize:11,fontWeight:700,color:'#6366F1',whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.15)'}}>
+            きゃっ！
+          </div>
+        )}
+      </div>
+
+      {/* フェイスちゃん */}
+      <div onClick={handleChanTap} style={{ position:'fixed', left:chanPos.x, bottom:80, zIndex:50, cursor:'pointer', userSelect:'none', transform: chanDir < 0 ? 'scaleX(-1)' : 'scaleX(1)', transition:'transform 0.1s' }}>
+        <img src="/フェイスちゃん.svg" alt="ちゃん" className={chanWink ? 'mascot-wink' : 'mascot-walk'} style={{width:70,height:70,filter:'drop-shadow(0 4px 8px rgba(0,0,0,0.2))',transition:'filter 0.2s', filter: chanWink ? 'drop-shadow(0 4px 12px rgba(236,72,153,0.6))' : 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'}} />
+        {chanWink && (
+          <div className="wink-bubble" style={{position:'absolute',top:-30,left:'50%',transform:'translateX(-50%)',background:'#fff',border:'2px solid #EC4899',borderRadius:12,padding:'3px 8px',fontSize:11,fontWeight:700,color:'#EC4899',whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.15)'}}>
+            お疲れ様です♪
           </div>
         )}
       </div>

@@ -747,8 +747,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
   const mascotsJSX = (
     <>
-      {/* PC：右のアイコン群の左 */}
-      <div style={{position:'fixed',top:0,right:120,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:45,paddingTop:'env(safe-area-inset-top,0px)'}} className="mascot-pc">
+      {/* PC：右のアイコン群の左 / スマホ：ハンバーガー右で切り替え */}
+      {(() => {
+        const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+        const style = isMobile
+          ? {position:'fixed',top:0,left:48,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:60,paddingTop:'env(safe-area-inset-top,0px)'}
+          : {position:'fixed',top:0,right:120,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:60,paddingTop:'env(safe-area-inset-top,0px)'};
+        return (
+          <div style={style}>
         <div onClick={handleKunTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
           <img src="/フェイスくん.svg" alt="くん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
           {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
@@ -757,19 +763,9 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
           {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
         </div>
-      </div>
-      {/* スマホ：ハンバーガーの右 */}
-      <div style={{position:'fixed',top:0,left:48,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:45,paddingTop:'env(safe-area-inset-top,0px)'}} className="mascot-sp">
-        <div onClick={handleKunTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
-          <img src="/フェイスくん.svg" alt="くん" style={{width:30,height:30,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
-          {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
-        </div>
-        <div onClick={handleChanTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
-          <img src="/フェイスちゃん.svg" alt="ちゃん" style={{width:30,height:30,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
-          {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
-        </div>
-      </div>
-      <style>{`.mascot-pc{display:flex} .mascot-sp{display:none} @media(max-width:768px){.mascot-pc{display:none} .mascot-sp{display:flex}}`}</style>
+          </div>
+        );
+      })()}
     </>
   );
 

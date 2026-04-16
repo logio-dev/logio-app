@@ -262,9 +262,10 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
       borderBottom: '1px solid #E8E8E8',
       paddingTop: 'env(safe-area-inset-top, 0px)',
+      pointerEvents: 'none',
     }}>
       <style>{`@keyframes logio-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
-      <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', height:'52px', paddingLeft:'16px', paddingRight:'16px' }}>
+      <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', height:'52px', paddingLeft:'16px', paddingRight:'16px', pointerEvents:'auto' }}>
         {/* 左：ハンバーガー */}
         <div style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)' }}>
           {showMenuButton && (

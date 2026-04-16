@@ -814,7 +814,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-5 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(200px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
+      <div className="max-w-2xl mx-auto px-5 pt-3 pb-5 w-full" style={{ flex:1, paddingBottom: 'calc(200px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -1540,6 +1540,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const handleCancel = async () => {
     if (confirm('入力内容を破棄してホーム画面に戻りますか？')) {
       if (onReleaseLock) await onReleaseLock();
+      window.scrollTo({top:0,behavior:'instant'});
       onNavigate('home');
     }
   };
@@ -1742,7 +1743,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const AddBtn = ({ onClick, disabled, label, pulse }) => (
-    <button onClick={onClick} disabled={disabled} className={!disabled && pulse ? 'btn-pulse' : ''} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)':'rgba(59,130,246,0.2)', border:`1px solid ${disabled?'rgba(255,255,255,0.08)':'rgba(59,130,246,0.4)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)':'#93C5FD', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px' }}>{label || '＋ 追加する'}</button>
+    <>
+      <style>{`@keyframes add-pulse{0%,100%{box-shadow:0 0 0 0 rgba(153,27,27,0.7)}50%{box-shadow:0 0 0 10px rgba(153,27,27,0)}}`}</style>
+      <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)':'#991B1B', border:`1px solid ${disabled?'rgba(255,255,255,0.08)':'rgba(248,113,113,0.3)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)':'#fff', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px', animation: !disabled ? 'add-pulse 1.8s ease-out infinite' : 'none' }}>{label || '＋ 追加する'}</button>
+    </>
   );
 
   const SectionLabel = ({ ja, en }) => (

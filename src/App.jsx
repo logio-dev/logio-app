@@ -711,11 +711,38 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   // ========== マスコット常駐ロジック ==========
   const [kunPopup, setKunPopup] = React.useState(null);
   const [chanPopup,setChanPopup]= React.useState(null);
-  const kunDrag  = React.useRef({ moved:false });
-  const chanDrag = React.useRef({ moved:false });
+  const isMobile = () => window.innerWidth <= 768;
+  const initKunPos  = () => isMobile() ? {x:48, y:10} : {x:window.innerWidth-120-32, y:10};
+  const initChanPos = () => isMobile() ? {x:90, y:10} : {x:window.innerWidth-80-32,  y:10};
+  const [kunPos,  setKunPos]  = React.useState(initKunPos);
+  const [chanPos, setChanPos] = React.useState(initChanPos);
+  const kunDrag  = React.useRef({ dragging:false, moved:false, ox:0, oy:0 });
+  const chanDrag = React.useRef({ dragging:false, moved:false, ox:0, oy:0 });
+
+  const makeDrag = (dragRef, setPos) => ({
+    onPointerDown: (e) => {
+      e.stopPropagation();
+      dragRef.current.dragging = true;
+      dragRef.current.moved = false;
+      dragRef.current.ox = e.clientX;
+      dragRef.current.oy = e.clientY;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    onPointerMove: (e) => {
+      if (!dragRef.current.dragging) return;
+      const dx = Math.abs(e.clientX - dragRef.current.ox);
+      const dy = Math.abs(e.clientY - dragRef.current.oy);
+      if (dx > 3 || dy > 3) dragRef.current.moved = true;
+      if (!dragRef.current.moved) return;
+      const x = Math.max(0, Math.min(window.innerWidth - 40, e.clientX - 20));
+      const y = Math.max(0, Math.min(window.innerHeight - 40, e.clientY - 20));
+      setPos({ x, y });
+    },
+    onPointerUp: (e) => { dragRef.current.dragging = false; },
+  });
 
   const handleKunTap = (e) => {
-    e.stopPropagation();
+    if (kunDrag.current.moved) return;
     const now = new Date();
     const h = String(now.getHours()).padStart(2,'0');
     const m = String(now.getMinutes()).padStart(2,'0');
@@ -726,7 +753,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   };
 
   const handleChanTap = (e) => {
-    e.stopPropagation();
+    if (chanDrag.current.moved) return;
     setChanPopup('取得中...');
     const fetchWeather = async (lat, lon) => {
       try {
@@ -1024,15 +1051,15 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       </div>
 
       {/* ★ マスコット */}
-      <div style={{position:'fixed',top:0,right:window.innerWidth>768?120:undefined,left:window.innerWidth<=768?48:undefined,height:'52px',display:'flex',alignItems:'center',gap:2,zIndex:60,paddingTop:'env(safe-area-inset-top,0px)'}}>
-        <div onClick={handleKunTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
-          <img src="/face-kun.svg" alt="くん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
-          {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
-        </div>
-        <div onClick={handleChanTap} style={{position:'relative',cursor:'pointer',userSelect:'none',padding:'4px',display:'flex',alignItems:'center'}}>
-          <img src="/face-chan.svg" alt="ちゃん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))'}} />
-          {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
-        </div>
+      <div {...makeDrag(kunDrag, setKunPos)} onClick={handleKunTap}
+        style={{position:'fixed',left:kunPos.x,top:kunPos.y,zIndex:60,cursor:'grab',userSelect:'none',touchAction:'none'}}>
+        <img src="/face-kun.svg" alt="くん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',pointerEvents:'none'}} />
+        {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
+      </div>
+      <div {...makeDrag(chanDrag, setChanPos)} onClick={handleChanTap}
+        style={{position:'fixed',left:chanPos.x,top:chanPos.y,zIndex:60,cursor:'grab',userSelect:'none',touchAction:'none'}}>
+        <img src="/face-chan.svg" alt="ちゃん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',pointerEvents:'none'}} />
+        {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
       </div>
     </div>
   );

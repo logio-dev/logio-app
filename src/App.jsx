@@ -712,8 +712,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const [kunPopup, setKunPopup] = React.useState(null);
   const [chanPopup,setChanPopup]= React.useState(null);
   const isMobile = () => window.innerWidth <= 768;
-  const initKunPos  = () => isMobile() ? {x:48, y:10} : {x:window.innerWidth-120-32, y:10};
-  const initChanPos = () => isMobile() ? {x:90, y:10} : {x:window.innerWidth-80-32,  y:10};
+  const initKunPos  = () => isMobile() ? {x:48, y:10} : {x:window.innerWidth-180, y:10};
+  const initChanPos = () => isMobile() ? {x:90, y:10} : {x:window.innerWidth-142, y:10};
   const [kunPos,  setKunPos]  = React.useState(initKunPos);
   const [chanPos, setChanPos] = React.useState(initChanPos);
   const kunDrag  = React.useRef({ dragging:false, moved:false, ox:0, oy:0 });
@@ -848,7 +848,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               {sites.length === 0 ? (
                 <div className="px-4 py-3 text-sm text-gray-500">現場が登録されていません</div>
               ) : sites.map(site => (
-                <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); }}
+                <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); window.scrollTo({top:0,behavior:'instant'}); }}
                   className="w-full px-4 py-3 text-left flex items-center justify-between transition-colors"
                   style={{ borderBottom: '1px solid #F0F0F0' }}
                   onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
@@ -2999,7 +2999,14 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
 
 // ========== AnalysisPage ==========
 function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  const [activeTab, setActiveTab] = useState(0);
+  const chartRef1 = React.useRef(null);
+  const chartRef2 = React.useRef(null);
+  const chartRef3 = React.useRef(null);
+  const chartInst = React.useRef({});
+
+  // データ計算
   const costByCategory = { '人工費': 0, '車両費': 0, '重機費': 0, '産廃費': 0 };
   reports.forEach(r => {
     if (r.workDetails) {
@@ -3017,15 +3024,17 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   if (projectInfo?.materialsCost) costByCategory['資材費'] = parseFloat(projectInfo.materialsCost) || 0;
 
   const pieData = Object.keys(costByCategory).map(key => ({ name: key, value: costByCategory[key] })).filter(d => d.value > 0);
-  const COLORS = ['#1E3A8A', '#3B82F6', '#60A5FA', '#93C5FD', '#6366F1', '#8B5CF6', '#A78BFA'];
+  const COLORS = ['#1E3A8A','#378ADD','#60A5FA','#6366F1','#A78BFA','#8B5CF6','#93C5FD'];
+  const totalCost = pieData.reduce((s,d) => s+d.value, 0);
 
   const monthlyData = {};
+  const monthlyWorkers = {};
   reports.forEach(r => {
     const month = r.date.substring(0, 7);
-    if (!monthlyData[month]) monthlyData[month] = 0;
+    if (!monthlyData[month]) { monthlyData[month] = 0; monthlyWorkers[month] = 0; }
     if (r.workDetails) {
-      r.workDetails.inHouseWorkers?.forEach(w => monthlyData[month] += w.amount || 0);
-      r.workDetails.outsourcingLabor?.forEach(o => monthlyData[month] += o.amount || 0);
+      r.workDetails.inHouseWorkers?.forEach(w => { monthlyData[month] += w.amount || 0; monthlyWorkers[month] += w.count || 1; });
+      r.workDetails.outsourcingLabor?.forEach(o => { monthlyData[month] += o.amount || 0; monthlyWorkers[month] += o.count || 1; });
       r.workDetails.vehicles?.forEach(v => monthlyData[month] += v.amount || 0);
       r.workDetails.machinery?.forEach(m => monthlyData[month] += m.unitPrice || 0);
       r.workDetails.envItems?.forEach(t => monthlyData[month] += t.amount || 0);
@@ -3033,111 +3042,171 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     }
     r.wasteItems?.forEach(w => monthlyData[month] += w.amount || 0);
   });
-  const barData = Object.keys(monthlyData).sort().map(month => ({ month: month.substring(5), cost: Math.round(monthlyData[month] / 10000) }));
-  const costRatio = totals.totalRevenue > 0 ? ((totals.accumulatedCost / totals.totalRevenue) * 100).toFixed(1) : '0.0';
-  const costRatioNum = parseFloat(costRatio);
+  const sortedMonths = Object.keys(monthlyData).sort();
+  const barLabels = sortedMonths.map(m => m.substring(5)+'月');
+  const barValues = sortedMonths.map(m => Math.round(monthlyData[m] / 10000));
+  const workerValues = sortedMonths.map(m => monthlyWorkers[m]);
+
+  const grossMargin = totals.totalRevenue > 0 ? ((totals.grossProfit / totals.totalRevenue) * 100).toFixed(1) : '0.0';
+  const grossMarginNum = parseFloat(grossMargin);
+  const marginColor = grossMarginNum >= 40 ? '#639922' : grossMarginNum >= 20 ? '#BA7517' : '#D85A30';
+
+  // Chart.js動的ロード
+  React.useEffect(() => {
+    if (window.Chart) return;
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    document.head.appendChild(script);
+  }, []);
+
+  // Chart描画
+  React.useEffect(() => {
+    if (activeTab !== 1 || !chartRef1.current) return;
+    if (chartInst.current.pie) chartInst.current.pie.destroy();
+    if (pieData.length === 0) return;
+    chartInst.current.pie = new window.Chart(chartRef1.current, {
+      type: 'doughnut',
+      data: { labels: pieData.map(d=>d.name), datasets: [{ data: pieData.map(d=>d.value), backgroundColor: COLORS, borderWidth: 0 }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, cutout:'65%' }
+    });
+  }, [activeTab]);
+
+  React.useEffect(() => {
+    if (activeTab !== 2) return;
+    if (barLabels.length === 0) return;
+    setTimeout(() => {
+      if (chartRef2.current) {
+        if (chartInst.current.bar) chartInst.current.bar.destroy();
+        chartInst.current.bar = new window.Chart(chartRef2.current, {
+          type: 'bar',
+          data: { labels: barLabels, datasets: [{ label:'原価(万円)', data: barValues, backgroundColor:'#378ADD', borderRadius:4, borderWidth:0 }] },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:'#888'}}, y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{color:'#888',callback:v=>v+'万'}} } }
+        });
+      }
+      if (chartRef3.current) {
+        if (chartInst.current.line) chartInst.current.line.destroy();
+        chartInst.current.line = new window.Chart(chartRef3.current, {
+          type: 'line',
+          data: { labels: barLabels, datasets: [{ label:'人工', data: workerValues, borderColor:'#639922', backgroundColor:'rgba(99,153,34,0.1)', tension:0.4, fill:true, pointRadius:4, pointBackgroundColor:'#639922' }] },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:'#888'}}, y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{color:'#888',callback:v=>v+'人'}} } }
+        });
+      }
+    }, 50);
+  }, [activeTab]);
+
+  const maxBar = Math.max(...pieData.map(d=>d.value), 1);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 bg-transparent min-h-screen" style={{paddingBottom:"calc(160px + env(safe-area-inset-bottom,0px))"}}>
-      <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#2D2D2D",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
-          <X className="w-4 h-4" />閉じる
-        </button>
+    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
+      {/* タブ */}
+      <div style={{display:'flex',gap:4,background:'#F4F4F4',borderRadius:10,padding:4,marginBottom:16}}>
+        {['財務','原価内訳','月別推移'].map((t,i) => (
+          <button key={i} onClick={()=>setActiveTab(i)}
+            style={{flex:1,padding:'8px',border: i===activeTab?'0.5px solid #E8E8E8':'none',borderRadius:7,fontSize:13,fontWeight:500,cursor:'pointer',background:i===activeTab?'#fff':'transparent',color:i===activeTab?'#1C1917':'#888',transition:'all 0.15s'}}>
+            {t}
+          </button>
+        ))}
       </div>
-      {(projectInfo?.workType || projectInfo?.projectName) && (
-        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: '#2D2D2D', border:'none' }}>
-          <div className="text-white text-lg font-bold leading-relaxed mb-2">{projectInfo.workType || projectInfo.projectName}</div>
-          {projectInfo.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
-        </div>
-      )}
-      <div className="mb-4">
-        <SectionHeader title="財務サマリー / Financial Summary" />
-        <div className="rounded-md p-5 space-y-3" style={{ background: '#2D2D2D' }}>
-          {[
-            { label: '売上 / Revenue', value: totals.totalRevenue, color: 'text-white' },
-            { label: '原価 / Cost', value: totals.accumulatedCost, color: 'text-red-400/80' },
-            ...(totals.accumulatedScrap > 0 ? [{ label: 'スクラップ / Scrap', value: totals.accumulatedScrap, color: 'text-white' }] : []),
-            { label: '粗利 / Profit', value: totals.grossProfit, color: totals.grossProfit >= 0 ? 'text-blue-400/90' : 'text-red-400/80', bold: true },
-          ].map((row, i, arr) => (
-            <div key={i} className={`flex justify-between items-center py-2 ${i < arr.length - 1 ? 'border-b border-white/10' : ''}`}>
-              <span style={{fontSize:11,fontWeight:500,color:'rgba(255,255,255,0.5)'}}>{row.label}</span>
-              <span className={`${row.bold ? 'text-lg' : ''} font-semibold ${row.color} tabular-nums`}>¥{formatCurrency(row.value)}</span>
+
+      {/* 財務タブ */}
+      {activeTab === 0 && (
+        <>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
+            {[
+              {label:'売上',value:`¥${formatCurrency(totals.totalRevenue)}`,color:'#378ADD'},
+              {label:'原価',value:`¥${formatCurrency(totals.accumulatedCost)}`,color:'#D85A30'},
+              {label:'粗利',value:`¥${formatCurrency(totals.grossProfit)}`,color:marginColor},
+            ].map((k,i) => (
+              <div key={i} style={{background:'#F4F4F4',borderRadius:10,padding:'12px 10px'}}>
+                <div style={{fontSize:11,color:'#888',marginBottom:4}}>{k.label}</div>
+                <div style={{fontSize:15,fontWeight:500,color:k.color,fontVariantNumeric:'tabular-nums'}}>{k.value}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{background:'#F4F4F4',borderRadius:12,padding:16,marginBottom:12,display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <div style={{fontSize:12,color:'#888',marginBottom:6}}>粗利率 / Gross Margin</div>
+            <div style={{fontSize:36,fontWeight:500,color:marginColor,fontVariantNumeric:'tabular-nums'}}>{grossMargin}%</div>
+            <div style={{width:'100%',height:8,background:'#E8E8E8',borderRadius:4,overflow:'hidden',margin:'10px 0 6px'}}>
+              <div style={{width:`${Math.min(100,grossMarginNum)}%`,height:'100%',background:marginColor,borderRadius:4,transition:'width 0.8s ease'}}></div>
             </div>
-          ))}
-          <div className="flex justify-between items-center py-2">
-            <span style={{fontSize:11,fontWeight:500,color:'rgba(255,255,255,0.5)'}}>粗利率 / Margin</span>
-            <div className="text-right">
-              <span className="text-lg font-semibold text-white tabular-nums">{totals.grossProfitRateContract}%</span>
-              <span style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginLeft:8}}>(込み: {totals.grossProfitRateWithScrap}%)</span>
-            </div>
+            {totals.accumulatedScrap > 0 && <div style={{fontSize:12,color:'#888'}}>スクラップ売上 ¥{formatCurrency(totals.accumulatedScrap)}</div>}
           </div>
-        </div>
-      </div>
-      <div className="mb-6 rounded-md p-5" style={{ background: '#2D2D2D' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:4}}>原価率 / Cost Ratio</p>
-            <p className={`text-4xl font-semibold tabular-nums ${costRatioNum >= 85 ? 'text-red-400' : costRatioNum >= 70 ? 'text-yellow-400' : 'text-blue-400'}`}>{costRatio}%</p>
-          </div>
-          <div className="text-right">
-            <p style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginBottom:8}}>目安</p>
-            <p className={`text-lg font-semibold ${costRatioNum >= 85 ? 'text-red-400' : costRatioNum >= 70 ? 'text-yellow-400' : 'text-blue-400'}`}>
-              {costRatioNum >= 85 ? '要警戒' : costRatioNum >= 70 ? '注意' : '余裕あり'}
-            </p>
-          </div>
-        </div>
-      </div>
-      <SectionHeader title="原価構成比 / Cost Structure" />
-      {pieData.length > 0 ? (
-        <div className="rounded-md p-5 mb-6" style={{ background: '#2D2D2D' }}>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                {pieData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-              </Pie>
-              <Tooltip formatter={(v) => `¥${formatCurrency(v)}`} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="mt-4 space-y-2 pt-4 border-t border-white/[0.06]">
-            {pieData.map((item, idx) => {
-              const total = pieData.reduce((s, d) => s + d.value, 0);
-              return (
-                <div key={idx} className="flex justify-between items-center">
-                  <span className="text-xs font-medium text-gray-400">{item.name}</span>
-                  <div className="text-right">
-                    <span className="text-sm font-semibold text-white tabular-nums">¥{formatCurrency(item.value)}</span>
-                    <span className="text-xs text-gray-500 ml-2">({((item.value / total) * 100).toFixed(1)}%)</span>
-                  </div>
+          <div style={{background:'#F4F4F4',borderRadius:12,padding:14}}>
+            <div style={{fontSize:12,color:'#888',marginBottom:10}}>収支内訳</div>
+            {[
+              {label:'売上',value:totals.totalRevenue,color:'#378ADD'},
+              {label:'原価',value:totals.accumulatedCost,color:'#D85A30'},
+              {label:'粗利',value:Math.abs(totals.grossProfit),color:marginColor},
+            ].map((b,i) => (
+              <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                <div style={{fontSize:11,color:'#888',width:52,textAlign:'right',flexShrink:0}}>{b.label}</div>
+                <div style={{flex:1,height:10,background:'#E8E8E8',borderRadius:5,overflow:'hidden'}}>
+                  <div style={{width:`${Math.round((b.value/Math.max(totals.totalRevenue,1))*100)}%`,height:'100%',background:b.color,borderRadius:5,transition:'width 0.8s ease'}}></div>
                 </div>
-              );
-            })}
+                <div style={{fontSize:11,color:'#888',width:60,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(b.value)}</div>
+              </div>
+            ))}
           </div>
-        </div>
-      ) : (
-        <div className="rounded-md p-8" style={{ background: '#2D2D2D' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
+        </>
       )}
-      <div className="mt-8">
-        <SectionHeader title="月別原価推移 / Monthly Trend" />
-        {barData.length > 0 ? (
-          <div className="rounded-md p-5" style={{ background: '#2D2D2D' }}>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={barData} margin={{top:5, right:10, left:0, bottom:5}}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="month" stroke="#9CA3AF" tick={{fontSize:11}} />
-                <YAxis stroke="#9CA3AF" tick={{fontSize:11}} width={40} tickFormatter={(v)=>`${v}万`} />
-                <Tooltip formatter={(v) => `${v}万円`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                <Bar dataKey="cost" fill="#3B82F6" radius={[4,4,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
+
+      {/* 原価内訳タブ */}
+      {activeTab === 1 && (
+        <>
+          <div style={{background:'#F4F4F4',borderRadius:12,padding:14,marginBottom:12}}>
+            <div style={{fontSize:12,color:'#888',marginBottom:10}}>原価構成比</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:10}}>
+              {pieData.map((d,i) => (
+                <span key={i} style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'#888'}}>
+                  <span style={{width:8,height:8,borderRadius:2,background:COLORS[i%COLORS.length],flexShrink:0}}></span>
+                  {d.name} {totalCost>0?Math.round((d.value/totalCost)*100):0}%
+                </span>
+              ))}
+            </div>
+            {pieData.length > 0
+              ? <div style={{position:'relative',width:'100%',height:200}}><canvas ref={chartRef1} role="img" aria-label="原価構成比ドーナツグラフ"></canvas></div>
+              : <div style={{textAlign:'center',padding:32,color:'#888',fontSize:13}}>データがありません</div>
+            }
           </div>
-        ) : (
-          <div className="rounded-md p-8" style={{ background: '#2D2D2D' }}><p className="text-center text-gray-500 text-sm">データがありません</p></div>
-        )}
-      </div>
+          <div style={{background:'#F4F4F4',borderRadius:12,padding:14}}>
+            <div style={{fontSize:12,color:'#888',marginBottom:10}}>カテゴリ別金額</div>
+            {pieData.sort((a,b)=>b.value-a.value).map((d,i) => (
+              <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                <div style={{fontSize:11,color:'#888',width:60,textAlign:'right',flexShrink:0}}>{d.name}</div>
+                <div style={{flex:1,height:10,background:'#E8E8E8',borderRadius:5,overflow:'hidden'}}>
+                  <div style={{width:`${Math.round((d.value/maxBar)*100)}%`,height:'100%',background:COLORS[i%COLORS.length],borderRadius:5}}></div>
+                </div>
+                <div style={{fontSize:11,color:'#888',width:60,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(d.value)}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* 月別推移タブ */}
+      {activeTab === 2 && (
+        <>
+          <div style={{background:'#F4F4F4',borderRadius:12,padding:14,marginBottom:12}}>
+            <div style={{fontSize:12,color:'#888',marginBottom:10}}>月別原価推移（万円）</div>
+            {barLabels.length > 0
+              ? <div style={{position:'relative',width:'100%',height:200}}><canvas ref={chartRef2} role="img" aria-label="月別原価推移グラフ"></canvas></div>
+              : <div style={{textAlign:'center',padding:32,color:'#888',fontSize:13}}>データがありません</div>
+            }
+          </div>
+          <div style={{background:'#F4F4F4',borderRadius:12,padding:14}}>
+            <div style={{fontSize:12,color:'#888',marginBottom:10}}>月別人工推移（人）</div>
+            {barLabels.length > 0
+              ? <div style={{position:'relative',width:'100%',height:160}}><canvas ref={chartRef3} role="img" aria-label="月別稼働人工グラフ"></canvas></div>
+              : <div style={{textAlign:'center',padding:32,color:'#888',fontSize:13}}>データがありません</div>
+            }
+          </div>
+        </>
+      )}
+
     </div>
   );
 }
+
 
 // ========== ExportPage ==========
 function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
@@ -4219,7 +4288,7 @@ export default function LOGIOApp() {
             </div>
             <div style={{ display:'flex', flexDirection:'column', gap:'6px', maxHeight:'240px', overflowY:'auto' }}>
               {sites.filter(s => !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(site => (
-                <button key={site.name} onClick={() => { handleSelectSite(site.name); setShowSearchModal(false); setSearchQuery(''); }}
+                <button key={site.name} onClick={() => { handleSelectSite(site.name); setShowSearchModal(false); setSearchQuery(''); window.scrollTo({top:0,behavior:'instant'}); }}
                   style={{ width:'100%', padding:'12px 14px', background: selectedSite === site.name ? '#1A1A1A' : '#F4F4F4', border:'none', borderRadius:'10px', cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                   <div>
                     <p style={{ fontSize:'14px', fontWeight:600, color: selectedSite === site.name ? '#fff' : '#1C1917' }}>{site.name}</p>

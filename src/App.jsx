@@ -815,7 +815,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-4 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
+      <div className="max-w-2xl mx-auto px-5 py-5 w-full" style={{ flex:1, paddingBottom: 'calc(160px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
@@ -827,7 +827,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           ) : (
           <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
             className="w-full px-4 py-3.5 flex items-center justify-between text-left"
-            style={{ background: '#1A1A1A', border: 'none', borderRadius: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+            style={{ background: '#0F2744', border: 'none', borderRadius: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
             {selectedSite ? (
               <div className="flex items-center gap-3">
                 <div className="logio-status-dot" />
@@ -885,7 +885,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         {selectedSite && (
           <>
             {/* 稼働日数・人工数カード */}
-            <div className="mb-3" style={{background:'#fff',borderRadius:18,padding:18,border:'0.5px solid #E8E8E8'}}>
+            <div className="mb-3" style={{background:'#fff',borderRadius:18,padding:18,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
               <style>{`
                 @keyframes breatheSlate {
                   0%,100% { opacity:1; text-shadow:0 0 0px rgba(203,213,225,0); }
@@ -951,7 +951,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               });
 
               return (
-                <div className="overflow-hidden mb-4" style={{background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:'16px'}}>
+                <div className="overflow-hidden mb-4" style={{background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:'18px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
                   <button onClick={()=>setWasteOpen(!wasteOpen)}
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
@@ -1010,7 +1010,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               const dayNames = ['日','月','火','水','木','金','土'];
               const dayName = latestDate ? dayNames[new Date(latestDate).getDay()] : '';
               return (
-                <div className="mb-4" style={{background:'#fff',borderRadius:18,padding:'14px 16px',border:'0.5px solid #E8E8E8'}}>
+                <div className="mb-4" style={{background:'#fff',borderRadius:18,padding:'14px 16px',border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                     <div>
                       <p style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:5}}>REPORT</p>
@@ -3096,12 +3096,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const maxBar = Math.max(...pieData.map(d=>d.value), 1);
 
   return (
-    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(180px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#F5F7FA'}}>
+    <div className="max-w-2xl mx-auto px-4 py-4" style={{paddingBottom:'calc(180px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#F5F7FA'}}>
       {/* 戻るボタン */}
       <button onClick={()=>onNavigate('home')}
         style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:12,fontWeight:600,color:'#1E3A5F',cursor:'pointer',marginBottom:12}}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-        ホームに戻る
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E3A5F" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        閉じる
       </button>
       {/* タブ */}
       <div style={{display:'flex',gap:4,background:'#E8ECF0',borderRadius:10,padding:4,marginBottom:16}}>
@@ -3118,9 +3118,9 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         <>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
             {[
-              {label:'売上',value:`¥${formatCurrency(totals.totalRevenue)}`,color:'#fff'},
-              {label:'原価',value:`¥${formatCurrency(totals.accumulatedCost)}`,color:'rgba(255,255,255,0.7)'},
-              {label:'粗利',value:`¥${formatCurrency(totals.grossProfit)}`,color:'#22D3EE'},
+              {label:'売上',value:`¥${formatCurrency(totals.totalRevenue)}`,color:'#111'},
+              {label:'原価',value:`¥${formatCurrency(totals.accumulatedCost)}`,color:'#D85A30'},
+              {label:'粗利',value:`¥${formatCurrency(totals.grossProfit)}`,color:'#639922'},
             ].map((k,i) => (
               <div key={i} style={{background:'#fff',borderRadius:14,padding:'12px 10px',border:'0.5px solid #E8E8E8'}}>
                 <div style={{fontSize:11,color:'#1E3A5F',marginBottom:4}}>{k.label}</div>
@@ -3134,7 +3134,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             <div style={{width:'100%',height:8,background:'#F0F0F0',borderRadius:4,overflow:'hidden',margin:'10px 0 6px'}}>
               <div style={{width:`${Math.min(100,grossMarginNum)}%`,height:'100%',background:marginColor,borderRadius:4,transition:'width 0.8s ease'}}></div>
             </div>
-            {totals.accumulatedScrap > 0 && <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>スクラップ売上 ¥{formatCurrency(totals.accumulatedScrap)}</div>}
+            {totals.accumulatedScrap > 0 && <div style={{fontSize:12,color:'#888'}}>スクラップ売上 ¥{formatCurrency(totals.accumulatedScrap)}</div>}
           </div>
           <div style={{background:'#2C2825',borderRadius:12,padding:14}}>
             <div style={{fontSize:12,color:'#888',marginBottom:10}}>収支内訳</div>
@@ -3148,7 +3148,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
                 <div style={{flex:1,height:10,background:'#F0F0F0',borderRadius:5,overflow:'hidden'}}>
                   <div style={{width:`${Math.round((b.value/Math.max(totals.totalRevenue,1))*100)}%`,height:'100%',background:b.color,borderRadius:5,transition:'width 0.8s ease'}}></div>
                 </div>
-                <div style={{fontSize:11,color:'rgba(255,255,255,0.5)',width:60,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(b.value)}</div>
+                <div style={{fontSize:11,color:'#888',width:60,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(b.value)}</div>
               </div>
             ))}
           </div>
@@ -4111,7 +4111,7 @@ export default function LOGIOApp() {
             const fabSc = (isFabActive||isFabHover) ? 1.16 : (fabHoverDiff===1||fabDiff===1) ? 1.05 : 1;
             return (
               <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'672px',padding:`0 16px calc(20px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:30,pointerEvents:'none'}}>
-                <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'rgba(10,10,10,0.97)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 20px 60px rgba(0,0,0,0.8)'}}>
+                <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'#0F2744',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 8px 32px rgba(15,39,68,0.4)'}}>
                   {renderDockBtn(navDefs[0], 0)}
                   {renderDockBtn(navDefs[1], 1)}
                   <button onClick={() => handleNavigate('input')} onMouseEnter={()=>setNavHoverId('input')} onMouseLeave={()=>setNavHoverId(null)} onTouchStart={()=>setNavHoverId('input')} onTouchEnd={()=>{setTimeout(()=>setNavHoverId(null),300);}} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>

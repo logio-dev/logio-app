@@ -517,22 +517,21 @@ function SplashScreen() {
   return (
     <>
       <style>{`
-        @keyframes splashFadeIn  { 0%{opacity:0;transform:scale(0.2)} 70%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
-        @keyframes splashFadeOut { 0%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.1)} }
-        @keyframes mascotBounce  { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-18px) rotate(2deg)} }
-        @keyframes mascotWave    { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(15deg)} 75%{transform:rotate(-10deg)} }
-        @keyframes titleSlide    { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
+        @keyframes splashRotateIn { 0%{opacity:0;transform:scale(0.3) rotate(-360deg)} 70%{opacity:1;transform:scale(1.05) rotate(10deg)} 85%{transform:scale(0.97) rotate(-5deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
+        @keyframes mascotFloat    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes titleSlide     { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
         .splash-bg { position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999; }
-        .splash-mascot { animation:splashFadeIn 1.2s cubic-bezier(0.34,1.56,0.64,1) forwards; transform-origin:center center; }
-        .splash-title { animation:titleSlide 0.6s ease-out 1.0s both; }
-        .splash-sub   { animation:titleSlide 0.6s ease-out 1.3s both; }
+        .splash-mascot-kun  { opacity:0; animation:splashRotateIn 2s cubic-bezier(0.25,0.46,0.45,0.94) 0.2s forwards, mascotFloat 3s ease-in-out 2.2s infinite; transform-origin:center center; }
+        .splash-mascot-chan { opacity:0; animation:splashRotateIn 2s cubic-bezier(0.25,0.46,0.45,0.94) 0.7s forwards, mascotFloat 3s ease-in-out 2.7s infinite; transform-origin:center center; }
+        .splash-title { animation:titleSlide 0.8s ease-out 1.8s both; }
+        .splash-sub   { animation:titleSlide 0.8s ease-out 2.2s both; }
       `}</style>
       <div className="splash-bg">
         <div style={{display:'flex', gap:24, alignItems:'flex-end', marginBottom:0}}>
-          <div className="splash-mascot" style={{animationDelay:'0s'}}>
+          <div className="splash-mascot-kun">
             <img src="/フェイスくん.svg" alt="フェイスくん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
           </div>
-          <div className="splash-mascot" style={{animationDelay:'0.25s', animationFillMode:'both', opacity:0}}>
+          <div className="splash-mascot-chan">
             <img src="/フェイスちゃん.svg" alt="フェイスちゃん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
           </div>
         </div>

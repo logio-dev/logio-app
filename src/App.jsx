@@ -712,8 +712,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const [kunPopup, setKunPopup] = React.useState(null);
   const [chanPopup,setChanPopup]= React.useState(null);
   const isMobile = () => window.innerWidth <= 768;
-  const initKunPos  = () => isMobile() ? {x:48, y:10} : {x:window.innerWidth-180, y:10};
-  const initChanPos = () => isMobile() ? {x:90, y:10} : {x:window.innerWidth-142, y:10};
+  const initKunPos  = () => isMobile() ? {x:48, y:10} : {x:window.innerWidth-240, y:10};
+  const initChanPos = () => isMobile() ? {x:90, y:10} : {x:window.innerWidth-196, y:10};
   const [kunPos,  setKunPos]  = React.useState(initKunPos);
   const [chanPos, setChanPos] = React.useState(initChanPos);
   const kunDrag  = React.useRef({ dragging:false, moved:false, ox:0, oy:0 });
@@ -903,7 +903,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 <div style={{width:1,height:50,background:'rgba(255,255,255,0.1)',flexShrink:0,alignSelf:'flex-end',marginBottom:4}}/>
                 <div>
                   <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.12em',fontFamily:'JetBrains Mono,monospace',marginBottom:2}}>WORKERS</div>
-                  <span className="workers-breathe" style={{fontSize:54,fontWeight:700,color:'#22D3EE',lineHeight:1,fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
+                  <span className="workers-breathe" style={{fontSize:54,fontWeight:700,color:'#FBBF24',lineHeight:1,fontVariantNumeric:'tabular-nums',display:'inline-block'}}>{animWorkers}</span>
                   <span style={{fontSize:12,color:'rgba(255,255,255,0.5)',marginLeft:3}}>人</span>
                 </div>
               </div>
@@ -951,19 +951,19 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               });
 
               return (
-                <div className="overflow-hidden mb-4" style={{background:'#F4F4F4',border:'none',borderRadius:'16px'}}>
+                <div className="overflow-hidden mb-4" style={{background:'#2C2825',border:'none',borderRadius:'16px'}}>
                   <button onClick={()=>setWasteOpen(!wasteOpen)}
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
                       <div>
-                        <p style={{ fontSize:11, fontWeight:700, color:'#555', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
+                        <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.5)', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
                         <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
-                          <span style={{ fontSize:'20px', fontWeight:700, color:'#1C1917', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
-                          <span style={{ fontSize:'10px', color:'#999' }}>{typeCount}種類</span>
+                          <span style={{ fontSize:'20px', fontWeight:700, color:'#fff', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
+                          <span style={{ fontSize:'10px', color:'rgba(255,255,255,0.5)' }}>{typeCount}種類</span>
                         </div>
                       </div>
                       <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink:0 }}>
-                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="8"/>
+                        <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8"/>
                         {donutSlices.map((s,i)=>(
                           <circle key={i} cx={CX} cy={CY} r={R} fill="none"
                             stroke={s.color} strokeWidth="8"
@@ -971,12 +971,12 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                             strokeDashoffset={-(s.offset-CIRC/4)}
                             transform={`rotate(-90 ${CX} ${CY})`}/>
                         ))}
-                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="#1C1917">{typeCount}種</text>
+                        <text x={CX} y={CY+3} textAnchor="middle" fontSize="8" fontWeight="700" fill="rgba(255,255,255,0.7)">{typeCount}種</text>
                       </svg>
                     </div>
                     <GradChevron open={wasteOpen} size={16}/>
                   </button>
-                  <div style={{ display: wasteOpen ? 'block' : 'none', borderTop:'1px solid rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: wasteOpen ? 'block' : 'none', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
                     <div style={{ padding:'4px 14px 16px' }}>
                       <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                         {wasteEntries.map(([name,val],i)=>{
@@ -1020,14 +1020,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                         {latestDate && <span style={{fontSize:10,fontWeight:700,color:'#4ade80',background:'rgba(34,197,94,0.15)',padding:'2px 8px',borderRadius:20}}>最新 {mo}/{da}（{dayName}）</span>}
                       </div>
                     </div>
-                    <style>{`@keyframes pdf-shimmer{0%{background-position:-200%}100%{background-position:300%}}`}</style>
+                    <style>{`@keyframes pdf-pulse{0%,100%{box-shadow:0 0 0 0 rgba(153,27,27,0.7)}50%{box-shadow:0 0 0 10px rgba(153,27,27,0)}}`}</style>
                     <button onClick={()=>onViewPdf&&onViewPdf(latest)}
-                      style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',background:'linear-gradient(90deg,#1C1917 0%,#1C1917 35%,rgba(34,211,238,0.35) 50%,#1C1917 65%,#1C1917 100%)',backgroundSize:'200%',border:'1px solid rgba(34,211,238,0.3)',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-shimmer 2s linear infinite'}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',background:'#991B1B',border:'1px solid rgba(248,113,113,0.3)',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-pulse 1.8s ease-out infinite'}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                         <polyline points="14 2 14 8 20 8"/>
                       </svg>
-                      <span style={{fontSize:12,fontWeight:700,color:'#22D3EE'}}>PDF</span>
+                      <span style={{fontSize:12,fontWeight:700,color:'#fff'}}>PDF</span>
                     </button>
                   </div>
                 </div>
@@ -3096,7 +3096,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const maxBar = Math.max(...pieData.map(d=>d.value), 1);
 
   return (
-    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(120px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#1A1A1A'}}>
+    <div style={{maxWidth:480,margin:'0 auto',padding:'16px 16px',paddingBottom:'calc(140px + env(safe-area-inset-bottom,0px))',minHeight:'100vh',background:'#1A1A1A'}}>
       {/* 戻るボタン */}
       <button onClick={()=>onNavigate('home')}
         style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:8,fontSize:12,fontWeight:600,color:'rgba(255,255,255,0.7)',cursor:'pointer',marginBottom:12}}>

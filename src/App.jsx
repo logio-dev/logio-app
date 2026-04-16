@@ -522,14 +522,19 @@ function SplashScreen() {
         @keyframes mascotBounce  { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-18px) rotate(2deg)} }
         @keyframes mascotWave    { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(15deg)} 75%{transform:rotate(-10deg)} }
         @keyframes titleSlide    { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
-        .splash-bg { position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999; }
+        .splash-bg { position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999; }
         .splash-mascot { animation:splashFadeIn 0.8s ease-out forwards, mascotBounce 2s ease-in-out 0.8s infinite; transform-origin:center bottom; }
         .splash-title { animation:titleSlide 0.6s ease-out 0.5s both; }
         .splash-sub   { animation:titleSlide 0.6s ease-out 0.8s both; }
       `}</style>
       <div className="splash-bg">
-        <div className="splash-mascot">
-          <img src="/フェイスくん.svg" alt="フェイスくん" style={{width:160,height:160,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
+        <div style={{display:'flex', gap:24, alignItems:'flex-end', marginBottom:0}}>
+          <div className="splash-mascot" style={{animationDelay:'0s'}}>
+            <img src="/フェイスくん.svg" alt="フェイスくん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
+          </div>
+          <div className="splash-mascot" style={{animationDelay:'0.3s', animationDuration:'2.3s'}}>
+            <img src="/フェイスちゃん.svg" alt="フェイスちゃん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
+          </div>
         </div>
         <div className="splash-title" style={{marginTop:24,textAlign:'center'}}>
           <span style={{fontSize:42,fontWeight:900,letterSpacing:'0.1em',color:'#fff',fontFamily:'Roboto Condensed,-apple-system,sans-serif',textShadow:'0 2px 12px rgba(0,0,0,0.4)'}}>Wac</span>
@@ -3580,7 +3585,7 @@ export default function LOGIOApp() {
 
   useEffect(() => {
     if (!showSplash) return;
-    const timer = setTimeout(() => setShowSplash(false), 2000);
+    const timer = setTimeout(() => setShowSplash(false), 4000);
     return () => clearTimeout(timer);
   }, [showSplash]);
 

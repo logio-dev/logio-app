@@ -1241,7 +1241,88 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
                     {isSelected ? (
                       <>
-                        <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={v=>setProjectInfo({...projectInfo,workType:v})} />
+                        {/* タブ */}
+                        <div style={{display:'flex',gap:4,background:'rgba(255,255,255,0.06)',borderRadius:10,padding:4,marginBottom:16}}>
+                          {[['basic','基本情報'],['order','受注情報']].map(([t,label])=>(
+                            <button key={t} onClick={()=>setProjectInfo({...projectInfo,_formTab:t})}
+                              style={{flex:1,padding:'8px',border:'none',borderRadius:7,fontSize:13,fontWeight:500,cursor:'pointer',
+                                background:(projectInfo._formTab||'basic')===t?'#fff':'transparent',
+                                color:(projectInfo._formTab||'basic')===t?'#111':'rgba(255,255,255,0.5)',transition:'all 0.15s'}}>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* 受注情報タブ */}
+                        {(projectInfo._formTab||'basic')==='order' && (
+                          <div>
+                            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>受注情報</div>
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                              <div>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>入金予定日</label>
+                                <input type="date" value={projectInfo.paymentDueDate||''} onChange={e=>setProjectInfo({...projectInfo,paymentDueDate:e.target.value})}
+                                  style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box'}}/>
+                              </div>
+                              <div>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>支払条件</label>
+                                <input type="text" value={projectInfo.paymentTerms||''} onChange={e=>setProjectInfo({...projectInfo,paymentTerms:e.target.value})} placeholder="例) 翌月末"
+                                  style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                              </div>
+                            </div>
+                            <div style={{marginBottom:16}}>
+                              <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>請求書送付先</label>
+                              <input type="text" value={projectInfo.invoiceRecipient||''} onChange={e=>setProjectInfo({...projectInfo,invoiceRecipient:e.target.value})} placeholder="例) 経理部 田中様"
+                                style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                            </div>
+                            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10,borderTop:'1px solid rgba(255,255,255,0.08)',paddingTop:14}}>下請情報</div>
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
+                              <div>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>下請金額（税抜）</label>
+                                <input type="number" value={projectInfo.subcontractAmount||''} onChange={e=>setProjectInfo({...projectInfo,subcontractAmount:e.target.value})} placeholder="0"
+                                  style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
+                              </div>
+                              <div>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>下請業者</label>
+                                <input type="text" value={projectInfo.subcontractor||''} onChange={e=>setProjectInfo({...projectInfo,subcontractor:e.target.value})} placeholder="例) △△工業"
+                                  style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                              </div>
+                            </div>
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+                              <div>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>支払条件</label>
+                                <input type="text" value={projectInfo.subcontractTerms||''} onChange={e=>setProjectInfo({...projectInfo,subcontractTerms:e.target.value})} placeholder="例) 翌々月末"
+                                  style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                              </div>
+                              <div>
+                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>請求書送付先</label>
+                                <input type="text" value={projectInfo.subcontractInvoiceRecipient||''} onChange={e=>setProjectInfo({...projectInfo,subcontractInvoiceRecipient:e.target.value})} placeholder="例) 経理部"
+                                  style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                              </div>
+                            </div>
+                            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10,borderTop:'1px solid rgba(255,255,255,0.08)',paddingTop:14}}>書類確認</div>
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:16}}>
+                              {[{key:'work',label:'WORK表'},{key:'paperManifest',label:'紙マニフェスト'},{key:'eManifest',label:'電子マニフェスト'},{key:'treatmentContract',label:'処理委託契約書'},{key:'estimateContract',label:'見積契約書'},{key:'signboard',label:'看板'},{key:'preInvoice',label:'着工前請求書'},{key:'postInvoice',label:'着工後請求書'},{key:'safetyDocs',label:'安全書類'}].map(({key,label})=>{
+                                const chk = projectInfo.documentsChecklist || {};
+                                return (
+                                  <button key={key} onClick={()=>setProjectInfo({...projectInfo,documentsChecklist:{...chk,[key]:!chk[key]}})}
+                                    style={{padding:'8px 6px',borderRadius:8,border:`1px solid ${chk[key]?'rgba(34,197,94,0.4)':'rgba(255,255,255,0.1)'}`,background:chk[key]?'rgba(34,197,94,0.15)':'rgba(255,255,255,0.04)',color:chk[key]?'#4ade80':'rgba(255,255,255,0.5)',fontSize:10,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>
+                                    <span style={{fontSize:12}}>{chk[key]?'☑':'☐'}</span>{label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div style={{display:'flex',gap:8,marginTop:8}}>
+                              <button onClick={onSave} style={{flex:1,padding:'13px',background:'linear-gradient(135deg,#2563EB,#4f46e5)',border:'none',color:'#fff',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                                <Save className="w-4 h-4"/>保存
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 基本情報タブ */}
+                        {(projectInfo._formTab||'basic')==='basic' && (
+                          <>
+<Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={v=>setProjectInfo({...projectInfo,workType:v})} />
                         <TextInput label="発注者" labelEn="Client" value={projectInfo.client||''} onChange={v=>setProjectInfo({...projectInfo,client:v})} placeholder="○○建設株式会社" />
                         <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation||''} onChange={v=>setProjectInfo({...projectInfo,workLocation:v})} placeholder="東京都渋谷区..." />
                         <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson||''} onChange={v=>setProjectInfo({...projectInfo,salesPerson:v})} />
@@ -1453,6 +1534,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           </button>
                           <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, padding:'13px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
                         </div>
+
+                          </>
+                        )}
                       </>
                     ) : (
                       /* 非選択現場：基本情報のみ表示 + 「この現場を選択して編集」ボタン */
@@ -3721,7 +3805,10 @@ export default function LOGIOApp() {
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
     contractAmount: '', additionalAmount: '', status: '進行中',
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
-    outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: []
+    outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
+    paymentDueDate: '', paymentTerms: '', invoiceRecipient: '',
+    subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '',
+    documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false}
   };
   const [projectInfo, setProjectInfo] = useState(defaultProjectInfo);
   const [reports, setReports] = useState([]);
@@ -3805,7 +3892,7 @@ export default function LOGIOApp() {
       await sb('project_info').insert({ site_name: siteName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
       setSites(prev => [...prev, { name: siteName, projectNumber, status: '進行中' }]);
       setSelectedSite(siteName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [] });
+      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
       alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); }
   };
@@ -3862,6 +3949,14 @@ export default function LOGIOApp() {
           siteTsubo:  d.site_tsubo  != null ? String(d.site_tsubo)  : '',
           siteUseType: d.site_use_type  || '',
           workCondition: d.work_condition || '',
+          paymentDueDate: d.payment_due_date || '',
+          paymentTerms: d.payment_terms || '',
+          invoiceRecipient: d.invoice_recipient || '',
+          subcontractAmount: d.subcontract_amount != null ? String(d.subcontract_amount) : '',
+          subcontractor: d.subcontractor || '',
+          subcontractTerms: d.subcontract_terms || '',
+          subcontractInvoiceRecipient: d.subcontract_invoice_recipient || '',
+          documentsChecklist: d.documents_checklist || {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false},
         };
         setProjectInfo(info);
         return info;
@@ -3882,6 +3977,14 @@ export default function LOGIOApp() {
     if (!selectedSite) return alert('現場を選択してください');
     try {
       await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined, manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
+          payment_due_date: projectInfo.paymentDueDate || '',
+          payment_terms: projectInfo.paymentTerms || '',
+          invoice_recipient: projectInfo.invoiceRecipient || '',
+          subcontract_amount: projectInfo.subcontractAmount ? parseFloat(projectInfo.subcontractAmount) : null,
+          subcontractor: projectInfo.subcontractor || '',
+          subcontract_terms: projectInfo.subcontractTerms || '',
+          subcontract_invoice_recipient: projectInfo.subcontractInvoiceRecipient || '',
+          documents_checklist: projectInfo.documentsChecklist || null,
         site_tsubo: projectInfo.siteTsubo ? parseFloat(projectInfo.siteTsubo) : null,
         site_use_type: projectInfo.siteUseType || null,
         work_condition: projectInfo.workCondition || null,

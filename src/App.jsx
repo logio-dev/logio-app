@@ -814,14 +814,14 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
       `}</style>
 
       {/* ★ コンテンツ: max-w-2xl(672px) + px-4(16px) */}
-      <div className="max-w-2xl mx-auto px-5 pt-3 pb-5 w-full" style={{ flex:1, paddingBottom: 'calc(200px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
+      <div className="max-w-2xl mx-auto px-5 pt-3 pb-5 w-full" style={{ flex:1, paddingBottom: 'calc(240px + env(safe-area-inset-bottom, 0px))', background:'#F5F7FA' }}>
 
         {/* 現場セレクター */}
         <div className="relative mb-5" ref={dropdownRef}>
           {!sitesReady ? (
             <div style={{ width:'100%', padding:'14px 16px', borderRadius:14, background:'rgba(255,255,255,0.08)', border:'1.5px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:8, height:8, borderRadius:'50%', background:'rgba(255,255,255,0.1)', flexShrink:0 }}/>
-              <div style={{ height:14, width:140, borderRadius:6, background:'rgba(255,255,255,0.08)' }}/>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:'rgba(255,255,255,0.3)', flexShrink:0 }}/>
+              <div style={{ height:14, width:140, borderRadius:6, background:'rgba(255,255,255,0.2)' }}/>
             </div>
           ) : (
           <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}

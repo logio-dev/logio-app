@@ -908,17 +908,17 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               </div>
               <div style={{display:'flex',gap:20,paddingTop:12,borderTop:'1px solid #F0F0F0'}}>
                 <div>
-                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>自社</p>
+                  <p style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>自社</p>
                   <span style={{fontSize:20,fontWeight:700,color:'#111',fontVariantNumeric:'tabular-nums'}}>{totalInHouse}</span>
                   <span style={{fontSize:11,color:'#aaa',marginLeft:2}}>人</span>
                 </div>
                 <div>
-                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>外注</p>
+                  <p style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>外注</p>
                   <span style={{fontSize:20,fontWeight:700,color:'#111',fontVariantNumeric:'tabular-nums'}}>{totalOutsourcing}</span>
                   <span style={{fontSize:11,color:'#aaa',marginLeft:2}}>人</span>
                 </div>
                 <div>
-                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>合計</p>
+                  <p style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.08em',fontFamily:'JetBrains Mono,monospace',marginBottom:3}}>合計</p>
                   <span style={{fontSize:20,fontWeight:700,color:'#111',fontVariantNumeric:'tabular-nums'}}>{totalWorkers}</span>
                   <span style={{fontSize:11,color:'#aaa',marginLeft:2}}>人</span>
                 </div>

@@ -701,7 +701,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const progressPercent = Math.min(100, (elapsedDays / totalDays) * 100);
 
   const selectedSiteData = sites.find(s => s.name === selectedSite);
-  const projectNumber = selectedSiteData?.projectNumber || projectInfo?.projectNumber || '';
+  const projectNumber = projectInfo?.projectNumber || selectedSiteData?.projectNumber || '';
 
   const card = { background: 'var(--bg3)', border: 'none', borderRadius: '12px', transition: 'border-color 0.15s ease' };
 
@@ -955,7 +955,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                     style={{ width:'100%', padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', background:'none', border:'none', cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'12px', flex:1, marginRight:'10px' }}>
                       <div>
-                        <p style={{ fontSize:11, fontWeight:700, color:'#1E3A5F', marginBottom:3, letterSpacing:'.04em' }}>産廃処分費 / WASTE DISPOSAL</p>
+                        <p style={{ fontSize:9, fontWeight:700, color:'#1E3A5F', marginBottom:3, letterSpacing:'.12em', fontFamily:'JetBrains Mono,monospace' }}>産廃処分費 / WASTE DISPOSAL</p>
                         <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
                           <span style={{ fontSize:'20px', fontWeight:700, color:'#111', fontVariantNumeric:'tabular-nums' }}>¥{formatCurrency(wasteTotal)}</span>
                           <span style={{ fontSize:'10px', color:'#aaa' }}>{typeCount}種類</span>
@@ -3763,7 +3763,13 @@ export default function LOGIOApp() {
   const loadSites = async () => {
     try {
       const data = await sb('sites').select('order=created_at.asc');
-      if (Array.isArray(data)) setSites(data.map(s => ({ name: s.name, createdAt: s.created_at, status: s.status, projectNumber: s.project_number || '' })));
+      if (Array.isArray(data)) {
+        // project_infoからproject_numberを取得して統合
+        const piData = await sb('project_info').select('select=site_name,project_number');
+        const piMap = {};
+        if (Array.isArray(piData)) piData.forEach(p => { if (p.site_name) piMap[p.site_name] = p.project_number || ''; });
+        setSites(data.map(s => ({ name: s.name, createdAt: s.created_at, status: s.status, projectNumber: piMap[s.name] || s.project_number || '' })));
+      }
     } catch (error) { console.log('loadSites error:', error); }
     setSitesReady(true);
   };

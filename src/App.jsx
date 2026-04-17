@@ -1312,8 +1312,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               })}
                             </div>
                             <div style={{display:'flex',gap:8,marginTop:8}}>
-                              <button onClick={onSave} style={{flex:1,padding:'13px',background:'linear-gradient(135deg,#2563EB,#4f46e5)',border:'none',color:'#fff',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                              <button onClick={onSave} style={{flex:2,padding:'13px',background:'linear-gradient(135deg,#2563EB,#4f46e5)',border:'none',color:'#fff',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                                 <Save className="w-4 h-4"/>保存
+                              </button>
+                              <button onClick={()=>{ onSave(); setTimeout(()=>onNavigate('order_pdf'),300); }} style={{flex:2,padding:'13px',background:'#991B1B',border:'none',color:'#fff',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                                <FileText className="w-4 h-4"/>受注表PDF
                               </button>
                             </div>
                           </div>
@@ -3398,6 +3401,182 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   );
 }
 
+
+// ========== OrderPDFPage ==========
+function OrderPDFPage({ projectInfo, onNavigate }) {
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+
+  const handlePrint = () => window.print();
+
+  const fmt = (v) => v ? `¥${Number(v).toLocaleString()}` : '—';
+  const chk = projectInfo.documentsChecklist || {};
+  const DOCS = [
+    {key:'work',label:'WORK表'},{key:'paperManifest',label:'紙マニフェスト'},{key:'eManifest',label:'電子マニフェスト'},
+    {key:'treatmentContract',label:'処理委託契約書'},{key:'estimateContract',label:'見積契約書'},{key:'signboard',label:'看板'},
+    {key:'preInvoice',label:'着工前請求書'},{key:'postInvoice',label:'着工後請求書'},{key:'safetyDocs',label:'安全書類'},
+  ];
+  const contractAmtTax = projectInfo.contractAmount ? Math.round(Number(projectInfo.contractAmount) * 1.1) : 0;
+  const subAmtTax = projectInfo.subcontractAmount ? Math.round(Number(projectInfo.subcontractAmount) * 1.1) : 0;
+
+  return (
+    <div style={{background:'#F5F7FA',minHeight:'100vh'}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        @media print {
+          .no-print { display: none !important; }
+          body { background: #fff !important; }
+          .order-pdf { box-shadow: none !important; }
+        }
+        .order-table { border-collapse: collapse; width: 100%; }
+        .order-table th, .order-table td { border: 1px solid #555; padding: 4px 6px; font-size: 11px; }
+        .order-table th { background: #374151; color: #fff; font-weight: 700; text-align: center; }
+      `}</style>
+
+      {/* 操作バー */}
+      <div className="no-print" style={{background:'#1E293B',padding:'10px 16px',display:'flex',gap:8,alignItems:'center'}}>
+        <button onClick={()=>onNavigate('settings')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:12,fontWeight:600,color:'#fff',cursor:'pointer'}}>
+          <X className="w-4 h-4"/>閉じる
+        </button>
+        <button onClick={handlePrint} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#DC2626',border:'none',borderRadius:8,fontSize:12,fontWeight:700,color:'#fff',cursor:'pointer'}}>
+          <FileText className="w-4 h-4"/>印刷 / PDF保存
+        </button>
+      </div>
+
+      {/* 受注表本体 */}
+      <div className="order-pdf" style={{maxWidth:800,margin:'16px auto',background:'#fff',padding:'24px 28px',fontFamily:"'Noto Sans JP', sans-serif",boxShadow:'0 2px 16px rgba(0,0,0,0.1)'}}>
+
+        {/* ヘッダー */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+          <div style={{fontSize:10,color:'#555'}}>社外秘</div>
+          <div style={{fontSize:22,fontWeight:700,textAlign:'center',flex:1}}>受　注　表</div>
+          <div style={{fontSize:10,color:'#555',textAlign:'right'}}>
+            <div>提出日　　　　年　　月　　日</div>
+            <div style={{marginTop:4}}>業務担当者　{projectInfo.salesPerson || '　　　　'}</div>
+          </div>
+        </div>
+
+        {/* 基本情報テーブル */}
+        <table className="order-table" style={{marginBottom:12}}>
+          <tbody>
+            <tr>
+              <th style={{width:100}}>発注先（会社名）</th>
+              <td colSpan={3}>{projectInfo.client || ''}</td>
+              <th style={{width:80}}>施工体制</th>
+              <td style={{width:120}}>自社施工　□</td>
+            </tr>
+            <tr>
+              <th>工事名</th>
+              <td colSpan={5}>{projectInfo.workType || ''} {projectInfo.workLocation ? `（${projectInfo.workLocation}）` : ''}</td>
+            </tr>
+            <tr>
+              <th>施工場所</th>
+              <td colSpan={5}>{projectInfo.workLocation || ''}</td>
+            </tr>
+            <tr>
+              <th>工期</th>
+              <td colSpan={2}>{projectInfo.startDate || ''}</td>
+              <td style={{textAlign:'center',width:20}}>〜</td>
+              <td colSpan={2}>{projectInfo.endDate || ''}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* 受注情報テーブル */}
+        <table className="order-table" style={{marginBottom:12}}>
+          <tbody>
+            <tr>
+              <th rowSpan={4} style={{width:60,writingMode:'vertical-rl',textAlign:'center'}}>受注</th>
+              <th style={{width:100}}>受注金額</th>
+              <td style={{width:120}}>{fmt(projectInfo.contractAmount)}</td>
+              <td style={{fontSize:10,color:'#555'}}>（税込 {fmt(contractAmtTax)}）</td>
+              <th style={{width:80}}>入金予定日</th>
+              <td>{projectInfo.paymentDueDate || ''}</td>
+            </tr>
+            <tr>
+              <th>支払条件</th>
+              <td colSpan={4}>{projectInfo.paymentTerms || ''}</td>
+            </tr>
+            <tr>
+              <th>請求書送付先</th>
+              <td colSpan={4}>{projectInfo.invoiceRecipient || ''}</td>
+            </tr>
+            <tr>
+              <th>領収型的書（添付）</th>
+              <td colSpan={4}></td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* 下請情報テーブル */}
+        <table className="order-table" style={{marginBottom:12}}>
+          <tbody>
+            <tr>
+              <th rowSpan={3} style={{width:60,writingMode:'vertical-rl',textAlign:'center'}}>下請</th>
+              <th style={{width:100}}>下請金額</th>
+              <td style={{width:120}}>{fmt(projectInfo.subcontractAmount)}</td>
+              <td style={{fontSize:10,color:'#555'}}>（税込 {fmt(subAmtTax)}）</td>
+              <th style={{width:80}}>下請業者</th>
+              <td>{projectInfo.subcontractor || ''}</td>
+            </tr>
+            <tr>
+              <th>支払条件</th>
+              <td colSpan={4}>{projectInfo.subcontractTerms || ''}</td>
+            </tr>
+            <tr>
+              <th>請求書送付先</th>
+              <td colSpan={4}>{projectInfo.subcontractInvoiceRecipient || ''}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* マニフェスト */}
+        <div style={{fontWeight:700,fontSize:12,marginBottom:6,borderBottom:'2px solid #374151',paddingBottom:4}}>マニフェスト】</div>
+        <table className="order-table" style={{marginBottom:16}}>
+          <thead>
+            <tr>
+              <th style={{width:'25%'}}>排出</th>
+              <th style={{width:'25%'}}>運搬</th>
+              <th style={{width:'25%'}}>処分</th>
+              <th style={{width:'10%'}}>枚数</th>
+              <th style={{width:'15%'}}>備考</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(projectInfo.manifestRows||[{disposal:'',transport:'',count:''}]).map((row,i)=>(
+              <tr key={i}>
+                <td>{row.disposal||''}</td>
+                <td>{row.transport||''}</td>
+                <td></td>
+                <td style={{textAlign:'center'}}>{row.count ? `${row.count}枚` : ''}</td>
+                <td></td>
+              </tr>
+            ))}
+            {Array.from({length:Math.max(0, 4-(projectInfo.manifestRows||[]).length)}).map((_,i)=>(
+              <tr key={`empty-${i}`}><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* 書類確認 */}
+        <div style={{fontWeight:700,fontSize:12,marginBottom:6,borderBottom:'2px solid #374151',paddingBottom:4}}>書類・その他】</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,marginBottom:16}}>
+          {DOCS.map(({key,label})=>(
+            <div key={key} style={{display:'flex',alignItems:'center',gap:6,fontSize:11}}>
+              <span style={{fontSize:14}}>{chk[key]?'☑':'☐'}</span>{label}
+            </div>
+          ))}
+        </div>
+
+        {/* フッター */}
+        <div style={{borderTop:'1px solid #ccc',paddingTop:10,display:'flex',gap:16,justifyContent:'flex-end',fontSize:10,color:'#555'}}>
+          <div>工事番号：{projectInfo.projectNumber || ''}</div>
+          <div>現場責任者：{projectInfo.siteManager || ''}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ========== ReportPDFPage ==========
 function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const projectInfo = report._projectInfo || propProjectInfo;
@@ -4137,7 +4316,7 @@ export default function LOGIOApp() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent flex" style={{ overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
+    <div className="min-h-screen bg-transparent flex" style={{ overflowX: (currentPage === 'pdf' || currentPage === 'order_pdf') ? 'auto' : 'hidden' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       <div className="flex flex-col flex-1 bg-transparent">
         <Header
@@ -4147,7 +4326,7 @@ export default function LOGIOApp() {
           onSearch={() => setShowSearchModal(true)}
           reloading={reloading}
         />
-        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: currentPage === 'pdf' ? 'auto' : 'hidden' }}>
+        <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: (currentPage === 'pdf' || currentPage === 'order_pdf') ? 'auto' : 'hidden' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
           {selectedSite && ['home','list','analysis'].includes(currentPage) && (() => {
             const navDefs = [
@@ -4254,6 +4433,7 @@ export default function LOGIOApp() {
           {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'pdf' && selectedReport && <ReportPDFPage report={selectedReport} projectInfo={projectInfo} onNavigate={handleNavigate} />}
+          {currentPage === 'order_pdf' && <OrderPDFPage projectInfo={projectInfo} onNavigate={handleNavigate} />}
         </main>
       </div>
 

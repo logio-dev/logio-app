@@ -1118,8 +1118,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#F5F7FA', minHeight:'100vh', color:'#1C1917', overflowX:'hidden', width:'100%' }}>
-      <div style={{ maxWidth:'100%', width:'100%', padding:'16px 16px calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box' }}>
+    <div style={{ background:'#F5F7FA', minHeight:'100vh', color:'#1C1917', width:'100%', maxWidth:'100vw', overflowX:'hidden' }}>
+      <div className="max-w-2xl mx-auto px-4 py-6" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box', width:'100%', maxWidth:'100%' }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -1183,7 +1183,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           return (
             <div key={site.name} style={{
               borderRadius:12, marginBottom:8, overflow:'hidden',
-              width:'100%', maxWidth:'100%', boxSizing:'border-box', minWidth:0,
+              width:'100%', maxWidth:'100vw', boxSizing:'border-box', minWidth:0,
               border: 'none',
               background: '#2D2D2D',
               boxShadow: 'none',

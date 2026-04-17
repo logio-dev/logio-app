@@ -214,7 +214,7 @@ const MASTER_DATA = {
   disposalSites: ['入間緑化', '石坂', 'ワイエム', 'フルハシ', 'ミダック', 'リバー', '二光産業', '木村建設', 'ウムヴェルト', 'ギプロ', '中央環境', '戸部組', '東和アークス'],
   scrapTypes: ['金属くず'],
   buyers: ['小林金属', '高橋金属', 'ナンセイスチール', '服部金属', 'サンビーム', '光田産業', '青木商店', '長沼商事'],
-  statuses: ['進行中', '完了', '中断']
+  statuses: ['着工前', '進行中', '完了']
 };
 
 const VEHICLE_UNIT_PRICES = {
@@ -1118,19 +1118,19 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   };
 
   return (
-    <div style={{ background:'#fff', minHeight:'100vh', color:'#1C1917', width:'100%', maxWidth:'100vw', overflowX:'hidden' }}>
-      <div className="max-w-2xl mx-auto px-4 py-6" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box', width:'100%', maxWidth:'100%' }}>
+    <div style={{ background:'#F5F7FA', minHeight:'100vh', color:'#1C1917' }}>
+      <div className="max-w-2xl mx-auto px-5 py-4" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))' }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
-          style={{ display:'flex', alignItems:'center', gap:6, padding:'10px 18px', borderRadius:10, background:'#2D2D2D', border:'1.5px solid rgba(255,255,255,0.18)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', marginBottom:24, boxShadow:'0 2px 8px rgba(0,0,0,0.18)' }}>
+          style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:10, background:'#fff', border:'0.5px solid #E8E8E8', color:'#1E3A5F', fontSize:12, fontWeight:600, cursor:'pointer', marginBottom:12 }}>
           <X className="w-4 h-4" />閉じる
         </button>
 
         {/* タイトル */}
         <div style={{ marginBottom:24 }}>
-          <div style={{ fontSize:18, fontWeight:800, letterSpacing:'-.02em' }}>現場管理</div>
-          <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>Site Management</div>
+          <div style={{ fontSize:18, fontWeight:800, letterSpacing:'-.02em', color:'#111' }}>現場管理</div>
+          <div style={{ fontSize:10, color:'#888', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>Site Management</div>
         </div>
 
         {/* 新規追加ボタン / フォーム */}
@@ -2756,11 +2756,11 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
         return (
           <div key={month} className="mb-3">
             <button onClick={() => toggleMonth(month)}
-              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#fff', border:'0.5px solid #E8E8E8', borderRadius: isOpen ? '18px 18px 0 0' : '18px', cursor:'pointer' }}>
+              style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 14px', background:'#1E293B', border:'none', borderRadius: isOpen ? '18px 18px 0 0' : '18px', cursor:'pointer' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                <span style={{ fontSize:'14px', fontWeight:700, color:'#111' }}>{fmtMonth(month)}</span>
-                <span style={{ fontSize:'11px', color:'#888', background:'#F0F0F0', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
-                {monthCost > 0 && <span style={{ fontSize:'11px', color:'#1E3A5F', fontWeight:700 }}>¥{formatCurrency(monthCost)}</span>}
+                <span style={{ fontSize:'14px', fontWeight:700, color:'#fff' }}>{fmtMonth(month)}</span>
+                <span style={{ fontSize:'11px', color:'rgba(255,255,255,0.6)', background:'rgba(255,255,255,0.12)', padding:'2px 8px', borderRadius:'10px' }}>{monthReports.length}件</span>
+                {monthCost > 0 && <span style={{ fontSize:'11px', color:'#94A3B8', fontWeight:700 }}>¥{formatCurrency(monthCost)}</span>}
               </div>
               {isOpen ? <GradChevronUp size={16}/> : <GradChevron open={false} size={16}/>}
             </button>
@@ -2938,63 +2938,56 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
 function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8" style={{background:'#1A1A1A',minHeight:'100vh'}}>
-      <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 18px",background:"#2D2D2D",border:"1.5px solid rgba(255,255,255,0.18)",borderRadius:10,fontSize:13,fontWeight:700,color:"#fff",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.18)"}}>
-          <X className="w-4 h-4" />閉じる
-        </button>
-      </div>
-      {(selectedSite || projectInfo?.workType || projectInfo?.projectName) && (
-        <div className="mb-6 px-4 py-4 border rounded-md" style={{ background: '#2D2D2D', border:'none' }}>
-          <div className="text-white text-lg font-bold leading-relaxed mb-2">{selectedSite || projectInfo?.workType || projectInfo?.projectName}</div>
-          {projectInfo?.workType && selectedSite && <div className="text-gray-500 text-xs mb-1">{projectInfo.workType}</div>}
-          {projectInfo?.projectNumber && <div className="text-gray-500 text-xs font-medium tracking-wide">PROJECT NO.: {projectInfo.projectNumber}</div>}
+    <div className="max-w-2xl mx-auto px-5 py-4" style={{background:'#F5F7FA',minHeight:'100vh',paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
+      <button onClick={() => onNavigate('home')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:12,fontWeight:600,color:'#1E3A5F',cursor:'pointer',marginBottom:12}}>
+        <X className="w-4 h-4" />閉じる
+      </button>
+      {(selectedSite || projectInfo?.workType) && (
+        <div style={{background:'#1E293B',borderRadius:18,padding:'14px 16px',marginBottom:10}}>
+          <div style={{fontSize:16,fontWeight:700,color:'#fff',marginBottom:2}}>{selectedSite || projectInfo?.workType}</div>
+          {projectInfo?.projectNumber && <div style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>PROJECT NO.: {projectInfo.projectNumber}</div>}
         </div>
       )}
-      <div className="space-y-6">
-        <div>
-          <h2 style={{fontSize:18,fontWeight:700,color:'#93C5FD',marginBottom:16}}>基本情報</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[['発注者 / CLIENT', projectInfo.client], ['現場住所 / LOCATION', projectInfo.workLocation], ['営業担当 / SALES', projectInfo.salesPerson], ['現場責任者 / MANAGER', projectInfo.siteManager]].map(([label, val]) => (
-              <div key={label}><p style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{label}</p><p style={{fontSize:16,fontWeight:500,color:'#fff'}}>{val || '-'}</p></div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h2 style={{fontSize:18,fontWeight:700,color:'#93C5FD',marginBottom:16}}>期間</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[['開始日 / START DATE', projectInfo.startDate], ['終了日 / END DATE', projectInfo.endDate]].map(([label, val]) => (
-              <div key={label}><p style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{label}</p><p style={{fontSize:16,fontWeight:500,color:'#fff'}}>{val || '-'}</p></div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h2 style={{fontSize:18,fontWeight:700,color:'#93C5FD',marginBottom:16}}>金額</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              ['契約金額 / CONTRACT AMOUNT', projectInfo.contractAmount, 'text-white'],
-              ['追加金額 / ADDITIONAL AMOUNT', projectInfo.additionalAmount, 'text-blue-400'],
-              ...(projectInfo.transferCost ? [['回送費 / TRANSFER COST', projectInfo.transferCost, 'text-gray-300']] : []),
-              ...(projectInfo.leaseCost ? [['リース費 / LEASE COST', projectInfo.leaseCost, 'text-gray-300']] : []),
-              ...(projectInfo.materialsCost ? [['資材費 / MATERIALS COST', projectInfo.materialsCost, 'text-gray-300']] : []),
-            ].map(([label, val, color]) => (
-              <div key={label}><p className="text-xs text-gray-500 mb-1">{label}</p><p className={`text-2xl font-bold ${color}`}>¥{val ? formatCurrency(parseFloat(val)) : '0'}</p></div>
-            ))}
-          </div>
-        </div>
-        <div>
-          <h2 style={{fontSize:18,fontWeight:700,color:'#93C5FD',marginBottom:16}}>ステータス</h2>
-          <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${
-            projectInfo.status === '進行中' ? 'bg-green-900/30 text-green-400' :
-            projectInfo.status === '完了' ? 'bg-blue-900/30 text-blue-400' : 'bg-transparent text-gray-400'
-          }`}>{projectInfo.status || '-'}</span>
+      <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:12}}>基本情報</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          {[['発注者','CLIENT',projectInfo.client],['現場住所','LOCATION',projectInfo.workLocation],['営業担当','SALES',projectInfo.salesPerson],['現場責任者','MANAGER',projectInfo.siteManager]].map(([ja,en,val])=>(
+            <div key={ja}><p style={{fontSize:9,color:'#1E3A5F',fontWeight:700,letterSpacing:'.08em',marginBottom:2}}>{ja} / {en}</p><p style={{fontSize:14,fontWeight:500,color:'#111'}}>{val||'-'}</p></div>
+          ))}
         </div>
       </div>
-      <div className="mt-6">
-        <button onClick={() => onNavigate('settings')} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
-          <Settings className="w-5 h-5" />編集する
-        </button>
+      <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:12}}>期間</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          {[['開始日','START DATE',projectInfo.startDate],['終了日','END DATE',projectInfo.endDate]].map(([ja,en,val])=>(
+            <div key={ja}><p style={{fontSize:9,color:'#1E3A5F',fontWeight:700,letterSpacing:'.08em',marginBottom:2}}>{ja} / {en}</p><p style={{fontSize:14,fontWeight:500,color:'#111'}}>{val||'-'}</p></div>
+          ))}
+        </div>
       </div>
+      <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:12}}>金額</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          {[
+            ['契約金額','CONTRACT',projectInfo.contractAmount,'#111'],
+            ['追加金額','ADDITIONAL',projectInfo.additionalAmount,'#2563EB'],
+            ...(projectInfo.transferCost?[['回送費','TRANSFER',projectInfo.transferCost,'#555']]:[[],[]].slice(0,0)),
+            ...(projectInfo.leaseCost?[['リース費','LEASE',projectInfo.leaseCost,'#555']]:[[],[]].slice(0,0)),
+            ...(projectInfo.materialsCost?[['資材費','MATERIALS',projectInfo.materialsCost,'#555']]:[[],[]].slice(0,0)),
+          ].map(([ja,en,val,color])=>ja&&(
+            <div key={ja}><p style={{fontSize:9,color:'#1E3A5F',fontWeight:700,letterSpacing:'.08em',marginBottom:2}}>{ja} / {en}</p><p style={{fontSize:18,fontWeight:700,color,fontVariantNumeric:'tabular-nums'}}>¥{val?formatCurrency(parseFloat(val)):'0'}</p></div>
+          ))}
+        </div>
+      </div>
+      <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:10}}>ステータス</div>
+        <span style={{display:'inline-block',padding:'4px 14px',borderRadius:20,fontSize:12,fontWeight:700,
+          background:projectInfo.status==='進行中'?'rgba(34,197,94,0.1)':projectInfo.status==='完了'?'rgba(37,99,235,0.1)':projectInfo.status==='着工前'?'rgba(245,158,11,0.1)':'#F0F0F0',
+          color:projectInfo.status==='進行中'?'#16A34A':projectInfo.status==='完了'?'#1D4ED8':projectInfo.status==='着工前'?'#B45309':'#888'
+        }}>{projectInfo.status||'-'}</span>
+      </div>
+      <button onClick={() => onNavigate('settings')} style={{width:'100%',padding:'14px',background:'#1E293B',border:'none',borderRadius:14,fontSize:14,fontWeight:700,color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+        <Settings className="w-4 h-4" />編集する
+      </button>
     </div>
   );
 }
@@ -3274,56 +3267,48 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 min-h-screen" style={{ background: '#1A1A1A' }}>
-      <div className="mb-4">
-        <button onClick={() => onNavigate('home')} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",background:"rgba(255,255,255,0.1)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:8,fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer"}}>
-          <X className="w-4 h-4" />閉じる
+    <div className="max-w-2xl mx-auto px-5 py-4" style={{minHeight:'100vh',background:'#F5F7FA',paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
+      <button onClick={() => onNavigate('home')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:12,fontWeight:600,color:'#1E3A5F',cursor:'pointer',marginBottom:12}}>
+        <X className="w-4 h-4" />閉じる
+      </button>
+      <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#111',marginBottom:12}}>スプレッドシート設定</div>
+        <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:4}}>日報用 GAS URL <span style={{color:'#DC2626'}}>*必須</span></div>
+        <input type="text" value={gasUrl} onChange={(e) => setGasUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
+          style={{width:'100%',padding:'10px 12px',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:13,color:'#111',background:'#F8FAFC',marginBottom:10,boxSizing:'border-box'}} />
+        <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:4}}>月報用 GAS URL</div>
+        <input type="text" value={gasMonthlyUrl} onChange={(e) => setGasMonthlyUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
+          style={{width:'100%',padding:'10px 12px',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:13,color:'#111',background:'#F8FAFC',marginBottom:10,boxSizing:'border-box'}} />
+        <button onClick={handleSaveSettings} style={{padding:'8px 16px',background:'#1E293B',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer'}}>
+          保存
         </button>
       </div>
-      <h1 className="text-3xl font-bold text-white mb-2">EXPORT</h1>
-      <p className="text-gray-400 text-sm mb-8">解体作業日報をGoogle スプレッドシートに出力</p>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: '#2D2D2D', border:'none' }}>
-        <h2 className="text-xl font-semibold text-white mb-4">スプレッドシート設定</h2>
-        <div className="mb-4">
-          <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>日報用 GAS URL <span className="text-red-500">*必須</span></label>
-          <input type="text" value={gasUrl} onChange={(e) => setGasUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
-            className="w-full px-4 py-3 bg-transparent border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-blue-500 mb-4" />
-          <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>月報用 GAS URL</label>
-          <input type="text" value={gasMonthlyUrl} onChange={(e) => setGasMonthlyUrl(e.target.value)} placeholder="例: https://script.google.com/macros/s/..."
-            className="w-full px-4 py-3 bg-transparent border border-white/[0.08] text-white text-sm rounded-md focus:outline-none focus:border-green-500 mb-4" />
-          <button onClick={handleSaveSettings} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            <Save className="inline w-4 h-4 mr-2" />保存
-          </button>
-        </div>
-      </div>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: '#2D2D2D', border:'none' }}>
-        <h2 className="text-xl font-semibold text-white mb-2">月報</h2>
-        <p className="text-gray-400 text-sm mb-4">全現場の月報シートにこの現場の情報を反映します。</p>
+      <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#111',marginBottom:6}}>月報</div>
+        <p style={{fontSize:12,color:'#888',marginBottom:10}}>全現場の月報シートにこの現場の情報を反映します。</p>
         <button onClick={handleExportMonthlyReport} disabled={exporting || !gasUrl || !selectedSite}
-          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${exporting || !gasUrl || !selectedSite ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-green-700 text-white hover:bg-green-600'}`}>
-          <FileText className="w-5 h-5" />{exporting ? '更新中...' : '月報を更新'}
+          style={{width:'100%',padding:'13px',background:exporting||!gasUrl||!selectedSite?'#E8E8E8':'#15803D',border:'none',borderRadius:12,fontSize:14,fontWeight:700,color:exporting||!gasUrl||!selectedSite?'#aaa':'#fff',cursor:exporting||!gasUrl||!selectedSite?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <FileText className="w-4 h-4" />{exporting ? '更新中...' : '月報を更新'}
         </button>
       </div>
-      <div className="border rounded-lg p-6 mb-6" style={{ background: '#2D2D2D', border:'none' }}>
-        <h2 className="text-xl font-semibold text-white mb-2">解体作業日報</h2>
-        <p className="text-gray-400 text-sm mb-4">LOGIO仕様の解体作業日報をスプレッドシートに自動生成します</p>
+      <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#111',marginBottom:6}}>解体作業日報</div>
+        <p style={{fontSize:12,color:'#888',marginBottom:10}}>LOGIO仕様の解体作業日報をスプレッドシートに自動生成します</p>
         <button onClick={handleExportWorkReport} disabled={exporting || !gasUrl || !selectedSite}
-          className={`w-full px-6 py-4 font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${exporting || !gasUrl || !selectedSite ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
-          <FileText className="w-5 h-5" />{exporting ? '作成中...' : '解体作業日報をスプシに作成'}
+          style={{width:'100%',padding:'13px',background:exporting||!gasUrl||!selectedSite?'#E8E8E8':'#1E293B',border:'none',borderRadius:12,fontSize:14,fontWeight:700,color:exporting||!gasUrl||!selectedSite?'#aaa':'#fff',cursor:exporting||!gasUrl||!selectedSite?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <FileText className="w-4 h-4" />{exporting ? '作成中...' : '解体作業日報をスプシに作成'}
         </button>
         {exportStatus && (
-          <div className={`mt-4 p-3 rounded-lg text-sm whitespace-pre-line ${exportStatus.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-800' : exportStatus.startsWith('❌') ? 'bg-red-900/30 text-red-400 border border-red-800' : 'bg-blue-900/30 text-blue-400 border border-blue-800'}`}>{exportStatus}</div>
+          <div style={{marginTop:10,padding:10,borderRadius:10,fontSize:12,background:exportStatus.startsWith('✅')?'rgba(34,197,94,0.08)':exportStatus.startsWith('❌')?'rgba(239,68,68,0.08)':'rgba(59,130,246,0.08)',color:exportStatus.startsWith('✅')?'#16A34A':exportStatus.startsWith('❌')?'#DC2626':'#2563EB',whiteSpace:'pre-line'}}>{exportStatus}</div>
         )}
       </div>
-      <div className="border rounded-lg p-6" style={{ background: '#2D2D2D', border:'none' }}>
-        <h2 className="text-xl font-semibold text-white mb-4">ステータス</h2>
-        <div className="space-y-3 text-sm">
-          {[['最終エクスポート', lastExport || '未実行'], ['現場', selectedSite || '未選択'], ['日報データ', `${reports.length}件`]].map(([label, val]) => (
-            <div key={label} className="flex justify-between py-2 border-b border-white/[0.06] last:border-b-0">
-              <span className="text-gray-400">{label}</span><span className="text-white font-medium">{val}</span>
-            </div>
-          ))}
-        </div>
+      <div style={{background:'#fff',borderRadius:18,padding:16,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#111',marginBottom:10}}>ステータス</div>
+        {[['最終エクスポート', lastExport || '未実行'], ['現場', selectedSite || '未選択'], ['日報データ', `${reports.length}件`]].map(([label, val]) => (
+          <div key={label} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:'0.5px solid #F0F0F0'}}>
+            <span style={{fontSize:12,color:'#888'}}>{label}</span><span style={{fontSize:13,fontWeight:600,color:'#111'}}>{val}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -790,7 +790,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           --main2:   #3D3D3D;
           --accent:  #2D2D2D;
         }
-        html, body { background: #fff !important; }
+        html, body { background: #F5F7FA !important; }
         *, *::before, *::after { box-sizing: border-box; }
         * { font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
         input, select, textarea { font-size: 16px !important; max-width: 100%; width: 100%; box-sizing: border-box; }

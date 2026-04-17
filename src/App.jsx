@@ -775,7 +775,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
 
   return (
-    <div className="bg-transparent text-white" style={{ minHeight:'100vh', display:'flex', flexDirection:'column' }}>
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'#F5F7FA' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
         :root {

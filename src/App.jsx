@@ -826,7 +826,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
           ) : (
           <button onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
             className="w-full px-4 py-3.5 flex items-center justify-between text-left"
-            style={{ background: '#0F2744', border: 'none', borderRadius: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+            style={{ background: '#1E293B', border: 'none', borderRadius: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
             {selectedSite ? (
               <div className="flex items-center gap-3">
                 <div className="logio-status-dot" />
@@ -1048,17 +1048,17 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         )}
       </div>
 
-      {/* ★ マスコット */}
-      <div {...makeDrag(kunDrag, setKunPos)} onClick={handleKunTap}
+      {/* ★ マスコット（非表示中） */}
+      {false && <div {...makeDrag(kunDrag, setKunPos)} onClick={handleKunTap}
         style={{position:'fixed',left:kunPos.x,top:kunPos.y,zIndex:60,cursor:'grab',userSelect:'none',touchAction:'none'}}>
         <img src="/face-kun.svg" alt="くん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',pointerEvents:'none'}} />
         {kunPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{kunPopup}</div>}
-      </div>
-      <div {...makeDrag(chanDrag, setChanPos)} onClick={handleChanTap}
+      </div>}
+      {false && <div {...makeDrag(chanDrag, setChanPos)} onClick={handleChanTap}
         style={{position:'fixed',left:chanPos.x,top:chanPos.y,zIndex:60,cursor:'grab',userSelect:'none',touchAction:'none'}}>
         <img src="/face-chan.svg" alt="ちゃん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',pointerEvents:'none'}} />
         {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
-      </div>
+      </div>}
     </div>
   );
 }
@@ -4114,7 +4114,7 @@ export default function LOGIOApp() {
             const fabSc = (isFabActive||isFabHover) ? 1.16 : (fabHoverDiff===1||fabDiff===1) ? 1.05 : 1;
             return (
               <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'672px',padding:`0 16px calc(20px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:30,pointerEvents:'none'}}>
-                <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'#0F2744',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 8px 32px rgba(15,39,68,0.4)'}}>
+                <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'#1E293B',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 8px 32px rgba(15,39,68,0.4)'}}>
                   {renderDockBtn(navDefs[0], 0)}
                   {renderDockBtn(navDefs[1], 1)}
                   <button onClick={() => handleNavigate('input')} onMouseEnter={()=>setNavHoverId('input')} onMouseLeave={()=>setNavHoverId(null)} onTouchStart={()=>setNavHoverId('input')} onTouchEnd={()=>{setTimeout(()=>setNavHoverId(null),300);}} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>

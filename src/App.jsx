@@ -4120,7 +4120,7 @@ export default function LOGIOApp() {
             const fabSc = (isFabActive||isFabHover) ? 1.16 : (fabHoverDiff===1||fabDiff===1) ? 1.05 : 1;
             return (
               <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'672px',padding:`0 16px calc(20px + env(safe-area-inset-bottom,0px))`,display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:30,pointerEvents:'none'}}>
-                <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'#1E293B',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 8px 32px rgba(15,39,68,0.4)'}}>
+                <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',width:'100%',background:'#1E293B',border:'1px solid rgba(255,255,255,0.08)',borderRadius:20,padding:'10px 8px',pointerEvents:'all',boxShadow:'0 8px 32px rgba(30,41,59,0.5)'}}>
                   {renderDockBtn(navDefs[0], 0)}
                   {renderDockBtn(navDefs[1], 1)}
                   <button onClick={() => handleNavigate('input')} onMouseEnter={()=>setNavHoverId('input')} onMouseLeave={()=>setNavHoverId(null)} onTouchStart={()=>setNavHoverId('input')} onTouchEnd={()=>{setTimeout(()=>setNavHoverId(null),300);}} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',cursor:'pointer',background:'none',border:'none',fontFamily:'inherit',outline:'none',WebkitTapHighlightColor:'transparent',position:'relative',height:60,flex:1}}>

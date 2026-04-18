@@ -1036,15 +1036,60 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                       </div>
                     </div>
                     <style>{`@keyframes pdf-pulse{0%,100%{box-shadow:0 0 0 0 rgba(153,27,27,0.7)}50%{box-shadow:0 0 0 10px rgba(153,27,27,0)}}`}</style>
-                    <button onClick={()=>onViewPdf&&onViewPdf(latest)}
-                      style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',background:'#991B1B',border:'1px solid rgba(248,113,113,0.3)',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-pulse 1.8s ease-out infinite'}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                      </svg>
-                      <span style={{fontSize:12,fontWeight:700,color:'#fff'}}>PDF</span>
-                    </button>
+                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      <button onClick={()=>setHomePhotoOpen&&setHomePhotoOpen(!homePhotoOpen)}
+                        style={{width:40,height:40,borderRadius:10,background:'#1E293B',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      </button>
+                      <button onClick={()=>onViewPdf&&onViewPdf(latest)}
+                        style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',height:40,background:'#991B1B',border:'1px solid rgba(248,113,113,0.3)',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-pulse 1.8s ease-out infinite'}}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span style={{fontSize:12,fontWeight:700,color:'#fff'}}>PDF</span>
+                      </button>
+                    </div>
                   </div>
+                  {homePhotoOpen && (
+                    <div style={{marginTop:12,borderTop:'0.5px solid #E8E8E8',paddingTop:12}}>
+                      <label style={{display:'block',border:'1.5px dashed #CBD5E1',borderRadius:10,padding:16,textAlign:'center',cursor:homePhotoUploading?'not-allowed':'pointer',opacity:homePhotoUploading?0.6:1,marginBottom:10}}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round" style={{display:'block',margin:'0 auto 6px'}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <div style={{fontSize:13,fontWeight:700,color:'#111',marginBottom:2}}>{homePhotoUploading?'アップロード中...':'ここにドロップ、またはアップロード'}</div>
+                        <div style={{fontSize:11,color:'#888'}}>最大5枚 · JPG / PNG / HEIC</div>
+                        <input type="file" accept="image/*" multiple style={{display:'none'}} disabled={homePhotoUploading}
+                          onChange={async(e)=>{
+                            const files=Array.from(e.target.files||[]).slice(0,5-homePhotoUrls.length);
+                            if(!files.length) return;
+                            setHomePhotoUploading(true);
+                            const lat=[...(reports||[])].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+                            try {
+                              const urls=await Promise.all(files.map(f=>uploadPhoto(f,projectInfo?.workLocation||'unknown',lat?.date||'unknown')));
+                              setHomePhotoUrls(prev=>[...prev,...urls]);
+                            } catch(err){alert('アップロード失敗: '+err.message);}
+                            finally{setHomePhotoUploading(false);e.target.value='';}
+                          }}
+                        />
+                      </label>
+                      {homePhotoUrls.length>0 && (
+                        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:10}}>
+                          {homePhotoUrls.map((url,i)=>(
+                            <div key={i} style={{position:'relative',aspectRatio:'1',borderRadius:8,overflow:'hidden',border:'0.5px solid #E8E8E8'}}>
+                              <img src={url} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                              <button onClick={()=>setHomePhotoUrls(homePhotoUrls.filter((_,j)=>j!==i))}
+                                style={{position:'absolute',top:3,right:3,width:18,height:18,borderRadius:'50%',background:'rgba(239,68,68,0.9)',border:'none',color:'#fff',fontSize:10,cursor:'pointer'}}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <textarea value={homeMemo} onChange={e=>setHomeMemo(e.target.value)} placeholder="メモ・備考..."
+                        style={{width:'100%',minHeight:60,resize:'vertical',boxSizing:'border-box',borderRadius:10,border:'0.5px solid #E8E8E8',padding:'10px 12px',fontSize:13,background:'#F8FAFC',color:'#111',outline:'none',fontFamily:'inherit',marginBottom:10}}/>
+                      <button onClick={handleHomeSavePhoto} disabled={homeSaving}
+                        style={{width:'100%',padding:'12px',background:homeSaving?'#E8E8E8':'#1E293B',border:'none',borderRadius:10,fontSize:13,fontWeight:700,color:homeSaving?'#999':'#fff',cursor:homeSaving?'not-allowed':'pointer'}}>
+                        {homeSaving?'保存中...':'最新日報に保存'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -1305,7 +1350,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
                               <div>
                                 <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>下請金額（税抜）</label>
-                                <input type="number" value={projectInfo.subcontractAmount||''} onChange={e=>setProjectInfo({...projectInfo,subcontractAmount:e.target.value})} placeholder="0"
+                                <input type="text" inputMode="numeric"
+                                  value={projectInfo.subcontractAmount ? Number(String(projectInfo.subcontractAmount).replace(/,/g,'')).toLocaleString() : ''}
+                                  onChange={e=>setProjectInfo({...projectInfo,subcontractAmount:e.target.value.replace(/,/g,'')})}
+                                  placeholder="0"
                                   style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
                               </div>
                               <div>
@@ -1369,8 +1417,22 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               style={{ width:'100%', padding:'11px 12px', background:'#2D2D2D', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
                           </div>
                         </div>
-                        <TextInput label="売上（税抜）" labelEn="Revenue" type="number" value={projectInfo.contractAmount||''} onChange={v=>setProjectInfo({...projectInfo,contractAmount:v})} placeholder="5000000" />
-                        <TextInput label="追加金額（税抜）" labelEn="Additional" type="number" value={projectInfo.additionalAmount||''} onChange={v=>setProjectInfo({...projectInfo,additionalAmount:v})} placeholder="0" />
+                        <div style={{marginBottom:20}}>
+                        <label style={{display:'block',fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>売上（税抜） / REVENUE</label>
+                        <input type="text" inputMode="numeric"
+                          value={projectInfo.contractAmount ? Number(String(projectInfo.contractAmount).replace(/,/g,'')).toLocaleString() : ''}
+                          onChange={e=>setProjectInfo({...projectInfo,contractAmount:e.target.value.replace(/,/g,'')})}
+                          placeholder="5,000,000"
+                          style={{width:'100%',padding:'11px 12px',background:'#2D2D2D',border:'none',color:'#fff',borderRadius:8,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
+                      </div>
+                        <div style={{marginBottom:20}}>
+                        <label style={{display:'block',fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>追加金額（税抜） / ADDITIONAL</label>
+                        <input type="text" inputMode="numeric"
+                          value={projectInfo.additionalAmount ? Number(String(projectInfo.additionalAmount).replace(/,/g,'')).toLocaleString() : ''}
+                          onChange={e=>setProjectInfo({...projectInfo,additionalAmount:e.target.value.replace(/,/g,'')})}
+                          placeholder="0"
+                          style={{width:'100%',padding:'11px 12px',background:'#2D2D2D',border:'none',color:'#fff',borderRadius:8,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
+                      </div>
 
                         {/* ★ 現場詳細 */}
                         <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'rgba(59,130,246,0.06)', border:'1px solid rgba(59,130,246,0.2)' }}>
@@ -1652,6 +1714,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [editingScrapIdx, setEditingScrapIdx] = useState(null);
   const [photoUrls, setPhotoUrls] = useState(isEditMode ? (editReport.photoUrls || []) : []);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [memoText, setMemoText] = useState(isEditMode ? (editReport.memo || '') : '');
+  const [photoAccordion, setPhotoAccordion] = useState(false);
   // ★ 半日追加
   const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, inHouseHalfDay: 12500, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
   // ★ dept追加
@@ -1792,7 +1856,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const StepDots = () => (
     <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:'8px', padding:'14px 0 10px' }}>
-      {[1,2,3].map(i => (
+      {[1,2,3,4].map(i => (
         <div key={i} style={{
           width: '8px', height: '8px', borderRadius: '50%',
           background: i < currentStep ? '#22c55e' : i === currentStep ? '#2563EB' : 'var(--border)',
@@ -2841,44 +2905,71 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}
 
-          {/* 写真アップロードセクション */}
-          <div style={{margin:'16px 0',padding:16,background:'#F0F4FF',borderRadius:14,border:'1.5px dashed #93C5FD'}}>
-            <div style={{fontSize:10,fontWeight:700,color:'#1E3A5F',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>📷 現場写真（任意・最大5枚）</div>
-            {photoUrls.length > 0 && (
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
-                {photoUrls.map((url,i)=>(
-                  <div key={i} style={{position:'relative',aspectRatio:'1',borderRadius:8,overflow:'hidden'}}>
-                    <img src={url} alt={`写真${i+1}`} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                    <button onClick={()=>setPhotoUrls(photoUrls.filter((_,j)=>j!==i))}
-                      style={{position:'absolute',top:4,right:4,width:22,height:22,borderRadius:'50%',background:'rgba(239,68,68,0.9)',border:'none',color:'#fff',fontSize:12,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
-                  </div>
-                ))}
+          <BFooter onBack={()=>setCurrentStep(2)} onNext={()=>setCurrentStep(4)} nextLabel="次へ →" />
+        </div>
+      )}
+
+      {/* Step 4 - 写真 & メモ */}
+      {!isEditMode && currentStep === 4 && (
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+
+          {/* アコーディオン：写真 & メモ */}
+          <div style={{background:'#fff',borderRadius:16,border:'0.5px solid #E8E8E8',overflow:'hidden',marginBottom:16}}>
+            <button onClick={()=>setPhotoAccordion(!photoAccordion)}
+              style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'14px 16px',background:'transparent',border:'none',cursor:'pointer',textAlign:'left'}}>
+              <div style={{width:36,height:36,borderRadius:10,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               </div>
-            )}
-            {photoUrls.length < 5 && (
-              <label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px',border:'1.5px dashed #93C5FD',borderRadius:10,cursor:photoUploading?'not-allowed':'pointer',color:'#1E3A5F',fontSize:14,fontWeight:700,opacity:photoUploading?0.6:1,background:'#fff'}}>
-                {photoUploading ? '📤 アップロード中...' : `📷 写真を追加 (${photoUrls.length}/5)`}
-                <input type="file" accept="image/*" multiple style={{display:'none'}} disabled={photoUploading}
-                  onChange={async(e)=>{
-                    const files = Array.from(e.target.files||[]).slice(0, 5-photoUrls.length);
-                    if (!files.length) return;
-                    setPhotoUploading(true);
-                    try {
-                      const urls = await Promise.all(files.map(f=>uploadPhoto(f, projectInfo?.workLocation||'unknown', report.date||'unknown')));
-                      setPhotoUrls(prev=>[...prev,...urls]);
-                    } catch(err) {
-                      alert('写真のアップロードに失敗しました: '+err.message);
-                    } finally {
-                      setPhotoUploading(false);
-                      e.target.value='';
-                    }
-                  }}
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:'#111'}}>現場写真 / SITE PHOTOS & NOTES</div>
+                <div style={{fontSize:11,color:'#888',marginTop:1}}>
+                  {photoUrls.length > 0 || memoText ? `${photoUrls.length > 0 ? `写真 ${photoUrls.length}枚` : ''}${photoUrls.length > 0 && memoText ? ' · ' : ''}${memoText ? 'メモあり' : ''}` : 'タップして写真・メモを追加'}
+                </div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,transform:photoAccordion?'rotate(180deg)':'rotate(0deg)',transition:'transform 0.2s'}}><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+
+            {photoAccordion && (
+              <div style={{borderTop:'0.5px solid #E8E8E8',padding:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#1E3A5F',letterSpacing:'.06em',marginBottom:8}}>写真 / PHOTOS</div>
+                <label style={{display:'block',border:'1.5px dashed #CBD5E1',borderRadius:10,padding:18,textAlign:'center',cursor:photoUploading?'not-allowed':'pointer',opacity:photoUploading?0.6:1,marginBottom:10}}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round" style={{display:'block',margin:'0 auto 8px'}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <div style={{fontSize:13,fontWeight:700,color:'#111',marginBottom:2}}>{photoUploading ? 'アップロード中...' : 'ここにドロップ、またはアップロード'}</div>
+                  <div style={{fontSize:11,color:'#888'}}>最大5枚 · JPG / PNG / HEIC</div>
+                  <input type="file" accept="image/*" multiple style={{display:'none'}} disabled={photoUploading}
+                    onChange={async(e)=>{
+                      const files=Array.from(e.target.files||[]).slice(0,5-photoUrls.length);
+                      if(!files.length) return;
+                      setPhotoUploading(true);
+                      try {
+                        const urls=await Promise.all(files.map(f=>uploadPhoto(f, projectInfo?.workLocation||'unknown', report.date||'unknown')));
+                        setPhotoUrls(prev=>[...prev,...urls]);
+                      } catch(err) { alert('アップロード失敗: '+err.message); }
+                      finally { setPhotoUploading(false); e.target.value=''; }
+                    }}
+                  />
+                </label>
+                {photoUrls.length > 0 && (
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:12}}>
+                    {photoUrls.map((url,i)=>(
+                      <div key={i} style={{position:'relative',aspectRatio:'1',borderRadius:8,overflow:'hidden',border:'0.5px solid #E8E8E8'}}>
+                        <img src={url} alt={`写真${i+1}`} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                        <button onClick={()=>setPhotoUrls(photoUrls.filter((_,j)=>j!==i))}
+                          style={{position:'absolute',top:3,right:3,width:18,height:18,borderRadius:'50%',background:'rgba(239,68,68,0.9)',border:'none',color:'#fff',fontSize:10,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{fontSize:11,fontWeight:700,color:'#1E3A5F',letterSpacing:'.06em',marginBottom:8,marginTop:4}}>メモ / NOTES</div>
+                <textarea value={memoText} onChange={e=>setMemoText(e.target.value)}
+                  placeholder="備考・申し送り・翌日の予定など..."
+                  style={{width:'100%',minHeight:72,resize:'vertical',boxSizing:'border-box',borderRadius:10,border:'0.5px solid #E8E8E8',padding:'10px 12px',fontSize:13,lineHeight:1.6,background:'#F8FAFC',color:'#111',outline:'none',fontFamily:'inherit'}}
                 />
-              </label>
+              </div>
             )}
           </div>
 
-          <BFooter onBack={()=>setCurrentStep(2)} onNext={handleSave} nextLabel={isSaving ? '保存中...' : isEditMode ? '更新する ✓' : '保存する ✓'} nextColor="#16a34a" disabled={isSaving} />
+          <BFooter onBack={()=>setCurrentStep(3)} onNext={handleSave} nextLabel={isSaving?'保存中...':'保存する ✓'} nextColor="#16a34a" disabled={isSaving} />
         </div>
       )}
     </div>
@@ -3048,6 +3139,29 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
               )}
             </div>
           )}
+          {/* 写真・メモ表示 */}
+          {(report.photoUrls?.length > 0 || report.memo) && (
+            <div style={{marginBottom:10}}>
+              {report.photoUrls?.length > 0 && (
+                <div style={{marginBottom:8}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:6}}>現場写真</div>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
+                    {report.photoUrls.map((url,i)=>(
+                      <div key={i} style={{aspectRatio:'1',borderRadius:8,overflow:'hidden',border:'0.5px solid #E8E8E8'}}>
+                        <img src={url} alt={`写真${i+1}`} style={{width:'100%',height:'100%',objectFit:'cover',cursor:'pointer'}} onClick={()=>window.open(url,'_blank')}/>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {report.memo && (
+                <div style={{padding:'8px 12px',background:'#F8FAFC',borderRadius:10,border:'0.5px solid #E8E8E8'}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:4}}>メモ</div>
+                  <div style={{fontSize:12,color:'#555',lineHeight:1.6,whiteSpace:'pre-wrap'}}>{report.memo}</div>
+                </div>
+              )}
+            </div>
+          )}
           {report.wasteItems?.length > 0 && (
             <div className="mb-4 rounded p-2" style={{ background: '#2D2D2D' }}>
               <p className="text-xs font-semibold text-red-400 mb-2">廃棄物: {report.wasteItems.length}件 / ¥{formatCurrency(report.wasteItems.reduce((s,w)=>s+w.amount,0))}</p>
@@ -3127,7 +3241,15 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
         <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:12}}>基本情報</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
           {[['発注者','CLIENT',projectInfo.client],['現場住所','LOCATION',projectInfo.workLocation],['営業担当','SALES',projectInfo.salesPerson],['現場責任者','MANAGER',projectInfo.siteManager]].map(([ja,en,val])=>(
-            <div key={ja}><p style={{fontSize:9,color:'#1E3A5F',fontWeight:700,letterSpacing:'.08em',marginBottom:2}}>{ja} / {en}</p><p style={{fontSize:14,fontWeight:500,color:'#111'}}>{val||'-'}</p></div>
+            <div key={ja}><p style={{fontSize:9,color:'#1E3A5F',fontWeight:700,letterSpacing:'.08em',marginBottom:2}}>{ja} / {en}</p>
+              {ja==='現場住所' && val ? (
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`} target="_blank" rel="noopener noreferrer"
+                  style={{fontSize:14,fontWeight:500,color:'#2563EB',textDecoration:'none',display:'flex',alignItems:'center',gap:4}}>
+                  {val}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+              ) : <p style={{fontSize:14,fontWeight:500,color:'#111'}}>{val||'-'}</p>}
+            </div>
           ))}
         </div>
       </div>
@@ -4229,7 +4351,7 @@ export default function LOGIOApp() {
   const loadReports = async (siteName) => {
     try {
       const data = await sb('reports').select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
-      if (Array.isArray(data)) setReports(data.map(r => ({ id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at, updatedBy: r.updated_by || '', updatedAt: r.updated_at || r.created_at || '', photoUrls: r.photo_urls || [] })));
+      if (Array.isArray(data)) setReports(data.map(r => ({ id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at, updatedBy: r.updated_by || '', updatedAt: r.updated_at || r.created_at || '', photoUrls: r.photo_urls || [], memo: r.memo || '' })));
       else setReports([]);
     } catch (error) { setReports([]); }
   };
@@ -4265,7 +4387,7 @@ export default function LOGIOApp() {
       const updatedBy = reportData.recorder || currentUser?.userId || '';
       // updated_by・updated_atカラムがない場合も保存できるよう try/catch で2段階対応
       try {
-        await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now, photo_urls: reportData.photoUrls || [] });
+        await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now, photo_urls: reportData.photoUrls || [], memo: reportData.memo || '' });
       } catch(e) {
         // カラムなしの場合はupdated_by・updated_atなしで再試行
         await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
@@ -4374,6 +4496,12 @@ export default function LOGIOApp() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
   window.__navigateEdit = (report) => { setEditingReport(report); setCurrentPage('edit'); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  window.__updateReportPhotos = async (reportId, photoUrls, memo) => {
+    const now = new Date().toISOString();
+    await sb('reports').update({ photo_urls: photoUrls, memo: memo, updated_at: now }, `id=eq.${reportId}`);
+    if (selectedSite) await loadReports(selectedSite);
+  };
+
   window.__navigatePdf = async (report) => {
     let info = projectInfo;
     const fetched = await loadProjectInfo(selectedSite);

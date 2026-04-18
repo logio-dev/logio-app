@@ -1068,12 +1068,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
   const [openCard, setOpenCard] = useState(null);
+  const [showAllSites, setShowAllSites] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
-  const [editingName, setEditingName] = useState(null); // 編集中のsite.name
+  const [editingName, setEditingName] = useState(null);
   const [editNameVal, setEditNameVal] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; if (selectedSite) setOpenCard(selectedSite); }, []);
-  useEffect(() => { if (selectedSite) setOpenCard(selectedSite); }, [selectedSite]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const handleAddSite = () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
@@ -1170,7 +1170,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         )}
 
         {/* アコーディオンカード */}
-        {sites.filter(s => !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((site) => {
+        {(()=>{
+          const filtered = sites.filter(s => !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+          const displayed = (searchQuery || showAllSites) ? filtered : filtered.slice(0, 5);
+          const remaining = filtered.length - displayed.length;
+          return (<>
+            {displayed.map((site) => {
           const isOpen = openCard === site.name;
           const pjNo = site.projectNumber || (site.projectInfo && site.projectInfo.projectNumber) || '';
           // このカードが選択中現場かどうか
@@ -1194,6 +1199,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               border: 'none',
               background: '#2D2D2D',
               boxShadow: 'none',
+              outline: isSelected ? '2px solid #1E293B' : 'none',
             }}>
               {/* カードヘッダー */}
               <button onClick={() => {
@@ -1569,7 +1575,15 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               )}
             </div>
           );
-        })}
+            })}
+            {remaining > 0 && (
+              <button onClick={()=>setShowAllSites(true)}
+                style={{width:'100%',padding:'10px',border:'1px dashed #CBD5E1',borderRadius:8,background:'transparent',color:'#1E3A5F',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:4,fontFamily:'inherit'}}>
+                ＋ 残り{remaining}件を表示
+              </button>
+            )}
+          </>);
+        })()}
 
         {sites.length === 0 && (
           <div style={{ textAlign:'center', padding:'40px 0', color:'rgba(255,255,255,0.45)', fontSize:13 }}>

@@ -1067,12 +1067,13 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
-  const [openCard, setOpenCard] = useState(null);
+  const [openCard, setOpenCard] = useState(selectedSite || null);
   const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
   const [editingName, setEditingName] = useState(null); // 編集中のsite.name
   const [editNameVal, setEditNameVal] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
+  useEffect(() => { if (selectedSite) setOpenCard(selectedSite); }, [selectedSite]);
 
   const handleAddSite = () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
@@ -1157,9 +1158,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         {/* セクションラベル */}
         {sites.length > 0 && (
           <div style={{position:'relative',marginBottom:10}}>
-            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',opacity:0.4,pointerEvents:'none'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',opacity:0.4,pointerEvents:'none'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E293B" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="現場名を検索..."
-              style={{width:'100%',padding:'9px 12px 9px 32px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'#fff',fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+              style={{width:'100%',padding:'9px 12px 9px 32px',borderRadius:9,border:'0.5px solid #E8E8E8',background:'#fff',color:'#111',fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit',boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}/>
           </div>
         )}
         {sites.length > 0 && (
@@ -1263,17 +1264,15 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         {(projectInfo._formTab||'basic')==='order' && (
                           <div>
                             <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>受注情報</div>
-                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
-                              <div>
-                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>入金予定日</label>
-                                <input type="date" value={projectInfo.paymentDueDate||''} onChange={e=>setProjectInfo({...projectInfo,paymentDueDate:e.target.value})}
-                                  style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box'}}/>
-                              </div>
-                              <div>
-                                <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>支払条件</label>
-                                <input type="text" value={projectInfo.paymentTerms||''} onChange={e=>setProjectInfo({...projectInfo,paymentTerms:e.target.value})} placeholder="例) 翌月末"
-                                  style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
-                              </div>
+                            <div style={{marginBottom:10}}>
+                              <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>入金予定日</label>
+                              <input type="date" value={projectInfo.paymentDueDate||''} onChange={e=>setProjectInfo({...projectInfo,paymentDueDate:e.target.value})}
+                                style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box'}}/>
+                            </div>
+                            <div style={{marginBottom:10}}>
+                              <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>支払条件</label>
+                              <input type="text" value={projectInfo.paymentTerms||''} onChange={e=>setProjectInfo({...projectInfo,paymentTerms:e.target.value})} placeholder="例) 翌月末"
+                                style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
                             </div>
                             <div style={{marginBottom:16}}>
                               <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>請求書送付先</label>

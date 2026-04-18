@@ -4,6 +4,22 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 
 
 // ========== Supabase設定 ==========
+// ★ Storage アップロード
+async function uploadPhoto(file, siteName, date) {
+  const ext = file.name.split('.').pop();
+  const path = `${siteName}/${date}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const res = await fetch(`https://ruomhthswdxylopkhmnh.supabase.co/storage/v1/object/report-photos/${encodeURIComponent(path)}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE`,
+      'Content-Type': file.type,
+    },
+    body: file,
+  });
+  if (!res.ok) throw new Error('Upload failed: ' + res.status);
+  return `https://ruomhthswdxylopkhmnh.supabase.co/storage/v1/object/public/report-photos/${encodeURIComponent(path)}`;
+}
+
 function sb(table) {
   const _url = 'https://ruomhthswdxylopkhmnh.supabase.co';
   const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
@@ -1634,6 +1650,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [scrapItems, setScrapItems] = useState(isEditMode ? (editReport.scrapItems || []) : []);
   const [editingWasteIdx, setEditingWasteIdx] = useState(null);
   const [editingScrapIdx, setEditingScrapIdx] = useState(null);
+  const [photoUrls, setPhotoUrls] = useState(isEditMode ? (editReport.photoUrls || []) : []);
+  const [photoUploading, setPhotoUploading] = useState(false);
   // ★ 半日追加
   const unitPrices = { inHouseDaytime: 25000, inHouseNighttime: 35000, inHouseNightLoading: 25000, inHouseHalfDay: 12500, outsourcingDaytime: 25000, outsourcingNighttime: 30000 };
   // ★ dept追加
@@ -2823,6 +2841,43 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}
 
+          {/* 写真アップロードセクション */}
+          <div style={{margin:'16px 0',padding:16,background:'rgba(255,255,255,0.04)',borderRadius:14,border:'1px solid rgba(255,255,255,0.08)'}}>
+            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.5)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>📷 現場写真（任意・最大5枚）</div>
+            {photoUrls.length > 0 && (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
+                {photoUrls.map((url,i)=>(
+                  <div key={i} style={{position:'relative',aspectRatio:'1',borderRadius:8,overflow:'hidden'}}>
+                    <img src={url} alt={`写真${i+1}`} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                    <button onClick={()=>setPhotoUrls(photoUrls.filter((_,j)=>j!==i))}
+                      style={{position:'absolute',top:4,right:4,width:22,height:22,borderRadius:'50%',background:'rgba(239,68,68,0.9)',border:'none',color:'#fff',fontSize:12,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {photoUrls.length < 5 && (
+              <label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px',border:'1.5px dashed rgba(255,255,255,0.2)',borderRadius:10,cursor:photoUploading?'not-allowed':'pointer',color:'rgba(255,255,255,0.5)',fontSize:13,fontWeight:600,opacity:photoUploading?0.6:1}}>
+                {photoUploading ? '📤 アップロード中...' : `📷 写真を追加 (${photoUrls.length}/5)`}
+                <input type="file" accept="image/*" multiple style={{display:'none'}} disabled={photoUploading}
+                  onChange={async(e)=>{
+                    const files = Array.from(e.target.files||[]).slice(0, 5-photoUrls.length);
+                    if (!files.length) return;
+                    setPhotoUploading(true);
+                    try {
+                      const urls = await Promise.all(files.map(f=>uploadPhoto(f, projectInfo?.workLocation||'unknown', report.date||'unknown')));
+                      setPhotoUrls(prev=>[...prev,...urls]);
+                    } catch(err) {
+                      alert('写真のアップロードに失敗しました: '+err.message);
+                    } finally {
+                      setPhotoUploading(false);
+                      e.target.value='';
+                    }
+                  }}
+                />
+              </label>
+            )}
+          </div>
+
           <BFooter onBack={()=>setCurrentStep(2)} onNext={handleSave} nextLabel={isSaving ? '保存中...' : isEditMode ? '更新する ✓' : '保存する ✓'} nextColor="#16a34a" disabled={isSaving} />
         </div>
       )}
@@ -2898,8 +2953,8 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
       <button onClick={() => setIsOpen(!isOpen)} className="w-full px-4 py-3 flex items-center justify-between hover:bg-transparent/50 transition-colors">
         <div className="text-left flex-1">
           <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <span style={{fontSize:15,fontWeight:700,color:"#111"}}>{report.date}</span>
-            <span style={{fontSize:12,color:"#aaa"}}>({getDayOfWeek(report.date)})</span>
+            <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>{report.date}</span>
+            <span style={{fontSize:12,color:"rgba(255,255,255,0.6)"}}>({getDayOfWeek(report.date)})</span>
             
             {/* 記入者＋更新日時 */}
             <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'rgba(255,255,255,0.65)', fontFamily:'monospace', background:'#E8E8E8', border:'none', padding:'2px 7px', borderRadius:99, color:'#555' }}>
@@ -4174,7 +4229,7 @@ export default function LOGIOApp() {
   const loadReports = async (siteName) => {
     try {
       const data = await sb('reports').select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
-      if (Array.isArray(data)) setReports(data.map(r => ({ id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at, updatedBy: r.updated_by || '', updatedAt: r.updated_at || r.created_at || '' })));
+      if (Array.isArray(data)) setReports(data.map(r => ({ id: r.id, siteName: r.site_name, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at, updatedBy: r.updated_by || '', updatedAt: r.updated_at || r.created_at || '', photoUrls: r.photo_urls || [] })));
       else setReports([]);
     } catch (error) { setReports([]); }
   };
@@ -4210,7 +4265,7 @@ export default function LOGIOApp() {
       const updatedBy = reportData.recorder || currentUser?.userId || '';
       // updated_by・updated_atカラムがない場合も保存できるよう try/catch で2段階対応
       try {
-        await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now });
+        await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now, photo_urls: reportData.photoUrls || [] });
       } catch(e) {
         // カラムなしの場合はupdated_by・updated_atなしで再試行
         await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });

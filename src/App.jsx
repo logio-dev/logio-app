@@ -1067,12 +1067,12 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
-  const [openCard, setOpenCard] = useState(selectedSite || null);
+  const [openCard, setOpenCard] = useState(null);
   const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
   const [editingName, setEditingName] = useState(null); // 編集中のsite.name
   const [editNameVal, setEditNameVal] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; if (selectedSite) setOpenCard(selectedSite); }, []);
   useEffect(() => { if (selectedSite) setOpenCard(selectedSite); }, [selectedSite]);
 
   const handleAddSite = () => {

@@ -2842,8 +2842,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}
 
           {/* 写真アップロードセクション */}
-          <div style={{margin:'16px 0',padding:16,background:'rgba(255,255,255,0.08)',borderRadius:14,border:'1.5px dashed rgba(255,255,255,0.25)'}}>
-            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.7)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>📷 現場写真（任意・最大5枚）</div>
+          <div style={{margin:'16px 0',padding:16,background:'#F0F4FF',borderRadius:14,border:'1.5px dashed #93C5FD'}}>
+            <div style={{fontSize:10,fontWeight:700,color:'#1E3A5F',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>📷 現場写真（任意・最大5枚）</div>
             {photoUrls.length > 0 && (
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
                 {photoUrls.map((url,i)=>(
@@ -2856,7 +2856,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
             )}
             {photoUrls.length < 5 && (
-              <label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px',border:'1.5px dashed rgba(255,255,255,0.2)',borderRadius:10,cursor:photoUploading?'not-allowed':'pointer',color:'rgba(255,255,255,0.5)',fontSize:13,fontWeight:600,opacity:photoUploading?0.6:1}}>
+              <label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px',border:'1.5px dashed #93C5FD',borderRadius:10,cursor:photoUploading?'not-allowed':'pointer',color:'#1E3A5F',fontSize:14,fontWeight:700,opacity:photoUploading?0.6:1,background:'#fff'}}>
                 {photoUploading ? '📤 アップロード中...' : `📷 写真を追加 (${photoUrls.length}/5)`}
                 <input type="file" accept="image/*" multiple style={{display:'none'}} disabled={photoUploading}
                   onChange={async(e)=>{

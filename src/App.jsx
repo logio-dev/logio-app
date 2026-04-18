@@ -1071,7 +1071,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   const [expenseForm, setExpenseForm] = useState({ name: '', amount: '' });
   const [editingName, setEditingName] = useState(null); // 編集中のsite.name
   const [editNameVal, setEditNameVal] = useState('');
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const handleAddSite = () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
@@ -1155,15 +1156,20 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
         {/* セクションラベル */}
         {sites.length > 0 && (
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-            <span style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.1em', whiteSpace:'nowrap' }}>登録済み現場</span>
-            <span style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', background:'#2D2D2D', border:'none', padding:'2px 8px', borderRadius:99 }}>{sites.length}件</span>
-            <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.08)' }}/>
+          <div style={{position:'relative',marginBottom:10}}>
+            <svg style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',opacity:0.4,pointerEvents:'none'}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="現場名を検索..."
+              style={{width:'100%',padding:'9px 12px 9px 32px',borderRadius:9,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'#fff',fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+          </div>
+        )}
+        {sites.length > 0 && (
+          <div style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginBottom:8,paddingLeft:2}}>
+            {searchQuery ? `${sites.filter(s=>s.name.toLowerCase().includes(searchQuery.toLowerCase())).length}件 / ${sites.length}件` : `${sites.length}件`}
           </div>
         )}
 
         {/* アコーディオンカード */}
-        {sites.map((site) => {
+        {sites.filter(s => !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((site) => {
           const isOpen = openCard === site.name;
           const pjNo = site.projectNumber || (site.projectInfo && site.projectInfo.projectNumber) || '';
           // このカードが選択中現場かどうか
@@ -2809,7 +2815,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
   const [filterCategory, setFilterCategory] = useState('');
   const [openMonths, setOpenMonths] = useState({});
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const filteredReports = reports.filter(r => {
     const category = r.workDetails?.workCategory || r.workCategory;
@@ -3026,13 +3032,21 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
   return (
     <div className="max-w-2xl mx-auto px-5 py-4" style={{background:'#F5F7FA',minHeight:'100vh',paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
-      <button onClick={() => onNavigate('home')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:12,fontWeight:600,color:'#1E3A5F',cursor:'pointer',marginBottom:12}}>
+      <button onClick={() => { window.scrollTo({top:0,behavior:'instant'}); document.body.scrollTop=0; document.documentElement.scrollTop=0; onNavigate('home'); }} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:12,fontWeight:600,color:'#1E3A5F',cursor:'pointer',marginBottom:12}}>
         <X className="w-4 h-4" />閉じる
       </button>
       {(selectedSite || projectInfo?.workType) && (
-        <div style={{background:'#1E293B',borderRadius:18,padding:'14px 16px',marginBottom:10}}>
-          <div style={{fontSize:16,fontWeight:700,color:'#fff',marginBottom:2}}>{selectedSite || projectInfo?.workType}</div>
-          {projectInfo?.projectNumber && <div style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>PROJECT NO.: {projectInfo.projectNumber}</div>}
+        <div style={{background:'#1E293B',borderRadius:18,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:16,fontWeight:700,color:'#fff',marginBottom:2}}>{selectedSite || projectInfo?.workType}</div>
+            {projectInfo?.projectNumber && <div style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>PROJECT NO.: {projectInfo.projectNumber}</div>}
+          </div>
+          {projectInfo?.status && (
+            <span style={{display:'inline-block',padding:'4px 12px',borderRadius:20,fontSize:11,fontWeight:700,flexShrink:0,
+              background:projectInfo.status==='進行中'?'rgba(34,197,94,0.2)':projectInfo.status==='完了'?'rgba(37,99,235,0.2)':'rgba(245,158,11,0.2)',
+              color:projectInfo.status==='進行中'?'#4ade80':projectInfo.status==='完了'?'#93C5FD':'#FCD34D'
+            }}>{projectInfo.status}</span>
+          )}
         </div>
       )}
       <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
@@ -3065,13 +3079,7 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
           ))}
         </div>
       </div>
-      <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:10,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
-        <div style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:10}}>ステータス</div>
-        <span style={{display:'inline-block',padding:'4px 14px',borderRadius:20,fontSize:12,fontWeight:700,
-          background:projectInfo.status==='進行中'?'rgba(34,197,94,0.1)':projectInfo.status==='完了'?'rgba(37,99,235,0.1)':projectInfo.status==='着工前'?'rgba(245,158,11,0.1)':'#F0F0F0',
-          color:projectInfo.status==='進行中'?'#16A34A':projectInfo.status==='完了'?'#1D4ED8':projectInfo.status==='着工前'?'#B45309':'#888'
-        }}>{projectInfo.status||'-'}</span>
-      </div>
+
       <button onClick={() => onNavigate('settings')} style={{width:'100%',padding:'14px',background:'#1E293B',border:'none',borderRadius:14,fontSize:14,fontWeight:700,color:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
         <Settings className="w-4 h-4" />編集する
       </button>
@@ -3081,7 +3089,7 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
 
 // ========== AnalysisPage ==========
 function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
   const [activeTab, setActiveTab] = useState(0);
   const chartRef1 = React.useRef(null);
   const chartRef2 = React.useRef(null);
@@ -3303,7 +3311,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [lastExport, setLastExport] = useState('');
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
   useEffect(() => {
     const loadSettings = async () => {
       const gasUrlResult = await window.storage.get('logio-gas-url');
@@ -3404,7 +3412,7 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 
 // ========== OrderPDFPage ==========
 function OrderPDFPage({ projectInfo, onNavigate }) {
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const handlePrint = () => window.print();
 
@@ -3582,7 +3590,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const projectInfo = report._projectInfo || propProjectInfo;
   const [allReports, setAllReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
   useEffect(() => {
     const loadAllReports = async () => {
       try {

@@ -2842,8 +2842,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {scrapItems.length>0 && <SubTotal label="スクラップ" value={Math.abs(scrapItems.reduce((s,i)=>s+i.amount,0))} />}
 
           {/* 写真アップロードセクション */}
-          <div style={{margin:'16px 0',padding:16,background:'rgba(255,255,255,0.04)',borderRadius:14,border:'1px solid rgba(255,255,255,0.08)'}}>
-            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.5)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>📷 現場写真（任意・最大5枚）</div>
+          <div style={{margin:'16px 0',padding:16,background:'rgba(255,255,255,0.08)',borderRadius:14,border:'1.5px dashed rgba(255,255,255,0.25)'}}>
+            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.7)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:12}}>📷 現場写真（任意・最大5枚）</div>
             {photoUrls.length > 0 && (
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
                 {photoUrls.map((url,i)=>(

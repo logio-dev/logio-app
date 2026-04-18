@@ -678,6 +678,28 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const [wasteOpen, setWasteOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
+  const [homePhotoOpen, setHomePhotoOpen] = useState(false);
+  const [homePhotoUrls, setHomePhotoUrls] = useState([]);
+  const [homeMemo, setHomeMemo] = useState('');
+  const [homePhotoUploading, setHomePhotoUploading] = useState(false);
+  const [homeSaving, setHomeSaving] = useState(false);
+
+  const handleHomeSavePhoto = async () => {
+    const latest = [...(reports||[])].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    if (!latest) return alert('日報がありません');
+    if (!homePhotoUrls.length && !homeMemo.trim()) return alert('写真またはメモを入力してください');
+    setHomeSaving(true);
+    try {
+      const allUrls = [...(latest.photoUrls||[]), ...homePhotoUrls];
+      const newMemo = [latest.memo||'', homeMemo].filter(Boolean).join('\n');
+      await window.__updateReportPhotos(latest.id, allUrls, newMemo);
+      setHomePhotoUrls([]);
+      setHomeMemo('');
+      setHomePhotoOpen(false);
+      alert('✅ 保存しました');
+    } catch(e) { alert('❌ 保存失敗: '+e.message); }
+    finally { setHomeSaving(false); }
+  };
   const dropdownRef = useRef(null);
 
   useEffect(() => {

@@ -1315,7 +1315,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               <button onClick={onSave} style={{flex:2,padding:'13px',background:'linear-gradient(135deg,#2563EB,#4f46e5)',border:'none',color:'#fff',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                                 <Save className="w-4 h-4"/>保存
                               </button>
-                              <button onClick={()=>{ onSave(); setTimeout(()=>onNavigate('order_pdf'),300); }} style={{flex:2,padding:'13px',background:'#991B1B',border:'none',color:'#fff',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                              <button onClick={async()=>{ await onSave(); onNavigate('order_pdf'); }} style={{flex:2,padding:'13px',background:'#991B1B',border:'none',color:'#fff',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                                 <FileText className="w-4 h-4"/>受注表PDF
                               </button>
                             </div>
@@ -3434,7 +3434,7 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
 
       {/* 操作バー */}
       <div className="no-print" style={{background:'#1E293B',padding:'10px 16px',display:'flex',gap:8,alignItems:'center'}}>
-        <button onClick={()=>onNavigate('settings')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:12,fontWeight:600,color:'#fff',cursor:'pointer'}}>
+        <button onClick={()=>onNavigate('home')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:12,fontWeight:600,color:'#fff',cursor:'pointer'}}>
           <X className="w-4 h-4"/>閉じる
         </button>
         <button onClick={handlePrint} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#DC2626',border:'none',borderRadius:8,fontSize:12,fontWeight:700,color:'#fff',cursor:'pointer'}}>
@@ -3443,7 +3443,7 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
       </div>
 
       {/* 受注表本体 */}
-      <div className="order-pdf" style={{maxWidth:800,margin:'16px auto',background:'#fff',padding:'24px 28px',fontFamily:"'Noto Sans JP', sans-serif",boxShadow:'0 2px 16px rgba(0,0,0,0.1)'}}>
+      <div className="order-pdf" style={{maxWidth:800,margin:'16px auto',background:'#fff',padding:'clamp(12px,4vw,28px)',fontFamily:"'Noto Sans JP', sans-serif",boxShadow:'0 2px 16px rgba(0,0,0,0.1)',overflowX:'auto'}}>
 
         {/* ヘッダー */}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
@@ -3456,7 +3456,7 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
         </div>
 
         {/* 基本情報テーブル */}
-        <table className="order-table" style={{marginBottom:12}}>
+        <table className="order-table" style={{marginBottom:12,minWidth:600}}>
           <tbody>
             <tr>
               <th style={{width:100}}>発注先（会社名）</th>

@@ -1582,6 +1582,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                 ＋ 残り{remaining}件を表示
               </button>
             )}
+            {showAllSites && !searchQuery && (
+              <button onClick={()=>setShowAllSites(false)}
+                style={{width:'100%',padding:'10px',border:'1px dashed #CBD5E1',borderRadius:8,background:'transparent',color:'#888',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:4,fontFamily:'inherit'}}>
+                ▲ 閉じる
+              </button>
+            )}
           </>);
         })()}
 

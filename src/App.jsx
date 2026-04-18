@@ -258,7 +258,7 @@ function GradChevronUp({ size = 16 }) {
 // ========== ★ Header（リロードアイコン追加）==========
 function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSearch, reloading = false, mascots = null }) {
   return (
-    <header className="bg-transparent" style={{
+    <header className="bg-transparent no-print" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
       borderBottom: '1px solid #E8E8E8',
       paddingTop: 'env(safe-area-inset-top, 0px)',
@@ -847,7 +847,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               {sites.length === 0 ? (
                 <div className="px-4 py-3 text-sm text-gray-500">現場が登録されていません</div>
               ) : sites.map(site => (
-                <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); window.scrollTo({top:0,behavior:'instant'}); }}
+                <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); window.scrollTo({top:0,behavior:'instant'}); document.body.scrollTop=0; document.documentElement.scrollTop=0; }}
                   className="w-full px-4 py-3 text-left flex items-center justify-between transition-colors"
                   style={{ borderBottom: '1px solid #F0F0F0' }}
                   onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
@@ -884,7 +884,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         {selectedSite && (
           <>
             {/* 稼働日数・人工数カード */}
-            <div className="mb-3" style={{background:'#fff',borderRadius:18,padding:18,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+            <div className="mb-2" style={{background:'#fff',borderRadius:18,padding:18,border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
               <style>{`
                 @keyframes breatheSlate {
                   0%,100% { opacity:1; text-shadow:0 0 0px rgba(203,213,225,0); }
@@ -1330,7 +1330,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation||''} onChange={v=>setProjectInfo({...projectInfo,workLocation:v})} placeholder="東京都渋谷区..." />
                         <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson||''} onChange={v=>setProjectInfo({...projectInfo,salesPerson:v})} />
                         <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager||''} onChange={v=>setProjectInfo({...projectInfo,siteManager:v})} />
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:24 }}>
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:10, marginBottom:24 }}>
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
                             <input type="date" value={projectInfo.startDate||''} onChange={e=>setProjectInfo({...projectInfo,startDate:e.target.value})}
@@ -3023,7 +3023,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
 
 // ========== ProjectPage ==========
 function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
   return (
     <div className="max-w-2xl mx-auto px-5 py-4" style={{background:'#F5F7FA',minHeight:'100vh',paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))'}}>
       <button onClick={() => onNavigate('home')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#fff',border:'0.5px solid #E8E8E8',borderRadius:10,fontSize:12,fontWeight:600,color:'#1E3A5F',cursor:'pointer',marginBottom:12}}>
@@ -3446,9 +3446,9 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
       <div className="order-pdf" style={{maxWidth:800,margin:'16px auto',background:'#fff',padding:'clamp(12px,4vw,28px)',fontFamily:"'Noto Sans JP', sans-serif",boxShadow:'0 2px 16px rgba(0,0,0,0.1)',overflowX:'auto'}}>
 
         {/* ヘッダー */}
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16,position:'relative'}}>
           <div style={{fontSize:10,color:'#555'}}>社外秘</div>
-          <div style={{fontSize:22,fontWeight:700,textAlign:'center',flex:1}}>受　注　表</div>
+          <div style={{fontSize:22,fontWeight:700,textAlign:'center',position:'absolute',left:0,right:0,pointerEvents:'none'}}>受　注　表</div>
           <div style={{fontSize:10,color:'#555',textAlign:'right'}}>
             <div>提出日　　　　年　　月　　日</div>
             <div style={{marginTop:4}}>業務担当者　{projectInfo.salesPerson || '　　　　'}</div>

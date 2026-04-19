@@ -1767,7 +1767,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems };
+      const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems, photoUrls, memo: memoText };
       if (isEditMode && onUpdate) {
         await onUpdate(editReport.id, data);
       } else {
@@ -4145,35 +4145,41 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           </>
                         )}
                         {(()=>{
-                          // 産廃行のworkerNameがあれば優先表示
-                          let normIdx2=-1;
-                          if(!effectiveWorkers[subIdx]?.isEnv){normIdx2=0;for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv)normIdx2++;}}
-                          const wRow=(!effectiveWorkers[subIdx]?.isEnv)?wasteAndScrap[normIdx2]:null;
-                          const displayName = effectiveWorkers[subIdx]?.isEnv
-                            ? `(${effectiveWorkers[subIdx]?.name?.replace(/[()]/g,'')||''})`
-                            : effectiveWorkers[subIdx]?.isDitto ? '〃'
-                            : (wRow?.workerName || effectiveWorkers[subIdx]?.name || '');
+                          const isEnvRow = effectiveWorkers[subIdx]?.isEnv;
+                          const isDittoRow = effectiveWorkers[subIdx]?.isDitto;
+                          // 通常行のインデックス（isEnvでない行を順番に数える）
+                          let normIdx2 = 0;
+                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv) normIdx2++;}
+                          const wRow = !isEnvRow ? wasteAndScrap[normIdx2] : null;
+                          const workerFromWaste = wRow?.workerName || '';
+                          const workerFromSelf = effectiveWorkers[subIdx]?.name || '';
+                          const displayName = isEnvRow
+                            ? `(${workerFromSelf.replace(/[()]/g,'')})`
+                            : isDittoRow ? '〃'
+                            : (workerFromWaste || workerFromSelf);
                           return (<>
-                            <td className="text-[8px]" style={effectiveWorkers[subIdx]?.isEnv?{color:'#374151'}:{}}>{displayName}</td>
-                            <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!effectiveWorkers[subIdx].isEnv&&!effectiveWorkers[subIdx].isDitto?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
+                            <td className="text-[8px]" style={isEnvRow?{color:'#374151'}:{}}>{displayName}</td>
+                            <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!isEnvRow&&!isDittoRow?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
                           </>);
                         })()}
                         <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseFloat(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
                         {/* 車両：通常車両 or 環境課車両 or ワイエム or 〃 */}
                         {(()=>{
-                          let normIdx3=-1;
-                          if(!effectiveWorkers[subIdx]?.isEnv){normIdx3=0;for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv)normIdx3++;}}
-                          const wRow2=(!effectiveWorkers[subIdx]?.isEnv)?wasteAndScrap[normIdx3]:null;
+                          const isEnvRow2 = effectiveWorkers[subIdx]?.isEnv;
+                          const isDittoRow2 = effectiveWorkers[subIdx]?.isDitto;
+                          let normIdx3 = 0;
+                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv) normIdx3++;}
+                          const wRow2 = !isEnvRow2 ? wasteAndScrap[normIdx3] : null;
                           const vt = vehicles[subIdx]?.type
-                            || (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vType : '')
+                            || (isEnvRow2 ? effectiveWorkers[subIdx].vType : '')
                             || (wRow2?.workerVType || '')
-                            || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '')
+                            || (isDittoRow2 ? '〃' : '')
                             || (extWasteRows[subIdx] ? '配車' : '');
                           const vn = vehicles[subIdx] ? vehicles[subIdx].number
-                            : (effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].vNumber : '')
+                            : (isEnvRow2 ? effectiveWorkers[subIdx].vNumber : '')
                             || (wRow2?.workerVNumber || '')
-                            || (effectiveWorkers[subIdx]?.isDitto ? '〃' : '')
+                            || (isDittoRow2 ? '〃' : '')
                             || (extWasteRows[subIdx] ? 'ワイエム' : '');
                           return (<>
                             <td className="text-center text-[8px]">{vt}</td>

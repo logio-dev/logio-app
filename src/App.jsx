@@ -3956,9 +3956,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const pageOutCost        = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
           const pageVehicleCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.vehicles||[]).reduce((a,v)=>a+(v.amount||0),0),0);
           const pageHaishiCost     = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.haishiAmount||0),0),0);
+          const pageWasteVehicleCost = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.vehicleAmount||0),0)+(r.scrapItems||[]).reduce((a,sc)=>a+(sc.vehicleAmount||0),0),0);
           const pageMachineryCost  = pageRows.reduce((s,r)=>s+(r.workDetails?.machinery||[]).reduce((a,m)=>a+(m.unitPrice||0),0),0);
           const pageWasteCost      = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),0),0);
-          const pageTotal          = pageInHouseCost+pageOutCost+pageVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost;
+          const pageTotal          = pageInHouseCost+pageOutCost+pageVehicleCost+pageHaishiCost+pageWasteVehicleCost+pageMachineryCost+pageWasteCost;
 
           // リース等アイテム集計
           const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
@@ -4147,10 +4148,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         {(()=>{
                           const isEnvRow = effectiveWorkers[subIdx]?.isEnv;
                           const isDittoRow = effectiveWorkers[subIdx]?.isDitto;
-                          // 通常行のインデックス（isEnvでない行を順番に数える）
+                          // isEnvでもisDittoでもない行のインデックス（自社人工のみカウント）
                           let normIdx2 = 0;
-                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv) normIdx2++;}
-                          const wRow = !isEnvRow ? wasteAndScrap[normIdx2] : null;
+                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv && !effectiveWorkers[k]?.isDitto) normIdx2++;}
+                          const wRow = !isEnvRow && !isDittoRow ? wasteAndScrap[normIdx2] : null;
                           const workerFromWaste = wRow?.workerName || '';
                           const workerFromSelf = effectiveWorkers[subIdx]?.name || '';
                           const displayName = isEnvRow
@@ -4169,8 +4170,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           const isEnvRow2 = effectiveWorkers[subIdx]?.isEnv;
                           const isDittoRow2 = effectiveWorkers[subIdx]?.isDitto;
                           let normIdx3 = 0;
-                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv) normIdx3++;}
-                          const wRow2 = !isEnvRow2 ? wasteAndScrap[normIdx3] : null;
+                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv && !effectiveWorkers[k]?.isDitto) normIdx3++;}
+                          const wRow2 = !isEnvRow2 && !isDittoRow2 ? wasteAndScrap[normIdx3] : null;
                           const vt = vehicles[subIdx]?.type
                             || (isEnvRow2 ? effectiveWorkers[subIdx].vType : '')
                             || (wRow2?.workerVType || '')
@@ -4233,7 +4234,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageInHouseCost)}</td>
                     <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{pageOutWorkers}人</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageOutCost)}</td>
-                    <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageVehicleCost + pageHaishiCost)}</td>
+                    <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageVehicleCost + pageHaishiCost + pageWasteVehicleCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageMachineryCost)}</td>
                     <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151', whiteSpace:'nowrap' }}>{(pageRows.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+pageRows.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151', whiteSpace:'nowrap' }}>¥{formatCurrency(pageWasteCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
@@ -4246,7 +4247,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalInHouseCost)}</td>
                       <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{totalOutsourcingWorkers}人</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
-                      <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost)}</td>
+                      <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost + totalWasteVehicleCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalMachineryCost)}</td>
                       <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e', whiteSpace:'nowrap' }}>{(allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e', whiteSpace:'nowrap' }}>¥{formatCurrency(totalWasteCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#1a1a2e' }}>原価合計</td>

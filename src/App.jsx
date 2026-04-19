@@ -208,12 +208,12 @@ const MASTER_DATA = {
   outsourcingCompanies: ['TCY興業', 'ALTEQ', '山田興業', '川田工業', 'マルカイ工業', 'MM興業'],
   weather: ['晴', '曇', '雨', '雪'],
   workCategories: ['解体', '清掃', '積込', '搬出'],
-  vehicles: ['軽バン', '2td', '3td', '4td', '4tc', '8tc', '増td', '10tc'],
+  vehicles: ['軽バン', '2td', '3td', '4td', '4tc', '8tc', '増td', '10tc', '東リース'],
   vehicleNumbersByType: {
     '軽バン': ['た1'], '2td': ['77', '201'],
     '3td': ['8736', '55', '3122', '66', '4514', '33', '3000', '1000', '6000', '44'],
     '4td': ['6994'], '4tc': ['2265', '11', '3214', '858', '8000', '4000', '5000', '8025', '88'],
-    '8tc': ['7000'], '増td': ['22'], '10tc': ['181', '381']
+    '8tc': ['7000'], '増td': ['22'], '10tc': ['181', '381'], '東リース': []
   },
   heavyMachinery: ['PC30', 'PC78US', 'PC138US'],
   workingHoursOptions: (() => {
@@ -235,7 +235,8 @@ const MASTER_DATA = {
 
 const VEHICLE_UNIT_PRICES = {
   '軽バン': 0, '2td': 10000, '3td': 10000, '4td': 15000,
-  '4tc': 15000, '8tc': 20000, '増td': 20000, '10tc': 20000
+  '4tc': 15000, '8tc': 20000, '増td': 20000, '10tc': 20000,
+  '東リース': 10000
 };
 
 const generateId = (prefix) => {
@@ -2044,7 +2045,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       {[1,2,3,4].map(i => (
         <div key={i} style={{
           width: '8px', height: '8px', borderRadius: '50%',
-          background: i < currentStep ? '#22c55e' : i === currentStep ? '#2563EB' : 'var(--border)',
+          background: i < currentStep ? '#22c55e' : i === currentStep ? '#3B82F6' : 'rgba(255,255,255,0.2)',
           transition: 'all 0.3s ease', flexShrink: 0,
         }} />
       ))}
@@ -2131,32 +2132,32 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const SectionLabel = ({ ja, en }) => (
     <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'8px' }}>
       <span style={{ fontSize:'10px', fontWeight:'700', color:'#fff', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'rgba(255,255,255,0.4)'}}>/ {en}</span></span>
-      <span style={{ flex:1, height:'1px', background:'var(--border)' }} />
+      <span style={{ flex:1, height:'1px', background:'rgba(255,255,255,0.1)' }} />
     </div>
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
-    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', zIndex:40 }}>
-      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#F4F4F4', border:'none', color:'#666', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
-      <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'#E8E8E8': nextColor||'#2563eb', border:'none', color: disabled?'#999':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
+    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#1C1C1E', borderTop:'1px solid #3A3A3C', display:'flex', gap:'10px', zIndex:40 }}>
+      {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#2D2D2F', border:'1px solid #3A3A3C', color:'#aaa', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
+      <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'#2D2D2F': nextColor||'#2563eb', border:'none', color: disabled?'#666':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
   );
 
   const workContent_tags = ['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'];
 
   return (
-    <div style={{ background: isEditMode ? '#111' : '#fff', minHeight:'100vh', overflowX:'hidden' }}>
+    <div style={{ background:'#0F0F10', minHeight:'100vh', overflowX:'hidden' }}>
       <style>{`@keyframes fadeUpIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} } .b-panel{animation:fadeUpIn 0.22s ease;} input[type="time"]::-webkit-calendar-picker-indicator { opacity:0; width:0; padding:0; margin:0; } @keyframes addPulse { 0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.8);background:rgba(59,130,246,0.2);border-color:rgba(59,130,246,0.4)} 50%{box-shadow:0 0 0 10px rgba(59,130,246,0);background:rgba(59,130,246,0.5);border-color:rgba(59,130,246,0.9)} } .btn-pulse { animation: addPulse 2s ease-in-out infinite; }`}</style>
 
       {/* ヘッダー */}
-      <div style={{ position:'sticky', top:0, zIndex:50, background:'#fff', backdropFilter:'blur(4px)', borderBottom:'1px solid #E8E8E8', padding:'12px 16px 0' }}>
+      <div style={{ position:'sticky', top:0, zIndex:50, background:'#1C1C1E', backdropFilter:'blur(4px)', borderBottom:'1px solid #3A3A3C', padding:'12px 16px 0' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px' }}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span style={{ fontSize:'17px', fontWeight:700, color:'#1C1917' }}>{isEditMode ? '日報を編集' : '日報入力'}</span>
-            {isEditMode && <span style={{fontSize:10,fontWeight:700,background:'#FEF3C7',color:'#92400E',padding:'2px 8px',borderRadius:20}}>編集中</span>}
+            <span style={{ fontSize:'17px', fontWeight:700, color:'#fff' }}>{isEditMode ? '日報を編集' : '日報入力'}</span>
+            {isEditMode && <span style={{fontSize:10,fontWeight:700,background:'rgba(251,191,36,0.15)',color:'#FBBF24',padding:'2px 8px',borderRadius:20}}>編集中</span>}
           </div>
           <button onClick={handleCancel}
-            style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:8, background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', color:'#DC2626', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+            style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:8, background:'rgba(239,68,68,0.15)', border:'1px solid rgba(239,68,68,0.3)', color:'#f87171', cursor:'pointer', fontSize:12, fontWeight:700 }}>
             <X style={{width:13,height:13}}/> キャンセル
           </button>
         </div>
@@ -2165,7 +2166,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1C1C1E', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
@@ -2188,7 +2189,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1C1C1E', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -2368,13 +2369,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* 経費 */}
           <SectionLabel ja="経費" en="Expenses" />
           {(workDetails.dailyExpenses||[]).map((e,i)=>(
-            <div key={i} style={{background:'#fff',borderRadius:10,padding:'10px 12px',marginBottom:5,display:'flex',alignItems:'center',gap:8,border:'0.5px solid #E8E8E8'}}>
+            <div key={i} style={{background:'rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 12px',marginBottom:5,display:'flex',alignItems:'center',gap:8,border:'1px solid rgba(255,255,255,0.08)'}}>
               <div style={{flex:1}}>
-                <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{e.name}</div>
-                <div style={{fontSize:10,color:'#999'}}>¥{formatCurrency(e.amount)}</div>
+                <div style={{fontSize:12,fontWeight:500,color:'#fff'}}>{e.name}</div>
+                <div style={{fontSize:10,color:'rgba(255,255,255,0.5)'}}>¥{formatCurrency(e.amount)}</div>
               </div>
               <button onClick={()=>setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)})}
-                style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+                style={{width:24,height:24,borderRadius:6,background:'rgba(239,68,68,0.15)',border:'1px solid rgba(239,68,68,0.3)',color:'#f87171',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
             </div>
           ))}
           <div style={inputCard}>
@@ -2410,7 +2411,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       {/* Step 3 */}
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1C1C1E', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.45)', marginBottom:'14px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 (4タブ統合) */}
@@ -2418,34 +2419,38 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
           {/* 入力済みリスト */}
           {editingWasteIdx === null && wasteItems.length > 0 && (
-            <div style={{fontSize:11,color:'rgba(245,158,11,0.8)',marginBottom:6,padding:'5px 10px',background:'rgba(245,158,11,0.06)',borderRadius:7,border:'1px dashed rgba(245,158,11,0.2)'}}>
+            <div style={{fontSize:11,color:'rgba(251,191,36,0.9)',marginBottom:6,padding:'5px 10px',background:'rgba(251,191,36,0.08)',borderRadius:7,border:'1px dashed rgba(251,191,36,0.25)'}}>
               ✏️ 行をタップすると編集できます
             </div>
           )}
           {wasteItems.map((w,i)=>{
             const k = detectKind(w);
-            const tagColor = k==='env'?'#4ade80':k==='ext'?'#a5b4fc':k==='scrap'?'#22D3EE':'#fbbf24';
-            const tagBg    = k==='env'?'rgba(34,197,94,0.12)':k==='ext'?'rgba(99,102,241,0.12)':k==='scrap'?'rgba(34,211,238,0.12)':'rgba(245,158,11,0.15)';
-            const tagLabel = k==='env'?'環境課':k==='ext'?'ワイエム':k==='scrap'?'スクラップ':'自社';
+            const scrap = isScrap(w);
+            // scrap時はシアン、それ以外はkindに応じて
+            const tagColor = scrap ? '#22D3EE' : (k==='env'?'#4ade80':k==='ext'?'#a5b4fc':'#fbbf24');
+            const tagBg    = scrap ? 'rgba(34,211,238,0.15)' : (k==='env'?'rgba(34,197,94,0.15)':k==='ext'?'rgba(165,180,252,0.15)':'rgba(251,191,36,0.15)');
+            const tagLabel = scrap
+              ? `${k==='env'?'環境課':k==='ext'?'ワイエム':'自社'}/売上`
+              : (k==='env'?'環境課':k==='ext'?'ワイエム':'自社');
             return (
               <div key={i} onClick={()=>loadWasteForEdit(i)} style={{borderRadius:11,marginBottom:6,overflow:'hidden',cursor:'pointer',
-                background: editingWasteIdx===i ? 'rgba(245,158,11,0.08)' : '#FFFBEB',
-                border: editingWasteIdx===i ? '2px solid rgba(245,158,11,0.6)' : '1px solid #FDE68A'
+                background: editingWasteIdx===i ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.06)',
+                border: editingWasteIdx===i ? '2px solid rgba(251,191,36,0.6)' : '1px solid rgba(255,255,255,0.08)'
               }}>
                 <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px'}}>
                   <div style={{width:36,height:36,borderRadius:9,background:tagBg,color:tagColor,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{(w.material||'').slice(0,2)}</div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
                       <span style={{fontSize:9,fontWeight:700,color:tagColor,background:tagBg,padding:'1px 6px',borderRadius:4}}>{tagLabel}</span>
-                      <div style={{fontSize:13,fontWeight:700,color:'#1C1917'}}>{w.material} → {w.disposalSite}</div>
+                      <div style={{fontSize:13,fontWeight:700,color:'#fff'}}>{w.material} → {w.disposalSite}</div>
                     </div>
-                    <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　{w.manifestNumber&&w.manifestNumber!=='-'?`マニ:${w.manifestNumber}`:''}{k==='env'&&w.driver?`　運転:${w.driver}`:''}{k!=='scrap'&&w.haishiAmount?`　配車:¥${formatCurrency(w.haishiAmount)}`:''}</div>
+                    <div style={{fontSize:10,color:'rgba(255,255,255,0.5)'}}>{w.quantity}{w.unit}　{w.manifestNumber&&w.manifestNumber!=='-'?`マニ:${w.manifestNumber}`:''}{k==='env'&&w.driver?`　運転:${w.driver}`:''}{w.haishiAmount?`　配車:¥${formatCurrency(w.haishiAmount)}`:''}</div>
                   </div>
                   {editingWasteIdx===i
-                    ? <span style={{fontSize:9,background:'rgba(245,158,11,0.2)',color:'#B45309',border:'1px solid rgba(245,158,11,0.4)',borderRadius:4,padding:'2px 7px',flexShrink:0,fontWeight:700}}>編集中</span>
-                    : <span style={{fontSize:11,color:'rgba(245,158,11,0.5)',flexShrink:0}}>✏️</span>
+                    ? <span style={{fontSize:9,background:'rgba(251,191,36,0.2)',color:'#FBBF24',border:'1px solid rgba(251,191,36,0.4)',borderRadius:4,padding:'2px 7px',flexShrink:0,fontWeight:700}}>編集中</span>
+                    : <span style={{fontSize:11,color:'rgba(251,191,36,0.5)',flexShrink:0}}>✏️</span>
                   }
-                  <div style={{fontSize:12,fontWeight:700,color:k==='scrap'?'#22D3EE':'#fbbf24',fontVariantNumeric:'tabular-nums',flexShrink:0}}>{k==='scrap'?'-':''}¥{formatCurrency(Math.abs(w.amount))}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:scrap?'#22D3EE':'#fbbf24',fontVariantNumeric:'tabular-nums',flexShrink:0}}>{scrap?'-':''}¥{formatCurrency(Math.abs(w.amount))}</div>
                   <button onClick={e=>{e.stopPropagation();if(editingWasteIdx===i){cancelEdit();}setWasteItems(wasteItems.filter((_,j)=>j!==i));}} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,flexShrink:0}}>✕</button>
                 </div>
               </div>
@@ -2453,16 +2458,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           })}
 
           {/* タブ切り替え (3種類: 金属くずは各タブの「売上」セグメントで入力) */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4,marginBottom:10,marginTop:8,padding:4,background:'#F1F1F1',borderRadius:10}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4,marginBottom:10,marginTop:8,padding:4,background:'#2D2D2F',borderRadius:10,border:'1px solid #3A3A3C'}}>
             {[
-              ['self','自社運搬','#92400E','#FBBF24'],
-              ['env','環境課配車','#15803D','#4ade80'],
-              ['ext','ワイエム配車','#26215C','#a5b4fc'],
+              ['self','自社運搬','#1F1F1F','#FBBF24'],
+              ['env','環境課配車','#1F1F1F','#4ade80'],
+              ['ext','ワイエム配車','#1F1F1F','#a5b4fc'],
             ].map(([v,label,color,bg])=>(
               <button key={v} onClick={()=>{ if (editingWasteIdx!==null) cancelEdit(); setWasteTab(v); }}
                 style={{
                   padding:'11px 4px',borderRadius:7,border:'none',
-                  background:wasteTab===v?bg:'transparent',color:wasteTab===v?color:'#9CA3AF',
+                  background:wasteTab===v?bg:'transparent',color:wasteTab===v?color:'rgba(255,255,255,0.5)',
                   fontSize:12,fontWeight:wasteTab===v?700:500,cursor:'pointer',fontFamily:'inherit',
                   transition:'all .15s',
                 }}>{label}</button>
@@ -2470,14 +2475,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
 
           {/* === 自社運搬フォーム === */}
-          {/* === 自社運搬フォーム === */}
           {wasteTab === 'self' && (() => {
             const isRev = wasteForm.mode === 'revenue';
-            const cardBg = isRev ? '#ECFEFF' : '#FFFBEB';
+            const cardBg = isRev ? '#172832' : '#2A2620';
             const cardBorder = isRev ? '2px solid #06B6D4' : '2px solid #FBBF24';
-            const accentDark = isRev ? '#0E7490' : '#92400E';
-            const accentBg = isRev ? '#CFFAFE' : '#FEF3C7';
-            const inputBorder = isRev ? '1px solid #A5F3FC' : '1px solid #FDE68A';
+            const accentDark = isRev ? '#22D3EE' : '#FBBF24';
+            const accentBg = isRev ? 'rgba(34,211,238,0.15)' : 'rgba(251,191,36,0.15)';
+            const inputBorder = isRev ? '1px solid rgba(34,211,238,0.3)' : '1px solid rgba(251,191,36,0.3)';
             const allWorkers = (MASTER_DATA.inHouseWorkersByDept[wasteSelfDept==='k1'?'工事1課':'環境課'])||[];
             return (
             <div style={{background:cardBg,border:cardBorder,borderRadius:14,padding:14,marginBottom:10}}>
@@ -2502,7 +2506,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
                       {[...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)].map(s=>(
                         <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
-                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(0,0,0,0.08)'}`,background:wasteForm.disposal===s?accentDark:'#fff',color:wasteForm.disposal===s?'#fff':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                           {s}
                         </button>
                       ))}
@@ -2517,27 +2521,27 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:undefined,fontWeight:isRev?500:undefined}} /></div>
               </div>
               {!isRev && (
-                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(0,0,0,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
+                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
               )}
               {isRev && (
                 <div style={{marginBottom:10,padding:'6px 10px',background:accentBg,borderRadius:6,fontSize:10,color:accentDark}}>売上として ¥{wasteForm.price?formatCurrency(parseFloat(wasteForm.price)||0):'0'} マイナス計上 → 原価から控除</div>
               )}
 
               {/* 担当者 + 車両 (部署タブ + チップ) */}
-              <div style={{padding:12,borderRadius:10,background:'rgba(0,0,0,0.04)',border:'1px solid rgba(0,0,0,0.06)',marginBottom:10}}>
-                <label style={{...inpLbl,marginBottom:8}}>担当者 / 車両 <span style={{color:'rgba(0,0,0,0.3)',fontSize:9,fontWeight:400}}>(任意)</span></label>
+              <div style={{padding:12,borderRadius:10,background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',marginBottom:10}}>
+                <label style={{...inpLbl,marginBottom:8}}>担当者 / 車両 <span style={{color:'rgba(255,255,255,0.3)',fontSize:9,fontWeight:400}}>(任意)</span></label>
                 {/* 部署タブ */}
                 <div style={{display:'flex',gap:5,marginBottom:8}}>
                   {[['k1','工事1課'],['k2','環境課']].map(([v,label])=>(
                     <button key={v} onClick={()=>setWasteSelfDept(v)}
-                      style={{padding:'4px 12px',borderRadius:6,border:`1px solid ${wasteSelfDept===v?accentDark:'rgba(0,0,0,0.08)'}`,background:wasteSelfDept===v?accentDark:'#fff',color:wasteSelfDept===v?'#fff':accentDark,fontSize:11,fontWeight:wasteSelfDept===v?600:500,cursor:'pointer',fontFamily:'inherit'}}>{label}</button>
+                      style={{padding:'4px 12px',borderRadius:6,border:`1px solid ${wasteSelfDept===v?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteSelfDept===v?accentDark:'rgba(255,255,255,0.08)',color:wasteSelfDept===v?'#1F1F1F':accentDark,fontSize:11,fontWeight:wasteSelfDept===v?600:500,cursor:'pointer',fontFamily:'inherit'}}>{label}</button>
                   ))}
                 </div>
                 {/* 担当者チップ(フルネーム) */}
                 <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
                   {allWorkers.map(n=>(
                     <button key={n} onClick={()=>setWasteForm({...wasteForm,workerName:n})}
-                      style={{padding:'4px 9px',borderRadius:6,border:`1px solid ${wasteForm.workerName===n?accentDark:'rgba(0,0,0,0.08)'}`,background:wasteForm.workerName===n?accentDark:'#fff',color:wasteForm.workerName===n?'#fff':'#444',fontSize:11,fontWeight:wasteForm.workerName===n?600:400,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
+                      style={{padding:'4px 9px',borderRadius:6,border:`1px solid ${wasteForm.workerName===n?accentDark:'rgba(255,255,255,0.1)'}`,background:wasteForm.workerName===n?accentDark:'rgba(255,255,255,0.06)',color:wasteForm.workerName===n?'#1F1F1F':'rgba(255,255,255,0.8)',fontSize:11,fontWeight:wasteForm.workerName===n?600:400,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
                   ))}
                 </div>
                 <input type="text" value={wasteForm.workerName} onChange={e=>setWasteForm({...wasteForm,workerName:e.target.value})} placeholder="マスタにない名前は直接入力" style={{...inpTxt,marginBottom:8,fontSize:12}}/>
@@ -2550,11 +2554,15 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     </select>
                   </div>
                   <div>
-                    <label style={inpLbl}>車番</label>
-                    <select value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} style={inpSel}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
-                      {(MASTER_DATA.vehicleNumbersByType[wasteForm.workerVType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
-                    </select>
+                    <label style={inpLbl}>車番{wasteForm.workerVType==='東リース'?'（手入力）':''}</label>
+                    {wasteForm.workerVType==='東リース' ? (
+                      <input type="text" value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} placeholder="例）ABC-123" style={inpTxt} />
+                    ) : (
+                      <select value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} style={inpSel}>
+                        <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
+                        {(MASTER_DATA.vehicleNumbersByType[wasteForm.workerVType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
+                      </select>
+                    )}
                   </div>
                 </div>
                 {wasteForm.workerVType && (
@@ -2568,7 +2576,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{display:'flex',gap:6}}>
                   <button onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty}
                     style={{flex:2,padding:'11px',background:accentDark,border:'none',borderRadius:9,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
-                  <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'#F3F4F6',border:'1px solid #E5E7EB',borderRadius:9,color:'#6B7280',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
+                  <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9,color:'#aaa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
                 </div>
               ) : (
                 <AddBtn onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty} />
@@ -2580,11 +2588,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* === 環境課配車フォーム === */}
           {wasteTab === 'env' && (() => {
             const isRev = wasteForm.mode === 'revenue';
-            const cardBg = isRev ? '#ECFEFF' : '#F0FDF4';
+            const cardBg = isRev ? '#172832' : '#1F2822';
             const cardBorder = isRev ? '2px solid #06B6D4' : '2px solid #4ade80';
-            const accentDark = isRev ? '#0E7490' : '#15803D';
-            const accentBg = isRev ? '#CFFAFE' : '#DCFCE7';
-            const inputBorder = isRev ? '1px solid #A5F3FC' : '1px solid #BBF7D0';
+            const accentDark = isRev ? '#22D3EE' : '#4ade80';
+            const accentBg = isRev ? 'rgba(34,211,238,0.15)' : 'rgba(34,197,94,0.15)';
+            const inputBorder = isRev ? '1px solid rgba(34,211,238,0.3)' : '1px solid rgba(34,197,94,0.3)';
             const envWorkers = MASTER_DATA.inHouseWorkersByDept['環境課']||[];
             return (
             <div style={{background:cardBg,border:cardBorder,borderRadius:14,padding:14,marginBottom:10}}>
@@ -2609,7 +2617,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
                       {[...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)].map(s=>(
                         <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
-                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(0,0,0,0.08)'}`,background:wasteForm.disposal===s?accentDark:'#fff',color:wasteForm.disposal===s?'#fff':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                           {s}
                         </button>
                       ))}
@@ -2623,18 +2631,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:undefined,fontWeight:isRev?500:undefined}} /></div>
               </div>
               {!isRev && (
-                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(0,0,0,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
+                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
               )}
               {isRev && (
                 <div style={{marginBottom:10,padding:'6px 10px',background:accentBg,borderRadius:6,fontSize:10,color:accentDark}}>売上 ¥{wasteForm.price?formatCurrency(parseFloat(wasteForm.price)||0):'0'} マイナス計上 + 配車費は通常通りコスト</div>
               )}
 
               {/* 運転者 (環境課フルネームチップ) */}
-              <label style={{...inpLbl,marginBottom:6}}>運転者 <span style={{color:'#DC2626'}}>*</span></label>
+              <label style={{...inpLbl,marginBottom:6}}>運転者 <span style={{color:'#f87171'}}>*</span></label>
               <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
                 {envWorkers.map(d=>(
                   <button key={d} onClick={()=>setWasteForm({...wasteForm,driver:d})}
-                    style={{padding:'4px 9px',borderRadius:6,border:`1px solid ${wasteForm.driver===d?accentDark:'rgba(0,0,0,0.08)'}`,background:wasteForm.driver===d?accentDark:'#fff',color:wasteForm.driver===d?'#fff':accentDark,fontSize:11,fontWeight:wasteForm.driver===d?600:400,cursor:'pointer',fontFamily:'inherit'}}>{d}</button>
+                    style={{padding:'4px 9px',borderRadius:6,border:`1px solid ${wasteForm.driver===d?accentDark:'rgba(255,255,255,0.1)'}`,background:wasteForm.driver===d?accentDark:'rgba(255,255,255,0.06)',color:wasteForm.driver===d?'#1F1F1F':accentDark,fontSize:11,fontWeight:wasteForm.driver===d?600:400,cursor:'pointer',fontFamily:'inherit'}}>{d}</button>
                 ))}
               </div>
               <input type="text" value={wasteForm.driver} onChange={e=>setWasteForm({...wasteForm,driver:e.target.value})} placeholder="マスタにない名前は直接入力" style={{...inpTxt,marginBottom:10,fontSize:12}}/>
@@ -2644,26 +2652,30 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={{...grid2,marginBottom:10}}>
                 <div>
                   <label style={inpLbl}>車種</label>
-                  <select value={wasteForm.vType} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:inputBorder}}>
+                  <select value={wasteForm.vType} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,border:inputBorder}}>
                     <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={inpLbl}>車番</label>
-                  <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:"#fff",color:"#111",border:inputBorder}}>
-                    <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
-                  </select>
+                  <label style={inpLbl}>車番{wasteForm.vType==='東リース'?'（手入力）':''}</label>
+                  {wasteForm.vType==='東リース' ? (
+                    <input type="text" value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="例）ABC-123" style={{...inpTxt,border:inputBorder}} />
+                  ) : (
+                    <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,border:inputBorder}}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
+                    </select>
+                  )}
                 </div>
               </div>
 
               {/* シフト */}
-              <label style={{...inpLbl,marginBottom:6}}>シフト <span style={{color:'#DC2626'}}>*</span></label>
+              <label style={{...inpLbl,marginBottom:6}}>シフト <span style={{color:'#f87171'}}>*</span></label>
               <div style={{...grid2,marginBottom:8}}>
                 {[['day','昼',20000],['night','夜',30000]].map(([v,label,price])=>(
                   <button key={v} onClick={()=>setWasteForm({...wasteForm,haishiShift:v})}
-                    style={{padding:'10px',borderRadius:9,border:`1px solid ${wasteForm.haishiShift===v?accentDark:'rgba(0,0,0,0.08)'}`,background:wasteForm.haishiShift===v?accentBg:'#fff',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
-                    <div style={{fontSize:13,fontWeight:800,color:wasteForm.haishiShift===v?accentDark:'#6B7280'}}>{label}</div>
-                    <div style={{fontSize:10,fontFamily:'monospace',color:wasteForm.haishiShift===v?accentDark:'#374151'}}>¥{formatCurrency(price)}</div>
+                    style={{padding:'10px',borderRadius:9,border:`1px solid ${wasteForm.haishiShift===v?accentDark:'rgba(255,255,255,0.1)'}`,background:wasteForm.haishiShift===v?accentBg:'rgba(255,255,255,0.05)',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                    <div style={{fontSize:13,fontWeight:800,color:wasteForm.haishiShift===v?accentDark:'rgba(255,255,255,0.7)'}}>{label}</div>
+                    <div style={{fontSize:10,fontFamily:'monospace',color:wasteForm.haishiShift===v?accentDark:'rgba(255,255,255,0.5)'}}>¥{formatCurrency(price)}</div>
                   </button>
                 ))}
               </div>
@@ -2672,7 +2684,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{display:'flex',gap:6}}>
                   <button onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.driver||!wasteForm.haishiShift}
                     style={{flex:2,padding:'11px',background:accentDark,border:'none',borderRadius:9,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
-                  <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'#F3F4F6',border:'1px solid #E5E7EB',borderRadius:9,color:'#6B7280',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
+                  <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9,color:'#aaa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
                 </div>
               ) : (
                 <AddBtn onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.driver||!wasteForm.haishiShift} />
@@ -2684,11 +2696,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* === ワイエム配車フォーム === */}
           {wasteTab === 'ext' && (() => {
             const isRev = wasteForm.mode === 'revenue';
-            const cardBg = isRev ? '#ECFEFF' : '#EEF2FF';
+            const cardBg = isRev ? '#172832' : '#24232E';
             const cardBorder = isRev ? '2px solid #06B6D4' : '2px solid #a5b4fc';
-            const accentDark = isRev ? '#0E7490' : '#26215C';
-            const accentBg = isRev ? '#CFFAFE' : '#E0E7FF';
-            const inputBorder = isRev ? '1px solid #A5F3FC' : '1px solid #C7D2FE';
+            const accentDark = isRev ? '#22D3EE' : '#a5b4fc';
+            const accentBg = isRev ? 'rgba(34,211,238,0.15)' : 'rgba(165,180,252,0.15)';
+            const inputBorder = isRev ? '1px solid rgba(34,211,238,0.3)' : '1px solid rgba(165,180,252,0.3)';
             return (
             <div style={{background:cardBg,border:cardBorder,borderRadius:14,padding:14,marginBottom:10}}>
               {/* セグメント: 処分 / 売上(金属) */}
@@ -2712,7 +2724,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
                       {[...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)].map(s=>(
                         <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
-                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(0,0,0,0.08)'}`,background:wasteForm.disposal===s?accentDark:'#fff',color:wasteForm.disposal===s?'#fff':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                           {s}
                         </button>
                       ))}
@@ -2726,45 +2738,49 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:undefined,fontWeight:isRev?500:undefined}} /></div>
               </div>
               {!isRev && (
-                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(0,0,0,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
+                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
               )}
               {isRev && (
                 <div style={{marginBottom:10,padding:'6px 10px',background:accentBg,borderRadius:6,fontSize:10,color:accentDark}}>売上 ¥{wasteForm.price?formatCurrency(parseFloat(wasteForm.price)||0):'0'} マイナス計上 + 配車費は通常通りコスト</div>
               )}
 
               {/* シフト */}
-              <label style={{...inpLbl,marginBottom:6}}>シフト <span style={{color:'#DC2626'}}>*</span> <span style={{color:'rgba(0,0,0,0.4)',fontWeight:400,fontSize:'9px'}}>※例外時は下のチェック</span></label>
+              <label style={{...inpLbl,marginBottom:6}}>シフト <span style={{color:'#f87171'}}>*</span> <span style={{color:'rgba(0,0,0,0.4)',fontWeight:400,fontSize:'9px'}}>※例外時は下のチェック</span></label>
               <div style={{...grid2,marginBottom:8}}>
                 {[['day','昼',22000],['night','夜',32000]].map(([v,label,price])=>(
                   <button key={v} onClick={()=>setWasteForm({...wasteForm,haishiShift:v,haishiOverride:false})}
-                    style={{padding:'10px',borderRadius:9,border:`1px solid ${!wasteForm.haishiOverride&&wasteForm.haishiShift===v?accentDark:'rgba(0,0,0,0.08)'}`,background:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?accentBg:'#fff',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
-                    <div style={{fontSize:13,fontWeight:800,color:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?accentDark:'#6B7280'}}>{label}</div>
-                    <div style={{fontSize:10,fontFamily:'monospace',color:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?accentDark:'#374151'}}>¥{formatCurrency(price)}</div>
+                    style={{padding:'10px',borderRadius:9,border:`1px solid ${!wasteForm.haishiOverride&&wasteForm.haishiShift===v?accentDark:'rgba(255,255,255,0.1)'}`,background:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?accentBg:'rgba(255,255,255,0.05)',cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
+                    <div style={{fontSize:13,fontWeight:800,color:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?accentDark:'rgba(255,255,255,0.7)'}}>{label}</div>
+                    <div style={{fontSize:10,fontFamily:'monospace',color:!wasteForm.haishiOverride&&wasteForm.haishiShift===v?accentDark:'rgba(255,255,255,0.5)'}}>¥{formatCurrency(price)}</div>
                   </button>
                 ))}
               </div>
 
               {/* 車両 (任意) */}
-              <label style={{...inpLbl,marginBottom:6}}>使用車両 <span style={{color:'rgba(0,0,0,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label>
+              <label style={{...inpLbl,marginBottom:6}}>使用車両 <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label>
               <div style={{...grid2,marginBottom:8}}>
                 <div>
                   <label style={inpLbl}>車種</label>
-                  <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,background:'#fff',color:'#111',border:inputBorder}}>
+                  <select value={wasteForm.vType||''} onChange={e=>setWasteForm({...wasteForm,vType:e.target.value,vNumber:''})} style={{...inpSel,border:inputBorder}}>
                     <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{MASTER_DATA.vehicles.map(v=><option key={v} style={{color:"#000",background:"#fff"}}>{v}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={inpLbl}>車番</label>
-                  <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,background:'#fff',color:'#111',border:inputBorder}}>
-                    <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
-                  </select>
+                  <label style={inpLbl}>車番{wasteForm.vType==='東リース'?'（手入力）':''}</label>
+                  {wasteForm.vType==='東リース' ? (
+                    <input type="text" value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="例）ABC-123" style={{...inpTxt,border:inputBorder}} />
+                  ) : (
+                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,border:inputBorder}}>
+                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
+                    </select>
+                  )}
                 </div>
               </div>
 
               <button onClick={()=>setWasteForm({...wasteForm,haishiOverride:!wasteForm.haishiOverride,haishiShift:''})}
                 style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',marginBottom:6}}>
-                <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${wasteForm.haishiOverride?accentDark:'#9CA3AF'}`,background:wasteForm.haishiOverride?accentDark:'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',flexShrink:0}}>{wasteForm.haishiOverride?'✓':''}</div>
-                <span style={{fontSize:11,color:wasteForm.haishiOverride?accentDark:'#6B7280'}}>遠方・例外あり（金額を手入力）</span>
+                <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${wasteForm.haishiOverride?accentDark:'rgba(255,255,255,0.3)'}`,background:wasteForm.haishiOverride?accentDark:'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#1F1F1F',flexShrink:0}}>{wasteForm.haishiOverride?'✓':''}</div>
+                <span style={{fontSize:11,color:wasteForm.haishiOverride?accentDark:'rgba(255,255,255,0.5)'}}>遠方・例外あり（金額を手入力）</span>
               </button>
               {wasteForm.haishiOverride && (
                 <input type="number" value={wasteForm.haishiPrice} onChange={e=>setWasteForm({...wasteForm,haishiPrice:e.target.value})} placeholder="配車費を入力" style={{...inpTxt,border:`1px solid ${accentDark}`,marginBottom:8}}/>
@@ -2774,7 +2790,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{display:'flex',gap:6}}>
                   <button onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||(!wasteForm.haishiOverride&&!wasteForm.haishiShift)}
                     style={{flex:2,padding:'11px',background:accentDark,border:'none',borderRadius:9,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
-                  <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'#F3F4F6',border:'1px solid #E5E7EB',borderRadius:9,color:'#6B7280',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
+                  <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9,color:'#aaa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
                 </div>
               ) : (
                 <AddBtn onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||(!wasteForm.haishiOverride&&!wasteForm.haishiShift)} />
@@ -2796,31 +2812,31 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 4 - 写真 & メモ */}
       {currentStep === 4 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#1C1C1E', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
 
           {/* アコーディオン：写真 & メモ */}
-          <div style={{background:'#fff',borderRadius:16,border:'0.5px solid #E8E8E8',overflow:'hidden',marginBottom:16}}>
+          <div style={{background:'#2D2D2F',borderRadius:16,border:'1px solid #3A3A3C',overflow:'hidden',marginBottom:16}}>
             <button onClick={()=>setPhotoAccordion(!photoAccordion)}
               style={{width:'100%',display:'flex',alignItems:'center',gap:12,padding:'14px 16px',background:'transparent',border:'none',cursor:'pointer',textAlign:'left'}}>
-              <div style={{width:36,height:36,borderRadius:10,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <div style={{width:36,height:36,borderRadius:10,background:'#3B82F6',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               </div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:700,color:'#111'}}>現場写真 / SITE PHOTOS & NOTES</div>
-                <div style={{fontSize:11,color:'#888',marginTop:1}}>
+                <div style={{fontSize:13,fontWeight:700,color:'#fff'}}>現場写真 / SITE PHOTOS & NOTES</div>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.5)',marginTop:1}}>
                   {photoUrls.length > 0 || memoText ? `${photoUrls.length > 0 ? `写真 ${photoUrls.length}枚` : ''}${photoUrls.length > 0 && memoText ? ' · ' : ''}${memoText ? 'メモあり' : ''}` : 'タップして写真・メモを追加'}
                 </div>
               </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,transform:photoAccordion?'rotate(180deg)':'rotate(0deg)',transition:'transform 0.2s'}}><polyline points="6 9 12 15 18 9"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,transform:photoAccordion?'rotate(180deg)':'rotate(0deg)',transition:'transform 0.2s'}}><polyline points="6 9 12 15 18 9"/></svg>
             </button>
 
             {photoAccordion && (
-              <div style={{borderTop:'0.5px solid #E8E8E8',padding:16}}>
-                <div style={{fontSize:11,fontWeight:700,color:'#1E3A5F',letterSpacing:'.06em',marginBottom:8}}>写真 / PHOTOS</div>
-                <label style={{display:'block',border:'1.5px dashed #CBD5E1',borderRadius:10,padding:18,textAlign:'center',cursor:photoUploading?'not-allowed':'pointer',opacity:photoUploading?0.6:1,marginBottom:10}}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round" style={{display:'block',margin:'0 auto 8px'}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  <div style={{fontSize:13,fontWeight:700,color:'#111',marginBottom:2}}>{photoUploading ? 'アップロード中...' : 'ここにドロップ、またはアップロード'}</div>
-                  <div style={{fontSize:11,color:'#888'}}>最大5枚 · JPG / PNG / HEIC</div>
+              <div style={{borderTop:'1px solid #3A3A3C',padding:16}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#93C5FD',letterSpacing:'.06em',marginBottom:8}}>写真 / PHOTOS</div>
+                <label style={{display:'block',border:'1.5px dashed rgba(255,255,255,0.2)',borderRadius:10,padding:18,textAlign:'center',cursor:photoUploading?'not-allowed':'pointer',opacity:photoUploading?0.6:1,marginBottom:10,background:'rgba(255,255,255,0.03)'}}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" style={{display:'block',margin:'0 auto 8px'}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <div style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:2}}>{photoUploading ? 'アップロード中...' : 'ここにドロップ、またはアップロード'}</div>
+                  <div style={{fontSize:11,color:'rgba(255,255,255,0.5)'}}>最大5枚 · JPG / PNG / HEIC</div>
                   <input type="file" accept="image/*" multiple style={{display:'none'}} disabled={photoUploading}
                     onChange={async(e)=>{
                       const files=Array.from(e.target.files||[]).slice(0,5-photoUrls.length);
@@ -2837,7 +2853,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 {photoUrls.length > 0 && (
                   <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:12}}>
                     {photoUrls.map((url,i)=>(
-                      <div key={i} style={{position:'relative',aspectRatio:'1',borderRadius:8,overflow:'hidden',border:'0.5px solid #E8E8E8'}}>
+                      <div key={i} style={{position:'relative',aspectRatio:'1',borderRadius:8,overflow:'hidden',border:'1px solid rgba(255,255,255,0.1)'}}>
                         <img src={url} alt={`写真${i+1}`} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                         <button onClick={()=>setPhotoUrls(photoUrls.filter((_,j)=>j!==i))}
                           style={{position:'absolute',top:3,right:3,width:18,height:18,borderRadius:'50%',background:'rgba(239,68,68,0.9)',border:'none',color:'#fff',fontSize:10,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
@@ -2845,10 +2861,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     ))}
                   </div>
                 )}
-                <div style={{fontSize:11,fontWeight:700,color:'#1E3A5F',letterSpacing:'.06em',marginBottom:8,marginTop:4}}>メモ / NOTES</div>
+                <div style={{fontSize:11,fontWeight:700,color:'#93C5FD',letterSpacing:'.06em',marginBottom:8,marginTop:4}}>メモ / NOTES</div>
                 <textarea value={memoText} onChange={e=>setMemoText(e.target.value)}
                   placeholder="備考・申し送り・翌日の予定など..."
-                  style={{width:'100%',minHeight:72,resize:'vertical',boxSizing:'border-box',borderRadius:10,border:'0.5px solid #E8E8E8',padding:'10px 12px',fontSize:13,lineHeight:1.6,background:'#F8FAFC',color:'#111',outline:'none',fontFamily:'inherit'}}
+                  style={{width:'100%',minHeight:72,resize:'vertical',boxSizing:'border-box',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',padding:'10px 12px',fontSize:13,lineHeight:1.6,background:'rgba(255,255,255,0.05)',color:'#fff',outline:'none',fontFamily:'inherit'}}
                 />
               </div>
             )}

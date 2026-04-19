@@ -248,6 +248,45 @@ const getDayOfWeek = (dateStr) => {
   return days[new Date(dateStr).getDay()];
 };
 
+// ========== 車両費の重複除去ヘルパー ==========
+// 1日の日報内で「車両」「産廃担当者の車両」「スクラップ担当者の車両」に
+// 同じ車種+車番を入力した場合、車両費を1回だけ計上する
+//   - vehicles[]:        type + number + amount
+//   - wasteItems[]:      workerVType + workerVNumber + vehicleAmount
+//   - scrapItems[]:      workerVType + workerVNumber + vehicleAmount
+// キーは "車種|車番"。車種だけ・車番だけのときも区別できるように両方使う。
+// 車種が空のものは集計対象外(車両費0)。
+function getReportVehicleCost(report) {
+  if (!report) return 0;
+  const map = new Map(); // key -> amount
+  const wd = report.workDetails || {};
+  (wd.vehicles || []).forEach(v => {
+    if (!v || !v.type) return;
+    const key = `${v.type}|${v.number || ''}`;
+    const amt = v.amount || 0;
+    if (!map.has(key) || map.get(key) < amt) map.set(key, amt);
+  });
+  (report.wasteItems || []).forEach(w => {
+    if (!w || !w.workerVType) return;
+    const key = `${w.workerVType}|${w.workerVNumber || ''}`;
+    const amt = w.vehicleAmount || 0;
+    if (!map.has(key) || map.get(key) < amt) map.set(key, amt);
+  });
+  (report.scrapItems || []).forEach(sc => {
+    if (!sc || !sc.workerVType) return;
+    const key = `${sc.workerVType}|${sc.workerVNumber || ''}`;
+    const amt = sc.vehicleAmount || 0;
+    if (!map.has(key) || map.get(key) < amt) map.set(key, amt);
+  });
+  let total = 0;
+  map.forEach(v => { total += v; });
+  return total;
+}
+// 複数日報の合計
+function getReportsVehicleCost(reports) {
+  return (reports || []).reduce((s, r) => s + getReportVehicleCost(r), 0);
+}
+
 // ========== ブルーglow矢印コンポーネント ==========
 function GradChevron({ open = false, size = 16 }) {
   return (
@@ -3064,11 +3103,12 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
         const monthCost = monthReports.reduce((sum, r) => sum +
           (r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
           (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
-          (r.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
+          getReportVehicleCost(r) +
           (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
           (r.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
           (r.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0), 0);
+          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0) +
+          (r.wasteItems?.reduce((s,w)=>s+(w.haishiAmount||0),0)||0), 0);
         return (
           <div key={month} className="mb-3">
             <button onClick={() => toggleMonth(month)}
@@ -3127,11 +3167,12 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
               const totalCost =
                 (report.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
                 (report.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
-                (report.workDetails?.vehicles?.reduce((s,v)=>s+(v.amount||0),0)||0) +
+                getReportVehicleCost(report) +
                 (report.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
                 (report.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
                 (report.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-                (report.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0);
+                (report.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0) +
+                (report.wasteItems?.reduce((s,w)=>s+(w.haishiAmount||0),0)||0);
               return totalCost > 0 && <span style={{color:"#B45309",fontWeight:700,fontSize:13,fontVariantNumeric:"tabular-nums"}}>¥{formatCurrency(totalCost)}</span>;
             })()}
           </div>
@@ -3356,11 +3397,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     if (r.workDetails) {
       r.workDetails.inHouseWorkers?.forEach(w => costByCategory['人工費'] += w.amount || 0);
       r.workDetails.outsourcingLabor?.forEach(o => costByCategory['人工費'] += o.amount || 0);
-      r.workDetails.vehicles?.forEach(v => costByCategory['車両費'] += v.amount || 0);
       r.workDetails.machinery?.forEach(m => costByCategory['重機費'] += m.unitPrice || 0);
       r.workDetails.envItems?.forEach(t => costByCategory['環境課配車'] = (costByCategory['環境課配車']||0) + (t.amount || 0));
       r.workDetails.extItems?.forEach(t => costByCategory['外部運搬'] = (costByCategory['外部運搬']||0) + (t.amount || 0));
     }
+    // ★ 車両費は重複除去版で計上
+    costByCategory['車両費'] += getReportVehicleCost(r);
     r.wasteItems?.forEach(w => costByCategory['産廃費'] += w.amount || 0);
   });
   if (projectInfo?.transferCost) costByCategory['回送費'] = parseFloat(projectInfo.transferCost) || 0;
@@ -3379,11 +3421,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     if (r.workDetails) {
       r.workDetails.inHouseWorkers?.forEach(w => { monthlyData[month] += w.amount || 0; monthlyWorkers[month] += w.count || 1; });
       r.workDetails.outsourcingLabor?.forEach(o => { monthlyData[month] += o.amount || 0; monthlyWorkers[month] += o.count || 1; });
-      r.workDetails.vehicles?.forEach(v => monthlyData[month] += v.amount || 0);
       r.workDetails.machinery?.forEach(m => monthlyData[month] += m.unitPrice || 0);
       r.workDetails.envItems?.forEach(t => monthlyData[month] += t.amount || 0);
       r.workDetails.extItems?.forEach(t => monthlyData[month] += t.amount || 0);
     }
+    // ★ 車両費は重複除去版で計上
+    monthlyData[month] += getReportVehicleCost(r);
     r.wasteItems?.forEach(w => monthlyData[month] += w.amount || 0);
   });
   const sortedMonths = Object.keys(monthlyData).sort();
@@ -3884,6 +3927,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const totalOutsourcingCost = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (o.amount || 0), 0), 0);
   const totalVehicleCost = allReports.reduce((sum, r) => sum + (r.workDetails?.vehicles || []).reduce((s, v) => s + (v.amount || 0), 0), 0);
   const totalWasteVehicleCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.vehicleAmount || 0), 0) + (r.scrapItems || []).reduce((s, sc) => s + (sc.vehicleAmount || 0), 0), 0);
+  // ★ 重複除去後の総車両費(同一車両は1回のみ計上)
+  const totalAllVehicleCost = getReportsVehicleCost(allReports);
   const totalMachineryCost = allReports.reduce((sum, r) => sum + (r.workDetails?.machinery || []).reduce((s, m) => s + (m.unitPrice || 0), 0), 0);
   const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
   const totalHaishiCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0), 0);
@@ -3891,7 +3936,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const totalDailyExpenses = allReports.reduce((sum, r) => sum + (r.workDetails?.dailyExpenses || []).reduce((s,e)=>s+(e.amount||0),0), 0);
   const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-  const totalCost = totalInHouseCost + totalOutsourcingCost + (totalVehicleCost + totalHaishiCost + totalWasteVehicleCost) + totalMachineryCost + totalTransportCost + totalWasteCost + totalDailyExpenses
+  // ★ 車両費は重複除去後の totalAllVehicleCost を使う(haishiAmount は別フィールドなので加算)
+  const totalCost = totalInHouseCost + totalOutsourcingCost + totalAllVehicleCost + totalHaishiCost + totalMachineryCost + totalTransportCost + totalWasteCost + totalDailyExpenses
     + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
     + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
@@ -3954,9 +4000,11 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const pageVehicleCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.vehicles||[]).reduce((a,v)=>a+(v.amount||0),0),0);
           const pageHaishiCost     = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.haishiAmount||0),0),0);
           const pageWasteVehicleCost = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.vehicleAmount||0),0)+(r.scrapItems||[]).reduce((a,sc)=>a+(sc.vehicleAmount||0),0),0);
+          // ★ 重複除去後のページ車両費合計
+          const pageAllVehicleCost = getReportsVehicleCost(pageRows);
           const pageMachineryCost  = pageRows.reduce((s,r)=>s+(r.workDetails?.machinery||[]).reduce((a,m)=>a+(m.unitPrice||0),0),0);
           const pageWasteCost      = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),0),0);
-          const pageTotal          = pageInHouseCost+pageOutCost+pageVehicleCost+pageHaishiCost+pageWasteVehicleCost+pageMachineryCost+pageWasteCost;
+          const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost;
 
           // リース等アイテム集計
           const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
@@ -4109,22 +4157,77 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 // ワイエム配車産廃行
                 const extWasteRows = extWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:true, vType:'', vNumber:'' }));
                 // 通常産廃＋スクラップ
-                const normWasteRows = [...normWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'' })), ...scrapRows];
+                const rawNormWasteRows = [...normWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'' })), ...scrapRows];
+                // ★ 担当者(workerName)ごとにグループ化して並び替え
+                //   workersの登場順に従って、同じ担当者の産廃・スクラップを連続して並べる
+                //   → 同じ担当者の2件目以降は表示時に「〃」になる
+                const normWasteRows = (() => {
+                  const workerOrder = workers.map(w => w.name);
+                  const grouped = [];
+                  const used = new Set();
+                  // 1) workers の登場順に該当する産廃を集める
+                  workerOrder.forEach(wname => {
+                    rawNormWasteRows.forEach((row, idx) => {
+                      if (used.has(idx)) return;
+                      if (row.workerName === wname) {
+                        grouped.push(row);
+                        used.add(idx);
+                      }
+                    });
+                  });
+                  // 2) どのworkerにもマッチしなかった残り(workerName未設定など)は最後に元の順で
+                  rawNormWasteRows.forEach((row, idx) => {
+                    if (!used.has(idx)) grouped.push(row);
+                  });
+                  return grouped;
+                })();
                 const wasteAndScrap = normWasteRows;
 
                 const allWorkers = [ ...workers, ...envWorkerRows ];
-                // 通常産廃が自社人工より多い場合、自社人工を〃で補完
-                const effectiveWorkers = [...allWorkers];
-                if (wasteAndScrap.length > workers.length) {
-                  for (let i = workers.length; i < wasteAndScrap.length; i++) {
-                    if (!effectiveWorkers[i] || effectiveWorkers[i]?.isEnv) {
-                      const lastWorker = workers[workers.length - 1];
-                      if (lastWorker) {
-                        effectiveWorkers.splice(i, 0, { ...lastWorker, isDitto: true, amount: 0 });
+                // ★修正: effectiveWorkers を wasteAndScrap の並びに合わせて再構築
+                //   各wasteAndScrapエントリの workerName に対応する worker を探し、
+                //   初出なら本物(金額あり)、2回目以降なら isDitto(〃) として配置する。
+                //   これにより氏名と金額が正しく対応する(間野の金額は間野の行に表示される)。
+                const effectiveWorkers = (() => {
+                  const result = [];
+                  const usedWorkerIdx = new Set();
+                  // 1) wasteAndScrap の並びに従って worker を配置
+                  wasteAndScrap.forEach((row) => {
+                    const wname = row.workerName;
+                    if (wname) {
+                      const wIdx = workers.findIndex((w, i) => !usedWorkerIdx.has(i) && w.name === wname);
+                      if (wIdx >= 0) {
+                        result.push(workers[wIdx]);
+                        usedWorkerIdx.add(wIdx);
+                        return;
+                      }
+                      // 既出の同名workerがいれば isDitto として配置
+                      const existingIdx = workers.findIndex(w => w.name === wname);
+                      if (existingIdx >= 0) {
+                        result.push({ ...workers[existingIdx], isDitto: true, amount: 0 });
+                        return;
                       }
                     }
-                  }
-                }
+                    // workerName未設定 or 該当workerなし: 未使用workerを順に or 最後のworkerをisDittoで補完
+                    const nextUnused = workers.findIndex((w, i) => !usedWorkerIdx.has(i));
+                    if (nextUnused >= 0) {
+                      result.push(workers[nextUnused]);
+                      usedWorkerIdx.add(nextUnused);
+                    } else if (workers.length > 0) {
+                      const last = workers[workers.length - 1];
+                      result.push({ ...last, isDitto: true, amount: 0 });
+                    }
+                  });
+                  // 2) wasteAndScrap で使われなかった残りの worker を末尾に追加(産廃を持たない作業員)
+                  workers.forEach((w, i) => {
+                    if (!usedWorkerIdx.has(i)) result.push(w);
+                  });
+                  // 3) 環境課配車行(envWorkerRows)を末尾に追加
+                  envWorkerRows.forEach(e => result.push(e));
+                  // 4) wasteAndScrap も workers も空のとき、最低限 workers を返す
+                  if (result.length === 0) return [...workers, ...envWorkerRows];
+                  return result;
+                })();
                 const maxSubRows = Math.max(1, effectiveWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, envWorkerRows.length + wasteAndScrap.length);
                 const allStartTimes = [...workers.map(w => w.start || w.startTime), ...outsourcing.map(o => o.start || o.startTime)].filter(Boolean).sort();
                 const allEndTimes = [...workers.map(w => w.end || w.endTime), ...outsourcing.map(o => o.end || o.endTime)].filter(Boolean).sort().reverse();
@@ -4153,11 +4256,31 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           const wRow = !isEnvRow ? wasteAndScrap[normIdx2] : null;
                           const workerFromWaste = wRow?.workerName || '';
                           const workerFromSelf = effectiveWorkers[subIdx]?.name || '';
-                          const displayName = isEnvRow
-                            ? `(${workerFromSelf.replace(/[()]/g,'')})`
-                            // isDitto行: 産廃にworkerNameがあればその名前を、なければ「〃」を表示
-                            : isDittoRow ? (workerFromWaste || '〃')
-                            : (workerFromWaste || workerFromSelf);
+                          // 各行の「実名」を計算する関数(env行は括弧付き、それ以外はworkerName優先→自社人工名)
+                          const resolveName = (idx) => {
+                            const isE = effectiveWorkers[idx]?.isEnv;
+                            const isD = effectiveWorkers[idx]?.isDitto;
+                            const self = effectiveWorkers[idx]?.name || '';
+                            if (isE) return `(${self.replace(/[()]/g,'')})`;
+                            // wasteAndScrap[idx相当]のworkerNameを取得
+                            let nIdx = 0;
+                            for(let k=0;k<idx;k++){if(!effectiveWorkers[k]?.isEnv) nIdx++;}
+                            const w = wasteAndScrap[nIdx];
+                            const fromW = w?.workerName || '';
+                            if (isD) return fromW || '';  // isDitto行は自社人工名は出さない(直後の同名チェックで〃に)
+                            return fromW || self;
+                          };
+                          const currentName = resolveName(subIdx);
+                          const prevName = subIdx > 0 ? resolveName(subIdx - 1) : '';
+                          // ★ 直前と同じ名前なら「〃」表示(env行同士の比較は除く - env行は括弧付きで別扱い)
+                          let displayName;
+                          if (isEnvRow) {
+                            displayName = currentName;
+                          } else if (currentName && currentName === prevName) {
+                            displayName = '〃';
+                          } else {
+                            displayName = currentName || (isDittoRow ? '〃' : '');
+                          }
                           return (<>
                             <td className="text-[8px]" style={isEnvRow?{color:'#374151'}:{}}>{displayName}</td>
                             <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!isEnvRow&&!isDittoRow?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
@@ -4237,7 +4360,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageInHouseCost)}</td>
                     <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>{pageOutWorkers}人</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageOutCost)}</td>
-                    <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageVehicleCost + pageHaishiCost + pageWasteVehicleCost)}</td>
+                    <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageAllVehicleCost + pageHaishiCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageMachineryCost)}</td>
                     <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151', whiteSpace:'nowrap' }}>{(pageRows.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+pageRows.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151', whiteSpace:'nowrap' }}>¥{formatCurrency(pageWasteCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
@@ -4250,7 +4373,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalInHouseCost)}</td>
                       <td className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>{totalOutsourcingWorkers}人</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
-                      <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalVehicleCost + totalHaishiCost + totalWasteVehicleCost)}</td>
+                      <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalAllVehicleCost + totalHaishiCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalMachineryCost)}</td>
                       <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e', whiteSpace:'nowrap' }}>{(allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e', whiteSpace:'nowrap' }}>¥{formatCurrency(totalWasteCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#1a1a2e' }}>原価合計</td>
@@ -4564,7 +4687,8 @@ export default function LOGIOApp() {
       if (report.workDetails) {
         report.workDetails.inHouseWorkers?.forEach(w => accumulatedCost += w.amount || 0);
         report.workDetails.outsourcingLabor?.forEach(o => accumulatedCost += o.amount || 0);
-        report.workDetails.vehicles?.forEach(v => accumulatedCost += v.amount || 0);
+        // ★ 車両費は重複除去して計上(vehicles + wasteItems + scrapItems の同一車両は1回のみ)
+        accumulatedCost += getReportVehicleCost(report);
         report.workDetails.machinery?.forEach(m => accumulatedCost += m.unitPrice || 0);
         report.workDetails.envItems?.forEach(t => accumulatedCost += t.amount || 0);
         report.workDetails.extItems?.forEach(t => accumulatedCost += t.amount || 0);
@@ -4572,8 +4696,7 @@ export default function LOGIOApp() {
       }
       report.wasteItems?.forEach(w => accumulatedCost += (w.amount || 0));
       report.wasteItems?.forEach(w => accumulatedCost += (w.haishiAmount || 0)); // 配車費は車両費扱い
-      report.wasteItems?.forEach(w => accumulatedCost += (w.vehicleAmount || 0)); // 産廃紐づき車両費
-      report.scrapItems?.forEach(sc => accumulatedCost += (sc.vehicleAmount || 0)); // スクラップ紐づき車両費
+      // ★ vehicleAmount は getReportVehicleCost に集約済みのため、ここでは加算しない
       report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
     });
     accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)

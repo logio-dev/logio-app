@@ -1812,27 +1812,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)||0}]});
     setMForm({type:'',price:''});
   };
-  const addEnv = () => {
-    if (!envForm.driver) return;
-    let unitPrice = 0;
-    if (envForm.isOverride) unitPrice = parseFloat(envForm.price)||0;
-    else if (envForm.shift) unitPrice = envForm.shift==='day' ? ENV_PRICES.day : ENV_PRICES.night;
-    if (!unitPrice) return;
-    const count = parseInt(envForm.count)||1;
-    const shiftLabel = envForm.isOverride ? '例外' : (envForm.shift==='day'?'昼':'夜');
-    setWorkDetails({...workDetails, envItems:[...(workDetails.envItems||[]),{driver:envForm.driver,shift:shiftLabel,count,unitPrice,amount:unitPrice*count}]});
-    setEnvForm({driver:'',shift:'',count:1,price:'',isOverride:false});
-  };
-  const addExt = () => {
-    let unitPrice = 0;
-    if (extForm.isOverride) unitPrice = parseFloat(extForm.price)||0;
-    else if (extForm.shift) unitPrice = extForm.shift==='day' ? EXT_PRICES.day : EXT_PRICES.night;
-    if (!unitPrice) return;
-    const count = parseInt(extForm.count)||1;
-    const shiftLabel = extForm.isOverride ? '例外' : (extForm.shift==='day'?'昼':'夜');
-    setWorkDetails({...workDetails, extItems:[...(workDetails.extItems||[]),{company:'ワイエムエコフューチャー',shift:shiftLabel,count,unitPrice,amount:unitPrice*count}]});
-    setExtForm({shift:'',count:1,price:'',isOverride:false});
-  };
+  // ※ envForm / extForm の入力UIは未実装のため、addEnv / addExt は削除しました
+  //   （未定義変数 envForm, extForm, ENV_PRICES, EXT_PRICES, setEnvForm, setExtForm を参照しており、
+  //    呼び出されると ReferenceError でクラッシュするデッドコードでした）
   const addWaste = () => {
     if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty) return;
     const qty=parseFloat(wasteForm.qty)||0, price=parseFloat(wasteForm.price)||0;
@@ -3870,10 +3852,25 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         if (siteName) {
           const data = await sb('reports').select(`site_name=eq.${encodeURIComponent(siteName)}&order=date.asc`);
           if (Array.isArray(data) && data.length > 0) {
-            setAllReports(data.map(r => ({ id: r.id, date: r.date, weather: r.weather, recorder: r.recorder, workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [], createdAt: r.created_at })));
+            // ★修正: photo_urls と memo も読み込み（PDF経由で写真・メモを参照する場合に対応）
+            setAllReports(data.map(r => ({
+              id: r.id,
+              date: r.date,
+              weather: r.weather,
+              recorder: r.recorder,
+              workDetails: r.work_details || {},
+              wasteItems: r.waste_items || [],
+              scrapItems: r.scrap_items || [],
+              photoUrls: r.photo_urls || [],
+              memo: r.memo || '',
+              createdAt: r.created_at,
+            })));
           } else { setAllReports([report]); }
         } else { setAllReports([report]); }
-      } catch (error) { setAllReports([report]); }
+      } catch (error) {
+        console.error('PDF loadAllReports error:', error);
+        setAllReports([report]);
+      }
       setLoading(false);
     };
     loadAllReports();
@@ -4192,16 +4189,19 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         {(()=>{
                           const envW = effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].waste : null;
                           const extW = !effectiveWorkers[subIdx]?.isEnv && !effectiveWorkers[subIdx]?.isDitto ? extWasteRows[subIdx] : null;
-                          // subIdxまでの通常行（isEnvでもisDittoでもない行 + isDitto行）のインデックス
-                          // effectiveWorkersの中でisEnvでない行の順番を数える
+                          // ★修正: normIdx2/normIdx3 と同じく isDitto も除外する
+                          //   （isDittoは「〃」で自社人工を補完する行で、産廃データを持たないため、
+                          //    wasteAndScrap のインデックスを進めてはいけない。
+                          //    これを除外しないと、環境課配車(isEnv)+〃補完(isDitto)がある日の
+                          //    通常産廃・スクラップが間違った行に表示される＝「古山問題」の原因）
                           let normIdx = -1;
-                          if (!effectiveWorkers[subIdx]?.isEnv) {
+                          if (!effectiveWorkers[subIdx]?.isEnv && !effectiveWorkers[subIdx]?.isDitto) {
                             normIdx = 0;
                             for (let k = 0; k < subIdx; k++) {
-                              if (!effectiveWorkers[k]?.isEnv) normIdx++;
+                              if (!effectiveWorkers[k]?.isEnv && !effectiveWorkers[k]?.isDitto) normIdx++;
                             }
                           }
-                          const normW = (!effectiveWorkers[subIdx]?.isEnv) ? wasteAndScrap[normIdx] : null;
+                          const normW = (normIdx >= 0) ? wasteAndScrap[normIdx] : null;
                           const w = envW || normW;
                           const isScrap = w?.manifestNumber==='-';
                           return (<>
@@ -4526,10 +4526,17 @@ export default function LOGIOApp() {
           count: parseFloat(o.count || o.workers || 0),
         }))
       };
+      // ★修正: photo_urls と memo も更新対象に含める（編集時に消失するバグの修正）
       try {
-        await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now }, `id=eq.${reportId}`);
+        await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], photo_urls: reportData.photoUrls || [], memo: reportData.memo || '', updated_by: updatedBy, updated_at: now }, `id=eq.${reportId}`);
       } catch(e) {
-        await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] }, `id=eq.${reportId}`);
+        // updated_by / updated_at カラムなしの場合のフォールバック
+        try {
+          await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], photo_urls: reportData.photoUrls || [], memo: reportData.memo || '' }, `id=eq.${reportId}`);
+        } catch(e2) {
+          // photo_urls / memo カラムもなしの場合の最終フォールバック
+          await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] }, `id=eq.${reportId}`);
+        }
       }
       await loadReports(selectedSite);
       setEditingReport(null);
@@ -4613,7 +4620,16 @@ export default function LOGIOApp() {
   window.__navigateEdit = (report) => { setEditingReport(report); setCurrentPage('edit'); window.scrollTo({ top: 0, behavior: 'instant' }); };
   window.__updateReportPhotos = async (reportId, photoUrls, memo) => {
     const now = new Date().toISOString();
-    await sb('reports').update({ photo_urls: photoUrls, memo: memo, updated_at: now }, `id=eq.${reportId}`);
+    // ★修正: updated_at カラムなしの場合のフォールバック
+    try {
+      await sb('reports').update({ photo_urls: photoUrls, memo: memo, updated_at: now }, `id=eq.${reportId}`);
+    } catch(e) {
+      try {
+        await sb('reports').update({ photo_urls: photoUrls, memo: memo }, `id=eq.${reportId}`);
+      } catch(e2) {
+        console.error('updateReportPhotos error:', e2);
+      }
+    }
     if (selectedSite) await loadReports(selectedSite);
   };
 

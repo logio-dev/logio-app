@@ -2603,7 +2603,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
                 <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select></div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:undefined,fontWeight:isRev?500:undefined}} /></div>
+                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
@@ -2654,6 +2654,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 )}
               </div>
 
+              {(() => {
+                const missing = [];
+                if (!wasteForm.type) missing.push('種類');
+                if (!wasteForm.disposal) missing.push('処分先');
+                if (!wasteForm.qty) missing.push('数量');
+                return missing.length > 0 ? (
+                  <div style={{fontSize:10,color:'rgba(255,255,255,0.5)',padding:'6px 10px',background:'rgba(255,255,255,0.04)',borderRadius:7,marginTop:6,textAlign:'center'}}>
+                    📝 入力が必要: <span style={{color:accentDark,fontWeight:700}}>{missing.join('・')}</span>
+                  </div>
+                ) : null;
+              })()}
               {editingWasteIdx !== null ? (
                 <div style={{display:'flex',gap:6}}>
                   <button onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty}
@@ -2710,7 +2721,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
                 <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select></div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:undefined,fontWeight:isRev?500:undefined}} /></div>
+                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
@@ -2775,6 +2786,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 })}
               </div>
 
+              {(() => {
+                const missing = [];
+                if (!wasteForm.type) missing.push('種類');
+                if (!wasteForm.disposal) missing.push('処分先');
+                if (!wasteForm.qty) missing.push('数量');
+                if (!wasteForm.driver) missing.push('運転者');
+                if (!wasteForm.haishiShift) missing.push('シフト');
+                return missing.length > 0 ? (
+                  <div style={{fontSize:10,color:'rgba(255,255,255,0.5)',padding:'6px 10px',background:'rgba(255,255,255,0.04)',borderRadius:7,marginTop:6,textAlign:'center'}}>
+                    📝 入力が必要: <span style={{color:accentDark,fontWeight:700}}>{missing.join('・')}</span>
+                  </div>
+                ) : null;
+              })()}
               {editingWasteIdx !== null ? (
                 <div style={{display:'flex',gap:6}}>
                   <button onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||!wasteForm.driver||!wasteForm.haishiShift}
@@ -2830,7 +2854,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
                 <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select></div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:undefined,fontWeight:isRev?500:undefined}} /></div>
+                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
@@ -2894,6 +2918,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <input type="number" value={wasteForm.haishiPrice} onChange={e=>setWasteForm({...wasteForm,haishiPrice:e.target.value})} placeholder="配車費を入力" style={{...inpTxt,border:`1px solid ${accentDark}`,marginBottom:8}}/>
               )}
 
+              {(() => {
+                const missing = [];
+                if (!wasteForm.type) missing.push('種類');
+                if (!wasteForm.disposal) missing.push('処分先');
+                if (!wasteForm.qty) missing.push('数量');
+                if (!wasteForm.haishiOverride && !wasteForm.haishiShift) missing.push('シフト または 例外金額');
+                return missing.length > 0 ? (
+                  <div style={{fontSize:10,color:'rgba(255,255,255,0.5)',padding:'6px 10px',background:'rgba(255,255,255,0.04)',borderRadius:7,marginTop:6,textAlign:'center'}}>
+                    📝 入力が必要: <span style={{color:accentDark,fontWeight:700}}>{missing.join('・')}</span>
+                  </div>
+                ) : null;
+              })()}
               {editingWasteIdx !== null ? (
                 <div style={{display:'flex',gap:6}}>
                   <button onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty||(!wasteForm.haishiOverride&&!wasteForm.haishiShift)}
@@ -4339,7 +4375,11 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 
 
 export default function LOGIOApp() {
-  const [showSplash, setShowSplash] = useState(true);
+  // ★ 起動アニメーション: 初回のみ表示 (localStorage に「見た」フラグ保存)
+  const [showSplash, setShowSplash] = useState(() => {
+    try { return !localStorage.getItem('wac_splash_seen'); }
+    catch { return true; }
+  });
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try { return !!localStorage.getItem('wac_user'); } catch { return false; }
   });
@@ -4386,7 +4426,10 @@ export default function LOGIOApp() {
 
   useEffect(() => {
     if (!showSplash) return;
-    const timer = setTimeout(() => setShowSplash(false), 4000);
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+      try { localStorage.setItem('wac_splash_seen', '1'); } catch {}
+    }, 4000);
     return () => clearTimeout(timer);
   }, [showSplash]);
 

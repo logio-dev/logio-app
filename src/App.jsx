@@ -4145,15 +4145,18 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         {(()=>{
                           const isEnvRow = effectiveWorkers[subIdx]?.isEnv;
                           const isDittoRow = effectiveWorkers[subIdx]?.isDitto;
-                          // isEnvでもisDittoでもない行のインデックス（自社人工のみカウント）
+                          // ★修正: isDittoは除外しない (産廃側のnormIdxと同じロジックに統一)
+                          //   これにより isDitto行でも wasteAndScrap[normIdx2] を参照でき、
+                          //   その産廃に紐づく workerName(例:間野)があれば「〃」ではなくその名前を表示できる
                           let normIdx2 = 0;
-                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv && !effectiveWorkers[k]?.isDitto) normIdx2++;}
-                          const wRow = !isEnvRow && !isDittoRow ? wasteAndScrap[normIdx2] : null;
+                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv) normIdx2++;}
+                          const wRow = !isEnvRow ? wasteAndScrap[normIdx2] : null;
                           const workerFromWaste = wRow?.workerName || '';
                           const workerFromSelf = effectiveWorkers[subIdx]?.name || '';
                           const displayName = isEnvRow
                             ? `(${workerFromSelf.replace(/[()]/g,'')})`
-                            : isDittoRow ? '〃'
+                            // isDitto行: 産廃にworkerNameがあればその名前を、なければ「〃」を表示
+                            : isDittoRow ? (workerFromWaste || '〃')
                             : (workerFromWaste || workerFromSelf);
                           return (<>
                             <td className="text-[8px]" style={isEnvRow?{color:'#374151'}:{}}>{displayName}</td>
@@ -4166,9 +4169,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         {(()=>{
                           const isEnvRow2 = effectiveWorkers[subIdx]?.isEnv;
                           const isDittoRow2 = effectiveWorkers[subIdx]?.isDitto;
+                          // ★修正: isDittoは除外しない (担当者・産廃のnormIdxと同じロジックに統一)
                           let normIdx3 = 0;
-                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv && !effectiveWorkers[k]?.isDitto) normIdx3++;}
-                          const wRow2 = !isEnvRow2 && !isDittoRow2 ? wasteAndScrap[normIdx3] : null;
+                          for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv) normIdx3++;}
+                          const wRow2 = !isEnvRow2 ? wasteAndScrap[normIdx3] : null;
                           const vt = vehicles[subIdx]?.type
                             || (isEnvRow2 ? effectiveWorkers[subIdx].vType : '')
                             || (wRow2?.workerVType || '')

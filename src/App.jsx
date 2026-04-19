@@ -4189,16 +4189,15 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         {(()=>{
                           const envW = effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].waste : null;
                           const extW = !effectiveWorkers[subIdx]?.isEnv && !effectiveWorkers[subIdx]?.isDitto ? extWasteRows[subIdx] : null;
-                          // ★修正: normIdx2/normIdx3 と同じく isDitto も除外する
-                          //   （isDittoは「〃」で自社人工を補完する行で、産廃データを持たないため、
-                          //    wasteAndScrap のインデックスを進めてはいけない。
-                          //    これを除外しないと、環境課配車(isEnv)+〃補完(isDitto)がある日の
-                          //    通常産廃・スクラップが間違った行に表示される＝「古山問題」の原因）
+                          // ★修正: isDittoは除外しない
+                          //   isDitto行は「自社人工を〃で補完する行」だが、wasteAndScrapに合わせて足された行のため、
+                          //   産廃データ(断熱材・金属など2件目以降)はisDitto行に表示する必要がある。
+                          //   isEnv行のみ除外する(環境課行は envW を使うため wasteAndScrap のindexを進めない)。
                           let normIdx = -1;
-                          if (!effectiveWorkers[subIdx]?.isEnv && !effectiveWorkers[subIdx]?.isDitto) {
+                          if (!effectiveWorkers[subIdx]?.isEnv) {
                             normIdx = 0;
                             for (let k = 0; k < subIdx; k++) {
-                              if (!effectiveWorkers[k]?.isEnv && !effectiveWorkers[k]?.isDitto) normIdx++;
+                              if (!effectiveWorkers[k]?.isEnv) normIdx++;
                             }
                           }
                           const normW = (normIdx >= 0) ? wasteAndScrap[normIdx] : null;

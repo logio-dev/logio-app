@@ -3349,8 +3349,9 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       r.workDetails.envItems?.forEach(t => costByCategory['環境課配車'] = (costByCategory['環境課配車']||0) + (t.amount || 0));
       r.workDetails.extItems?.forEach(t => costByCategory['外部運搬'] = (costByCategory['外部運搬']||0) + (t.amount || 0));
     }
-    // ★ 車両費は重複除去版で計上
+    // ★ 車両費(配車費込み = 従来の設計通り)
     costByCategory['車両費'] += getReportVehicleCost(r);
+    costByCategory['車両費'] += (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0);
     r.wasteItems?.forEach(w => costByCategory['産廃費'] += w.amount || 0);
   });
   if (projectInfo?.transferCost) costByCategory['回送費'] = parseFloat(projectInfo.transferCost) || 0;
@@ -3373,8 +3374,9 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       r.workDetails.envItems?.forEach(t => monthlyData[month] += t.amount || 0);
       r.workDetails.extItems?.forEach(t => monthlyData[month] += t.amount || 0);
     }
-    // ★ 車両費は重複除去版で計上
+    // ★ 車両費(配車費込み)
     monthlyData[month] += getReportVehicleCost(r);
+    monthlyData[month] += (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0);
     r.wasteItems?.forEach(w => monthlyData[month] += w.amount || 0);
   });
   const sortedMonths = Object.keys(monthlyData).sort();
@@ -3878,11 +3880,21 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   // ★ 重複除去後の総車両費(同一車両は1回のみ計上)
   const totalAllVehicleCost = getReportsVehicleCost(allReports);
   const totalMachineryCost = allReports.reduce((sum, r) => sum + (r.workDetails?.machinery || []).reduce((s, m) => s + (m.unitPrice || 0), 0), 0);
-  const totalWasteCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
+  // ★ 産廃処分費 (処分のみ、プラスの金額)
+  const totalWasteDisposal = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + ((w.amount || 0) > 0 ? w.amount : 0), 0), 0);
+  // ★ 金属売上 (wasteItems のマイナス金額の絶対値)
+  const totalMetalRevenue = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + ((w.amount || 0) < 0 ? Math.abs(w.amount) : 0), 0), 0);
+  // ★ 純額: 処分費 - 金属売上 (原価計算用)
+  const totalWasteCost = totalWasteDisposal - totalMetalRevenue;
   const totalHaishiCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0), 0);
   const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.envItems || []).reduce((s,t)=>s+(t.amount||0),0) + (r.workDetails?.extItems || []).reduce((s,t)=>s+(t.amount||0),0), 0);
   const totalDailyExpenses = allReports.reduce((sum, r) => sum + (r.workDetails?.dailyExpenses || []).reduce((s,e)=>s+(e.amount||0),0), 0);
-  const totalScrapRevenue = allReports.reduce((sum, r) => sum + Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0)), 0);
+  // ★ 金属売上: 旧 scrapItems + 新 wasteItems(amount < 0 or isScrap) の両方を合算
+  const totalScrapRevenue = allReports.reduce((sum, r) => {
+    const oldScrap = Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0));
+    const newScrap = (r.wasteItems || []).reduce((s, w) => s + ((w.amount || 0) < 0 ? Math.abs(w.amount) : 0), 0);
+    return sum + oldScrap + newScrap;
+  }, 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
   // ★ 車両費は重複除去後の totalAllVehicleCost を使う(haishiAmount は別フィールドなので加算)
   const totalCost = totalInHouseCost + totalOutsourcingCost + totalAllVehicleCost + totalHaishiCost + totalMachineryCost + totalTransportCost + totalWasteCost + totalDailyExpenses
@@ -3951,7 +3963,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           // ★ 重複除去後のページ車両費合計
           const pageAllVehicleCost = getReportsVehicleCost(pageRows);
           const pageMachineryCost  = pageRows.reduce((s,r)=>s+(r.workDetails?.machinery||[]).reduce((a,m)=>a+(m.unitPrice||0),0),0);
-          const pageWasteCost      = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),0),0);
+          // ★ 産廃処分費 (処分のみ、金額プラスのもの)
+          const pageWasteDisposal  = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+((w.amount||0) > 0 ? w.amount : 0),0),0);
+          // ★ 金属売上 (マイナス金額の絶対値、売上として別表示)
+          const pageMetalRevenue   = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+((w.amount||0) < 0 ? Math.abs(w.amount) : 0),0),0);
+          // ★ 純額(原価計算用): 処分費 - 売上
+          const pageWasteCost      = pageWasteDisposal - pageMetalRevenue;
           const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost;
 
           // リース等アイテム集計
@@ -3965,7 +3982,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 
           // 現場詳細・単価計算
           const areaM2 = parseFloat(projectInfo.siteAreaM2) || 0;
-          const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)
+          const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.unit==='㎥'?(parseFloat(w.quantity)||0):(w.volumeM3?parseFloat(w.volumeM3)||0:0)),s),0)
                        + allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0);
           const wCost  = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),s),0);
           const laborC = allReports.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0)+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
@@ -4336,7 +4353,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageOutCost)}</td>
                     <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageAllVehicleCost + pageHaishiCost)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151' }}>¥{formatCurrency(pageMachineryCost)}</td>
-                    <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151', whiteSpace:'nowrap' }}>{(pageRows.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+pageRows.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151', whiteSpace:'nowrap' }}>¥{formatCurrency(pageWasteCost)}</td>
+                    <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#374151', whiteSpace:'nowrap' }}>{(pageRows.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.unit==='㎥'?(parseFloat(w.quantity)||0):(w.volumeM3?parseFloat(w.volumeM3)||0:0)),s),0)+pageRows.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#374151', whiteSpace:'nowrap' }}>¥{formatCurrency(pageWasteDisposal)}</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#374151' }}>原価小計</td>
                     <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#374151' }}>¥{formatCurrency(pageTotal)}</td>
                   </tr>
@@ -4349,7 +4366,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalOutsourcingCost)}</td>
                       <td colSpan="2" className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalAllVehicleCost + totalHaishiCost)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e' }}>¥{formatCurrency(totalMachineryCost)}</td>
-                      <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e', whiteSpace:'nowrap' }}>{(allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(parseFloat(w.quantity)||0),s),0)+allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e', whiteSpace:'nowrap' }}>¥{formatCurrency(totalWasteCost)}</td>
+                      <td colSpan="2" className="text-center text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e', whiteSpace:'nowrap' }}>{(allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.unit==='㎥'?(parseFloat(w.quantity)||0):(w.volumeM3?parseFloat(w.volumeM3)||0:0)),s),0)+allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0)).toFixed(1)}㎥</td><td className="text-right text-[8px] font-bold" style={{ color: '#93C5FD', background:'#1a1a2e', whiteSpace:'nowrap' }}>¥{formatCurrency(totalWasteDisposal)}</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#D1D5DB', background:'#1a1a2e' }}>原価合計</td>
                       <td className="text-right text-[8px] font-bold" style={{ color: '#fff', background:'#1a1a2e' }}>¥{formatCurrency(totalCost)}</td>
                     </tr>

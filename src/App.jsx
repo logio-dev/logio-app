@@ -1647,8 +1647,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                     rows[i]={...rows[i],disposal:e.target.value};
                                     setProjectInfo({...projectInfo,manifestRows:rows});
                                   }} style={{width:'100%',padding:'9px 8px',background:'rgba(255,255,255,0.08)',border:'none',color:row.disposal?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',WebkitAppearance:'none',boxSizing:'border-box'}}>
-                                    <option value="" style={{background:'#F3F4F6'}}>処分先を選択</option>
-                                    {MASTER_DATA.disposalSites.map(s=><option key={s} value={s} style={{background:'#F3F4F6'}}>{s}</option>)}
+                                    <option value="" style={{color:'#000',background:'#F3F4F6'}}>処分先を選択</option>
+                                    {MASTER_DATA.disposalSites.map(s=><option key={s} value={s} style={{color:'#000',background:'#F3F4F6'}}>{s}</option>)}
                                   </select>
                                   <div style={{display:'flex',gap:4,marginTop:4}}>
                                     <input type="text" value={row._custom||''} onChange={e=>{
@@ -1676,14 +1676,26 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                 <div style={{display:'grid',gridTemplateColumns:'1fr 72px',gap:8}}>
                                   <div>
                                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.3)',letterSpacing:'.06em',marginBottom:4}}>運搬会社</div>
-                                    <select value={row.transport||''} onChange={e=>{
+                                    <select value={['入間緑化','自社運搬','奈良商事'].includes(row.transport)?row.transport:(row.transport?'__custom__':'')} onChange={e=>{
                                       const rows=[...(projectInfo.manifestRows||[])];
-                                      rows[i]={...rows[i],transport:e.target.value};
+                                      if(e.target.value==='__custom__'){
+                                        rows[i]={...rows[i],transport:rows[i].transport&&!['入間緑化','自社運搬','奈良商事'].includes(rows[i].transport)?rows[i].transport:''};
+                                      } else {
+                                        rows[i]={...rows[i],transport:e.target.value};
+                                      }
                                       setProjectInfo({...projectInfo,manifestRows:rows});
                                     }} style={{width:'100%',padding:'9px 8px',background:'rgba(255,255,255,0.08)',border:'none',color:row.transport?'#fff':'rgba(255,255,255,0.3)',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',WebkitAppearance:'none',boxSizing:'border-box'}}>
-                                      <option value="" style={{background:'#F3F4F6'}}>選択</option>
-                                      {['自社運搬','入間緑化','奈良商事'].map(t=><option key={t} value={t} style={{background:'#F3F4F6'}}>{t}</option>)}
+                                      <option value="" style={{color:'#000',background:'#F3F4F6'}}>選択</option>
+                                      {['入間緑化','自社運搬','奈良商事'].map(t=><option key={t} value={t} style={{color:'#000',background:'#F3F4F6'}}>{t}</option>)}
+                                      <option value="__custom__" style={{color:'#000',background:'#F3F4F6'}}>リストにない場合</option>
                                     </select>
+                                    {row.transport && !['入間緑化','自社運搬','奈良商事'].includes(row.transport) && (
+                                      <input type="text" value={row.transport} onChange={e=>{
+                                        const rows=[...(projectInfo.manifestRows||[])];
+                                        rows[i]={...rows[i],transport:e.target.value};
+                                        setProjectInfo({...projectInfo,manifestRows:rows});
+                                      }} placeholder="運搬会社名を入力" style={{marginTop:6,width:'100%',padding:'9px 8px',background:'rgba(59,130,246,0.12)',border:'1px solid rgba(59,130,246,0.3)',color:'#60a5fa',borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',boxSizing:'border-box'}}/>
+                                    )}
                                   </div>
                                   <div>
                                     <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.3)',letterSpacing:'.06em',marginBottom:4}}>枚数</div>
@@ -2120,7 +2132,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     else if (wasteTab === 'ext') addExtWaste();
   };
 
-  const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜積':s==='halfDay'?'半日':'日勤';
+  const shiftLabel = s => s==='nighttime'?'夜間':s==='nightLoading'?'夜間環境課':s==='halfDay'?'半日':'日勤';
   const shiftColor = s => s==='nighttime'?'#8B5CF6':s==='nightLoading'?'#6366F1':s==='halfDay'?'#F59E0B':'#3B82F6';
 
   const StepDots = () => (
@@ -2174,7 +2186,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       {[
         ['daytime',     '日勤',   '#2563EB'],
         ['nighttime',   '夜間',   '#7C3AED'],
-        ['nightLoading','夜積',   '#4F46E5'],
+        ['nightLoading','夜間環境課',   '#4F46E5'],
         ['halfDay',     '半日',   '#D97706'],
       ].map(([v,label,color])=>(
         <button key={v} onClick={()=>onChange(v)} style={{
@@ -2226,7 +2238,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     </div>
   );
 
-  const workContent_tags = ['1F解体作業','2F解体作業','外壁解体','基礎解体','内装解体','鉄骨切断','産廃積込','整地作業'];
+  const workContent_tags = ['養生','間仕切解体','天井解体','ボード搬出'];
 
   return (
     <div style={{ background:'#fff', minHeight:'100vh', overflowX:'hidden' }}>
@@ -2279,7 +2291,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           <div style={inputCard}>
             <div>
               <label style={inpLbl}>施工内容</label>
-              <input type="text" placeholder="例）1F解体作業" value={workDetails.workContent} onChange={e=>setWorkDetails({...workDetails,workContent:e.target.value})} style={inpTxt} />
+              <input type="text" placeholder="例）養生、間仕切解体、天井解体、ボード搬出" value={workDetails.workContent} onChange={e=>setWorkDetails({...workDetails,workContent:e.target.value})} style={inpTxt} />
               <p style={{ fontSize:'9px', color:'rgba(255,255,255,0.45)', margin:'7px 0 5px' }}>⏱ 候補から選択</p>
               <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
                 {workContent_tags.filter(t=>!workDetails.workContent||t.includes(workDetails.workContent)).map(t=>(
@@ -2687,15 +2699,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     </select>
                   </div>
                   <div>
-                    <label style={inpLbl}>車番{(wasteForm.workerVType==='東リース2t'||wasteForm.workerVType==='東リース3t'||wasteForm.workerVType==='道具車')?'（手入力）':''}</label>
-                    {(wasteForm.workerVType==='東リース2t'||wasteForm.workerVType==='東リース3t'||wasteForm.workerVType==='道具車') ? (
-                      <input type="text" value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} placeholder="例）ABC-123" style={inpTxt} />
-                    ) : (
-                      <select value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} style={inpSel}>
-                        <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
-                        {(MASTER_DATA.vehicleNumbersByType[wasteForm.workerVType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
-                      </select>
+                    <label style={inpLbl}>車番</label>
+                    {((MASTER_DATA.vehicleNumbersByType[wasteForm.workerVType])||[]).length > 0 && (
+                      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                        {(MASTER_DATA.vehicleNumbersByType[wasteForm.workerVType]||[]).map(n=>(
+                          <button key={n} onClick={()=>setWasteForm({...wasteForm,workerVNumber:n})}
+                            style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.workerVNumber===n?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.workerVNumber===n?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.workerVNumber===n?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                            {n}
+                          </button>
+                        ))}
+                      </div>
                     )}
+                    <input type="text" value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} placeholder="車番を入力または上から選択" style={inpTxt} />
                   </div>
                 </div>
                 {wasteForm.workerVType && (
@@ -2801,14 +2816,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   </select>
                 </div>
                 <div>
-                  <label style={inpLbl}>車番{(wasteForm.vType==='東リース2t'||wasteForm.vType==='東リース3t'||wasteForm.vType==='道具車')?'（手入力）':''}</label>
-                  {(wasteForm.vType==='東リース2t'||wasteForm.vType==='東リース3t'||wasteForm.vType==='道具車') ? (
-                    <input type="text" value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="例）ABC-123" style={{...inpTxt,border:inputBorder}} />
-                  ) : (
-                    <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,border:inputBorder}}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
-                    </select>
+                  <label style={inpLbl}>車番</label>
+                  {((MASTER_DATA.vehicleNumbersByType[wasteForm.vType])||[]).length > 0 && (
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                      {(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=>(
+                        <button key={n} onClick={()=>setWasteForm({...wasteForm,vNumber:n})}
+                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.vNumber===n?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.vNumber===n?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.vNumber===n?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
                   )}
+                  <input type="text" value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="車番を入力または上から選択" style={{...inpTxt,border:inputBorder}} />
                 </div>
               </div>
 
@@ -2953,14 +2972,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   </select>
                 </div>
                 <div>
-                  <label style={inpLbl}>車番{(wasteForm.vType==='東リース2t'||wasteForm.vType==='東リース3t'||wasteForm.vType==='道具車')?'（手入力）':''}</label>
-                  {(wasteForm.vType==='東リース2t'||wasteForm.vType==='東リース3t'||wasteForm.vType==='道具車') ? (
-                    <input type="text" value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="例）ABC-123" style={{...inpTxt,border:inputBorder}} />
-                  ) : (
-                    <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,border:inputBorder}}>
-                      <option value="" style={{color:"#000",background:"#fff"}}>選択</option>{(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=><option key={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
-                    </select>
+                  <label style={inpLbl}>車番</label>
+                  {((MASTER_DATA.vehicleNumbersByType[wasteForm.vType])||[]).length > 0 && (
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                      {(MASTER_DATA.vehicleNumbersByType[wasteForm.vType]||[]).map(n=>(
+                        <button key={n} onClick={()=>setWasteForm({...wasteForm,vNumber:n})}
+                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.vNumber===n?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.vNumber===n?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.vNumber===n?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
                   )}
+                  <input type="text" value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="車番を入力または上から選択" style={{...inpTxt,border:inputBorder}} />
                 </div>
               </div>
 

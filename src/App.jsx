@@ -722,6 +722,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const [wasteOpen, setWasteOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
+  // ★ 現場セレクターのタブフィルタ (all=全て / 着工前 / 進行中 / 完了)
+  const [siteFilterTab, setSiteFilterTab] = useState('進行中');
   const [homePhotoOpen, setHomePhotoOpen] = useState(false);
   const [homePhotoUrls, setHomePhotoUrls] = useState([]);
   const [homeMemo, setHomeMemo] = useState('');
@@ -928,19 +930,57 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               style={{ background: '#fff', border: '1px solid #E8E8E8' }}>
               {sites.length === 0 ? (
                 <div className="px-4 py-3 text-sm text-gray-500">現場が登録されていません</div>
-              ) : sites.map(site => (
-                <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); window.scrollTo({top:0,behavior:'instant'}); document.body.scrollTop=0; document.documentElement.scrollTop=0; }}
-                  className="w-full px-4 py-3 text-left flex items-center justify-between transition-colors"
-                  style={{ borderBottom: '1px solid #F0F0F0' }}
-                  onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
-                  onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                  <div>
-                    <p style={{ fontSize: '14px', fontWeight:600, color:'#1C1917' }}>{site.name}</p>
-                    {site.projectNumber && <p style={{ fontSize: '11px', color:'#999', marginTop:2 }}>{site.projectNumber}</p>}
-                  </div>
-                  {selectedSite === site.name && <Check className="w-4 h-4 text-blue-500" />}
-                </button>
-              ))}
+              ) : (() => {
+                // タブごとのカウント
+                const countByStatus = {
+                  '着工前': sites.filter(s => s.status === '着工前').length,
+                  '進行中': sites.filter(s => s.status === '進行中' || !s.status).length,
+                  '完了':   sites.filter(s => s.status === '完了').length,
+                };
+                // 選択中のタブでフィルタ
+                const filteredSites = sites.filter(s => {
+                  if (siteFilterTab === '進行中') return s.status === '進行中' || !s.status;
+                  return s.status === siteFilterTab;
+                });
+                return (
+                  <>
+                    {/* タブ切替 */}
+                    <div style={{display:'flex',gap:2,padding:'8px 8px 6px',borderBottom:'1px solid #F0F0F0',background:'#FAFAFA'}}>
+                      {['着工前','進行中','完了'].map(tab => (
+                        <button key={tab} onClick={(e) => { e.stopPropagation(); setSiteFilterTab(tab); }}
+                          style={{
+                            flex:1,padding:'7px 6px',borderRadius:6,border:'none',
+                            background: siteFilterTab===tab ? '#1E293B' : 'transparent',
+                            color: siteFilterTab===tab ? '#fff' : '#666',
+                            fontSize:11,fontWeight:siteFilterTab===tab?700:500,
+                            cursor:'pointer',fontFamily:'inherit',
+                            transition:'all 0.15s'
+                          }}>
+                          {tab} <span style={{fontSize:9,opacity:0.7,marginLeft:2}}>({countByStatus[tab]})</span>
+                        </button>
+                      ))}
+                    </div>
+                    {/* 現場リスト */}
+                    <div style={{maxHeight:'320px',overflowY:'auto'}}>
+                      {filteredSites.length === 0 ? (
+                        <div style={{padding:'20px 16px',textAlign:'center',fontSize:12,color:'#aaa'}}>該当する現場がありません</div>
+                      ) : filteredSites.map(site => (
+                        <button key={site.name} onClick={() => { onSelectSite(site.name); setSiteDropdownOpen(false); window.scrollTo({top:0,behavior:'instant'}); document.body.scrollTop=0; document.documentElement.scrollTop=0; }}
+                          className="w-full px-4 py-3 text-left flex items-center justify-between transition-colors"
+                          style={{ borderBottom: '1px solid #F0F0F0' }}
+                          onMouseEnter={e => e.currentTarget.style.background='#F7F7F7'}
+                          onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                          <div>
+                            <p style={{ fontSize: '14px', fontWeight:600, color:'#1C1917' }}>{site.name}</p>
+                            {site.projectNumber && <p style={{ fontSize: '11px', color:'#999', marginTop:2 }}>{site.projectNumber}</p>}
+                          </div>
+                          {selectedSite === site.name && <Check className="w-4 h-4 text-blue-500" />}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
           {/* sitesReady条件の閉じ */}
@@ -2571,7 +2611,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               ['env','環境課配車','#0E3A1E'],
               ['ext','ワイエム配車','#26215C'],
             ].map(([v,label,activeColor])=>(
-              <button key={v} onClick={()=>{ if (editingWasteIdx!==null) cancelEdit(); setWasteTab(v); }}
+              <button key={v} onClick={()=>{ 
+                if (editingWasteIdx!==null) cancelEdit();
+                setWasteTab(v);
+                // ★ タブ切替時にフォーム完全クリア(産廃/金属の独立化)
+                const currentMode = wasteModeByTab[v]||'cost';
+                setWasteForm({mode:currentMode,type:'',disposal:'',qty:'',unit:currentMode==='revenue'?'kg':'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});
+                setEditingWasteIdx(null);
+              }}
                 style={{
                   position:'relative',zIndex:1,
                   padding:'11px 4px',borderRadius:7,border:'none',
@@ -2659,7 +2706,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
                 <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
+                <div><label style={{...inpLbl,color:isRev?accentDark:'#fff',fontWeight:isRev?700:500}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
@@ -2702,19 +2749,24 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     <label style={inpLbl}>車番</label>
                     {(() => {
                       const candidates = MASTER_DATA.vehicleNumbersByType[wasteForm.workerVType] || [];
-                      const isCustom = wasteForm.workerVNumber && !candidates.includes(wasteForm.workerVNumber);
+                      const inMaster = candidates.includes(wasteForm.workerVNumber);
+                      const isCustom = wasteForm.workerVNumber && !inMaster;
                       return (
                         <>
                           <select value={isCustom ? '__custom__' : (wasteForm.workerVNumber||'')} onChange={e=>{
-                            if (e.target.value === '__custom__') setWasteForm({...wasteForm, workerVNumber: wasteForm.workerVNumber && !candidates.includes(wasteForm.workerVNumber) ? wasteForm.workerVNumber : ''});
-                            else setWasteForm({...wasteForm, workerVNumber: e.target.value});
+                            if (e.target.value === '__custom__') {
+                              // __custom__選択時: 既に非マスタ値があればそのまま、なければスペース1つで入力欄を出す
+                              setWasteForm({...wasteForm, workerVNumber: (wasteForm.workerVNumber && !candidates.includes(wasteForm.workerVNumber)) ? wasteForm.workerVNumber : ' '});
+                            } else {
+                              setWasteForm({...wasteForm, workerVNumber: e.target.value});
+                            }
                           }} style={inpSel}>
                             <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
                             {candidates.map(n=><option key={n} value={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                             <option value="__custom__" style={{color:"#000",background:"#fff"}}>マスタにない場合</option>
                           </select>
                           {isCustom && (
-                            <input type="text" value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} placeholder="車番を入力" style={{...inpTxt,marginTop:6}} />
+                            <input type="text" value={(wasteForm.workerVNumber||'').trim()} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value||' '})} placeholder="車番を入力" style={{...inpTxt,marginTop:6,color:'#fff'}} autoFocus />
                           )}
                         </>
                       );
@@ -2791,7 +2843,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
                 <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
+                <div><label style={{...inpLbl,color:isRev?accentDark:'#fff',fontWeight:isRev?700:500}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
@@ -2827,19 +2879,23 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <label style={inpLbl}>車番</label>
                   {(() => {
                     const candidates = MASTER_DATA.vehicleNumbersByType[wasteForm.vType] || [];
-                    const isCustom = wasteForm.vNumber && !candidates.includes(wasteForm.vNumber);
+                    const inMaster = candidates.includes(wasteForm.vNumber);
+                    const isCustom = wasteForm.vNumber && !inMaster;
                     return (
                       <>
                         <select value={isCustom ? '__custom__' : (wasteForm.vNumber||'')} onChange={e=>{
-                          if (e.target.value === '__custom__') setWasteForm({...wasteForm, vNumber: wasteForm.vNumber && !candidates.includes(wasteForm.vNumber) ? wasteForm.vNumber : ''});
-                          else setWasteForm({...wasteForm, vNumber: e.target.value});
+                          if (e.target.value === '__custom__') {
+                            setWasteForm({...wasteForm, vNumber: (wasteForm.vNumber && !candidates.includes(wasteForm.vNumber)) ? wasteForm.vNumber : ' '});
+                          } else {
+                            setWasteForm({...wasteForm, vNumber: e.target.value});
+                          }
                         }} style={{...inpSel,border:inputBorder}}>
                           <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
                           {candidates.map(n=><option key={n} value={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                           <option value="__custom__" style={{color:"#000",background:"#fff"}}>マスタにない場合</option>
                         </select>
                         {isCustom && (
-                          <input type="text" value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="車番を入力" style={{...inpTxt,border:inputBorder,marginTop:6}} />
+                          <input type="text" value={(wasteForm.vNumber||'').trim()} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value||' '})} placeholder="車番を入力" style={{...inpTxt,border:inputBorder,marginTop:6,color:'#fff'}} autoFocus />
                         )}
                       </>
                     );
@@ -2937,7 +2993,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
                 <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
+                <div><label style={{...inpLbl,color:isRev?accentDark:'#fff',fontWeight:isRev?700:500}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
@@ -2991,19 +3047,23 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <label style={inpLbl}>車番</label>
                   {(() => {
                     const candidates = MASTER_DATA.vehicleNumbersByType[wasteForm.vType] || [];
-                    const isCustom = (wasteForm.vNumber||'') && !candidates.includes(wasteForm.vNumber||'');
+                    const inMaster = candidates.includes(wasteForm.vNumber||'');
+                    const isCustom = (wasteForm.vNumber||'') && !inMaster;
                     return (
                       <>
                         <select value={isCustom ? '__custom__' : (wasteForm.vNumber||'')} onChange={e=>{
-                          if (e.target.value === '__custom__') setWasteForm({...wasteForm, vNumber: (wasteForm.vNumber||'') && !candidates.includes(wasteForm.vNumber||'') ? wasteForm.vNumber : ''});
-                          else setWasteForm({...wasteForm, vNumber: e.target.value});
+                          if (e.target.value === '__custom__') {
+                            setWasteForm({...wasteForm, vNumber: ((wasteForm.vNumber||'') && !candidates.includes(wasteForm.vNumber||'')) ? wasteForm.vNumber : ' '});
+                          } else {
+                            setWasteForm({...wasteForm, vNumber: e.target.value});
+                          }
                         }} style={{...inpSel,border:inputBorder}}>
                           <option value="" style={{color:"#000",background:"#fff"}}>選択</option>
                           {candidates.map(n=><option key={n} value={n} style={{color:"#000",background:"#fff"}}>{n}</option>)}
                           <option value="__custom__" style={{color:"#000",background:"#fff"}}>マスタにない場合</option>
                         </select>
                         {isCustom && (
-                          <input type="text" value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="車番を入力" style={{...inpTxt,border:inputBorder,marginTop:6}} />
+                          <input type="text" value={(wasteForm.vNumber||'').trim()} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value||' '})} placeholder="車番を入力" style={{...inpTxt,border:inputBorder,marginTop:6,color:'#fff'}} autoFocus />
                         )}
                       </>
                     );
@@ -4456,11 +4516,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 
 
 export default function LOGIOApp() {
-  // ★ 起動アニメーション: 初回のみ表示 (localStorage に「見た」フラグ保存)
-  const [showSplash, setShowSplash] = useState(() => {
-    try { return !localStorage.getItem('wac_splash_seen'); }
-    catch { return true; }
-  });
+  // ★ 起動アニメーション: 毎回起動時に表示
+  const [showSplash, setShowSplash] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try { return !!localStorage.getItem('wac_user'); } catch { return false; }
   });
@@ -4509,9 +4566,28 @@ export default function LOGIOApp() {
     if (!showSplash) return;
     const timer = setTimeout(() => {
       setShowSplash(false);
-      try { localStorage.setItem('wac_splash_seen', '1'); } catch {}
     }, 4000);
     return () => clearTimeout(timer);
+  }, [showSplash]);
+
+  // ★ 10分無操作でアニメに戻る(ログインセッションは維持)
+  useEffect(() => {
+    if (showSplash) return; // スプラッシュ中は監視不要
+    const IDLE_MS = 10 * 60 * 1000; // 10分
+    let idleTimer = null;
+    const resetIdle = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        setShowSplash(true);
+      }, IDLE_MS);
+    };
+    const events = ['mousedown','mousemove','keydown','touchstart','scroll','wheel'];
+    events.forEach(e => window.addEventListener(e, resetIdle, {passive:true}));
+    resetIdle(); // 初期起動
+    return () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      events.forEach(e => window.removeEventListener(e, resetIdle));
+    };
   }, [showSplash]);
 
   useEffect(() => { if (isLoggedIn) loadSites(); }, [isLoggedIn]);

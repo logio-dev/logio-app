@@ -2090,7 +2090,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     setWasteForm({
       mode: scrap ? 'revenue' : 'cost',
       type:w.material, disposal:w.disposalSite,
-      qty:String(w.quantity), unit:w.unit||'㎥',
+      qty:String(w.quantity), unit: scrap ? 'kg' : (w.unit||'㎥'),
       price:String(Math.abs(w.amount||0)),  // 表示は絶対値
       manifest:(w.manifestNumber==='-'?'':w.manifestNumber||''),
       haisha:w.haisha||'',
@@ -2608,12 +2608,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {/* 処分/売上 2分割カード */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
-                <button onClick={()=>setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'})}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm(f=>({...f,unit:'㎥'}));}}
                   style={{padding:'12px 8px',borderRadius:10,border:!isRev?`2px solid ${accentDark}`:'2px solid rgba(255,255,255,0.12)',background:!isRev?accentBg:'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:!isRev?accentDark:'rgba(255,255,255,0.5)'}}>産廃処分</div>
                   <div style={{fontSize:9,color:!isRev?accentDark:'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>廃プラ・ボード等</div>
                 </button>
-                <button onClick={()=>setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'})}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm(f=>({...f,unit:'kg'}));}}
                   style={{padding:'12px 8px',borderRadius:10,border:isRev?'2px solid #06B6D4':'2px solid rgba(255,255,255,0.12)',background:isRev?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:isRev?'#22D3EE':'rgba(255,255,255,0.5)'}}>金属売上</div>
                   <div style={{fontSize:9,color:isRev?'#67e8f9':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>鉄・銅くず等</div>
@@ -2639,7 +2639,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
-                <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select></div>
+                <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
                 <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (
@@ -2730,12 +2730,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {/* 処分/売上 2分割カード */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
-                <button onClick={()=>setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'})}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm(f=>({...f,unit:'㎥'}));}}
                   style={{padding:'12px 8px',borderRadius:10,border:!isRev?`2px solid ${accentDark}`:'2px solid rgba(255,255,255,0.12)',background:!isRev?accentBg:'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:!isRev?accentDark:'rgba(255,255,255,0.5)'}}>産廃処分</div>
                   <div style={{fontSize:9,color:!isRev?accentDark:'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>廃プラ・ボード等</div>
                 </button>
-                <button onClick={()=>setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'})}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm(f=>({...f,unit:'kg'}));}}
                   style={{padding:'12px 8px',borderRadius:10,border:isRev?'2px solid #06B6D4':'2px solid rgba(255,255,255,0.12)',background:isRev?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:isRev?'#22D3EE':'rgba(255,255,255,0.5)'}}>金属売上</div>
                   <div style={{fontSize:9,color:isRev?'#67e8f9':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>鉄・銅くず等</div>
@@ -2760,7 +2760,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
-                <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select></div>
+                <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
                 <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (
@@ -2864,12 +2864,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {/* 処分/売上 2分割カード */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
-                <button onClick={()=>setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'})}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm(f=>({...f,unit:'㎥'}));}}
                   style={{padding:'12px 8px',borderRadius:10,border:!isRev?`2px solid ${accentDark}`:'2px solid rgba(255,255,255,0.12)',background:!isRev?accentBg:'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:!isRev?accentDark:'rgba(255,255,255,0.5)'}}>産廃処分</div>
                   <div style={{fontSize:9,color:!isRev?accentDark:'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>廃プラ・ボード等</div>
                 </button>
-                <button onClick={()=>setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'})}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm(f=>({...f,unit:'kg'}));}}
                   style={{padding:'12px 8px',borderRadius:10,border:isRev?'2px solid #06B6D4':'2px solid rgba(255,255,255,0.12)',background:isRev?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:isRev?'#22D3EE':'rgba(255,255,255,0.5)'}}>金属売上</div>
                   <div style={{fontSize:9,color:isRev?'#67e8f9':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>鉄・銅くず等</div>
@@ -2894,7 +2894,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div style={grid3}>
                 <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
-                <div><label style={inpLbl}>単位</label><select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select></div>
+                <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
                 <div><label style={{...inpLbl,color:isRev?accentDark:undefined,fontWeight:isRev?700:undefined}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
               </div>
               {!isRev && (

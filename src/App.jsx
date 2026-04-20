@@ -1810,7 +1810,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime', start:'', end:'' });
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
-  const [wasteForm, setWasteForm] = useState({ mode:'cost', type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'', workerName:'', workerVType:'', workerVNumber:'' });
+  const [wasteForm, setWasteForm] = useState({ mode:'cost', type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'', workerName:'', workerVType:'', workerVNumber:'', volumeM3:'' });
   const [scrapForm, setScrapForm] = useState({ type:'金属くず', buyer:'', qty:'', unit:'kg', price:'', manifest:'', volumeM3:'', workerName:'', workerVType:'', workerVNumber:'' });
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
@@ -1906,6 +1906,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       haishiShift:wasteForm.haishiShift||'', haishiAmount,
       workerName:wasteForm.workerName||'', workerVType:wasteForm.workerVType||'',
       workerVNumber:wasteForm.workerVNumber||'', vehicleAmount:workerVehicleAmount,
+      volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
     };
     if (editingWasteIdx !== null) {
       const items = [...wasteItems];
@@ -1915,7 +1916,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setWasteItems([...wasteItems, newItem]);
     }
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:''}));
+    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
   };
   const addScrap = () => {
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty) return;
@@ -1976,6 +1977,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       workerVType:wasteForm.workerVType||'',
       workerVNumber:wasteForm.workerVNumber||'',
       vehicleAmount:workerVehicleAmount,
+      volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
     };
     if (editingWasteIdx !== null) {
       const items = [...wasteItems]; items[editingWasteIdx] = newItem;
@@ -1983,7 +1985,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setWasteItems([...wasteItems, newItem]);
     }
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:''}));
+    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
   };
   // 環境課配車 (運転者+車両+シフト + 産廃情報)
   const addEnvWaste = () => {
@@ -2013,6 +2015,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       vType:wasteForm.vType||'', vNumber:wasteForm.vNumber||'',
       haishiShift:wasteForm.haishiShift, haishiAmount,
       workerName:'', workerVType:'', workerVNumber:'', vehicleAmount:0,
+      volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
     };
     if (editingWasteIdx !== null) {
       const items = [...wasteItems]; items[editingWasteIdx] = newItem;
@@ -2020,7 +2023,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setWasteItems(normalizeHaishiAmounts([...wasteItems, newItem]));
     }
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:''}));
+    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
   };
   // ワイエム配車 (シフト or 例外金額 + 車両任意 + 産廃情報)
   const addExtWaste = () => {
@@ -2052,6 +2055,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       vType:wasteForm.vType||'', vNumber:wasteForm.vNumber||'',
       haishiShift:wasteForm.haishiShift||'', haishiAmount,
       workerName:'', workerVType:'', workerVNumber:'', vehicleAmount:0,
+      volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
     };
     if (editingWasteIdx !== null) {
       const items = [...wasteItems]; items[editingWasteIdx] = newItem;
@@ -2059,7 +2063,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setWasteItems(normalizeHaishiAmounts([...wasteItems, newItem]));
     }
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:''}));
+    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
   };
 
   const detectKind = (w) => {
@@ -2093,12 +2097,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       driver:w.driver||'', vType:w.vType||'', vNumber:w.vNumber||'',
       haishiShift:w.haishiShift||'', haishiOverride:false, haishiPrice:'',
       workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'',
+      volumeM3: w.volumeM3 ? String(w.volumeM3) : '',
     });
   };
   // ★ 編集キャンセル
   const cancelEdit = () => {
     setEditingWasteIdx(null);
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:''}));
+    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
     setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:'',volumeM3:'',workerName:'',workerVType:'',workerVNumber:''});
   };
   // ★ タブに応じた add 関数 (scrap は mode='revenue' で各タブから入力)
@@ -2640,6 +2645,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
               )}
+              {isRev && (
+                <div style={{marginBottom:10}}>
+                  <label style={{...inpLbl,color:'#22D3EE',fontWeight:700}}>㎥換算 <span style={{color:'rgba(255,255,255,0.4)',fontWeight:400,fontSize:'9px'}}>(任意・後日入力可)</span></label>
+                  <input type="number" step="0.1" value={wasteForm.volumeM3||''} onChange={e=>setWasteForm({...wasteForm,volumeM3:e.target.value})} placeholder="例）2.5" style={{...inpTxt,border:'1px solid #06B6D4',color:'#22D3EE',fontWeight:500}} />
+                  <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginTop:4,lineHeight:1.4}}>kg入力後に後日㎥数値を追加すれば、PDFで「kg/㎥」併記され、㎥合計に加算されます</div>
+                </div>
+              )}
 
               {/* 担当者 + 車両 (部署タブ + チップ) */}
               <div style={{padding:12,borderRadius:10,background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',marginBottom:10}}>
@@ -2753,6 +2765,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
+              )}
+              {isRev && (
+                <div style={{marginBottom:10}}>
+                  <label style={{...inpLbl,color:'#22D3EE',fontWeight:700}}>㎥換算 <span style={{color:'rgba(255,255,255,0.4)',fontWeight:400,fontSize:'9px'}}>(任意・後日入力可)</span></label>
+                  <input type="number" step="0.1" value={wasteForm.volumeM3||''} onChange={e=>setWasteForm({...wasteForm,volumeM3:e.target.value})} placeholder="例）2.5" style={{...inpTxt,border:'1px solid #06B6D4',color:'#22D3EE',fontWeight:500}} />
+                  <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginTop:4,lineHeight:1.4}}>kg入力後に後日㎥数値を追加すれば、PDFで「kg/㎥」併記され、㎥合計に加算されます</div>
+                </div>
               )}
 
               {/* 運転者 (環境課フルネームチップ) */}
@@ -2880,6 +2899,13 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {!isRev && (
                 <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
+              )}
+              {isRev && (
+                <div style={{marginBottom:10}}>
+                  <label style={{...inpLbl,color:'#22D3EE',fontWeight:700}}>㎥換算 <span style={{color:'rgba(255,255,255,0.4)',fontWeight:400,fontSize:'9px'}}>(任意・後日入力可)</span></label>
+                  <input type="number" step="0.1" value={wasteForm.volumeM3||''} onChange={e=>setWasteForm({...wasteForm,volumeM3:e.target.value})} placeholder="例）2.5" style={{...inpTxt,border:'1px solid #06B6D4',color:'#22D3EE',fontWeight:500}} />
+                  <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginTop:4,lineHeight:1.4}}>kg入力後に後日㎥数値を追加すれば、PDFで「kg/㎥」併記され、㎥合計に加算されます</div>
+                </div>
               )}
 
               {/* シフト */}

@@ -4279,9 +4279,35 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             || (wRow2?.workerVNumber || '')
                             || (isDittoRow2 ? '〃' : '')
                             || (extWasteRows[subIdx] ? 'ワイエム' : '');
+                          // ★ 前行の車種・車番を取得して、連続する同じ値なら 〃 に置換
+                          const resolveVehicle = (idx) => {
+                            const isE = effectiveWorkers[idx]?.isEnv;
+                            const isD = effectiveWorkers[idx]?.isDitto;
+                            let nIdx = 0;
+                            for(let k=0;k<idx;k++){if(!effectiveWorkers[k]?.isEnv) nIdx++;}
+                            const w = !isE ? wasteAndScrap[nIdx] : null;
+                            const t = vehicles[idx]?.type
+                              || (isE ? effectiveWorkers[idx].vType : '')
+                              || (w?.workerVType || '')
+                              || (extWasteRows[idx] ? '配車' : '');
+                            const n = vehicles[idx] ? vehicles[idx].number
+                              : (isE ? effectiveWorkers[idx].vNumber : '')
+                              || (w?.workerVNumber || '')
+                              || (extWasteRows[idx] ? 'ワイエム' : '');
+                            return { t, n, isD };
+                          };
+                          const prev = subIdx > 0 ? resolveVehicle(subIdx - 1) : { t:'', n:'', isD:false };
+                          const curT = vt === '〃' ? '' : vt;
+                          const curN = vn === '〃' ? '' : vn;
+                          // 直前と同じ車種・車番なら 〃 表示
+                          let showT = vt, showN = vn;
+                          if (curT && curT === prev.t && curN === prev.n) {
+                            showT = '〃';
+                            showN = '〃';
+                          }
                           return (<>
-                            <td className="text-center text-[8px]">{vt}</td>
-                            <td className="text-center text-[8px]">{vn}</td>
+                            <td className="text-center text-[8px]">{showT}</td>
+                            <td className="text-center text-[8px]">{showN}</td>
                           </>);
                         })()}
                         <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>

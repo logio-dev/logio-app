@@ -208,12 +208,12 @@ const MASTER_DATA = {
   outsourcingCompanies: ['TCY興業', 'ALTEQ', '山田興業', '川田工業', 'マルカイ工業', 'MM興業'],
   weather: ['晴', '曇', '雨', '雪'],
   workCategories: ['解体', '清掃', '積込', '搬出'],
-  vehicles: ['軽バン', '2td', '3td', '4td', '4tc', '8tc', '増td', '10tc', '東リース'],
+  vehicles: ['軽バン', '2td', '3td', '4td', '4tc', '4tu', '8tc', '増td', '10tc', '東リース2t', '東リース3t', '道具車'],
   vehicleNumbersByType: {
     '軽バン': ['た1'], '2td': ['77', '201'],
     '3td': ['8736', '55', '3122', '66', '4514', '33', '3000', '1000', '6000', '44'],
     '4td': ['6994'], '4tc': ['2265', '11', '3214', '858', '8000', '4000', '5000', '8025', '88'],
-    '8tc': ['7000'], '増td': ['22'], '10tc': ['181', '381'], '東リース': []
+    '8tc': ['7000'], '増td': ['22'], '10tc': ['181', '381'], '4tu': [], '東リース2t': [], '東リース3t': [], '道具車': []
   },
   heavyMachinery: ['PC30', 'PC78US', 'PC138US'],
   workingHoursOptions: (() => {
@@ -235,8 +235,9 @@ const MASTER_DATA = {
 
 const VEHICLE_UNIT_PRICES = {
   '軽バン': 0, '2td': 10000, '3td': 10000, '4td': 15000,
-  '4tc': 15000, '8tc': 20000, '増td': 20000, '10tc': 20000,
-  '東リース': 10000
+  '4tc': 15000, '4tu': 15000, '8tc': 20000, '増td': 20000, '10tc': 20000,
+  '東リース2t': 10000, '東リース3t': 10000,
+  '道具車': 0
 };
 
 // ★ 金属売上時の買取業者リスト(固定)
@@ -1865,7 +1866,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const addWorker = () => {
     const actualName = wForm.name.trim();
-    if (!actualName||!wForm.start||!wForm.end) return;
+    if (!actualName) return;
     const amount = getShiftAmount(wForm.shift);
     setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm,amount}]});
     setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
@@ -1964,7 +1965,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   // ★ 4タブ用の追加関数群
   // 自社運搬 (担当者+車両、配車費なし) - 処分/売上モード対応
   const addSelfWaste = () => {
-    if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty) return;
+    // ★ 道具車/空車対応: 車種が入っていれば、種類・処分先・数量なしでも追加OK
+    const hasWaste = wasteForm.type && wasteForm.disposal && wasteForm.qty;
+    const hasVehicle = wasteForm.workerVType;
+    if (!hasWaste && !hasVehicle) return;
     const qty = parseFloat(wasteForm.qty)||0, price = parseFloat(wasteForm.price)||0;
     const workerVehicleAmount = VEHICLE_UNIT_PRICES[wasteForm.workerVType] || 0;
     const isRevenue = (wasteModeByTab[wasteTab]||'cost') === 'revenue';
@@ -2331,7 +2335,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             <div style={{ textAlign:'right', fontSize:'12px', color:'#60a5fa', fontWeight:'600', marginBottom:'8px' }}>
               適用単価: ¥{formatCurrency(getShiftAmount(wForm.shift))}
             </div>
-            <AddBtn onClick={addWorker} disabled={!wForm.name.trim()||!wForm.start||!wForm.end} pulse={!!wForm.name.trim()} />
+            <AddBtn onClick={addWorker} disabled={!wForm.name.trim()} pulse={!!wForm.name.trim()} />
           </div>
           {workDetails.inHouseWorkers.length>0 && <SubTotal label="自社人工" value={workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0)} />}
 
@@ -2683,8 +2687,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     </select>
                   </div>
                   <div>
-                    <label style={inpLbl}>車番{wasteForm.workerVType==='東リース'?'（手入力）':''}</label>
-                    {wasteForm.workerVType==='東リース' ? (
+                    <label style={inpLbl}>車番{(wasteForm.workerVType==='東リース2t'||wasteForm.workerVType==='東リース3t'||wasteForm.workerVType==='道具車')?'（手入力）':''}</label>
+                    {(wasteForm.workerVType==='東リース2t'||wasteForm.workerVType==='東リース3t'||wasteForm.workerVType==='道具車') ? (
                       <input type="text" value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} placeholder="例）ABC-123" style={inpTxt} />
                     ) : (
                       <select value={wasteForm.workerVNumber} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} style={inpSel}>
@@ -2703,12 +2707,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
               {editingWasteIdx !== null ? (
                 <div style={{display:'flex',gap:6}}>
-                  <button onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty}
+                  <button onClick={handleAddByTab} disabled={!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || wasteForm.workerVType)}
                     style={{flex:2,padding:'11px',background:accentDark,border:'none',borderRadius:9,color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>✓ この内容で上書き</button>
                   <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9,color:'#aaa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
                 </div>
               ) : (
-                <AddBtn onClick={handleAddByTab} disabled={!wasteForm.type||!wasteForm.disposal||!wasteForm.qty} />
+                <AddBtn onClick={handleAddByTab} disabled={!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || wasteForm.workerVType)} />
               )}
             </div>
             );
@@ -2797,8 +2801,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   </select>
                 </div>
                 <div>
-                  <label style={inpLbl}>車番{wasteForm.vType==='東リース'?'（手入力）':''}</label>
-                  {wasteForm.vType==='東リース' ? (
+                  <label style={inpLbl}>車番{(wasteForm.vType==='東リース2t'||wasteForm.vType==='東リース3t'||wasteForm.vType==='道具車')?'（手入力）':''}</label>
+                  {(wasteForm.vType==='東リース2t'||wasteForm.vType==='東リース3t'||wasteForm.vType==='道具車') ? (
                     <input type="text" value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="例）ABC-123" style={{...inpTxt,border:inputBorder}} />
                   ) : (
                     <select value={wasteForm.vNumber} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,border:inputBorder}}>
@@ -2949,8 +2953,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   </select>
                 </div>
                 <div>
-                  <label style={inpLbl}>車番{wasteForm.vType==='東リース'?'（手入力）':''}</label>
-                  {wasteForm.vType==='東リース' ? (
+                  <label style={inpLbl}>車番{(wasteForm.vType==='東リース2t'||wasteForm.vType==='東リース3t'||wasteForm.vType==='道具車')?'（手入力）':''}</label>
+                  {(wasteForm.vType==='東リース2t'||wasteForm.vType==='東リース3t'||wasteForm.vType==='道具車') ? (
                     <input type="text" value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} placeholder="例）ABC-123" style={{...inpTxt,border:inputBorder}} />
                   ) : (
                     <select value={wasteForm.vNumber||''} onChange={e=>setWasteForm({...wasteForm,vNumber:e.target.value})} style={{...inpSel,border:inputBorder}}>

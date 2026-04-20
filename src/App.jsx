@@ -239,6 +239,9 @@ const VEHICLE_UNIT_PRICES = {
   '東リース': 10000
 };
 
+// ★ 金属売上時の買取業者リスト(固定)
+const METAL_BUYERS = ['高橋金属', '長沼金属', '小林金属', 'ナンセイスチール', '日東物産', '有明興業'];
+
 const generateId = (prefix) => {
   if (crypto?.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2624,9 +2627,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder={isRev?'金属くず・鉄くず等':'木くず・廃プラ等'} style={{...inpTxt,border:inputBorder}} /></div>
                 <div>
                   <label style={inpLbl}>{isRev?'買取業者':'処分先'}</label>
-                  {((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal)) && (
+                  {(isRev ? METAL_BUYERS.length > 0 : ((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal))) && (
                     <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
-                      {[...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)].map(s=>(
+                      {(isRev ? METAL_BUYERS : [...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)]).map(s=>(
                         <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
                           style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                           {s}
@@ -2746,9 +2749,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={grid2}>
                 <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder={isRev?'金属くず・鉄くず等':'木くず・廃プラ等'} style={{...inpTxt,border:inputBorder}} /></div>
                 <div><label style={inpLbl}>{isRev?'買取業者':'処分先'}</label>
-                  {((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal)) && (
+                  {(isRev ? METAL_BUYERS.length > 0 : ((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal))) && (
                     <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
-                      {[...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)].map(s=>(
+                      {(isRev ? METAL_BUYERS : [...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)]).map(s=>(
                         <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
                           style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                           {s}
@@ -2880,9 +2883,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={grid2}>
                 <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder={isRev?'金属くず・鉄くず等':'木くず・廃プラ等'} style={{...inpTxt,border:inputBorder}} /></div>
                 <div><label style={inpLbl}>{isRev?'買取業者':'処分先'}</label>
-                  {((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal)) && (
+                  {(isRev ? METAL_BUYERS.length > 0 : ((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal))) && (
                     <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
-                      {[...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)].map(s=>(
+                      {(isRev ? METAL_BUYERS : [...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)]).map(s=>(
                         <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
                           style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                           {s}

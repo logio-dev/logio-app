@@ -3963,9 +3963,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 
           // 現場詳細・単価計算
           const areaM2 = parseFloat(projectInfo.siteAreaM2) || 0;
+          // ★ 総㎥: 処分+金属どちらも含む (金属は volumeM3 があれば加算)
           const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.unit==='㎥'?(parseFloat(w.quantity)||0):(w.volumeM3?parseFloat(w.volumeM3)||0:0)),s),0)
                        + allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0);
-          const wCost  = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.amount||0),s),0);
+          // ★ 総金額: 処分費 + 金属売上額(絶対値) → 金額の絶対合計
+          const wCost  = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+Math.abs(w.amount||0),s),0)
+                       + allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+Math.abs(sc.amount||0),s),0);
           const laborC = allReports.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0)+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
           const unitWaste   = wQty   > 0 ? Math.round(wCost/wQty)       : 0;
           const unitLaborM2 = areaM2 > 0 ? Math.round(laborC/areaM2)    : 0;

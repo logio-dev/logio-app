@@ -4749,8 +4749,8 @@ export default function LOGIOApp() {
         site_use_type: projectInfo.siteUseType || null,
         work_condition: projectInfo.workCondition || null,
         updated_at: new Date().toISOString() }, 'site_name');
-      await sb('sites').update({ project_number: projectInfo.projectNumber || '' }, `name=eq.${encodeURIComponent(selectedSite)}`);
-      setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '' } : s));
+      await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
+      setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '進行中' } : s));
       alert('✅ プロジェクト情報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + (error?.message || JSON.stringify(error))); }

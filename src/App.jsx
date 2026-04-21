@@ -2471,31 +2471,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div>
                 <label style={inpLbl}>人数</label>
-                {(() => {
-                  const countOptions = [0.25,0.5,0.75,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10];
-                  const currentNum = parseFloat(oForm.count);
-                  const isCustom = oForm.count && !countOptions.includes(currentNum);
-                  return (
-                    <>
-                      <select value={isCustom ? '__custom__' : (oForm.count||'')} onChange={e=>{
-                        if (e.target.value === '__custom__') {
-                          setOForm({...oForm, count: (oForm.count && !countOptions.includes(parseFloat(oForm.count))) ? oForm.count : ' '});
-                        } else {
-                          setOForm({...oForm, count: e.target.value});
-                        }
-                      }} style={inpSel}>
-                        <option value="" style={{color:"#000",background:"#fff"}}>人数を選択</option>
-                        {countOptions.map(n=>(
-                          <option key={n} value={String(n)} style={{color:"#000",background:"#fff"}}>{n === 0.25 ? '0.25人 (¼)' : n === 0.5 ? '0.5人 (½)' : n === 0.75 ? '0.75人 (¾)' : `${n}人`}</option>
-                        ))}
-                        <option value="__custom__" style={{color:"#000",background:"#fff"}}>その他(手入力)</option>
-                      </select>
-                      {isCustom && (
-                        <input type="number" inputMode="decimal" step="0.5" min="0" value={(oForm.count||'').trim()} onChange={e=>setOForm({...oForm,count:e.target.value||' '})} placeholder="例) 15" style={{...inpTxt,marginTop:6,color:'#fff'}} autoFocus />
-                      )}
-                    </>
-                  );
-                })()}
+                <input type="number" inputMode="decimal" step="0.25" min="0" value={oForm.count||''} onChange={e=>setOForm({...oForm,count:e.target.value})} placeholder="例) 1.5" style={{...inpTxt,textAlign:'center',fontSize:16,fontWeight:700}} />
+                <div style={{display:'flex',flexWrap:'wrap',gap:3,marginTop:6}}>
+                  {[0.25,0.5,0.75,1,1.5,2,2.5,3,4,5,10].map(n=>{
+                    const selected = parseFloat(oForm.count) === n;
+                    return (
+                      <button key={n} onClick={()=>setOForm({...oForm,count:String(n)})}
+                        style={{padding:'5px 9px',borderRadius:6,border:`1px solid ${selected?'rgba(34,211,238,0.5)':'rgba(255,255,255,0.1)'}`,background:selected?'rgba(34,211,238,0.18)':'rgba(255,255,255,0.05)',color:selected?'#67E8F9':'rgba(255,255,255,0.7)',fontSize:10,fontWeight:selected?700:400,cursor:'pointer',fontFamily:'inherit'}}>
+                        {n === 0.25 ? '¼' : n === 0.5 ? '½' : n === 0.75 ? '¾' : n}
+                      </button>
+                    );
+                  })}
+                </div>
                 {oForm.count&&parseFloat(oForm.count)>0&&<div style={{fontSize:10,color:'#60a5fa',textAlign:'right',marginTop:2}}>¥{new Intl.NumberFormat('ja-JP').format(parseFloat(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
               </div>
             </div>

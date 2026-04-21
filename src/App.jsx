@@ -760,7 +760,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   // 稼働日数・人工数
   const workingDays = (reports||[]).length;
   const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss)=>ss+1,s),0);
-  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseInt(o.count||o.workers)||0),s),0);
+  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseFloat(o.count||o.workers)||0),s),0);
   const totalInHouse = totalInHouseRaw;
   const totalOutsourcing = totalOutsourcingRaw;
   const totalWorkers = totalInHouse + totalOutsourcing;
@@ -1925,8 +1925,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   };
   const addOutsource = () => {
     const actualCompany = oForm.company.trim();
-    if (!actualCompany||!oForm.count) return;
+    if (!actualCompany) return;
     const count = parseFloat(oForm.count) || 0;
+    if (count <= 0) return;
     const basePrice = oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime;
     const amount = count * basePrice;
     setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,count,amount}]});
@@ -2470,12 +2471,31 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div>
                 <label style={inpLbl}>人数</label>
-                <select value={oForm.count} onChange={e=>setOForm({...oForm,count:e.target.value})} style={inpSel}>
-                  <option value="" style={{color:"#000",background:"#fff"}}>人数を選択</option>
-                  {[0.25,0.5,0.75,1,2,3,4,5,6,7,8,9,10].map(n=>(
-                    <option key={n} value={String(n)} style={{color:"#000",background:"#fff"}}>{n === 0.25 ? '0.25人 (¼)' : n === 0.5 ? '0.5人 (½)' : n === 0.75 ? '0.75人 (¾)' : `${n}人`}</option>
-                  ))}
-                </select>
+                {(() => {
+                  const countOptions = [0.25,0.5,0.75,1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10];
+                  const currentNum = parseFloat(oForm.count);
+                  const isCustom = oForm.count && !countOptions.includes(currentNum);
+                  return (
+                    <>
+                      <select value={isCustom ? '__custom__' : (oForm.count||'')} onChange={e=>{
+                        if (e.target.value === '__custom__') {
+                          setOForm({...oForm, count: (oForm.count && !countOptions.includes(parseFloat(oForm.count))) ? oForm.count : ' '});
+                        } else {
+                          setOForm({...oForm, count: e.target.value});
+                        }
+                      }} style={inpSel}>
+                        <option value="" style={{color:"#000",background:"#fff"}}>人数を選択</option>
+                        {countOptions.map(n=>(
+                          <option key={n} value={String(n)} style={{color:"#000",background:"#fff"}}>{n === 0.25 ? '0.25人 (¼)' : n === 0.5 ? '0.5人 (½)' : n === 0.75 ? '0.75人 (¾)' : `${n}人`}</option>
+                        ))}
+                        <option value="__custom__" style={{color:"#000",background:"#fff"}}>その他(手入力)</option>
+                      </select>
+                      {isCustom && (
+                        <input type="number" inputMode="decimal" step="0.5" min="0" value={(oForm.count||'').trim()} onChange={e=>setOForm({...oForm,count:e.target.value||' '})} placeholder="例) 15" style={{...inpTxt,marginTop:6,color:'#fff'}} autoFocus />
+                      )}
+                    </>
+                  );
+                })()}
                 {oForm.count&&parseFloat(oForm.count)>0&&<div style={{fontSize:10,color:'#60a5fa',textAlign:'right',marginTop:2}}>¥{new Intl.NumberFormat('ja-JP').format(parseFloat(oForm.count)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
               </div>
             </div>
@@ -4017,7 +4037,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 
   const totalInHouseWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.inHouseWorkers?.length || 0), 0);
   const totalInHouseCost = allReports.reduce((sum, r) => sum + (r.workDetails?.inHouseWorkers || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
-  const totalOutsourcingWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (parseInt(o.count || o.workers) || 0), 0), 0);
+  const totalOutsourcingWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (parseFloat(o.count || o.workers) || 0), 0), 0);
   const totalOutsourcingCost = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (o.amount || 0), 0), 0);
   const totalVehicleCost = allReports.reduce((sum, r) => sum + (r.workDetails?.vehicles || []).reduce((s, v) => s + (v.amount || 0), 0), 0);
   const totalWasteVehicleCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.vehicleAmount || 0), 0) + (r.scrapItems || []).reduce((s, sc) => s + (sc.vehicleAmount || 0), 0), 0);
@@ -4099,7 +4119,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const pageEmptyRows = ROWS_PER_PAGE - pageRows.length;
           const pageInHouseWorkers = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).length,0);
           const pageInHouseCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0),0);
-          const pageOutWorkers     = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(parseInt(o.count||o.workers)||0),0),0);
+          const pageOutWorkers     = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(parseFloat(o.count||o.workers)||0),0),0);
           const pageOutCost        = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
           const pageVehicleCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.vehicles||[]).reduce((a,v)=>a+(v.amount||0),0),0);
           const pageHaishiCost     = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.haishiAmount||0),0),0);

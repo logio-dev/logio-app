@@ -4568,6 +4568,232 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   );
 }
 
+// ========== AdminPage (管理者ページ) ==========
+function AdminPage({ currentUser, onLogout }) {
+  const [adminTab, setAdminTab] = useState('dashboard');
+  const [masterTab, setMasterTab] = useState('disposal');
+
+  // ダミーデータ(Supabaseから取得するロジックは後で実装)
+  const stats = {
+    users: { total: 12, limit: 50, newThisMonth: 2 },
+    sites: { total: 28, inProgress: 12 },
+    reports: { total: 847, thisMonth: 142 },
+    storage: { used: 2.1, limit: 5.0 }
+  };
+  const activities = [
+    { icon:'小', color:'#3B82F6', text:'小峯朋宏 が日報を作成', time:'5分前' },
+    { icon:'五', color:'#22c55e', text:'五十嵐悠哉 がログイン', time:'12分前' },
+    { icon:'浅', color:'#a855f7', text:'浅見勇弥 が現場「○○マンション」を編集', time:'25分前' },
+  ];
+  const users = [
+    { name:'小峯朋宏', email:'komine@example.com', dept:'環境課', status:'アクティブ', role:'編集者', color:'#3B82F6', initial:'小' },
+    { name:'五十嵐悠哉', email:'igarashi@example.com', dept:'工事1課', status:'アクティブ', role:'管理者', color:'#22c55e', initial:'五' },
+    { name:'浅見勇弥', email:'asami@example.com', dept:'環境課', status:'休眠', role:'編集者', color:'#888', initial:'浅', note:'30日未ログイン' },
+  ];
+  const masterData = {
+    disposal: ['入間緑化','石坂','ワイエム','フルハシ','ミダック','リバー','二光産業','木村建設','ウムヴェルト','ギプロ','中央環境','戸部組','東和アークス'],
+    transport: ['入間緑化','自社運搬','奈良商事'],
+    buyer: ['高橋金属','長沼金属','小林金属','ナンセイスチール','日東物産','有明興業'],
+    vehicle: ['軽バン','2td','3td','4td','4tc','4tu','8tc','増td','10tc','東リース2t','東リース3t','道具車'],
+    price: ['自社人工単価','外注単価','車両費単価','配車費単価']
+  };
+  const masterTitles = { disposal:'処分先', transport:'運搬会社', buyer:'買取業者', vehicle:'車両', price:'単価' };
+  const logs = [
+    { action:'作成', color:'34,197,94', textColor:'#4ade80', user:'小峯朋宏', desc:'日報「○○マンション 2024-04-21」', time:'14:32' },
+    { action:'編集', color:'59,130,246', textColor:'#60a5fa', user:'五十嵐悠哉', desc:'案件「△△ビル」のステータスを変更', time:'14:15' },
+    { action:'login', color:'168,85,247', textColor:'#c4b5fd', user:'浅見勇弥', desc:'ログイン (192.168.1.5)', time:'13:50' },
+    { action:'削除', color:'239,68,68', textColor:'#f87171', user:'山田太郎', desc:'日報「××商業施設 2024-04-15」を削除', time:'12:08' },
+  ];
+
+  return (
+    <div style={{minHeight:'100vh',background:'#0F1420',color:'#fff',display:'flex'}}>
+      {/* サイドバー */}
+      <div style={{width:220,background:'#161B28',borderRight:'1px solid #2D3548',padding:'20px 14px',display:'flex',flexDirection:'column',gap:4}}>
+        <div style={{padding:'8px 12px',marginBottom:16}}>
+          <div style={{fontSize:9,color:'#60a5fa',letterSpacing:'.15em',fontWeight:700}}>ADMIN</div>
+          <div style={{fontSize:18,fontWeight:900,marginTop:2,letterSpacing:'.05em'}}>Wac Admin</div>
+        </div>
+        {[
+          ['dashboard','📊 ダッシュボード'],
+          ['users','👥 ユーザー管理'],
+          ['master','🗂 マスタデータ'],
+          ['logs','📝 操作ログ'],
+        ].map(([v,label])=>(
+          <button key={v} onClick={()=>setAdminTab(v)}
+            style={{padding:'10px 12px',borderRadius:8,border:'none',background:adminTab===v?'#3B82F6':'transparent',color:adminTab===v?'#fff':'#888',fontSize:12,fontWeight:adminTab===v?700:500,textAlign:'left',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}
+            onMouseEnter={e=>{if(adminTab!==v)e.currentTarget.style.background='#252B3D';}}
+            onMouseLeave={e=>{if(adminTab!==v)e.currentTarget.style.background='transparent';}}>
+            {label}
+          </button>
+        ))}
+        <div style={{flex:1}}/>
+        <div style={{padding:'10px 12px',borderTop:'1px solid #2D3548',marginTop:12}}>
+          <div style={{fontSize:10,color:'#666'}}>ログイン中</div>
+          <div style={{fontSize:11,fontWeight:600,marginTop:2}}>{currentUser?.userId || 'admin'}</div>
+        </div>
+        <button onClick={onLogout}
+          style={{padding:'9px 12px',borderRadius:8,border:'1px solid #2D3548',background:'transparent',color:'#f87171',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+          ログアウト
+        </button>
+      </div>
+
+      {/* メイン */}
+      <div style={{flex:1,overflow:'auto'}}>
+        {/* ヘッダー */}
+        <div style={{padding:'14px 22px',borderBottom:'1px solid #2D3548',display:'flex',justifyContent:'space-between',alignItems:'center',background:'#161B28'}}>
+          <div>
+            <div style={{fontSize:9,color:'#60a5fa',letterSpacing:'.15em',fontWeight:700}}>ADMIN</div>
+            <div style={{fontSize:17,fontWeight:700,marginTop:2}}>
+              {adminTab==='dashboard'?'管理者ダッシュボード':adminTab==='users'?'ユーザー管理':adminTab==='master'?'マスタデータ管理':'操作ログ'}
+            </div>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            <span style={{fontSize:11,color:'#888'}}>管理者:</span>
+            <span style={{fontSize:12,fontWeight:600}}>{currentUser?.userId || 'admin'}</span>
+            <div style={{width:30,height:30,borderRadius:'50%',background:'#3B82F6',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700}}>A</div>
+          </div>
+        </div>
+
+        <div style={{padding:22}}>
+          {/* ダッシュボード */}
+          {adminTab==='dashboard' && (
+            <>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:12,marginBottom:20}}>
+                <div style={{background:'#252B3D',padding:16,borderRadius:12,border:'1px solid #2D3548'}}>
+                  <div style={{fontSize:10,color:'#888',letterSpacing:'.1em',fontWeight:700}}>USERS</div>
+                  <div style={{fontSize:28,fontWeight:700,marginTop:6,color:'#fff'}}>{stats.users.total}<span style={{fontSize:12,color:'#888',fontWeight:400}}> / {stats.users.limit}</span></div>
+                  <div style={{fontSize:10,color:'#22c55e',marginTop:4}}>+{stats.users.newThisMonth} 今月</div>
+                </div>
+                <div style={{background:'#252B3D',padding:16,borderRadius:12,border:'1px solid #2D3548'}}>
+                  <div style={{fontSize:10,color:'#888',letterSpacing:'.1em',fontWeight:700}}>SITES</div>
+                  <div style={{fontSize:28,fontWeight:700,marginTop:6,color:'#fff'}}>{stats.sites.total}</div>
+                  <div style={{fontSize:10,color:'#888',marginTop:4}}>進行中: {stats.sites.inProgress}</div>
+                </div>
+                <div style={{background:'#252B3D',padding:16,borderRadius:12,border:'1px solid #2D3548'}}>
+                  <div style={{fontSize:10,color:'#888',letterSpacing:'.1em',fontWeight:700}}>REPORTS</div>
+                  <div style={{fontSize:28,fontWeight:700,marginTop:6,color:'#fff'}}>{stats.reports.total}</div>
+                  <div style={{fontSize:10,color:'#22c55e',marginTop:4}}>今月: {stats.reports.thisMonth}件</div>
+                </div>
+                <div style={{background:'#252B3D',padding:16,borderRadius:12,border:'1px solid #2D3548'}}>
+                  <div style={{fontSize:10,color:'#888',letterSpacing:'.1em',fontWeight:700}}>STORAGE</div>
+                  <div style={{fontSize:28,fontWeight:700,marginTop:6,color:'#fff'}}>{stats.storage.used}<span style={{fontSize:12,color:'#888',fontWeight:400}}>GB</span></div>
+                  <div style={{height:4,background:'#3B82F6',width:`${(stats.storage.used/stats.storage.limit)*100}%`,borderRadius:2,marginTop:8}}/>
+                </div>
+              </div>
+
+              <div style={{fontSize:11,color:'#888',letterSpacing:'.1em',fontWeight:700,marginBottom:10}}>RECENT ACTIVITY</div>
+              <div style={{background:'#252B3D',borderRadius:12,border:'1px solid #2D3548',overflow:'hidden'}}>
+                {activities.map((a,i)=>(
+                  <div key={i} style={{padding:'12px 14px',display:'flex',alignItems:'center',gap:12,borderBottom:i<activities.length-1?'1px solid #2D3548':'none',fontSize:12}}>
+                    <div style={{width:24,height:24,borderRadius:'50%',background:a.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,flexShrink:0}}>{a.icon}</div>
+                    <span style={{color:'#ccc',flex:1}}>{a.text}</span>
+                    <span style={{color:'#666',fontSize:11}}>{a.time}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* ユーザー管理 */}
+          {adminTab==='users' && (
+            <>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                <div style={{fontSize:11,color:'#888'}}>{users.length}人 / {stats.users.limit}人 まで利用可能</div>
+                <button style={{padding:'9px 18px',background:'#3B82F6',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>+ 新規追加</button>
+              </div>
+
+              <div style={{display:'flex',gap:8,marginBottom:14}}>
+                <input type="text" placeholder="ユーザー名で検索..." style={{flex:1,padding:'9px 12px',background:'#252B3D',border:'1px solid #2D3548',borderRadius:8,color:'#fff',fontSize:12,outline:'none',fontFamily:'inherit'}}/>
+                <select style={{padding:'9px 12px',background:'#252B3D',border:'1px solid #2D3548',color:'#ccc',fontSize:12,borderRadius:8,fontFamily:'inherit'}}>
+                  <option style={{color:'#000'}}>全部署</option>
+                  <option style={{color:'#000'}}>工事1課</option>
+                  <option style={{color:'#000'}}>環境課</option>
+                </select>
+              </div>
+
+              <div style={{background:'#252B3D',borderRadius:12,border:'1px solid #2D3548',overflow:'hidden'}}>
+                {users.map((u,i)=>(
+                  <div key={i} style={{padding:'13px 16px',display:'flex',alignItems:'center',gap:14,borderBottom:i<users.length-1?'1px solid #2D3548':'none'}}>
+                    <div style={{width:36,height:36,borderRadius:'50%',background:u.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,flexShrink:0}}>{u.initial}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:600,color:u.status==='休眠'?'#aaa':'#fff'}}>{u.name}</div>
+                      <div style={{fontSize:10,color:u.status==='休眠'?'#666':'#888',marginTop:2}}>{u.email} · {u.dept}{u.note?` · ${u.note}`:''}</div>
+                    </div>
+                    <span style={{fontSize:9,padding:'3px 9px',background:u.status==='アクティブ'?'rgba(34,197,94,0.15)':'rgba(255,255,255,0.08)',color:u.status==='アクティブ'?'#4ade80':'#888',borderRadius:99,fontWeight:700}}>{u.status}</span>
+                    <span style={{fontSize:9,padding:'3px 9px',background:u.role==='管理者'?'rgba(245,158,11,0.15)':'rgba(168,85,247,0.15)',color:u.role==='管理者'?'#fbbf24':'#c4b5fd',borderRadius:99,fontWeight:700}}>{u.role}</span>
+                    <button style={{padding:'6px 10px',background:'transparent',border:'none',color:'#888',cursor:'pointer',fontSize:14,fontFamily:'inherit'}}>⋯</button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* マスタデータ管理 */}
+          {adminTab==='master' && (
+            <>
+              <div style={{display:'flex',background:'#161B28',borderRadius:10,padding:4,marginBottom:14,border:'1px solid #2D3548'}}>
+                {Object.keys(masterTitles).map(k=>(
+                  <button key={k} onClick={()=>setMasterTab(k)}
+                    style={{flex:1,padding:'10px 8px',border:'none',background:masterTab===k?'#3B82F6':'transparent',color:masterTab===k?'#fff':'#888',fontSize:12,fontWeight:masterTab===k?700:500,cursor:'pointer',fontFamily:'inherit',borderRadius:7,transition:'all .15s'}}>
+                    {masterTitles[k]}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+                <div style={{fontSize:12,color:'#888'}}>{masterTitles[masterTab]} ({(masterData[masterTab]||[]).length}件)</div>
+                <button style={{padding:'7px 14px',background:'#3B82F6',border:'none',borderRadius:7,color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>+ 追加</button>
+              </div>
+
+              <div style={{background:'#252B3D',borderRadius:12,border:'1px solid #2D3548',padding:14}}>
+                <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                  {(masterData[masterTab]||[]).map((item,i)=>(
+                    <div key={i} style={{padding:'8px 13px',background:'#1A1F2E',border:'1px solid #2D3548',borderRadius:8,display:'flex',alignItems:'center',gap:10}}>
+                      <span style={{fontSize:12,color:'#fff'}}>{item}</span>
+                      <button style={{padding:0,background:'transparent',border:'none',color:'#888',cursor:'pointer',fontSize:12}}>✏</button>
+                      <button style={{padding:0,background:'transparent',border:'none',color:'#f87171',cursor:'pointer',fontSize:12}}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* 操作ログ */}
+          {adminTab==='logs' && (
+            <>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                <div style={{fontSize:11,color:'#888'}}>過去30日間の全操作履歴</div>
+                <div style={{display:'flex',gap:8}}>
+                  <select style={{padding:'8px 12px',background:'#252B3D',border:'1px solid #2D3548',color:'#ccc',fontSize:12,borderRadius:8,fontFamily:'inherit'}}>
+                    <option style={{color:'#000'}}>全アクション</option>
+                    <option style={{color:'#000'}}>作成</option>
+                    <option style={{color:'#000'}}>編集</option>
+                    <option style={{color:'#000'}}>削除</option>
+                    <option style={{color:'#000'}}>ログイン</option>
+                  </select>
+                  <button style={{padding:'8px 14px',background:'#252B3D',border:'1px solid #2D3548',borderRadius:8,color:'#ccc',fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>CSV</button>
+                </div>
+              </div>
+
+              <div style={{background:'#252B3D',borderRadius:12,border:'1px solid #2D3548',overflow:'hidden'}}>
+                {logs.map((log,i)=>(
+                  <div key={i} style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:12,borderBottom:i<logs.length-1?'1px solid #2D3548':'none',fontSize:12}}>
+                    <span style={{fontSize:9,padding:'3px 8px',background:`rgba(${log.color},0.15)`,color:log.textColor,borderRadius:5,fontWeight:700,width:44,textAlign:'center',flexShrink:0}}>{log.action}</span>
+                    <span style={{color:'#fff',fontWeight:600,width:90,flexShrink:0}}>{log.user}</span>
+                    <span style={{color:'#aaa',flex:1}}>{log.desc}</span>
+                    <span style={{color:'#666',fontSize:11}}>{log.time}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export default function LOGIOApp() {
   // ★ 起動アニメーション: 毎回起動時に表示
@@ -4968,6 +5194,8 @@ export default function LOGIOApp() {
 
   if (showSplash) return <SplashScreen />;
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
+  // ★ 管理者ログイン時は AdminPage を表示
+  if (currentUser?.type === 'admin') return <AdminPage currentUser={currentUser} onLogout={handleLogout} />;
 
   // ★ マスコット常駐ロジック（ホーム・日報一覧・分析ページのみ表示）
   const MASCOT_PAGES = ['home', 'list', 'analysis'];

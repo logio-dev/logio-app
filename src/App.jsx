@@ -5582,8 +5582,7 @@ export default function LOGIOApp() {
   // ★ handleNavigate: 日報入力時にロック取得
   const handleNavigate = (page) => {
     window.scrollTo({ top: 0, behavior: 'instant' });
-    if (page === 'settings') { setShowPasswordModal(true); setPassword(''); }
-    else if (page === 'input') {
+    if (page === 'input') {
       (async () => {
         if (!selectedSite) return;
         const userName = currentUser?.userId || 'unknown';
@@ -5599,10 +5598,7 @@ export default function LOGIOApp() {
     } else { setCurrentPage(page); }
   };
 
-  const handlePasswordSubmit = () => {
-    if (password === 'face1991') { setShowPasswordModal(false); setPassword(''); setCurrentPage('settings'); }
-    else { alert('❌ パスワードが正しくありません'); setPassword(''); }
-  };
+  // handlePasswordSubmit: パスワード認証廃止に伴い削除
 
   const totals = calculateTotals();
   window.__navigatePDF = async (report) => {
@@ -5779,20 +5775,7 @@ export default function LOGIOApp() {
         </main>
       </div>
 
-      {/* パスワードモーダル */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-transparent/80 flex items-center justify-center z-50 px-4">
-          <div className="bg-transparent p-6 max-w-md w-full rounded-lg border border-white/[0.08]">
-            <h2 className="text-xl font-bold text-white mb-4">管理者認証</h2>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-              placeholder="パスワードを入力" className="w-full px-4 py-3 bg-transparent border border-white/[0.08] text-white text-base rounded-md focus:outline-none focus:border-blue-500 mb-4" autoFocus />
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={handlePasswordSubmit} className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700">認証</button>
-              <button onClick={() => { setShowPasswordModal(false); setPassword(''); }} className="px-4 py-3 bg-transparent border border-white/[0.08] text-gray-300 font-medium rounded-lg hover:bg-gray-700">キャンセル</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* パスワードモーダル削除済み - 現場管理は誰でも入れる */}
 
       {/* 工期確認モーダル */}
       {showCalendarModal && (() => {

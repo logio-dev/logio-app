@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
-import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown, MessageCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 
@@ -190,7 +190,7 @@ function useCountUp(target, duration=900) {
 
 // ========== マスタデータ ==========
 const MASTER_DATA = {
-  projectNames: ['内装解体', 'スケルトン解体', '建物解体', '外装解体', '外構解体', 'アスベスト除去', '設備解体', '躯体解体'],
+  projectNames: ['内装解体', 'スケルトン工事', '産廃処分', '木造解体', 'S造解体', 'RC造解体', '外構解体', '設備解体', 'アスベスト工事', 'その他工事'],
   salesPersons: ['間野', '八ツ田', '木嶋', '西', '鈴木', '原', '二宮'],
   employees: ['五十嵐悠哉', '折田優作', '稲葉正輝', '井ケ田浩寿', '大野勝也', '石森達也', '一村琢磨', '間野昂平', '西貴大', '二宮翼'],
   inHouseWorkers: ['五十嵐悠哉', '井ケ田浩寿', '稲葉正輝', '石森達也', '一村琢磨', '間野昂平', '折田優作', '大野勝也', '小峯朋宏', '松橋信行', '浅見勇弥', '石田竜二', '田南功紀', '尾崎奈帆', '古山慎祐', '増岡利幸', '森繁信', '西貴大', '二宮翼'],
@@ -227,7 +227,7 @@ const MASTER_DATA = {
     return options;
   })(),
   wasteTypes: ['混合廃棄物', '木くず', '廃プラ', 'がら陶', 'コンクリートがら', '金属くず', '石膏ボード', 'ガラス', '断熱材', '繊維くず', '非飛散性アスベスト（運搬費含む）'],
-  disposalSites: ['入間緑化', '石坂', 'ワイエム', 'フルハシ', 'ミダック', 'リバー', '二光産業', '木村建設', 'ウムヴェルト', 'ギプロ', '中央環境', '戸部組', '東和アークス'],
+  disposalSites: ['入間緑化', '石坂(直行)', '石坂(積保)', 'ワイエム', 'フルハシ', 'ミダック', 'リバー', '二光産業', '木村建設', 'ウムヴェルト', 'ギプロ', '中央環境', '戸部組', '東和アークス'],
   scrapTypes: ['金属くず'],
   buyers: ['小林金属', '高橋金属', 'ナンセイスチール', '服部金属', 'サンビーム', '光田産業', '青木商店', '長沼商事'],
   statuses: ['着工前', '進行中', '完了']
@@ -524,6 +524,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
     { id: 'project', label: 'PROJECT', icon: FileText },
     { id: 'input', label: '日報入力', icon: Plus },
     { id: 'list', label: '日報一覧', icon: FileText },
+    { id: 'chat', label: 'チャット', icon: MessageCircle },
     { id: 'analysis', label: '原価分析', icon: BarChart3 },
     { id: 'export', label: 'EXPORT', icon: ChevronUp },
     { id: 'settings', label: '設定・編集', icon: Settings }
@@ -1446,9 +1447,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
                     {isSelected ? (
                       <>
-                        {/* タブ */}
+                        {/* タブ削除 - 基本情報のみ */}
+                        {false && (
                         <div style={{display:'flex',gap:4,background:'rgba(255,255,255,0.06)',borderRadius:10,padding:4,marginBottom:16}}>
-                          {[['basic','基本情報'],['order','受注情報']].map(([t,label])=>(
+                          {[['basic','基本情報']].map(([t,label])=>(
                             <button key={t} onClick={()=>setProjectInfo({...projectInfo,_formTab:t})}
                               style={{flex:1,padding:'8px',border:'none',borderRadius:7,fontSize:13,fontWeight:500,cursor:'pointer',
                                 background:(projectInfo._formTab||'basic')===t?'#fff':'transparent',
@@ -1457,9 +1459,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             </button>
                           ))}
                         </div>
+                        )}
 
-                        {/* 受注情報タブ */}
-                        {(projectInfo._formTab||'basic')==='order' && (
+                        {/* 受注情報タブは削除 (基本情報に統合) */}
+                        {false && (projectInfo._formTab||'basic')==='order' && (
                           <div>
                             <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:10}}>受注情報</div>
                             <div style={{marginBottom:10}}>
@@ -1531,6 +1534,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         {/* 基本情報タブ */}
                         {(projectInfo._formTab||'basic')==='basic' && (
                           <>
+<Select label="請負区分" labelEn="Contract Type" options={['フェイス','入間緑化']} value={projectInfo.contractType||''} onChange={v=>setProjectInfo({...projectInfo,contractType:v})} />
 <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={v=>setProjectInfo({...projectInfo,workType:v})} />
                         <TextInput label="発注者" labelEn="Client" value={projectInfo.client||''} onChange={v=>setProjectInfo({...projectInfo,client:v})} placeholder="○○建設株式会社" />
                         <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation||''} onChange={v=>setProjectInfo({...projectInfo,workLocation:v})} placeholder="東京都渋谷区..." />
@@ -1670,6 +1674,25 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               placeholder="排出事業者名を入力"
                               style={{width:'100%',padding:'9px 11px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
                           </div>
+                          {/* マニ伝種類 */}
+                          <div style={{marginBottom:14}}>
+                            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>マニ伝種類</div>
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                              {['紙マニフェスト','電子マニフェスト'].map(v=>(
+                                <button key={v} onClick={()=>setProjectInfo({...projectInfo,manifestType:v})}
+                                  style={{padding:'10px',borderRadius:8,border:`1px solid ${projectInfo.manifestType===v?'rgba(96,165,250,0.5)':'rgba(255,255,255,0.1)'}`,background:projectInfo.manifestType===v?'rgba(59,130,246,0.15)':'rgba(255,255,255,0.04)',color:projectInfo.manifestType===v?'#60a5fa':'rgba(255,255,255,0.55)',fontSize:12,fontWeight:projectInfo.manifestType===v?700:500,cursor:'pointer',fontFamily:'inherit'}}>
+                                  {v}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          {/* 交付担当者 */}
+                          <div style={{marginBottom:14}}>
+                            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>交付担当者</div>
+                            <input type="text" value={projectInfo.manifestIssuer||''} onChange={e=>setProjectInfo({...projectInfo,manifestIssuer:e.target.value})}
+                              placeholder="氏名を入力"
+                              style={{width:'100%',padding:'9px 11px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                          </div>
                           <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:12}}>
                             {/* ヘッダー非表示（縦並びに変更） */}
                             {/* 行 */}
@@ -1760,6 +1783,13 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                 <span style={{fontSize:18,fontWeight:700,color:'#60a5fa'}}>{(projectInfo.manifestRows||[]).reduce((s,r)=>s+(parseInt(r.count)||0),0)}枚</span>
                               </div>
                             )}
+                            {/* 備考欄 */}
+                            <div style={{marginTop:14}}>
+                              <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>備考欄</div>
+                              <textarea value={projectInfo.manifestRemarks||''} onChange={e=>setProjectInfo({...projectInfo,manifestRemarks:e.target.value})}
+                                placeholder="例) 新規取引になります。"
+                                style={{width:'100%',padding:'9px 11px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit',minHeight:64,resize:'vertical'}}/>
+                            </div>
                           </div>
                         </div>
                         {/* 保存・削除 */}
@@ -4802,6 +4832,360 @@ function AdminPage({ currentUser, onLogout }) {
 }
 
 
+// ========== ChatPage (現場チャット) ==========
+function ChatPage({ sites, currentUser, selectedSite, onSelectSite, onNavigate }) {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [view, setView] = useState(selectedSite ? 'chat' : 'siteList'); // 'siteList' or 'chat'
+  const [activeSite, setActiveSite] = useState(selectedSite || '');
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  const userId = currentUser?.userId || 'unknown';
+  const userName = currentUser?.userId === 'face1991' ? '会社代表' 
+    : currentUser?.userId === 'ryokuka2005' ? '緑化担当'
+    : currentUser?.userId === 'admin2026' ? '管理者'
+    : currentUser?.userId || 'ゲスト';
+
+  // メッセージ読み込み
+  const loadMessages = async (siteName) => {
+    if (!siteName) return;
+    setLoading(true);
+    try {
+      const url = `site_name=eq.${encodeURIComponent(siteName)}&order=created_at.asc&limit=200`;
+      const data = await sb('site_messages').select(url);
+      setMessages(data || []);
+      // 既読マーク
+      markAsRead(data || []);
+    } catch (e) { console.error('load messages error:', e); }
+    setLoading(false);
+  };
+
+  // 未読数を現場ごとに取得(サイトリスト用)
+  const loadUnreadCounts = async () => {
+    if (!sites || sites.length === 0) return;
+    try {
+      const data = await sb('site_messages').select('order=created_at.desc&limit=500');
+      const counts = {};
+      (data || []).forEach(m => {
+        const readBy = m.read_by || [];
+        if (!readBy.includes(userId) && m.user_id !== userId) {
+          counts[m.site_name] = (counts[m.site_name] || 0) + 1;
+        }
+      });
+      setUnreadCounts(counts);
+    } catch (e) { console.error('load unread error:', e); }
+  };
+
+  // 既読マーク
+  const markAsRead = async (msgs) => {
+    const unread = msgs.filter(m => {
+      const readBy = m.read_by || [];
+      return !readBy.includes(userId) && m.user_id !== userId;
+    });
+    if (unread.length === 0) return;
+    for (const m of unread) {
+      const newReadBy = [...(m.read_by || []), userId];
+      await sb('site_messages').update({ read_by: newReadBy }, `id=eq.${m.id}`);
+    }
+  };
+
+  // メッセージ送信
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !activeSite) return;
+    const text = newMessage.trim();
+    setNewMessage('');
+    try {
+      const result = await sb('site_messages').insert({
+        site_name: activeSite,
+        user_id: userId,
+        user_name: userName,
+        message: text,
+        image_url: null,
+        read_by: [userId]
+      });
+      // Realtimeで入ってくる前に、即座にローカル追加
+      if (Array.isArray(result) && result[0]) {
+        setMessages(prev => [...prev, result[0]]);
+      }
+    } catch (e) { console.error('send error:', e); alert('送信失敗'); }
+  };
+
+  // 写真アップロード
+  const uploadImage = async (file) => {
+    if (!file || !activeSite) return;
+    setUploading(true);
+    try {
+      const timestamp = Date.now();
+      const ext = file.name.split('.').pop() || 'jpg';
+      const filename = `${activeSite}_${timestamp}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+      
+      const _url = 'https://ruomhthswdxylopkhmnh.supabase.co';
+      const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
+      
+      const uploadRes = await fetch(`${_url}/storage/v1/object/chat-images/${encodeURIComponent(filename)}`, {
+        method: 'POST',
+        headers: {
+          'apikey': _key,
+          'Authorization': 'Bearer ' + _key,
+          'Content-Type': file.type
+        },
+        body: file
+      });
+      if (!uploadRes.ok) throw new Error('upload failed');
+      
+      const imageUrl = `${_url}/storage/v1/object/public/chat-images/${encodeURIComponent(filename)}`;
+      const result = await sb('site_messages').insert({
+        site_name: activeSite,
+        user_id: userId,
+        user_name: userName,
+        message: null,
+        image_url: imageUrl,
+        read_by: [userId]
+      });
+      if (Array.isArray(result) && result[0]) {
+        setMessages(prev => [...prev, result[0]]);
+      }
+    } catch (e) { console.error('upload error:', e); alert('画像アップロード失敗'); }
+    setUploading(false);
+  };
+
+  // 初回読み込み + 未読カウント
+  useEffect(() => { loadUnreadCounts(); }, [sites]);
+  useEffect(() => {
+    if (view === 'chat' && activeSite) {
+      loadMessages(activeSite);
+    }
+  }, [view, activeSite]);
+
+  // Supabase Realtime: 他の人の投稿を受信
+  useEffect(() => {
+    if (view !== 'chat' || !activeSite) return;
+    const _url = 'https://ruomhthswdxylopkhmnh.supabase.co';
+    const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
+    const wsUrl = _url.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + _key + '&vsn=1.0.0';
+    let ws;
+    let pingInterval;
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        // 購読
+        ws.send(JSON.stringify({
+          topic: 'realtime:public:site_messages',
+          event: 'phx_join',
+          payload: { config: { postgres_changes: [{ event: 'INSERT', schema: 'public', table: 'site_messages' }] } },
+          ref: '1'
+        }));
+        pingInterval = setInterval(() => {
+          if (ws.readyState === 1) ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: 'hb' }));
+        }, 30000);
+      };
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.event === 'postgres_changes' && msg.payload?.data?.record) {
+            const newMsg = msg.payload.data.record;
+            if (newMsg.site_name === activeSite && newMsg.user_id !== userId) {
+              setMessages(prev => {
+                if (prev.some(m => m.id === newMsg.id)) return prev;
+                markAsRead([newMsg]);
+                return [...prev, newMsg];
+              });
+            }
+          }
+        } catch (err) {}
+      };
+    } catch (e) { console.error('ws error:', e); }
+    return () => {
+      if (pingInterval) clearInterval(pingInterval);
+      if (ws) ws.close();
+    };
+  }, [view, activeSite, userId]);
+
+  // 自動スクロール
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  // 日付区切り
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    const days = ['日','月','火','水','木','金','土'];
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} (${days[d.getDay()]})`;
+  };
+  const formatTime = (dateStr) => {
+    const d = new Date(dateStr);
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  };
+  const getAvatar = (name) => {
+    if (!name) return '?';
+    return name.charAt(0);
+  };
+  const getAvatarColor = (name) => {
+    if (!name) return '#888';
+    const colors = ['#3B82F6','#22c55e','#a855f7','#F59E0B','#EC4899','#06B6D4','#10B981','#F97316'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  // ========== サイト選択画面 ==========
+  if (view === 'siteList') {
+    return (
+      <div style={{padding:'16px',minHeight:'calc(100vh - 60px)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:20}}>
+          <MessageCircle className="w-6 h-6" style={{color:'#3B82F6'}}/>
+          <div>
+            <h2 style={{fontSize:20,fontWeight:800,color:'#fff',margin:0}}>チャット</h2>
+            <p style={{fontSize:11,color:'#999',margin:0,marginTop:2}}>現場を選んでチャットを開始</p>
+          </div>
+        </div>
+
+        {sites.length === 0 ? (
+          <div style={{padding:'40px 20px',textAlign:'center',color:'#888',fontSize:13}}>
+            現場が登録されていません
+          </div>
+        ) : (
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {sites.map(site => {
+              const unread = unreadCounts[site.name] || 0;
+              return (
+                <button key={site.name} onClick={()=>{setActiveSite(site.name); setView('chat'); onSelectSite && onSelectSite(site.name);}}
+                  style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',background:'#1E293B',border:'1px solid #2D3548',borderRadius:12,cursor:'pointer',fontFamily:'inherit',textAlign:'left',transition:'all .15s'}}
+                  onMouseEnter={e=>e.currentTarget.style.background='#252B3D'}
+                  onMouseLeave={e=>e.currentTarget.style.background='#1E293B'}>
+                  <div style={{width:40,height:40,borderRadius:10,background:'rgba(59,130,246,0.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <MessageCircle className="w-5 h-5" style={{color:'#60a5fa'}}/>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:700,color:'#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{site.name}</div>
+                    {site.projectNumber && <div style={{fontSize:10,color:'#888',marginTop:2}}>{site.projectNumber}</div>}
+                  </div>
+                  {unread > 0 && (
+                    <div style={{minWidth:22,height:22,borderRadius:11,background:'#EF4444',color:'#fff',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 7px',flexShrink:0}}>
+                      {unread > 99 ? '99+' : unread}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ========== チャット画面 ==========
+  const groupedMessages = [];
+  let lastDate = '';
+  messages.forEach(m => {
+    const dStr = formatDate(m.created_at);
+    if (dStr !== lastDate) {
+      groupedMessages.push({ type: 'date', dateStr: dStr, id: 'date-' + m.created_at });
+      lastDate = dStr;
+    }
+    groupedMessages.push({ type: 'msg', ...m });
+  });
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 52px - env(safe-area-inset-top, 0px))',background:'#FAFAFA'}}>
+      {/* ヘッダー */}
+      <div style={{padding:'12px 14px',background:'#1E293B',color:'#fff',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
+        <button onClick={()=>{setView('siteList');loadUnreadCounts();}} 
+          style={{padding:'6px',background:'transparent',border:'none',color:'#fff',cursor:'pointer',display:'flex'}}>
+          <ChevronLeft className="w-5 h-5"/>
+        </button>
+        <div style={{width:8,height:8,borderRadius:'50%',background:'#22c55e'}}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:13,fontWeight:700,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{activeSite}</div>
+          <div style={{fontSize:9,color:'#aaa'}}>{messages.length}件の投稿</div>
+        </div>
+      </div>
+
+      {/* メッセージリスト */}
+      <div style={{flex:1,overflowY:'auto',padding:'14px',display:'flex',flexDirection:'column',gap:10}}>
+        {loading && (
+          <div style={{textAlign:'center',padding:20,color:'#999',fontSize:12}}>読み込み中...</div>
+        )}
+        {!loading && messages.length === 0 && (
+          <div style={{textAlign:'center',padding:40,color:'#999',fontSize:13}}>
+            まだメッセージはありません<br/>
+            <span style={{fontSize:11,color:'#bbb'}}>最初のメッセージを送ってみよう</span>
+          </div>
+        )}
+        {groupedMessages.map((item, idx) => {
+          if (item.type === 'date') {
+            return (
+              <div key={item.id} style={{display:'flex',justifyContent:'center',margin:'6px 0'}}>
+                <span style={{fontSize:10,color:'#999',background:'#fff',padding:'3px 12px',borderRadius:99,border:'1px solid #E0E0E0'}}>{item.dateStr}</span>
+              </div>
+            );
+          }
+          const isMine = item.user_id === userId;
+          const readCount = (item.read_by || []).length;
+          if (isMine) {
+            return (
+              <div key={item.id} style={{display:'flex',flexDirection:'column',alignItems:'flex-end'}}>
+                <div style={{fontSize:10,color:'#666',marginBottom:3}}>あなた · {formatTime(item.created_at)}</div>
+                {item.message && (
+                  <div style={{background:'#3B82F6',padding:'9px 13px',borderRadius:'14px 14px 4px 14px',fontSize:13,color:'#fff',lineHeight:1.5,display:'inline-block',maxWidth:'80%',wordBreak:'break-word',whiteSpace:'pre-wrap'}}>{item.message}</div>
+                )}
+                {item.image_url && (
+                  <img src={item.image_url} alt="uploaded" style={{maxWidth:240,maxHeight:240,borderRadius:10,marginTop:4,cursor:'pointer'}} onClick={()=>window.open(item.image_url,'_blank')}/>
+                )}
+                {readCount > 1 && <div style={{fontSize:9,color:'#22c55e',marginTop:2}}>既読 {readCount - 1}</div>}
+              </div>
+            );
+          }
+          return (
+            <div key={item.id} style={{display:'flex',gap:8}}>
+              <div style={{width:32,height:32,borderRadius:'50%',background:getAvatarColor(item.user_name),display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',flexShrink:0}}>{getAvatar(item.user_name)}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,color:'#666',marginBottom:3}}>{item.user_name} · {formatTime(item.created_at)}</div>
+                {item.message && (
+                  <div style={{background:'#fff',padding:'9px 13px',borderRadius:'14px 14px 14px 4px',border:'1px solid #E8E8E8',fontSize:13,color:'#333',lineHeight:1.5,display:'inline-block',maxWidth:'80%',wordBreak:'break-word',whiteSpace:'pre-wrap'}}>{item.message}</div>
+                )}
+                {item.image_url && (
+                  <img src={item.image_url} alt="uploaded" style={{maxWidth:240,maxHeight:240,borderRadius:10,marginTop:4,cursor:'pointer',display:'block'}} onClick={()=>window.open(item.image_url,'_blank')}/>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        <div ref={messagesEndRef}/>
+      </div>
+
+      {/* 入力バー */}
+      <div style={{padding:'10px 12px',background:'#fff',borderTop:'1px solid #E8E8E8',display:'flex',gap:6,alignItems:'center',flexShrink:0,paddingBottom:'calc(10px + env(safe-area-inset-bottom, 0px))'}}>
+        <input type="file" accept="image/*" ref={fileInputRef} style={{display:'none'}} onChange={e=>{
+          const f = e.target.files?.[0];
+          if (f) uploadImage(f);
+          e.target.value = '';
+        }}/>
+        <button onClick={()=>fileInputRef.current?.click()} disabled={uploading}
+          style={{width:36,height:36,borderRadius:'50%',background:'#F3F4F6',border:'none',fontSize:18,cursor:uploading?'not-allowed':'pointer',opacity:uploading?0.5:1}}>
+          📷
+        </button>
+        <input type="text" value={newMessage} onChange={e=>setNewMessage(e.target.value)}
+          onKeyDown={e=>{ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+          placeholder={uploading ? '画像アップロード中...' : 'メッセージを入力...'}
+          disabled={uploading}
+          style={{flex:1,padding:'9px 14px',background:'#F3F4F6',border:'none',borderRadius:20,fontSize:13,outline:'none',fontFamily:'inherit',color:'#1C1917'}}/>
+        <button onClick={sendMessage} disabled={!newMessage.trim() || uploading}
+          style={{padding:'9px 16px',background:(!newMessage.trim()||uploading)?'#CBD5E1':'#3B82F6',border:'none',color:'#fff',borderRadius:20,fontSize:12,fontWeight:700,cursor:(!newMessage.trim()||uploading)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+          送信
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 export default function LOGIOApp() {
   // ★ 起動アニメーション: 毎回起動時に表示
   const [showSplash, setShowSplash] = useState(true);
@@ -4939,7 +5323,7 @@ export default function LOGIOApp() {
       await sb('project_info').insert({ site_name: siteName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
       setSites(prev => [...prev, { name: siteName, projectNumber, status: '進行中' }]);
       setSelectedSite(siteName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
+      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, contractType: '', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
       alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); }
   };
@@ -5329,6 +5713,7 @@ export default function LOGIOApp() {
             />
           )}
           {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={handleNavigate} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}
+          {currentPage === 'chat' && <ChatPage sites={sites} currentUser={currentUser} selectedSite={selectedSite} onSelectSite={setSelectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={handleNavigate} />}
           {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}

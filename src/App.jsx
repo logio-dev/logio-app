@@ -386,11 +386,11 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
 function Select({ label, labelEn, options, value, onChange, placeholder = "選択してください", required = false }) {
   return (
     <div className="mb-4">
-      <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>
+      <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>
         {label} / {labelEn} {required && <span style={{color:'#f87171'}}>*</span>}
       </label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
-        style={{ width:'100%', padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit', WebkitAppearance:'none' }}
+        style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit', WebkitAppearance:'none' }}
         required={required}>
         <option value="" style={{background:'#fff',color:'#111'}}>{placeholder}</option>
         {options.map((opt) => <option key={opt} value={opt} style={{background:'#fff',color:'#111'}}>{opt}</option>)}
@@ -458,11 +458,11 @@ function DarkSelect({ label, labelEn, options, value, onChange, placeholder = "�
 function TextInput({ label, labelEn, value, onChange, placeholder = "", type = "text", required = false }) {
   return (
     <div className="mb-4">
-      <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.45)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>
+      <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>
         {label} / {labelEn} {required && <span style={{color:'#f87171'}}>*</span>}
       </label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width:'100%', padding:'10px 12px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit' }}
+        style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit' }}
         required={required} />
     </div>
   );
@@ -524,7 +524,6 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
     { id: 'project', label: 'PROJECT', icon: FileText },
     { id: 'input', label: '日報入力', icon: Plus },
     { id: 'list', label: '日報一覧', icon: FileText },
-    { id: 'chat', label: 'チャット', icon: MessageCircle },
     { id: 'analysis', label: '原価分析', icon: BarChart3 },
     { id: 'export', label: 'EXPORT', icon: ChevronUp },
     { id: 'settings', label: '設定・編集', icon: Settings }
@@ -1417,27 +1416,25 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         style={{ padding:'5px 8px', borderRadius:7, border:'none', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.65)', fontSize:11, cursor:'pointer' }}>✕</button>
                     </div>
                   ) : (
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{site.name}</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0, flexShrink:1 }}>{site.name}</div>
                       <button onClick={e=>{ e.stopPropagation(); setEditingName(site.name); setEditNameVal(site.name); }}
                         style={{ padding:'2px 6px', borderRadius:5, border:'none', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.45)', fontSize:9, cursor:'pointer', flexShrink:0 }}>編集</button>
+                      {/* ★ 受注表PDFボタン (編集の隣) */}
+                      <button onClick={async(e)=>{
+                          e.stopPropagation();
+                          if (!isSelected) { onSelectSite && onSelectSite(site.name); }
+                          setTimeout(() => onNavigate('order_pdf'), isSelected ? 0 : 200);
+                        }}
+                        style={{ padding:'2px 7px', borderRadius:5, border:'none', background:'rgba(153,27,27,0.2)', color:'#f87171', fontSize:9, fontWeight:700, cursor:'pointer', flexShrink:0, fontFamily:'inherit', whiteSpace:'nowrap' }}>
+                        📄 受注表
+                      </button>
                     </div>
                   )}
                   <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', marginTop:1 }}>
                     {pjNo || cardInfo.projectNumber || '番号未設定'}{cardInfo.status ? ` · ${cardInfo.status}` : ''}
                   </div>
                 </div>
-                {/* ★ 受注表PDFボタン */}
-                <span onClick={async(e)=>{
-                    e.stopPropagation();
-                    // 選択中でない場合は選択→ナビ
-                    if (!isSelected) { onSelectSite && onSelectSite(site.name); }
-                    // 少し待ってから遷移 (state更新反映)
-                    setTimeout(() => onNavigate('order_pdf'), isSelected ? 0 : 200);
-                  }}
-                  style={{ display:'flex',alignItems:'center',gap:4,padding:'5px 9px',background:'rgba(153,27,27,0.15)',border:'1px solid rgba(239,68,68,0.3)',color:'#f87171',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0,whiteSpace:'nowrap' }}>
-                  📄 受注表
-                </span>
                 {isSelected && (
                   <span style={{ fontSize:9, fontWeight:700, padding:'3px 7px', borderRadius:99, background:'rgba(34,197,94,0.12)', color:'#4ade80', border:'1px solid rgba(34,197,94,0.2)', flexShrink:0 }}>選択中</span>
                 )}
@@ -1448,14 +1445,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               {isOpen && (
                 <div style={{ padding:'0 10px 14px', borderTop:'1px solid #EBEBEB', width:'100%', maxWidth:'100%', boxSizing:'border-box', overflow:'hidden' }}>
                   <div style={{ paddingTop:16, minWidth:0, width:'100%', maxWidth:'100%' }}>
-                    {/* 工事番号（読み取り専用） */}
-                    <div style={{ marginBottom:14 }}>
-                      <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
-                      <div style={{ padding:'10px 12px', background:'#2D2D2D', border:'none', borderRadius:8, fontSize:14, color:'rgba(255,255,255,0.45)', boxSizing:'border-box', width:'100%' }}>
-                        {cardInfo.projectNumber || pjNo || '未採番'}　<span style={{ fontSize:10 }}>※ 自動採番（編集不可）</span>
-                      </div>
-                    </div>
-
                     {isSelected ? (
                       <>
                         {/* タブ削除 - 基本情報のみ */}
@@ -1545,22 +1534,32 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         {/* 基本情報タブ */}
                         {(projectInfo._formTab||'basic')==='basic' && (
                           <>
+                        {/* ★ 基本情報カード */}
+                        <div style={{ marginBottom:20, padding:'16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
+                          <div style={{ fontSize:10, fontWeight:700, color:'#60a5fa', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:14 }}>基本情報 / Basic Info</div>
+                          {/* 工事番号 (読み取り専用) */}
+                          <div style={{ marginBottom:14 }}>
+                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.55)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工事番号 / PROJECT NO.</label>
+                            <div style={{ padding:'10px 12px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', borderRadius:8, fontSize:14, color:'rgba(255,255,255,0.55)', boxSizing:'border-box', width:'100%' }}>
+                              {cardInfo.projectNumber || pjNo || '未採番'}　<span style={{ fontSize:10 }}>※ 自動採番（編集不可）</span>
+                            </div>
+                          </div>
 <Select label="請負区分" labelEn="Contract Type" options={['フェイス','入間緑化']} value={projectInfo.contractType||''} onChange={v=>setProjectInfo({...projectInfo,contractType:v})} />
 <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={v=>setProjectInfo({...projectInfo,workType:v})} />
                         <TextInput label="発注者" labelEn="Client" value={projectInfo.client||''} onChange={v=>setProjectInfo({...projectInfo,client:v})} placeholder="○○建設株式会社" />
                         <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation||''} onChange={v=>setProjectInfo({...projectInfo,workLocation:v})} placeholder="東京都渋谷区..." />
                         <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson||''} onChange={v=>setProjectInfo({...projectInfo,salesPerson:v})} />
                         <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager||''} onChange={v=>setProjectInfo({...projectInfo,siteManager:v})} />
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:10, marginBottom:24 }}>
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:10, marginBottom:16 }}>
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
                             <input type="date" value={projectInfo.startDate||''} onChange={e=>setProjectInfo({...projectInfo,startDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'#2D2D2D', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', colorScheme:'dark' }} />
                           </div>
                           <div>
                             <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期終了</label>
                             <input type="date" value={projectInfo.endDate||''} onChange={e=>setProjectInfo({...projectInfo,endDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'#2D2D2D', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box' }} />
+                              style={{ width:'100%', padding:'11px 12px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', colorScheme:'dark' }} />
                           </div>
                         </div>
                         <div style={{marginBottom:20}}>
@@ -1569,7 +1568,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           value={projectInfo.contractAmount ? Number(String(projectInfo.contractAmount).replace(/,/g,'')).toLocaleString() : ''}
                           onChange={e=>setProjectInfo({...projectInfo,contractAmount:e.target.value.replace(/,/g,'')})}
                           placeholder="5,000,000"
-                          style={{width:'100%',padding:'11px 12px',background:'#2D2D2D',border:'none',color:'#fff',borderRadius:8,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
+                          style={{width:'100%',padding:'11px 12px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
                       </div>
                         <div style={{marginBottom:20}}>
                         <label style={{display:'block',fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>追加金額（税抜） / ADDITIONAL</label>
@@ -1577,8 +1576,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           value={projectInfo.additionalAmount ? Number(String(projectInfo.additionalAmount).replace(/,/g,'')).toLocaleString() : ''}
                           onChange={e=>setProjectInfo({...projectInfo,additionalAmount:e.target.value.replace(/,/g,'')})}
                           placeholder="0"
-                          style={{width:'100%',padding:'11px 12px',background:'#2D2D2D',border:'none',color:'#fff',borderRadius:8,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
+                          style={{width:'100%',padding:'11px 12px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
                       </div>
+                        </div>
+                        {/* ★ 基本情報カード閉じ */}
 
                         {/* ★ 現場詳細 */}
                         <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
@@ -1587,23 +1588,23 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             <div>
                               <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>面積 (㎡)</label>
                               <input type="number" value={projectInfo.siteAreaM2||''} onChange={e=>setProjectInfo({...projectInfo,siteAreaM2:e.target.value})} placeholder="例) 150"
-                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
+                                style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
                             </div>
                             <div>
                               <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>坪数 (坪)</label>
                               <input type="number" value={projectInfo.siteTsubo||''} onChange={e=>setProjectInfo({...projectInfo,siteTsubo:e.target.value})} placeholder="例) 45"
-                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
+                                style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
                             </div>
                             <div>
                               <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>業態</label>
                               <input type="text" value={projectInfo.siteUseType||''} onChange={e=>setProjectInfo({...projectInfo,siteUseType:e.target.value})} placeholder="例) 商業"
-                                style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
+                                style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
                             </div>
                           </div>
                           <div>
                             <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>工事条件</label>
                             <textarea value={projectInfo.workCondition||''} onChange={e=>setProjectInfo({...projectInfo,workCondition:e.target.value})} placeholder="例) アスベスト有り、夜間作業あり..."
-                              style={{ width:'100%', padding:'10px', background:'rgba(255,255,255,0.08)', border:'none', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:'inherit', minHeight:64, resize:'vertical' }} />
+                              style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:'inherit', minHeight:64, resize:'vertical' }} />
                           </div>
                         </div>
 
@@ -3895,7 +3896,7 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
       {/* 操作バー */}
       <div className="no-print" style={{background:'#1E293B',padding:'10px 16px',display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
         <button onClick={()=>{
-            onNavigate('project');
+            onNavigate('settings');
             setTimeout(()=>{
               const el = document.getElementById('site-management-top');
               if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
@@ -5717,7 +5718,6 @@ export default function LOGIOApp() {
             />
           )}
           {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={handleNavigate} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}
-          {currentPage === 'chat' && <ChatPage sites={sites} currentUser={currentUser} selectedSite={selectedSite} onSelectSite={setSelectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={handleNavigate} />}
           {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}

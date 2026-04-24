@@ -1313,7 +1313,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
   return (
     <div style={{ background:'#F5F7FA', minHeight:'100vh', color:'#1C1917', width:'100%', maxWidth:'100vw', overflowX:'hidden' }}>
-      <div className="max-w-2xl mx-auto px-4 py-6" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box', width:'100%', maxWidth:'100%' }}>
+      <div className="max-w-2xl mx-auto px-4 py-6" style={{ paddingBottom:'calc(160px + env(safe-area-inset-bottom,0px))', boxSizing:'border-box', width:'100%', maxWidth:'42rem', margin:'0 auto' }}>
 
         {/* 閉じるボタン */}
         <button onClick={() => onNavigate('home')}
@@ -1544,39 +1544,47 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               {cardInfo.projectNumber || pjNo || '未採番'}　<span style={{ fontSize:10 }}>※ 自動採番（編集不可）</span>
                             </div>
                           </div>
+{/* セクション1: 契約情報 */}
+<div style={{ fontSize:9, color:'#fbbf24', fontWeight:700, letterSpacing:'.08em', marginBottom:8, paddingBottom:4, borderBottom:'1px solid rgba(251,191,36,0.3)' }}>契約情報</div>
 <Select label="請負区分" labelEn="Contract Type" options={['フェイス','入間緑化']} value={projectInfo.contractType||''} onChange={v=>setProjectInfo({...projectInfo,contractType:v})} />
 <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={v=>setProjectInfo({...projectInfo,workType:v})} />
                         <TextInput label="発注者" labelEn="Client" value={projectInfo.client||''} onChange={v=>setProjectInfo({...projectInfo,client:v})} placeholder="○○建設株式会社" />
                         <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation||''} onChange={v=>setProjectInfo({...projectInfo,workLocation:v})} placeholder="東京都渋谷区..." />
+
+                        {/* セクション2: 担当者 */}
+                        <div style={{ fontSize:9, color:'#fbbf24', fontWeight:700, letterSpacing:'.08em', marginTop:16, marginBottom:8, paddingBottom:4, borderBottom:'1px solid rgba(251,191,36,0.3)' }}>担当者</div>
                         <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson||''} onChange={v=>setProjectInfo({...projectInfo,salesPerson:v})} />
                         <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager||''} onChange={v=>setProjectInfo({...projectInfo,siteManager:v})} />
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:10, marginBottom:16 }}>
+
+                        {/* セクション3: 工期・金額 */}
+                        <div style={{ fontSize:9, color:'#fbbf24', fontWeight:700, letterSpacing:'.08em', marginTop:16, marginBottom:8, paddingBottom:4, borderBottom:'1px solid rgba(251,191,36,0.3)' }}>工期・金額</div>
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
                           <div>
-                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期開始</label>
+                            <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.55)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>工期開始</label>
                             <input type="date" value={projectInfo.startDate||''} onChange={e=>setProjectInfo({...projectInfo,startDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', colorScheme:'dark' }} />
+                              style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', colorScheme:'dark' }} />
                           </div>
                           <div>
-                            <label style={{ display:'block', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>工期終了</label>
+                            <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.55)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>工期終了</label>
                             <input type="date" value={projectInfo.endDate||''} onChange={e=>setProjectInfo({...projectInfo,endDate:e.target.value})}
-                              style={{ width:'100%', padding:'11px 12px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', colorScheme:'dark' }} />
+                              style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', colorScheme:'dark' }} />
                           </div>
                         </div>
-                        <div style={{marginBottom:20}}>
-                        <label style={{display:'block',fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>売上（税抜） / REVENUE</label>
+                        <div style={{marginBottom:12}}>
+                        <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>売上（税抜） / REVENUE</label>
                         <input type="text" inputMode="numeric"
                           value={projectInfo.contractAmount ? Number(String(projectInfo.contractAmount).replace(/,/g,'')).toLocaleString() : ''}
                           onChange={e=>setProjectInfo({...projectInfo,contractAmount:e.target.value.replace(/,/g,'')})}
                           placeholder="5,000,000"
-                          style={{width:'100%',padding:'11px 12px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
+                          style={{width:'100%',padding:'10px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
                       </div>
-                        <div style={{marginBottom:20}}>
-                        <label style={{display:'block',fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>追加金額（税抜） / ADDITIONAL</label>
+                        <div>
+                        <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>追加金額（税抜） / ADDITIONAL</label>
                         <input type="text" inputMode="numeric"
                           value={projectInfo.additionalAmount ? Number(String(projectInfo.additionalAmount).replace(/,/g,'')).toLocaleString() : ''}
                           onChange={e=>setProjectInfo({...projectInfo,additionalAmount:e.target.value.replace(/,/g,'')})}
                           placeholder="0"
-                          style={{width:'100%',padding:'11px 12px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:15,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
+                          style={{width:'100%',padding:'10px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
                       </div>
                         </div>
                         {/* ★ 基本情報カード閉じ */}
@@ -1691,7 +1699,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>マニ伝種類</div>
                             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
                               {['紙マニフェスト','電子マニフェスト'].map(v=>(
-                                <button key={v} onClick={()=>setProjectInfo({...projectInfo,manifestType:v})}
+                                <button key={v} onClick={()=>setProjectInfo({...projectInfo,manifestType:projectInfo.manifestType===v?'':v})}
                                   style={{padding:'10px',borderRadius:8,border:`1px solid ${projectInfo.manifestType===v?'rgba(96,165,250,0.5)':'rgba(255,255,255,0.1)'}`,background:projectInfo.manifestType===v?'rgba(59,130,246,0.15)':'rgba(255,255,255,0.04)',color:projectInfo.manifestType===v?'#60a5fa':'rgba(255,255,255,0.55)',fontSize:12,fontWeight:projectInfo.manifestType===v?700:500,cursor:'pointer',fontFamily:'inherit'}}>
                                   {v}
                                 </button>

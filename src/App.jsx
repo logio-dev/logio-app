@@ -1265,6 +1265,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   const [editingName, setEditingName] = useState(null);
   const [editNameVal, setEditNameVal] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  // ★ ステータスフィルタタブ
+  const [statusFilter, setStatusFilter] = useState('進行中');
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const handleAddSite = () => {
@@ -1347,6 +1349,31 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           </div>
         )}
 
+        {/* ★ ステータスタブ + 検索 */}
+        {sites.length > 0 && (() => {
+          const countByStatus = {
+            '着工前': sites.filter(s => s.status === '着工前').length,
+            '進行中': sites.filter(s => s.status === '進行中' || !s.status).length,
+            '完了':   sites.filter(s => s.status === '完了').length,
+            'all':    sites.length,
+          };
+          return (
+            <div style={{display:'flex',gap:4,padding:4,background:'rgba(255,255,255,0.05)',borderRadius:10,marginBottom:10}}>
+              {[
+                ['着工前', `着工前 (${countByStatus['着工前']})`],
+                ['進行中', `進行中 (${countByStatus['進行中']})`],
+                ['完了',   `完了 (${countByStatus['完了']})`],
+                ['all',    `すべて (${countByStatus.all})`],
+              ].map(([v,label])=>(
+                <button key={v} onClick={()=>setStatusFilter(v)}
+                  style={{flex:1,padding:'8px 4px',border:'none',background:statusFilter===v?'#1E293B':'transparent',color:statusFilter===v?'#fff':'#666',fontSize:10,fontWeight:statusFilter===v?700:500,borderRadius:7,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* セクションラベル */}
         {sites.length > 0 && (
           <div style={{position:'relative',marginBottom:10}}>
@@ -1355,18 +1382,36 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               style={{width:'100%',padding:'9px 12px 9px 32px',borderRadius:9,border:'0.5px solid #E8E8E8',background:'#fff',color:'#111',fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit',boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}/>
           </div>
         )}
-        {sites.length > 0 && (
+        {sites.length > 0 && searchQuery && (
           <div style={{fontSize:10,color:'rgba(255,255,255,0.3)',marginBottom:8,paddingLeft:2}}>
-            {searchQuery ? `${sites.filter(s=>s.name.toLowerCase().includes(searchQuery.toLowerCase())).length}件 / ${sites.length}件` : `${sites.length}件`}
+            検索結果: {sites.filter(s=>s.name.toLowerCase().includes(searchQuery.toLowerCase())).length}件
           </div>
         )}
 
         {/* アコーディオンカード */}
         {(()=>{
-          const filtered = sites.filter(s => !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+          // ステータスフィルタ + 検索
+          const filtered = sites.filter(s => {
+            // ステータス判定
+            if (statusFilter !== 'all') {
+              if (statusFilter === '進行中') {
+                if (s.status && s.status !== '進行中') return false;
+              } else {
+                if (s.status !== statusFilter) return false;
+              }
+            }
+            // 検索
+            if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+            return true;
+          });
           const displayed = (searchQuery || showAllSites) ? filtered : filtered.slice(0, 5);
           const remaining = filtered.length - displayed.length;
           return (<>
+            {filtered.length === 0 && sites.length > 0 && (
+              <div style={{padding:'30px 20px',textAlign:'center',color:'#999',fontSize:13,background:'#2D2D2D',borderRadius:12}}>
+                {searchQuery ? `「${searchQuery}」に一致する現場がありません` : `「${statusFilter}」の現場はありません`}
+              </div>
+            )}
             {displayed.map((site) => {
           const isOpen = openCard === site.name;
           const pjNo = site.projectNumber || (site.projectInfo && site.projectInfo.projectNumber) || '';

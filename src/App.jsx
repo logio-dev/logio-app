@@ -1323,7 +1323,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         </button>
 
         {/* タイトル */}
-        <div style={{ marginBottom:24 }}>
+        <div id="site-management-top" style={{ marginBottom:24 }}>
           <div style={{ fontSize:18, fontWeight:800, letterSpacing:'-.02em', color:'#111' }}>現場管理</div>
           <div style={{ fontSize:10, color:'#888', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>Site Management</div>
         </div>
@@ -1427,6 +1427,17 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                     {pjNo || cardInfo.projectNumber || '番号未設定'}{cardInfo.status ? ` · ${cardInfo.status}` : ''}
                   </div>
                 </div>
+                {/* ★ 受注表PDFボタン */}
+                <span onClick={async(e)=>{
+                    e.stopPropagation();
+                    // 選択中でない場合は選択→ナビ
+                    if (!isSelected) { onSelectSite && onSelectSite(site.name); }
+                    // 少し待ってから遷移 (state更新反映)
+                    setTimeout(() => onNavigate('order_pdf'), isSelected ? 0 : 200);
+                  }}
+                  style={{ display:'flex',alignItems:'center',gap:4,padding:'5px 9px',background:'rgba(153,27,27,0.15)',border:'1px solid rgba(239,68,68,0.3)',color:'#f87171',borderRadius:7,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0,whiteSpace:'nowrap' }}>
+                  📄 受注表
+                </span>
                 {isSelected && (
                   <span style={{ fontSize:9, fontWeight:700, padding:'3px 7px', borderRadius:99, background:'rgba(34,197,94,0.12)', color:'#4ade80', border:'1px solid rgba(34,197,94,0.2)', flexShrink:0 }}>選択中</span>
                 )}
@@ -1604,7 +1615,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           const miscItems = projectInfo.miscItems !== undefined ? projectInfo.miscItems :
                             [...(projectInfo.siteExpenseItems||[]), ...(projectInfo.sgaItems||[])];
                           const renderItems=(items,delFn,color,border)=>items.map((item,i)=>(
-                            <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'rgba(255,255,255,0.06)',border:'none'}}>
+                            <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'#3F3F3F',border:'1px solid rgba(255,255,255,0.08)'}}>
                               <div style={{width:34,height:34,borderRadius:8,background:'rgba(255,255,255,0.1)',color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:13,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
@@ -1618,7 +1629,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             const name=projectInfo[`_${key}Name`]||'', days=projectInfo[`_${key}Days`]||'', amt=projectInfo[`_${key}Amt`]||'';
                             const rgb=key==='out'?'59,130,246':'168,85,247';
                             return (
-                              <div style={{padding:12,borderRadius:10,background:'rgba(255,255,255,0.06)',border:'none',marginTop:4}}>
+                              <div style={{padding:12,borderRadius:10,background:'#3F3F3F',border:'1px solid rgba(255,255,255,0.08)',marginTop:4}}>
                                 <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:5}}>直接原価（リース・機材・資材・経費等）</label>
                                 <input type="text" value={name} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Name`]:e.target.value})}
                                   placeholder="費用名を入力…" style={{width:'100%',padding:'11px 12px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:9,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'inherit',marginBottom:8}}/>
@@ -1697,7 +1708,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             {/* ヘッダー非表示（縦並びに変更） */}
                             {/* 行 */}
                             {(projectInfo.manifestRows||[]).map((row,i)=>(
-                              <div key={i} style={{background:'rgba(255,255,255,0.04)',borderRadius:10,padding:'10px 12px',marginBottom:8,position:'relative'}}>
+                              <div key={i} style={{background:'#3F3F3F',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 12px',marginBottom:8,position:'relative'}}>
                                 <button onClick={()=>{
                                   const rows=(projectInfo.manifestRows||[]).filter((_,j)=>j!==i);
                                   setProjectInfo({...projectInfo,manifestRows:rows});
@@ -1778,7 +1789,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               ＋ 行を追加
                             </button>
                             {(projectInfo.manifestRows||[]).length>0 && (
-                              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:'rgba(255,255,255,0.04)',borderRadius:9,marginTop:10}}>
+                              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:'#3F3F3F',border:'1px solid rgba(255,255,255,0.08)',borderRadius:9,marginTop:10}}>
                                 <span style={{fontSize:12,color:'#aaa'}}>合計枚数</span>
                                 <span style={{fontSize:18,fontWeight:700,color:'#60a5fa'}}>{(projectInfo.manifestRows||[]).reduce((s,r)=>s+(parseInt(r.count)||0),0)}枚</span>
                               </div>
@@ -1792,15 +1803,20 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             </div>
                           </div>
                         </div>
-                        {/* 保存・削除・受注表PDF */}
-                        <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
-                          <button onClick={onSave} style={{ flex:2, minWidth:120, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                        {/* 保存・削除 */}
+                        <div id="site-management-top-anchor" style={{ display:'flex', gap:8, marginTop:8 }}>
+                          <button onClick={async()=>{ 
+                            await onSave();
+                            // 現場管理の先頭にスクロール (ホームに戻らず)
+                            setTimeout(()=>{
+                              const el = document.getElementById('site-management-top');
+                              if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
+                              else window.scrollTo({top:0,behavior:'smooth'});
+                            }, 100);
+                          }} style={{ flex:3, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
                             <Save className="w-4 h-4" />保存
                           </button>
-                          <button onClick={async()=>{ await onSave(true); onNavigate('order_pdf'); }} style={{ flex:2, minWidth:120, padding:'13px', background:'#991B1B', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-                            <FileText className="w-4 h-4" />受注表PDF
-                          </button>
-                          <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, minWidth:60, padding:'13px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
+                          <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, padding:'13px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
                         </div>
 
                           </>

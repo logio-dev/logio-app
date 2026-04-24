@@ -1792,12 +1792,15 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             </div>
                           </div>
                         </div>
-                        {/* 保存・削除 */}
-                        <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                          <button onClick={onSave} style={{ flex:3, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                        {/* 保存・削除・受注表PDF */}
+                        <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
+                          <button onClick={onSave} style={{ flex:2, minWidth:120, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
                             <Save className="w-4 h-4" />保存
                           </button>
-                          <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, padding:'13px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
+                          <button onClick={async()=>{ await onSave(true); onNavigate('order_pdf'); }} style={{ flex:2, minWidth:120, padding:'13px', background:'#991B1B', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                            <FileText className="w-4 h-4" />受注表PDF
+                          </button>
+                          <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, minWidth:60, padding:'13px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
                         </div>
 
                           </>
@@ -3843,16 +3846,21 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const handlePrint = () => window.print();
+  const handleDownload = () => {
+    // PDF保存の案内表示後に印刷ダイアログを開く
+    // ブラウザの印刷ダイアログで「送信先 → PDFとして保存」を選ぶ
+    const prev = document.title;
+    const sitename = projectInfo.projectName || projectInfo.workType || '受注表';
+    const datestr = new Date().toISOString().slice(0,10);
+    document.title = `受注表_${sitename}_${datestr}`;
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => { document.title = prev; }, 500);
+    }, 100);
+  };
 
   const fmt = (v) => v ? `¥${Number(v).toLocaleString()}` : '—';
-  const chk = projectInfo.documentsChecklist || {};
-  const DOCS = [
-    {key:'work',label:'WORK表'},{key:'paperManifest',label:'紙マニフェスト'},{key:'eManifest',label:'電子マニフェスト'},
-    {key:'treatmentContract',label:'処理委託契約書'},{key:'estimateContract',label:'見積契約書'},{key:'signboard',label:'看板'},
-    {key:'preInvoice',label:'着工前請求書'},{key:'postInvoice',label:'着工後請求書'},{key:'safetyDocs',label:'安全書類'},
-  ];
   const contractAmtTax = projectInfo.contractAmount ? Math.round(Number(projectInfo.contractAmount) * 1.1) : 0;
-  const subAmtTax = projectInfo.subcontractAmount ? Math.round(Number(projectInfo.subcontractAmount) * 1.1) : 0;
 
   return (
     <div style={{background:'#F5F7FA',minHeight:'100vh'}}>
@@ -3864,17 +3872,21 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
           .order-pdf { box-shadow: none !important; }
         }
         .order-table { border-collapse: collapse; width: 100%; }
-        .order-table th, .order-table td { border: 1px solid #555; padding: 4px 6px; font-size: 11px; }
+        .order-table th, .order-table td { border: 1px solid #555; padding: 6px 8px; font-size: 11px; }
         .order-table th { background: #374151; color: #fff; font-weight: 700; text-align: center; }
       `}</style>
 
       {/* 操作バー */}
-      <div className="no-print" style={{background:'#1E293B',padding:'10px 16px',display:'flex',gap:8,alignItems:'center'}}>
+      <div className="no-print" style={{background:'#1E293B',padding:'10px 16px',display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
         <button onClick={()=>onNavigate('home')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:12,fontWeight:600,color:'#fff',cursor:'pointer'}}>
           <X className="w-4 h-4"/>閉じる
         </button>
-        <button onClick={handlePrint} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#DC2626',border:'none',borderRadius:8,fontSize:12,fontWeight:700,color:'#fff',cursor:'pointer'}}>
-          <FileText className="w-4 h-4"/>印刷 / PDF保存
+        <div style={{flex:1}}/>
+        <button onClick={handlePrint} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.3)',borderRadius:8,fontSize:12,fontWeight:700,color:'#fff',cursor:'pointer'}}>
+          🖨 印刷
+        </button>
+        <button onClick={handleDownload} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#DC2626',border:'none',borderRadius:8,fontSize:12,fontWeight:700,color:'#fff',cursor:'pointer'}}>
+          <FileText className="w-4 h-4"/>PDFダウンロード
         </button>
       </div>
 
@@ -3895,14 +3907,16 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
         <table className="order-table" style={{marginBottom:12,minWidth:600}}>
           <tbody>
             <tr>
-              <th style={{width:100}}>発注先（会社名）</th>
-              <td colSpan={3}>{projectInfo.client || ''}</td>
-              <th style={{width:80}}>施工体制</th>
-              <td style={{width:120}}>自社施工　□</td>
+              <th style={{width:110}}>請負区分</th>
+              <td colSpan={5}>{projectInfo.contractType || ''}</td>
+            </tr>
+            <tr>
+              <th>発注先（会社名）</th>
+              <td colSpan={5}>{projectInfo.client || ''}</td>
             </tr>
             <tr>
               <th>工事名</th>
-              <td colSpan={5}>{projectInfo.workType || ''} {projectInfo.workLocation ? `（${projectInfo.workLocation}）` : ''}</td>
+              <td colSpan={5}>{projectInfo.workType || ''}</td>
             </tr>
             <tr>
               <th>施工場所</th>
@@ -3914,93 +3928,60 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
               <td style={{textAlign:'center',width:20}}>〜</td>
               <td colSpan={2}>{projectInfo.endDate || ''}</td>
             </tr>
-          </tbody>
-        </table>
-
-        {/* 受注情報テーブル */}
-        <table className="order-table" style={{marginBottom:12}}>
-          <tbody>
             <tr>
-              <th rowSpan={4} style={{width:60,writingMode:'vertical-rl',textAlign:'center'}}>受注</th>
-              <th style={{width:100}}>受注金額</th>
-              <td style={{width:120}}>{fmt(projectInfo.contractAmount)}</td>
-              <td style={{fontSize:10,color:'#555'}}>（税込 {fmt(contractAmtTax)}）</td>
-              <th style={{width:80}}>入金予定日</th>
-              <td>{projectInfo.paymentDueDate || ''}</td>
-            </tr>
-            <tr>
-              <th>支払条件</th>
-              <td colSpan={4}>{projectInfo.paymentTerms || ''}</td>
-            </tr>
-            <tr>
-              <th>請求書送付先</th>
-              <td colSpan={4}>{projectInfo.invoiceRecipient || ''}</td>
-            </tr>
-            <tr>
-              <th>領収型的書（添付）</th>
-              <td colSpan={4}></td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* 下請情報テーブル */}
-        <table className="order-table" style={{marginBottom:12}}>
-          <tbody>
-            <tr>
-              <th rowSpan={3} style={{width:60,writingMode:'vertical-rl',textAlign:'center'}}>下請</th>
-              <th style={{width:100}}>下請金額</th>
-              <td style={{width:120}}>{fmt(projectInfo.subcontractAmount)}</td>
-              <td style={{fontSize:10,color:'#555'}}>（税込 {fmt(subAmtTax)}）</td>
-              <th style={{width:80}}>下請業者</th>
-              <td>{projectInfo.subcontractor || ''}</td>
-            </tr>
-            <tr>
-              <th>支払条件</th>
-              <td colSpan={4}>{projectInfo.subcontractTerms || ''}</td>
-            </tr>
-            <tr>
-              <th>請求書送付先</th>
-              <td colSpan={4}>{projectInfo.subcontractInvoiceRecipient || ''}</td>
+              <th>受注金額</th>
+              <td colSpan={2}>{fmt(projectInfo.contractAmount)}</td>
+              <td colSpan={3} style={{fontSize:10,color:'#555'}}>（税込 {fmt(contractAmtTax)}）</td>
             </tr>
           </tbody>
         </table>
 
         {/* マニフェスト */}
-        <div style={{fontWeight:700,fontSize:12,marginBottom:6,borderBottom:'2px solid #374151',paddingBottom:4}}>マニフェスト】</div>
+        <div style={{fontWeight:700,fontSize:12,marginBottom:6,borderBottom:'2px solid #374151',paddingBottom:4}}>【マニフェスト】</div>
+        <table className="order-table" style={{marginBottom:6}}>
+          <tbody>
+            <tr>
+              <th style={{width:110}}>排出事業者</th>
+              <td colSpan={3}>{projectInfo.manifestDischarger || ''}</td>
+            </tr>
+            <tr>
+              <th>マニ伝種類</th>
+              <td colSpan={3}>{projectInfo.manifestType || ''}</td>
+            </tr>
+            {projectInfo.manifestIssuer && (
+              <tr>
+                <th>交付担当者</th>
+                <td colSpan={3}>{projectInfo.manifestIssuer}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
         <table className="order-table" style={{marginBottom:16}}>
           <thead>
             <tr>
-              <th style={{width:'25%'}}>排出</th>
-              <th style={{width:'25%'}}>運搬</th>
-              <th style={{width:'25%'}}>処分</th>
-              <th style={{width:'10%'}}>枚数</th>
-              <th style={{width:'15%'}}>備考</th>
+              <th style={{width:'40%'}}>運搬</th>
+              <th style={{width:'40%'}}>処分</th>
+              <th style={{width:'20%'}}>枚数</th>
             </tr>
           </thead>
           <tbody>
             {(projectInfo.manifestRows||[{disposal:'',transport:'',count:''}]).map((row,i)=>(
               <tr key={i}>
-                <td>{row.disposal||''}</td>
                 <td>{row.transport||''}</td>
-                <td></td>
+                <td>{row.disposal||''}</td>
                 <td style={{textAlign:'center'}}>{row.count ? `${row.count}枚` : ''}</td>
-                <td></td>
               </tr>
             ))}
             {Array.from({length:Math.max(0, 4-(projectInfo.manifestRows||[]).length)}).map((_,i)=>(
-              <tr key={`empty-${i}`}><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>
+              <tr key={`empty-${i}`}><td>&nbsp;</td><td></td><td></td></tr>
             ))}
           </tbody>
         </table>
 
-        {/* 書類確認 */}
-        <div style={{fontWeight:700,fontSize:12,marginBottom:6,borderBottom:'2px solid #374151',paddingBottom:4}}>書類・その他】</div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,marginBottom:16}}>
-          {DOCS.map(({key,label})=>(
-            <div key={key} style={{display:'flex',alignItems:'center',gap:6,fontSize:11}}>
-              <span style={{fontSize:14}}>{chk[key]?'☑':'☐'}</span>{label}
-            </div>
-          ))}
+        {/* 備考欄 */}
+        <div style={{fontWeight:700,fontSize:12,marginBottom:6,borderBottom:'2px solid #374151',paddingBottom:4}}>【備考欄】</div>
+        <div style={{border:'1px solid #555',minHeight:80,padding:'8px 10px',fontSize:11,whiteSpace:'pre-wrap',marginBottom:16,lineHeight:1.6}}>
+          {projectInfo.manifestRemarks || ''}
         </div>
 
         {/* フッター */}
@@ -5404,7 +5385,7 @@ export default function LOGIOApp() {
     } catch (error) { setReports([]); }
   };
 
-  const handleSaveProject = async () => {
+  const handleSaveProject = async (silent = false) => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
       await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined, manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
@@ -5422,7 +5403,7 @@ export default function LOGIOApp() {
         updated_at: new Date().toISOString() }, 'site_name');
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '進行中' } : s));
-      alert('✅ プロジェクト情報を保存しました');
+      if (!silent) alert('✅ プロジェクト情報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + (error?.message || JSON.stringify(error))); }
   };

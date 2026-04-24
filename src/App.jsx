@@ -1660,7 +1660,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               {renderItems(miscItems,(i)=>setProjectInfo({...projectInfo,miscItems:miscItems.filter((_,j)=>j!==i)}),'#a855f7','rgba(168,85,247,0.12)')}
                               {miscItems.length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'4px 4px',borderTop:'1px solid rgba(168,85,247,0.1)',marginBottom:2}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#a855f7',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
                               {renderForm('misc',MISC_QUICK,'#a855f7','linear-gradient(135deg,#7c3aed,#a855f7)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,miscItems:[...miscItems,ni],_miscName:'',_miscDays:'',_miscAmt:''});})}
-                              <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'rgba(255,255,255,0.08)',border:'none'}}>
+                              <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'#3F3F3F',border:'1px solid rgba(255,255,255,0.08)'}}>
                                 <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8,fontFamily:'monospace'}}>コストサマリー</div>
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
                                   <span style={{fontSize:11,color:'rgba(255,255,255,0.45)'}}>リース・機材・資材・経費等 <span style={{fontSize:9,fontFamily:'monospace'}}>直接原価</span></span>
@@ -3894,7 +3894,14 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
 
       {/* 操作バー */}
       <div className="no-print" style={{background:'#1E293B',padding:'10px 16px',display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-        <button onClick={()=>onNavigate('home')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:12,fontWeight:600,color:'#fff',cursor:'pointer'}}>
+        <button onClick={()=>{
+            onNavigate('project');
+            setTimeout(()=>{
+              const el = document.getElementById('site-management-top');
+              if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
+              else window.scrollTo({top:0,behavior:'smooth'});
+            }, 150);
+          }} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(255,255,255,0.1)',border:'0.5px solid rgba(255,255,255,0.2)',borderRadius:8,fontSize:12,fontWeight:600,color:'#fff',cursor:'pointer'}}>
           <X className="w-4 h-4"/>閉じる
         </button>
         <div style={{flex:1}}/>
@@ -3932,7 +3939,7 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
             </tr>
             <tr>
               <th>工事名</th>
-              <td colSpan={5}>{projectInfo.workType || ''}</td>
+              <td colSpan={5}>{projectInfo.projectName || ''}</td>
             </tr>
             <tr>
               <th>施工場所</th>

@@ -4666,229 +4666,394 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 // ========== AdminPage (管理者ページ) ==========
 function AdminPage({ currentUser, onLogout }) {
   const [adminTab, setAdminTab] = useState('dashboard');
-  const [masterTab, setMasterTab] = useState('disposal');
+  const [sites, setSites] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('30d');
 
-  // ダミーデータ(Supabaseから取得するロジックは後で実装)
-  const stats = {
-    users: { total: 12, limit: 50, newThisMonth: 2 },
-    sites: { total: 28, inProgress: 12 },
-    reports: { total: 847, thisMonth: 142 },
-    storage: { used: 2.1, limit: 5.0 }
-  };
-  const activities = [
-    { icon:'小', color:'#3B82F6', text:'小峯朋宏 が日報を作成', time:'5分前' },
-    { icon:'五', color:'#22c55e', text:'五十嵐悠哉 がログイン', time:'12分前' },
-    { icon:'浅', color:'#a855f7', text:'浅見勇弥 が現場「○○マンション」を編集', time:'25分前' },
-  ];
-  const users = [
-    { name:'小峯朋宏', email:'komine@example.com', dept:'環境課', status:'アクティブ', role:'編集者', color:'#3B82F6', initial:'小' },
-    { name:'五十嵐悠哉', email:'igarashi@example.com', dept:'工事1課', status:'アクティブ', role:'管理者', color:'#22c55e', initial:'五' },
-    { name:'浅見勇弥', email:'asami@example.com', dept:'環境課', status:'休眠', role:'編集者', color:'#888', initial:'浅', note:'30日未ログイン' },
-  ];
-  const masterData = {
-    disposal: ['入間緑化','石坂','ワイエム','フルハシ','ミダック','リバー','二光産業','木村建設','ウムヴェルト','ギプロ','中央環境','戸部組','東和アークス'],
-    transport: ['入間緑化','自社運搬','奈良商事'],
-    buyer: ['高橋金属','長沼金属','小林金属','ナンセイスチール','日東物産','有明興業'],
-    vehicle: ['軽バン','2td','3td','4td','4tc','4tu','8tc','増td','10tc','東リース2t','東リース3t','道具車'],
-    price: ['自社人工単価','外注単価','車両費単価','配車費単価']
-  };
-  const masterTitles = { disposal:'処分先', transport:'運搬会社', buyer:'買取業者', vehicle:'車両', price:'単価' };
-  const logs = [
-    { action:'作成', color:'34,197,94', textColor:'#4ade80', user:'小峯朋宏', desc:'日報「○○マンション 2024-04-21」', time:'14:32' },
-    { action:'編集', color:'59,130,246', textColor:'#60a5fa', user:'五十嵐悠哉', desc:'案件「△△ビル」のステータスを変更', time:'14:15' },
-    { action:'login', color:'168,85,247', textColor:'#c4b5fd', user:'浅見勇弥', desc:'ログイン (192.168.1.5)', time:'13:50' },
-    { action:'削除', color:'239,68,68', textColor:'#f87171', user:'山田太郎', desc:'日報「××商業施設 2024-04-15」を削除', time:'12:08' },
-  ];
+  // データ取得
+  useEffect(() => {
+    (async () => {
+      try {
+        const sitesData = await sb('sites').select('order=created_at.desc');
+        const reportsData = await sb('reports').select('order=date.desc&limit=1000');
+        setSites(Array.isArray(sitesData) ? sitesData : []);
+        setReports(Array.isArray(reportsData) ? reportsData : []);
+      } catch (e) { console.error('AdminPage load:', e); }
+      setLoading(false);
+    })();
+  }, []);
 
+  // 集計ロジック
+  const calcStats = () => {
+    const now = new Date();
+    const thisMonth = now.getFullYear() * 100 + now.getMonth() + 1;
+    const lastMonth = now.getMonth() === 0 ? (now.getFullYear() - 1) * 100 + 12 : now.getFullYear() * 100 + now.getMonth();
+
+    let mRevenue = 0, mCost = 0, lRevenue = 0, lCost = 0;
+    const siteStats = {};
+
+    reports.forEach(r => {
+      if (!r.date) return;
+      const d = new Date(r.date);
+      const ym = d.getFullYear() * 100 + d.getMonth() + 1;
+      const siteName = r.site_name || '';
+
+      // 日報から原価を計算 (workDetails内のコストデータ)
+      const wd = r.work_details || {};
+      const selfCost = (wd.selfWorkers || 0) * 20000;
+      const envCost = (wd.envWorkers || 0) * 20000;
+      const extCost = (wd.extWorkers || 0) * 22000;
+      const vehCost = (wd.vehicles || []).reduce((s, v) => s + (Number(v.unitPrice) || 0), 0);
+      const transCost = (wd.transportEntries || []).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const dispCost = (r.waste_items || []).reduce((s, w) => s + (Number(w.disposalCost) || 0), 0);
+      const totalCost = selfCost + envCost + extCost + vehCost + transCost + dispCost;
+
+      if (ym === thisMonth) { mCost += totalCost; }
+      if (ym === lastMonth) { lCost += totalCost; }
+
+      if (!siteStats[siteName]) siteStats[siteName] = { cost: 0, count: 0 };
+      siteStats[siteName].cost += totalCost;
+      siteStats[siteName].count++;
+    });
+
+    // 売上: sitesの contract_amount をプロジェクト完了時に計上する簡易バージョン
+    sites.forEach(s => {
+      const amt = Number(s.contract_amount) || 0;
+      // 今月の進行中現場の受注金額を暫定的に今月売上とする
+      if (s.status === '進行中') mRevenue += amt * 0.3; // 進捗30%と仮定
+      if (s.status === '完了') mRevenue += amt * 0.1;
+    });
+
+    const mProfit = mRevenue - mCost;
+    const profitRate = mRevenue > 0 ? (mProfit / mRevenue * 100) : 0;
+    const inProgressCount = sites.filter(s => s.status === '進行中' || !s.status).length;
+    const completingCount = sites.filter(s => {
+      if (!s.end_date) return false;
+      const end = new Date(s.end_date);
+      const monthLater = new Date(); monthLater.setMonth(monthLater.getMonth() + 1);
+      return end <= monthLater && (s.status === '進行中' || !s.status);
+    }).length;
+
+    return { mRevenue, mCost, mProfit, profitRate, lRevenue, lCost, inProgressCount, completingCount, siteStats };
+  };
+
+  const stats = calcStats();
+  const prevDiff = stats.lCost > 0 ? ((stats.mCost - stats.lCost) / stats.lCost * 100).toFixed(1) : 0;
+
+  // 過去12ヶ月の月次推移
+  const monthlyData = (() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const ym = d.getFullYear() * 100 + d.getMonth() + 1;
+      const label = `${d.getMonth() + 1}月`;
+      let cost = 0;
+      reports.forEach(r => {
+        if (!r.date) return;
+        const rd = new Date(r.date);
+        if (rd.getFullYear() * 100 + rd.getMonth() + 1 === ym) {
+          const wd = r.work_details || {};
+          cost += (wd.selfWorkers || 0) * 20000 + (wd.envWorkers || 0) * 20000 + (wd.extWorkers || 0) * 22000 +
+                  (wd.vehicles || []).reduce((s, v) => s + (Number(v.unitPrice) || 0), 0) +
+                  (wd.transportEntries || []).reduce((s, t) => s + (Number(t.amount) || 0), 0) +
+                  (r.waste_items || []).reduce((s, w) => s + (Number(w.disposalCost) || 0), 0);
+        }
+      });
+      months.push({ label, cost, revenue: cost * 1.3 });
+    }
+    return months;
+  })();
+
+  const maxY = Math.max(1000000, ...monthlyData.map(m => m.revenue));
+
+  // 現場別ランキング
+  const siteRanking = sites
+    .filter(s => s.status === '進行中' || s.status === '完了' || !s.status)
+    .map(s => {
+      const cost = stats.siteStats[s.name]?.cost || 0;
+      const revenue = (Number(s.contract_amount) || 0) * 0.3;
+      return { ...s, cost, revenue, profit: revenue - cost, rate: revenue > 0 ? (revenue - cost) / revenue * 100 : 0 };
+    })
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 5);
+
+  const fmt = (n) => '¥' + Math.round(n).toLocaleString();
+  const fmtM = (n) => {
+    if (n >= 10000000) return '¥' + (n / 10000000).toFixed(1) + '千万';
+    if (n >= 1000000) return '¥' + (n / 1000000).toFixed(1) + 'M';
+    if (n >= 10000) return '¥' + Math.round(n / 10000) + '万';
+    return '¥' + Math.round(n).toLocaleString();
+  };
+
+  // ========== UI ==========
   return (
-    <div style={{minHeight:'100vh',background:'#0F1420',color:'#fff',display:'flex'}}>
+    <div style={{ background:'#0A0A0A', color:'#EDEDED', minHeight:'100vh', fontFamily:"'Inter', -apple-system, 'Hiragino Sans', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @keyframes shimmer { 0%{opacity:.4}50%{opacity:1}100%{opacity:.4} }
+        .admin-nav-item:hover { background:#141414 !important; color:#EDEDED !important; }
+        .admin-card:hover { border-color:rgba(255,255,255,0.12) !important; }
+        .admin-row:hover td { background:#141414 !important; }
+      `}</style>
+
       {/* サイドバー */}
-      <div style={{width:220,background:'#161B28',borderRight:'1px solid #2D3548',padding:'20px 14px',display:'flex',flexDirection:'column',gap:4}}>
-        <div style={{padding:'8px 12px',marginBottom:16}}>
-          <div style={{fontSize:9,color:'#60a5fa',letterSpacing:'.15em',fontWeight:700}}>ADMIN</div>
-          <div style={{fontSize:18,fontWeight:900,marginTop:2,letterSpacing:'.05em'}}>Wac Admin</div>
+      <aside style={{ position:'fixed', top:0, left:0, bottom:0, width:220, background:'#0F0F0F', borderRight:'1px solid rgba(255,255,255,0.08)', padding:'20px 14px', zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'0 8px', marginBottom:28 }}>
+          <div style={{ width:28, height:28, borderRadius:6, background:'linear-gradient(135deg,#00D68F,#00A86B)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, color:'#000', fontSize:14 }}>W</div>
+          <div style={{ fontWeight:700, fontSize:15, letterSpacing:'-0.01em' }}>Wac Admin</div>
         </div>
-        {[
-          ['dashboard','📊 ダッシュボード'],
-          ['users','👥 ユーザー管理'],
-          ['master','🗂 マスタデータ'],
-          ['logs','📝 操作ログ'],
-        ].map(([v,label])=>(
-          <button key={v} onClick={()=>setAdminTab(v)}
-            style={{padding:'10px 12px',borderRadius:8,border:'none',background:adminTab===v?'#3B82F6':'transparent',color:adminTab===v?'#fff':'#888',fontSize:12,fontWeight:adminTab===v?700:500,textAlign:'left',cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}
-            onMouseEnter={e=>{if(adminTab!==v)e.currentTarget.style.background='#252B3D';}}
-            onMouseLeave={e=>{if(adminTab!==v)e.currentTarget.style.background='transparent';}}>
-            {label}
-          </button>
-        ))}
-        <div style={{flex:1}}/>
-        <div style={{padding:'10px 12px',borderTop:'1px solid #2D3548',marginTop:12}}>
-          <div style={{fontSize:10,color:'#666'}}>ログイン中</div>
-          <div style={{fontSize:11,fontWeight:600,marginTop:2}}>{currentUser?.userId || 'admin'}</div>
+
+        <div style={{ marginBottom:20 }}>
+          <div style={{ fontSize:10, color:'#555', textTransform:'uppercase', letterSpacing:'0.1em', padding:'0 10px', marginBottom:6, fontWeight:600 }}>Overview</div>
+          {[
+            ['dashboard', '📊', 'ダッシュボード'],
+            ['budget', '🎯', '予算・実績'],
+            ['analysis', '📈', '分析'],
+          ].map(([id, icon, label]) => (
+            <div key={id} className="admin-nav-item" onClick={() => setAdminTab(id)}
+              style={{ display:'flex', alignItems:'center', gap:9, padding:'7px 10px', borderRadius:6, color: adminTab===id ? '#EDEDED' : '#888', cursor:'pointer', fontSize:13, fontWeight:500, background: adminTab===id ? '#141414' : 'transparent', position:'relative' }}>
+              {adminTab===id && <div style={{ position:'absolute', left:-2, top:6, bottom:6, width:3, background:'#00D68F', borderRadius:2 }}/>}
+              <span style={{ fontSize:14 }}>{icon}</span>{label}
+            </div>
+          ))}
         </div>
-        <button onClick={onLogout}
-          style={{padding:'9px 12px',borderRadius:8,border:'1px solid #2D3548',background:'transparent',color:'#f87171',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-          ログアウト
-        </button>
-      </div>
+
+        <div style={{ marginBottom:20 }}>
+          <div style={{ fontSize:10, color:'#555', textTransform:'uppercase', letterSpacing:'0.1em', padding:'0 10px', marginBottom:6, fontWeight:600 }}>Management</div>
+          {[
+            ['sites', '🏗', '現場管理'],
+            ['master', '🗂', 'マスタ'],
+            ['users', '👥', 'ユーザー'],
+          ].map(([id, icon, label]) => (
+            <div key={id} className="admin-nav-item" onClick={() => setAdminTab(id)}
+              style={{ display:'flex', alignItems:'center', gap:9, padding:'7px 10px', borderRadius:6, color: adminTab===id ? '#EDEDED' : '#888', cursor:'pointer', fontSize:13, fontWeight:500, background: adminTab===id ? '#141414' : 'transparent' }}>
+              <span style={{ fontSize:14 }}>{icon}</span>{label}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ position:'absolute', bottom:20, left:14, right:14 }}>
+          <div style={{ padding:'10px', background:'#141414', borderRadius:6, display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ width:28, height:28, borderRadius:'50%', background:'#2D3548', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700 }}>AD</div>
+            <div style={{ flex:1, fontSize:12 }}>
+              <div style={{ fontWeight:600 }}>{currentUser?.userId || 'admin'}</div>
+              <div style={{ fontSize:10, color:'#888' }}>管理者</div>
+            </div>
+            <button onClick={onLogout} style={{ background:'transparent', border:'none', color:'#888', cursor:'pointer', fontSize:14 }}>⎋</button>
+          </div>
+        </div>
+      </aside>
 
       {/* メイン */}
-      <div style={{flex:1,overflow:'auto'}}>
+      <main style={{ marginLeft:220, minHeight:'100vh' }}>
         {/* ヘッダー */}
-        <div style={{padding:'14px 22px',borderBottom:'1px solid #2D3548',display:'flex',justifyContent:'space-between',alignItems:'center',background:'#161B28'}}>
+        <div style={{ padding:'20px 32px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(10,10,10,0.8)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:5 }}>
           <div>
-            <div style={{fontSize:9,color:'#60a5fa',letterSpacing:'.15em',fontWeight:700}}>ADMIN</div>
-            <div style={{fontSize:17,fontWeight:700,marginTop:2}}>
-              {adminTab==='dashboard'?'管理者ダッシュボード':adminTab==='users'?'ユーザー管理':adminTab==='master'?'マスタデータ管理':'操作ログ'}
+            <h1 style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.01em', margin:0 }}>
+              {adminTab==='dashboard' ? 'ダッシュボード' : adminTab==='budget' ? '予算・実績' : adminTab==='analysis' ? '分析' : adminTab==='sites' ? '現場管理' : adminTab==='master' ? 'マスタ' : adminTab==='users' ? 'ユーザー' : ''}
+            </h1>
+            <div style={{ fontSize:12, color:'#888', marginTop:2 }}>リアルタイム経営状況 · {new Date().getFullYear()}年{new Date().getMonth()+1}月</div>
+          </div>
+          <div style={{ display:'flex', gap:2, padding:3, background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:7 }}>
+            {[['24h','24h'],['7d','7d'],['30d','30d'],['1y','1y']].map(([v,l]) => (
+              <button key={v} onClick={()=>setPeriod(v)} style={{ padding:'5px 12px', background: period===v?'#141414':'transparent', border:'none', color: period===v?'#EDEDED':'#888', fontSize:12, cursor:'pointer', borderRadius:5, fontFamily:'inherit', fontWeight: period===v?600:500 }}>{l}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* コンテンツ */}
+        <div style={{ padding:'24px 32px' }}>
+
+        {loading && <div style={{ textAlign:'center', padding:40, color:'#888' }}>読み込み中...</div>}
+
+        {!loading && adminTab === 'dashboard' && (
+          <>
+            {/* KPI 4カード */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:28 }}>
+              <div className="admin-card" style={{ padding:'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+                <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>📈 今月売上</div>
+                <div style={{ fontSize:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{fmtM(stats.mRevenue)}</div>
+                <div style={{ fontSize:12, marginTop:8, color:'#888' }}>暫定 · 契約額×進捗</div>
+              </div>
+              <div className="admin-card" style={{ padding:'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+                <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>📦 今月原価</div>
+                <div style={{ fontSize:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{fmtM(stats.mCost)}</div>
+                <div style={{ fontSize:12, marginTop:8, color: Number(prevDiff) > 0 ? '#FF4D4D' : '#00D68F' }}>
+                  {Number(prevDiff) > 0 ? '↑' : '↓'} {Math.abs(Number(prevDiff))}% 前月比
+                </div>
+              </div>
+              <div className="admin-card" style={{ padding:'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+                <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>✨ 粗利</div>
+                <div style={{ fontSize:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace", color: stats.mProfit >= 0 ? '#EDEDED' : '#FF4D4D' }}>{fmtM(stats.mProfit)}</div>
+                <div style={{ fontSize:12, marginTop:8, color: stats.profitRate >= 30 ? '#00D68F' : '#F5A623' }}>粗利率 {stats.profitRate.toFixed(1)}%</div>
+              </div>
+              <div className="admin-card" style={{ padding:'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+                <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>🏗 進行中現場</div>
+                <div style={{ fontSize:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{stats.inProgressCount}<span style={{ fontSize:13, color:'#888', fontWeight:500, marginLeft:2 }}>件</span></div>
+                <div style={{ fontSize:12, marginTop:8, color:'#888' }}>完了予定 {stats.completingCount}件</div>
+              </div>
             </div>
-          </div>
-          <div style={{display:'flex',gap:6,alignItems:'center'}}>
-            <span style={{fontSize:11,color:'#888'}}>管理者:</span>
-            <span style={{fontSize:12,fontWeight:600}}>{currentUser?.userId || 'admin'}</span>
-            <div style={{width:30,height:30,borderRadius:'50%',background:'#3B82F6',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700}}>A</div>
-          </div>
-        </div>
 
-        <div style={{padding:22}}>
-          {/* ダッシュボード */}
-          {adminTab==='dashboard' && (
-            <>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:12,marginBottom:20}}>
-                <div style={{background:'#252B3D',padding:16,borderRadius:12,border:'1px solid #2D3548'}}>
-                  <div style={{fontSize:10,color:'#888',letterSpacing:'.1em',fontWeight:700}}>USERS</div>
-                  <div style={{fontSize:28,fontWeight:700,marginTop:6,color:'#fff'}}>{stats.users.total}<span style={{fontSize:12,color:'#888',fontWeight:400}}> / {stats.users.limit}</span></div>
-                  <div style={{fontSize:10,color:'#22c55e',marginTop:4}}>+{stats.users.newThisMonth} 今月</div>
+            {/* 売上・粗利推移 */}
+            <div style={{ background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, marginBottom:12 }}>
+              <div style={{ padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:600, letterSpacing:'-0.01em' }}>📊 月次推移</div>
+                  <div style={{ fontSize:11, color:'#888', marginTop:2 }}>過去12ヶ月 · 原価ベース</div>
                 </div>
-                <div style={{background:'#252B3D',padding:16,borderRadius:12,border:'1px solid #2D3548'}}>
-                  <div style={{fontSize:10,color:'#888',letterSpacing:'.1em',fontWeight:700}}>SITES</div>
-                  <div style={{fontSize:28,fontWeight:700,marginTop:6,color:'#fff'}}>{stats.sites.total}</div>
-                  <div style={{fontSize:10,color:'#888',marginTop:4}}>進行中: {stats.sites.inProgress}</div>
-                </div>
-                <div style={{background:'#252B3D',padding:16,borderRadius:12,border:'1px solid #2D3548'}}>
-                  <div style={{fontSize:10,color:'#888',letterSpacing:'.1em',fontWeight:700}}>REPORTS</div>
-                  <div style={{fontSize:28,fontWeight:700,marginTop:6,color:'#fff'}}>{stats.reports.total}</div>
-                  <div style={{fontSize:10,color:'#22c55e',marginTop:4}}>今月: {stats.reports.thisMonth}件</div>
-                </div>
-                <div style={{background:'#252B3D',padding:16,borderRadius:12,border:'1px solid #2D3548'}}>
-                  <div style={{fontSize:10,color:'#888',letterSpacing:'.1em',fontWeight:700}}>STORAGE</div>
-                  <div style={{fontSize:28,fontWeight:700,marginTop:6,color:'#fff'}}>{stats.storage.used}<span style={{fontSize:12,color:'#888',fontWeight:400}}>GB</span></div>
-                  <div style={{height:4,background:'#3B82F6',width:`${(stats.storage.used/stats.storage.limit)*100}%`,borderRadius:2,marginTop:8}}/>
+                <div style={{ display:'flex', gap:14, fontSize:11, color:'#888' }}>
+                  <span style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ width:10, height:2, background:'#00D68F' }}/>売上</span>
+                  <span style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ width:10, height:2, background:'#F5A623' }}/>原価</span>
                 </div>
               </div>
-
-              <div style={{fontSize:11,color:'#888',letterSpacing:'.1em',fontWeight:700,marginBottom:10}}>RECENT ACTIVITY</div>
-              <div style={{background:'#252B3D',borderRadius:12,border:'1px solid #2D3548',overflow:'hidden'}}>
-                {activities.map((a,i)=>(
-                  <div key={i} style={{padding:'12px 14px',display:'flex',alignItems:'center',gap:12,borderBottom:i<activities.length-1?'1px solid #2D3548':'none',fontSize:12}}>
-                    <div style={{width:24,height:24,borderRadius:'50%',background:a.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,flexShrink:0}}>{a.icon}</div>
-                    <span style={{color:'#ccc',flex:1}}>{a.text}</span>
-                    <span style={{color:'#666',fontSize:11}}>{a.time}</span>
-                  </div>
-                ))}
+              <div style={{ padding:20 }}>
+                <svg viewBox="0 0 600 200" preserveAspectRatio="none" style={{ width:'100%', height:200 }}>
+                  <line x1="0" y1="50" x2="600" y2="50" stroke="rgba(255,255,255,0.04)"/>
+                  <line x1="0" y1="100" x2="600" y2="100" stroke="rgba(255,255,255,0.04)"/>
+                  <line x1="0" y1="150" x2="600" y2="150" stroke="rgba(255,255,255,0.04)"/>
+                  <defs>
+                    <linearGradient id="gradSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00D68F" stopOpacity="0.3"/>
+                      <stop offset="100%" stopColor="#00D68F" stopOpacity="0"/>
+                    </linearGradient>
+                    <linearGradient id="gradCost" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#F5A623" stopOpacity="0.15"/>
+                      <stop offset="100%" stopColor="#F5A623" stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  {(() => {
+                    const w = 600, h = 200;
+                    const step = w / (monthlyData.length - 1);
+                    const scaleY = (v) => h - (v / maxY) * (h - 20);
+                    const salesPoints = monthlyData.map((m, i) => `${i * step},${scaleY(m.revenue)}`).join(' L ');
+                    const costPoints = monthlyData.map((m, i) => `${i * step},${scaleY(m.cost)}`).join(' L ');
+                    return (
+                      <>
+                        <path d={`M ${salesPoints} L ${w},${h} L 0,${h} Z`} fill="url(#gradSales)"/>
+                        <path d={`M ${costPoints} L ${w},${h} L 0,${h} Z`} fill="url(#gradCost)"/>
+                        <path d={`M ${salesPoints}`} fill="none" stroke="#00D68F" strokeWidth="1.8"/>
+                        <path d={`M ${costPoints}`} fill="none" stroke="#F5A623" strokeWidth="1.8"/>
+                        {monthlyData.map((m, i) => (
+                          <g key={i}>
+                            <text x={i * step} y={h - 3} textAnchor="middle" fill="#555" fontSize="9">{m.label}</text>
+                          </g>
+                        ))}
+                      </>
+                    );
+                  })()}
+                </svg>
               </div>
-            </>
-          )}
+            </div>
 
-          {/* ユーザー管理 */}
-          {adminTab==='users' && (
-            <>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-                <div style={{fontSize:11,color:'#888'}}>{users.length}人 / {stats.users.limit}人 まで利用可能</div>
-                <button style={{padding:'9px 18px',background:'#3B82F6',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>+ 新規追加</button>
+            {/* 現場パフォーマンス */}
+            <div style={{ background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+              <div style={{ padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontSize:13, fontWeight:600 }}>🏆 現場パフォーマンス</div>
+                <div style={{ fontSize:11, color:'#888', marginTop:2 }}>今月の粗利 · TOP 5</div>
               </div>
-
-              <div style={{display:'flex',gap:8,marginBottom:14}}>
-                <input type="text" placeholder="ユーザー名で検索..." style={{flex:1,padding:'9px 12px',background:'#252B3D',border:'1px solid #2D3548',borderRadius:8,color:'#fff',fontSize:12,outline:'none',fontFamily:'inherit'}}/>
-                <select style={{padding:'9px 12px',background:'#252B3D',border:'1px solid #2D3548',color:'#ccc',fontSize:12,borderRadius:8,fontFamily:'inherit'}}>
-                  <option style={{color:'#000'}}>全部署</option>
-                  <option style={{color:'#000'}}>工事1課</option>
-                  <option style={{color:'#000'}}>環境課</option>
-                </select>
-              </div>
-
-              <div style={{background:'#252B3D',borderRadius:12,border:'1px solid #2D3548',overflow:'hidden'}}>
-                {users.map((u,i)=>(
-                  <div key={i} style={{padding:'13px 16px',display:'flex',alignItems:'center',gap:14,borderBottom:i<users.length-1?'1px solid #2D3548':'none'}}>
-                    <div style={{width:36,height:36,borderRadius:'50%',background:u.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,flexShrink:0}}>{u.initial}</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:600,color:u.status==='休眠'?'#aaa':'#fff'}}>{u.name}</div>
-                      <div style={{fontSize:10,color:u.status==='休眠'?'#666':'#888',marginTop:2}}>{u.email} · {u.dept}{u.note?` · ${u.note}`:''}</div>
-                    </div>
-                    <span style={{fontSize:9,padding:'3px 9px',background:u.status==='アクティブ'?'rgba(34,197,94,0.15)':'rgba(255,255,255,0.08)',color:u.status==='アクティブ'?'#4ade80':'#888',borderRadius:99,fontWeight:700}}>{u.status}</span>
-                    <span style={{fontSize:9,padding:'3px 9px',background:u.role==='管理者'?'rgba(245,158,11,0.15)':'rgba(168,85,247,0.15)',color:u.role==='管理者'?'#fbbf24':'#c4b5fd',borderRadius:99,fontWeight:700}}>{u.role}</span>
-                    <button style={{padding:'6px 10px',background:'transparent',border:'none',color:'#888',cursor:'pointer',fontSize:14,fontFamily:'inherit'}}>⋯</button>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* マスタデータ管理 */}
-          {adminTab==='master' && (
-            <>
-              <div style={{display:'flex',background:'#161B28',borderRadius:10,padding:4,marginBottom:14,border:'1px solid #2D3548'}}>
-                {Object.keys(masterTitles).map(k=>(
-                  <button key={k} onClick={()=>setMasterTab(k)}
-                    style={{flex:1,padding:'10px 8px',border:'none',background:masterTab===k?'#3B82F6':'transparent',color:masterTab===k?'#fff':'#888',fontSize:12,fontWeight:masterTab===k?700:500,cursor:'pointer',fontFamily:'inherit',borderRadius:7,transition:'all .15s'}}>
-                    {masterTitles[k]}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-                <div style={{fontSize:12,color:'#888'}}>{masterTitles[masterTab]} ({(masterData[masterTab]||[]).length}件)</div>
-                <button style={{padding:'7px 14px',background:'#3B82F6',border:'none',borderRadius:7,color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>+ 追加</button>
-              </div>
-
-              <div style={{background:'#252B3D',borderRadius:12,border:'1px solid #2D3548',padding:14}}>
-                <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-                  {(masterData[masterTab]||[]).map((item,i)=>(
-                    <div key={i} style={{padding:'8px 13px',background:'#1A1F2E',border:'1px solid #2D3548',borderRadius:8,display:'flex',alignItems:'center',gap:10}}>
-                      <span style={{fontSize:12,color:'#fff'}}>{item}</span>
-                      <button style={{padding:0,background:'transparent',border:'none',color:'#888',cursor:'pointer',fontSize:12}}>✏</button>
-                      <button style={{padding:0,background:'transparent',border:'none',color:'#f87171',cursor:'pointer',fontSize:12}}>✕</button>
-                    </div>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                <thead>
+                  <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+                    <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>#</th>
+                    <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>現場</th>
+                    <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>ステータス</th>
+                    <th style={{ padding:'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>売上</th>
+                    <th style={{ padding:'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>原価</th>
+                    <th style={{ padding:'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>粗利率</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {siteRanking.length === 0 ? (
+                    <tr><td colSpan="6" style={{ padding:40, textAlign:'center', color:'#555' }}>データがありません</td></tr>
+                  ) : siteRanking.map((s, i) => (
+                    <tr key={i} className="admin-row" style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+                      <td style={{ padding:'12px 20px', color:'#888', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{String(i+1).padStart(2,'0')}</td>
+                      <td style={{ padding:'12px 20px', fontWeight:500 }}>{s.name}</td>
+                      <td style={{ padding:'12px 20px' }}>
+                        {s.status === '完了' ? <span style={{ padding:'2px 8px', background:'rgba(0,214,143,0.15)', color:'#00D68F', borderRadius:99, fontSize:11, fontWeight:500 }}>● 完了</span>
+                          : <span style={{ padding:'2px 8px', background:'rgba(59,130,246,0.15)', color:'#3B82F6', borderRadius:99, fontSize:11, fontWeight:500 }}>● {s.status || '進行中'}</span>}
+                      </td>
+                      <td style={{ padding:'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{fmt(s.revenue)}</td>
+                      <td style={{ padding:'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{fmt(s.cost)}</td>
+                      <td style={{ padding:'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12, color: s.rate >= 30 ? '#00D68F' : s.rate >= 20 ? '#F5A623' : '#FF4D4D', fontWeight:600 }}>{s.rate.toFixed(1)}%</td>
+                    </tr>
                   ))}
-                </div>
-              </div>
-            </>
-          )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
-          {/* 操作ログ */}
-          {adminTab==='logs' && (
-            <>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-                <div style={{fontSize:11,color:'#888'}}>過去30日間の全操作履歴</div>
-                <div style={{display:'flex',gap:8}}>
-                  <select style={{padding:'8px 12px',background:'#252B3D',border:'1px solid #2D3548',color:'#ccc',fontSize:12,borderRadius:8,fontFamily:'inherit'}}>
-                    <option style={{color:'#000'}}>全アクション</option>
-                    <option style={{color:'#000'}}>作成</option>
-                    <option style={{color:'#000'}}>編集</option>
-                    <option style={{color:'#000'}}>削除</option>
-                    <option style={{color:'#000'}}>ログイン</option>
-                  </select>
-                  <button style={{padding:'8px 14px',background:'#252B3D',border:'1px solid #2D3548',borderRadius:8,color:'#ccc',fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>CSV</button>
-                </div>
-              </div>
+        {!loading && adminTab === 'budget' && (
+          <div style={{ padding:40, background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, textAlign:'center' }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>🎯</div>
+            <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>予算・実績機能</div>
+            <div style={{ fontSize:13, color:'#888' }}>現場ごとの予算と実績を管理 - 次回実装予定</div>
+          </div>
+        )}
 
-              <div style={{background:'#252B3D',borderRadius:12,border:'1px solid #2D3548',overflow:'hidden'}}>
-                {logs.map((log,i)=>(
-                  <div key={i} style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:12,borderBottom:i<logs.length-1?'1px solid #2D3548':'none',fontSize:12}}>
-                    <span style={{fontSize:9,padding:'3px 8px',background:`rgba(${log.color},0.15)`,color:log.textColor,borderRadius:5,fontWeight:700,width:44,textAlign:'center',flexShrink:0}}>{log.action}</span>
-                    <span style={{color:'#fff',fontWeight:600,width:90,flexShrink:0}}>{log.user}</span>
-                    <span style={{color:'#aaa',flex:1}}>{log.desc}</span>
-                    <span style={{color:'#666',fontSize:11}}>{log.time}</span>
-                  </div>
+        {!loading && adminTab === 'analysis' && (
+          <div style={{ padding:40, background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, textAlign:'center' }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>📈</div>
+            <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>分析機能</div>
+            <div style={{ fontSize:13, color:'#888' }}>詳細なグラフ・分析 - 次回実装予定</div>
+          </div>
+        )}
+
+        {!loading && adminTab === 'sites' && (
+          <div style={{ background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+            <div style={{ padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize:13, fontWeight:600 }}>🏗 現場一覧</div>
+              <div style={{ fontSize:11, color:'#888', marginTop:2 }}>全 {sites.length} 件</div>
+            </div>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+              <thead>
+                <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+                  <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>現場</th>
+                  <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>番号</th>
+                  <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>ステータス</th>
+                  <th style={{ padding:'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500 }}>受注金額</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sites.map((s, i) => (
+                  <tr key={i} className="admin-row" style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+                    <td style={{ padding:'12px 20px', fontWeight:500 }}>{s.name}</td>
+                    <td style={{ padding:'12px 20px', color:'#888', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{s.project_number || '-'}</td>
+                    <td style={{ padding:'12px 20px' }}>
+                      <span style={{ padding:'2px 8px', background:'rgba(59,130,246,0.15)', color:'#3B82F6', borderRadius:99, fontSize:11 }}>{s.status || '進行中'}</span>
+                    </td>
+                    <td style={{ padding:'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{s.contract_amount ? fmt(Number(s.contract_amount)) : '-'}</td>
+                  </tr>
                 ))}
-              </div>
-            </>
-          )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!loading && adminTab === 'master' && (
+          <div style={{ padding:40, background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, textAlign:'center' }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>🗂</div>
+            <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>マスタ管理</div>
+            <div style={{ fontSize:13, color:'#888' }}>勘定科目・処分場・運搬業者のマスタ - 次回実装予定</div>
+          </div>
+        )}
+
+        {!loading && adminTab === 'users' && (
+          <div style={{ padding:40, background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, textAlign:'center' }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>👥</div>
+            <div style={{ fontSize:16, fontWeight:600, marginBottom:6 }}>ユーザー管理</div>
+            <div style={{ fontSize:13, color:'#888' }}>アカウント管理・権限設定 - 次回実装予定</div>
+          </div>
+        )}
+
         </div>
-      </div>
+      </main>
     </div>
   );
 }
-
 
 // ========== ChatPage (現場チャット) ==========
 function ChatPage({ sites, currentUser, selectedSite, onSelectSite, onNavigate }) {

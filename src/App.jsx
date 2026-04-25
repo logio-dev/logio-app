@@ -4670,6 +4670,15 @@ function AdminPage({ currentUser, onLogout }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30d');
+  // ★ モバイル対応
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // データ取得
   useEffect(() => {
@@ -4798,11 +4807,30 @@ function AdminPage({ currentUser, onLogout }) {
         .admin-row:hover td { background:#141414 !important; }
       `}</style>
 
+      {/* モバイル用オーバーレイ */}
+      {isMobile && mobileMenuOpen && (
+        <div onClick={() => setMobileMenuOpen(false)}
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:9, backdropFilter:'blur(4px)' }}/>
+      )}
+
       {/* サイドバー */}
-      <aside style={{ position:'fixed', top:0, left:0, bottom:0, width:220, background:'#0F0F0F', borderRight:'1px solid rgba(255,255,255,0.08)', padding:'20px 14px', zIndex:10 }}>
+      <aside style={{ 
+        position:'fixed', top:0, left:0, bottom:0, 
+        width: isMobile ? 260 : 220, 
+        background:'#0F0F0F', 
+        borderRight:'1px solid rgba(255,255,255,0.08)', 
+        padding:'20px 14px', 
+        zIndex:10,
+        transform: (isMobile && !mobileMenuOpen) ? 'translateX(-100%)' : 'translateX(0)',
+        transition:'transform .25s cubic-bezier(0.4, 0, 0.2, 1)',
+        overflowY:'auto'
+      }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, padding:'0 8px', marginBottom:28 }}>
           <div style={{ width:28, height:28, borderRadius:6, background:'linear-gradient(135deg,#00D68F,#00A86B)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, color:'#000', fontSize:14 }}>W</div>
-          <div style={{ fontWeight:700, fontSize:15, letterSpacing:'-0.01em' }}>Wac Admin</div>
+          <div style={{ fontWeight:700, fontSize:15, letterSpacing:'-0.01em', flex:1 }}>Wac Admin</div>
+          {isMobile && (
+            <button onClick={() => setMobileMenuOpen(false)} style={{ background:'transparent', border:'none', color:'#888', cursor:'pointer', fontSize:18, padding:4 }}>✕</button>
+          )}
         </div>
 
         <div style={{ marginBottom:20 }}>
@@ -4812,7 +4840,7 @@ function AdminPage({ currentUser, onLogout }) {
             ['budget', '🎯', '予算・実績'],
             ['analysis', '📈', '分析'],
           ].map(([id, icon, label]) => (
-            <div key={id} className="admin-nav-item" onClick={() => setAdminTab(id)}
+            <div key={id} className="admin-nav-item" onClick={() => { setAdminTab(id); setMobileMenuOpen(false); }}
               style={{ display:'flex', alignItems:'center', gap:9, padding:'7px 10px', borderRadius:6, color: adminTab===id ? '#EDEDED' : '#888', cursor:'pointer', fontSize:13, fontWeight:500, background: adminTab===id ? '#141414' : 'transparent', position:'relative' }}>
               {adminTab===id && <div style={{ position:'absolute', left:-2, top:6, bottom:6, width:3, background:'#00D68F', borderRadius:2 }}/>}
               <span style={{ fontSize:14 }}>{icon}</span>{label}
@@ -4827,7 +4855,7 @@ function AdminPage({ currentUser, onLogout }) {
             ['master', '🗂', 'マスタ'],
             ['users', '👥', 'ユーザー'],
           ].map(([id, icon, label]) => (
-            <div key={id} className="admin-nav-item" onClick={() => setAdminTab(id)}
+            <div key={id} className="admin-nav-item" onClick={() => { setAdminTab(id); setMobileMenuOpen(false); }}
               style={{ display:'flex', alignItems:'center', gap:9, padding:'7px 10px', borderRadius:6, color: adminTab===id ? '#EDEDED' : '#888', cursor:'pointer', fontSize:13, fontWeight:500, background: adminTab===id ? '#141414' : 'transparent' }}>
               <span style={{ fontSize:14 }}>{icon}</span>{label}
             </div>
@@ -4847,58 +4875,63 @@ function AdminPage({ currentUser, onLogout }) {
       </aside>
 
       {/* メイン */}
-      <main style={{ marginLeft:220, minHeight:'100vh' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 220, minHeight:'100vh' }}>
         {/* ヘッダー */}
-        <div style={{ padding:'20px 32px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(10,10,10,0.8)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:5 }}>
-          <div>
-            <h1 style={{ fontSize:20, fontWeight:600, letterSpacing:'-0.01em', margin:0 }}>
+        <div style={{ padding: isMobile ? '14px 16px' : '20px 32px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', justifyContent:'space-between', alignItems:'center', background:'rgba(10,10,10,0.85)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:5, gap:10 }}>
+          {isMobile && (
+            <button onClick={() => setMobileMenuOpen(true)} style={{ background:'transparent', border:'none', color:'#EDEDED', cursor:'pointer', padding:6, marginLeft:-6, display:'flex', alignItems:'center' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+          )}
+          <div style={{ flex:1, minWidth:0 }}>
+            <h1 style={{ fontSize: isMobile ? 16 : 20, fontWeight:600, letterSpacing:'-0.01em', margin:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
               {adminTab==='dashboard' ? 'ダッシュボード' : adminTab==='budget' ? '予算・実績' : adminTab==='analysis' ? '分析' : adminTab==='sites' ? '現場管理' : adminTab==='master' ? 'マスタ' : adminTab==='users' ? 'ユーザー' : ''}
             </h1>
-            <div style={{ fontSize:12, color:'#888', marginTop:2 }}>リアルタイム経営状況 · {new Date().getFullYear()}年{new Date().getMonth()+1}月</div>
+            {!isMobile && <div style={{ fontSize:12, color:'#888', marginTop:2 }}>リアルタイム経営状況 · {new Date().getFullYear()}年{new Date().getMonth()+1}月</div>}
           </div>
-          <div style={{ display:'flex', gap:2, padding:3, background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:7 }}>
+          <div style={{ display:'flex', gap:2, padding:3, background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:7, flexShrink:0 }}>
             {[['24h','24h'],['7d','7d'],['30d','30d'],['1y','1y']].map(([v,l]) => (
-              <button key={v} onClick={()=>setPeriod(v)} style={{ padding:'5px 12px', background: period===v?'#141414':'transparent', border:'none', color: period===v?'#EDEDED':'#888', fontSize:12, cursor:'pointer', borderRadius:5, fontFamily:'inherit', fontWeight: period===v?600:500 }}>{l}</button>
+              <button key={v} onClick={()=>setPeriod(v)} style={{ padding: isMobile ? '4px 8px' : '5px 12px', background: period===v?'#141414':'transparent', border:'none', color: period===v?'#EDEDED':'#888', fontSize: isMobile ? 11 : 12, cursor:'pointer', borderRadius:5, fontFamily:'inherit', fontWeight: period===v?600:500 }}>{l}</button>
             ))}
           </div>
         </div>
 
         {/* コンテンツ */}
-        <div style={{ padding:'24px 32px' }}>
+        <div style={{ padding: isMobile ? '16px' : '24px 32px' }}>
 
         {loading && <div style={{ textAlign:'center', padding:40, color:'#888' }}>読み込み中...</div>}
 
         {!loading && adminTab === 'dashboard' && (
           <>
             {/* KPI 4カード */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:28 }}>
-              <div className="admin-card" style={{ padding:'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+            <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: isMobile ? 8 : 12, marginBottom: isMobile ? 20 : 28 }}>
+              <div className="admin-card" style={{ padding: isMobile?'14px':'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
                 <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>📈 今月売上</div>
-                <div style={{ fontSize:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{fmtM(stats.mRevenue)}</div>
+                <div style={{ fontSize: isMobile?20:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{fmtM(stats.mRevenue)}</div>
                 <div style={{ fontSize:12, marginTop:8, color:'#888' }}>暫定 · 契約額×進捗</div>
               </div>
-              <div className="admin-card" style={{ padding:'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+              <div className="admin-card" style={{ padding: isMobile?'14px':'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
                 <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>📦 今月原価</div>
-                <div style={{ fontSize:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{fmtM(stats.mCost)}</div>
+                <div style={{ fontSize: isMobile?20:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{fmtM(stats.mCost)}</div>
                 <div style={{ fontSize:12, marginTop:8, color: Number(prevDiff) > 0 ? '#FF4D4D' : '#00D68F' }}>
                   {Number(prevDiff) > 0 ? '↑' : '↓'} {Math.abs(Number(prevDiff))}% 前月比
                 </div>
               </div>
-              <div className="admin-card" style={{ padding:'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+              <div className="admin-card" style={{ padding: isMobile?'14px':'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
                 <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>✨ 粗利</div>
-                <div style={{ fontSize:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace", color: stats.mProfit >= 0 ? '#EDEDED' : '#FF4D4D' }}>{fmtM(stats.mProfit)}</div>
+                <div style={{ fontSize: isMobile?20:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace", color: stats.mProfit >= 0 ? '#EDEDED' : '#FF4D4D' }}>{fmtM(stats.mProfit)}</div>
                 <div style={{ fontSize:12, marginTop:8, color: stats.profitRate >= 30 ? '#00D68F' : '#F5A623' }}>粗利率 {stats.profitRate.toFixed(1)}%</div>
               </div>
-              <div className="admin-card" style={{ padding:'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
+              <div className="admin-card" style={{ padding: isMobile?'14px':'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
                 <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>🏗 進行中現場</div>
-                <div style={{ fontSize:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{stats.inProgressCount}<span style={{ fontSize:13, color:'#888', fontWeight:500, marginLeft:2 }}>件</span></div>
+                <div style={{ fontSize: isMobile?20:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{stats.inProgressCount}<span style={{ fontSize:13, color:'#888', fontWeight:500, marginLeft:2 }}>件</span></div>
                 <div style={{ fontSize:12, marginTop:8, color:'#888' }}>完了予定 {stats.completingCount}件</div>
               </div>
             </div>
 
             {/* 売上・粗利推移 */}
             <div style={{ background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, marginBottom:12 }}>
-              <div style={{ padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div style={{ padding: isMobile?'12px 14px':'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.08)', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:8 }}>
                 <div>
                   <div style={{ fontSize:13, fontWeight:600, letterSpacing:'-0.01em' }}>📊 月次推移</div>
                   <div style={{ fontSize:11, color:'#888', marginTop:2 }}>過去12ヶ月 · 原価ベース</div>
@@ -4908,8 +4941,8 @@ function AdminPage({ currentUser, onLogout }) {
                   <span style={{ display:'flex', alignItems:'center', gap:5 }}><span style={{ width:10, height:2, background:'#F5A623' }}/>原価</span>
                 </div>
               </div>
-              <div style={{ padding:20 }}>
-                <svg viewBox="0 0 600 200" preserveAspectRatio="none" style={{ width:'100%', height:200 }}>
+              <div style={{ padding: isMobile?12:20 }}>
+                <svg viewBox="0 0 600 200" preserveAspectRatio="none" style={{ width:'100%', height: isMobile ? 160 : 200 }}>
                   <line x1="0" y1="50" x2="600" y2="50" stroke="rgba(255,255,255,0.04)"/>
                   <line x1="0" y1="100" x2="600" y2="100" stroke="rgba(255,255,255,0.04)"/>
                   <line x1="0" y1="150" x2="600" y2="150" stroke="rgba(255,255,255,0.04)"/>
@@ -4953,15 +4986,16 @@ function AdminPage({ currentUser, onLogout }) {
                 <div style={{ fontSize:13, fontWeight:600 }}>🏆 現場パフォーマンス</div>
                 <div style={{ fontSize:11, color:'#888', marginTop:2 }}>今月の粗利 · TOP 5</div>
               </div>
-              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+              <div style={{ overflowX:'auto' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13, minWidth: isMobile ? 600 : 'auto' }}>
                 <thead>
                   <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-                    <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>#</th>
-                    <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>現場</th>
-                    <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>ステータス</th>
-                    <th style={{ padding:'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>売上</th>
-                    <th style={{ padding:'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>原価</th>
-                    <th style={{ padding:'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>粗利率</th>
+                    <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>#</th>
+                    <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>現場</th>
+                    <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>ステータス</th>
+                    <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>売上</th>
+                    <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>原価</th>
+                    <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'.08em' }}>粗利率</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -4969,19 +5003,20 @@ function AdminPage({ currentUser, onLogout }) {
                     <tr><td colSpan="6" style={{ padding:40, textAlign:'center', color:'#555' }}>データがありません</td></tr>
                   ) : siteRanking.map((s, i) => (
                     <tr key={i} className="admin-row" style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-                      <td style={{ padding:'12px 20px', color:'#888', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{String(i+1).padStart(2,'0')}</td>
-                      <td style={{ padding:'12px 20px', fontWeight:500 }}>{s.name}</td>
+                      <td style={{ padding: isMobile?'10px 12px':'12px 20px', color:'#888', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{String(i+1).padStart(2,'0')}</td>
+                      <td style={{ padding: isMobile?'10px 12px':'12px 20px', fontWeight:500 }}>{s.name}</td>
                       <td style={{ padding:'12px 20px' }}>
                         {s.status === '完了' ? <span style={{ padding:'2px 8px', background:'rgba(0,214,143,0.15)', color:'#00D68F', borderRadius:99, fontSize:11, fontWeight:500 }}>● 完了</span>
                           : <span style={{ padding:'2px 8px', background:'rgba(59,130,246,0.15)', color:'#3B82F6', borderRadius:99, fontSize:11, fontWeight:500 }}>● {s.status || '進行中'}</span>}
                       </td>
-                      <td style={{ padding:'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{fmt(s.revenue)}</td>
-                      <td style={{ padding:'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{fmt(s.cost)}</td>
-                      <td style={{ padding:'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12, color: s.rate >= 30 ? '#00D68F' : s.rate >= 20 ? '#F5A623' : '#FF4D4D', fontWeight:600 }}>{s.rate.toFixed(1)}%</td>
+                      <td style={{ padding: isMobile?'10px 12px':'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{fmt(s.revenue)}</td>
+                      <td style={{ padding: isMobile?'10px 12px':'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{fmt(s.cost)}</td>
+                      <td style={{ padding: isMobile?'10px 12px':'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12, color: s.rate >= 30 ? '#00D68F' : s.rate >= 20 ? '#F5A623' : '#FF4D4D', fontWeight:600 }}>{s.rate.toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </>
         )}
@@ -5008,28 +5043,30 @@ function AdminPage({ currentUser, onLogout }) {
               <div style={{ fontSize:13, fontWeight:600 }}>🏗 現場一覧</div>
               <div style={{ fontSize:11, color:'#888', marginTop:2 }}>全 {sites.length} 件</div>
             </div>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+            <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13, minWidth: isMobile ? 600 : 'auto' }}>
               <thead>
                 <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-                  <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>現場</th>
-                  <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>番号</th>
-                  <th style={{ padding:'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>ステータス</th>
-                  <th style={{ padding:'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500 }}>受注金額</th>
+                  <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>現場</th>
+                  <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>番号</th>
+                  <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'left', color:'#888', fontSize:11, fontWeight:500 }}>ステータス</th>
+                  <th style={{ padding: isMobile?'8px 12px':'10px 20px', textAlign:'right', color:'#888', fontSize:11, fontWeight:500 }}>受注金額</th>
                 </tr>
               </thead>
               <tbody>
                 {sites.map((s, i) => (
                   <tr key={i} className="admin-row" style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-                    <td style={{ padding:'12px 20px', fontWeight:500 }}>{s.name}</td>
-                    <td style={{ padding:'12px 20px', color:'#888', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{s.project_number || '-'}</td>
+                    <td style={{ padding: isMobile?'10px 12px':'12px 20px', fontWeight:500 }}>{s.name}</td>
+                    <td style={{ padding: isMobile?'10px 12px':'12px 20px', color:'#888', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{s.project_number || '-'}</td>
                     <td style={{ padding:'12px 20px' }}>
                       <span style={{ padding:'2px 8px', background:'rgba(59,130,246,0.15)', color:'#3B82F6', borderRadius:99, fontSize:11 }}>{s.status || '進行中'}</span>
                     </td>
-                    <td style={{ padding:'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{s.contract_amount ? fmt(Number(s.contract_amount)) : '-'}</td>
+                    <td style={{ padding: isMobile?'10px 12px':'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{s.contract_amount ? fmt(Number(s.contract_amount)) : '-'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 

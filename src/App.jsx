@@ -1360,16 +1360,29 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           return (
             <div style={{display:'flex',gap:4,padding:4,background:'rgba(255,255,255,0.05)',borderRadius:10,marginBottom:10}}>
               {[
-                ['着工前', `着工前 (${countByStatus['着工前']})`],
-                ['進行中', `進行中 (${countByStatus['進行中']})`],
-                ['完了',   `完了 (${countByStatus['完了']})`],
-                ['all',    `すべて (${countByStatus.all})`],
-              ].map(([v,label])=>(
-                <button key={v} onClick={()=>setStatusFilter(v)}
-                  style={{flex:1,padding:'8px 4px',border:'none',background:statusFilter===v?'#1E293B':'transparent',color:statusFilter===v?'#fff':'#666',fontSize:10,fontWeight:statusFilter===v?700:500,borderRadius:7,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>
-                  {label}
-                </button>
-              ))}
+                ['着工前', '着工前', 'PRE-START', countByStatus['着工前']],
+                ['進行中', '進行中', 'RUNNING', countByStatus['進行中']],
+                ['完了',   '完了',   'DONE', countByStatus['完了']],
+                ['all',    'すべて', 'ALL', countByStatus.all],
+              ].map(([v,jp,en,cnt])=>{
+                const isDisabled = cnt === 0 && v !== 'all';
+                return (
+                  <button key={v} onClick={()=> !isDisabled && setStatusFilter(v)} disabled={isDisabled}
+                    style={{
+                      flex:1,padding:'7px 4px',border:'none',
+                      background: statusFilter===v ? '#1E293B' : 'transparent',
+                      color: statusFilter===v ? '#fff' : (isDisabled ? '#444' : '#888'),
+                      fontSize:11, fontWeight: statusFilter===v?700:500,
+                      borderRadius:7, cursor: isDisabled?'not-allowed':'pointer',
+                      fontFamily:'inherit', transition:'all .15s',
+                      display:'flex', flexDirection:'column', alignItems:'center', gap:1,
+                      opacity: isDisabled ? 0.5 : 1
+                    }}>
+                    <span style={{whiteSpace:'nowrap'}}>{jp} ({cnt})</span>
+                    <span style={{ fontSize:8, opacity:0.55, letterSpacing:'.08em', fontWeight:500 }}>{en}</span>
+                  </button>
+                );
+              })}
             </div>
           );
         })()}
@@ -1429,61 +1442,119 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             ? setProjectInfo
             : (val) => { /* 非選択現場は保存時に別途処理 */ };
 
+          // ★ パターンF: 工期から進捗を自動計算
+          const calcProgress = () => {
+            const sd = cardInfo.startDate;
+            const ed = cardInfo.endDate;
+            if (!sd || !ed) return null;
+            const start = new Date(sd).getTime();
+            const end = new Date(ed).getTime();
+            const now = Date.now();
+            if (isNaN(start) || isNaN(end) || end <= start) return null;
+            const total = end - start;
+            const elapsed = now - start;
+            const pct = Math.max(0, Math.min(100, (elapsed / total) * 100));
+            const daysLeft = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+            return { pct, daysLeft };
+          };
+          const progress = calcProgress();
+
+          // 受注金額のフォーマット
+          const formatMoney = (n) => {
+            const num = Number(n) || 0;
+            if (num === 0) return null;
+            return '¥' + num.toLocaleString();
+          };
+          const moneyDisplay = formatMoney(cardInfo.contractAmount);
+
+          // ステータス色
+          const statusColor = cardInfo.status === '完了' ? '#888' : cardInfo.status === '着工前' ? '#60a5fa' : '#00D48F';
+          const statusBg = cardInfo.status === '完了' ? 'rgba(136,136,136,0.15)' : cardInfo.status === '着工前' ? 'rgba(96,165,250,0.15)' : 'rgba(0,212,143,0.15)';
+
           return (
             <div key={site.name} style={{
-              borderRadius:12, marginBottom:8, overflow:'hidden',
+              borderRadius:14, marginBottom:8, overflow:'hidden',
               width:'100%', maxWidth:'100vw', boxSizing:'border-box', minWidth:0,
-              border: 'none',
-              background: '#2D2D2D',
+              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
               boxShadow: 'none',
-              outline: isSelected ? '2px solid #1E293B' : 'none',
+              outline: isSelected ? '2px solid rgba(0,212,143,0.4)' : 'none',
+              transition: 'all .2s'
             }}>
-              {/* カードヘッダー */}
+              {/* カードヘッダー (Apple Health風) */}
               <button onClick={() => {
                   if (!isSelected && !isOpen) onSelectSite && onSelectSite(site.name);
                   setOpenCard(isOpen ? null : site.name);
                 }}
-                style={{ width:'100%', padding:'10px 8px', display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer', textAlign:'left' }}>
-                <SiteAvatar pjNo={pjNo || cardInfo.projectNumber} />
-                <div style={{ flex:1, minWidth:0 }}>
-                  {editingName === site.name ? (
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }} onClick={e=>e.stopPropagation()}>
-                      <input
-                        type="text" value={editNameVal}
-                        onChange={e=>setEditNameVal(e.target.value)}
-                        onKeyDown={e=>{ if(e.key==='Enter'){ onRenameSite(site.name,editNameVal); setEditingName(null); } if(e.key==='Escape') setEditingName(null); }}
-                        autoFocus
-                        style={{ flex:1, padding:'5px 8px', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(59,130,246,0.5)', borderRadius:7, color:'#fff', fontSize:14, fontWeight:700, outline:'none' }}
-                      />
-                      <button onClick={e=>{ e.stopPropagation(); onRenameSite(site.name,editNameVal); setEditingName(null); }}
-                        style={{ padding:'5px 10px', borderRadius:7, border:'none', background:'rgba(59,130,246,0.2)', color:'#60a5fa', fontSize:11, fontWeight:700, cursor:'pointer' }}>保存</button>
-                      <button onClick={e=>{ e.stopPropagation(); setEditingName(null); }}
-                        style={{ padding:'5px 8px', borderRadius:7, border:'none', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.65)', fontSize:11, cursor:'pointer' }}>✕</button>
-                    </div>
-                  ) : (
-                    <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0, flexShrink:1 }}>{site.name}</div>
-                      <button onClick={e=>{ e.stopPropagation(); setEditingName(site.name); setEditNameVal(site.name); }}
-                        style={{ padding:'2px 6px', borderRadius:5, border:'none', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.45)', fontSize:9, cursor:'pointer', flexShrink:0 }}>編集</button>
-                      {/* ★ 受注表PDFボタン (編集の隣) */}
-                      <button onClick={async(e)=>{
-                          e.stopPropagation();
-                          if (!isSelected) { onSelectSite && onSelectSite(site.name); }
-                          setTimeout(() => onNavigate('order_pdf'), isSelected ? 0 : 200);
-                        }}
-                        style={{ padding:'2px 7px', borderRadius:5, border:'none', background:'rgba(153,27,27,0.2)', color:'#f87171', fontSize:9, fontWeight:700, cursor:'pointer', flexShrink:0, fontFamily:'inherit', whiteSpace:'nowrap' }}>
-                        📄 受注表
-                      </button>
-                    </div>
-                  )}
-                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.45)', marginTop:1 }}>
-                    {pjNo || cardInfo.projectNumber || '番号未設定'}{cardInfo.status ? ` · ${cardInfo.status}` : ''}
+                style={{ width:'100%', padding:'14px 16px', background:'none', border:'none', cursor:'pointer', textAlign:'left', display:'flex', flexDirection:'column', gap:10 }}>
+
+                {/* 上段: 番号 + ステータス + 編集ボタン */}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', fontFamily:"'SF Mono', monospace", letterSpacing:'0.08em' }}>
+                    {pjNo || cardInfo.projectNumber || '番号未設定'}
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    {isSelected && (
+                      <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'rgba(0,212,143,0.15)', color:'#00D48F', border:'1px solid rgba(0,212,143,0.2)' }}>選択中</span>
+                    )}
+                    {cardInfo.status && (
+                      <span style={{ padding:'3px 9px', borderRadius:99, fontSize:10, fontWeight:700, background:statusBg, color:statusColor }}>
+                        ● {cardInfo.status}
+                      </span>
+                    )}
                   </div>
                 </div>
-                {isSelected && (
-                  <span style={{ fontSize:9, fontWeight:700, padding:'3px 7px', borderRadius:99, background:'rgba(34,197,94,0.12)', color:'#4ade80', border:'1px solid rgba(34,197,94,0.2)', flexShrink:0 }}>選択中</span>
+
+                {/* 中段: 現場名 */}
+                {editingName === site.name ? (
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }} onClick={e=>e.stopPropagation()}>
+                    <input
+                      type="text" value={editNameVal}
+                      onChange={e=>setEditNameVal(e.target.value)}
+                      onKeyDown={e=>{ if(e.key==='Enter'){ onRenameSite(site.name,editNameVal); setEditingName(null); } if(e.key==='Escape') setEditingName(null); }}
+                      autoFocus
+                      style={{ flex:1, padding:'6px 10px', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(0,212,143,0.5)', borderRadius:7, color:'#fff', fontSize:16, fontWeight:700, outline:'none' }}
+                    />
+                    <button onClick={e=>{ e.stopPropagation(); onRenameSite(site.name,editNameVal); setEditingName(null); }}
+                      style={{ padding:'5px 10px', borderRadius:7, border:'none', background:'rgba(0,212,143,0.2)', color:'#00D48F', fontSize:11, fontWeight:700, cursor:'pointer' }}>保存</button>
+                    <button onClick={e=>{ e.stopPropagation(); setEditingName(null); }}
+                      style={{ padding:'5px 8px', borderRadius:7, border:'none', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.65)', fontSize:11, cursor:'pointer' }}>✕</button>
+                  </div>
+                ) : (
+                  <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                    <div style={{ fontSize:16, fontWeight:700, color:'#fff', lineHeight:1.3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', minWidth:0, flex:1 }}>{site.name}</div>
+                    <button onClick={e=>{ e.stopPropagation(); setEditingName(site.name); setEditNameVal(site.name); }}
+                      style={{ padding:'2px 7px', borderRadius:5, border:'none', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.55)', fontSize:9, cursor:'pointer', flexShrink:0 }}>編集</button>
+                  </div>
                 )}
-                <GradChevron open={isOpen} size={16}/>
+
+                {/* 下段: 金額 + 進捗バー */}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.7)', fontFamily:"'SF Mono', monospace" }}>
+                    {moneyDisplay || '金額未設定'}
+                  </div>
+                  {progress !== null ? (
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+                      <div style={{ width:60, height:4, background:'rgba(255,255,255,0.1)', borderRadius:99, overflow:'hidden' }}>
+                        <div style={{
+                          height:'100%',
+                          width: progress.pct + '%',
+                          background: progress.daysLeft < 0 ? 'linear-gradient(90deg,#FF4D4D,#DC2626)'
+                            : progress.daysLeft <= 7 ? 'linear-gradient(90deg,#FBBF24,#F59E0B)'
+                            : 'linear-gradient(90deg,#00D48F,#00A86B)',
+                          borderRadius: 99
+                        }}/>
+                      </div>
+                      <span style={{ fontSize:10, color:'rgba(255,255,255,0.6)', minWidth:48, textAlign:'right' }}>
+                        {progress.daysLeft < 0 ? '超過' : progress.daysLeft === 0 ? '本日' : `あと${progress.daysLeft}日`}
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', flexShrink:0 }}>工期未設定</div>
+                  )}
+                  <GradChevron open={isOpen} size={16}/>
+                </div>
+
               </button>
 
               {/* 展開コンテンツ */}
@@ -1857,7 +1928,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             </div>
                           </div>
                         </div>
-                        {/* 保存・削除 */}
+                        {/* 保存・受注表PDF・削除 */}
                         <div id="site-management-top-anchor" style={{ display:'flex', gap:8, marginTop:8 }}>
                           <button onClick={async()=>{ 
                             await onSave();
@@ -1867,8 +1938,11 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                               if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
                               else window.scrollTo({top:0,behavior:'smooth'});
                             }, 100);
-                          }} style={{ flex:3, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                          }} style={{ flex:2, padding:'13px', background:'linear-gradient(135deg,#2563EB,#4f46e5)', border:'none', color:'#fff', borderRadius:10, fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
                             <Save className="w-4 h-4" />保存
+                          </button>
+                          <button onClick={async()=>{ await onSave(true); onNavigate('order_pdf'); }} style={{ flex:2, padding:'13px', background:'#991B1B', border:'none', color:'#fff', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                            <FileText className="w-4 h-4" />受注表PDF
                           </button>
                           <button onClick={()=>handleDeleteSite(site.name)} style={{ flex:1, padding:'13px', background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171', borderRadius:10, fontSize:13, fontWeight:700, cursor:'pointer' }}>削除</button>
                         </div>
@@ -1902,13 +1976,15 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             })}
             {remaining > 0 && (
               <button onClick={()=>setShowAllSites(true)}
-                style={{width:'100%',padding:'10px',border:'1px dashed #CBD5E1',borderRadius:8,background:'transparent',color:'#1E3A5F',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:4,fontFamily:'inherit'}}>
-                ＋ 残り{remaining}件を表示
+                style={{width:'100%',padding:'12px',border:'1px solid rgba(59,130,246,0.3)',borderRadius:10,background:'rgba(59,130,246,0.08)',color:'#60a5fa',fontSize:13,fontWeight:700,cursor:'pointer',marginTop:8,fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6,transition:'all .15s'}}
+                onMouseEnter={e=>{e.currentTarget.style.background='rgba(59,130,246,0.15)';e.currentTarget.style.borderColor='rgba(59,130,246,0.5)';}}
+                onMouseLeave={e=>{e.currentTarget.style.background='rgba(59,130,246,0.08)';e.currentTarget.style.borderColor='rgba(59,130,246,0.3)';}}>
+                ↓ 残り{remaining}件を表示
               </button>
             )}
             {showAllSites && !searchQuery && (
               <button onClick={()=>setShowAllSites(false)}
-                style={{width:'100%',padding:'10px',border:'1px dashed #CBD5E1',borderRadius:8,background:'transparent',color:'#888',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:4,fontFamily:'inherit'}}>
+                style={{width:'100%',padding:'10px',border:'1px solid rgba(255,255,255,0.1)',borderRadius:10,background:'rgba(255,255,255,0.04)',color:'#888',fontSize:12,fontWeight:700,cursor:'pointer',marginTop:8,fontFamily:'inherit'}}>
                 ▲ 閉じる
               </button>
             )}

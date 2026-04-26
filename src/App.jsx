@@ -1476,8 +1476,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               borderRadius:14, marginBottom:8, overflow:'hidden',
               width:'100%', maxWidth:'100vw', boxSizing:'border-box', minWidth:0,
               border: '1px solid rgba(255,255,255,0.06)',
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
-              boxShadow: 'none',
+              background: '#2D2D2D',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
               outline: isSelected ? '2px solid rgba(0,212,143,0.4)' : 'none',
               transition: 'all .2s'
             }}>

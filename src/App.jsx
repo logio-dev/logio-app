@@ -1267,6 +1267,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   const [searchQuery, setSearchQuery] = useState('');
   // ★ ステータスフィルタタブ
   const [statusFilter, setStatusFilter] = useState('進行中');
+  // ★ アコーディオングループ展開state(「すべて」タブで使用)
+  const [groupExpanded, setGroupExpanded] = useState({ '進行中': true, '着工前': false, '完了': false });
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const handleAddSite = () => {
@@ -1417,8 +1419,27 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
             return true;
           });
-          const displayed = (searchQuery || showAllSites) ? filtered : filtered.slice(0, 5);
-          const remaining = filtered.length - displayed.length;
+
+          // ★「すべて」タブ + 検索なし → アコーディオングループ表示
+          const isAccordionMode = statusFilter === 'all' && !searchQuery;
+          let displayed, remaining;
+          // displayedに「グループヘッダー」と「現場」を混在させる
+          if (isAccordionMode) {
+            const grpRunning = filtered.filter(s => !s.status || s.status === '進行中');
+            const grpPre = filtered.filter(s => s.status === '着工前');
+            const grpDone = filtered.filter(s => s.status === '完了');
+            displayed = [];
+            displayed.push({ _isGroup:true, key:'進行中', items:grpRunning });
+            if (groupExpanded['進行中']) grpRunning.forEach(s => displayed.push(s));
+            displayed.push({ _isGroup:true, key:'着工前', items:grpPre });
+            if (groupExpanded['着工前']) grpPre.forEach(s => displayed.push(s));
+            displayed.push({ _isGroup:true, key:'完了', items:grpDone });
+            if (groupExpanded['完了']) grpDone.forEach(s => displayed.push(s));
+            remaining = 0;
+          } else {
+            displayed = (searchQuery || showAllSites) ? filtered : filtered.slice(0, 5);
+            remaining = filtered.length - displayed.length;
+          }
           return (<>
             {filtered.length === 0 && sites.length > 0 && (
               <div style={{padding:'30px 20px',textAlign:'center',color:'#999',fontSize:13,background:'#2D2D2D',borderRadius:12}}>
@@ -1426,8 +1447,39 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               </div>
             )}
             {displayed.map((site) => {
-          const isOpen = openCard === site.name;
-          const pjNo = site.projectNumber || (site.projectInfo && site.projectInfo.projectNumber) || '';
+              // ★ グループヘッダーの場合
+              if (site._isGroup) {
+                const grp = site.key;
+                const c = grp === '進行中'
+                  ? { color:'#60a5fa', bg:'rgba(59,130,246,0.15)', border:'rgba(59,130,246,0.3)', countBg:'rgba(59,130,246,0.2)' }
+                  : grp === '着工前'
+                  ? { color:'#fbbf24', bg:'rgba(245,158,11,0.15)', border:'rgba(245,158,11,0.3)', countBg:'rgba(245,158,11,0.2)' }
+                  : { color:'#888', bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.06)', countBg:'rgba(255,255,255,0.08)' };
+                const isExp = !!groupExpanded[grp];
+                const cnt = site.items.length;
+                return (
+                  <button key={'grp-'+grp} onClick={()=> cnt > 0 && setGroupExpanded(prev=>({...prev,[grp]:!prev[grp]}))} disabled={cnt===0}
+                    style={{
+                      width:'100%', padding:'12px 14px', display:'flex', justifyContent:'space-between', alignItems:'center',
+                      background: c.bg, border:`1px solid ${c.border}`, color: c.color,
+                      borderRadius:10, cursor: cnt === 0 ? 'default' : 'pointer',
+                      fontSize:13, fontWeight:700, fontFamily:'inherit',
+                      marginTop: grp === '進行中' ? 0 : 14, marginBottom:6,
+                      opacity: cnt === 0 ? 0.6 : 1
+                    }}>
+                    <span style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{width:8,height:8,borderRadius:'50%',background:c.color,display:'inline-block'}}/>
+                      {grp}
+                    </span>
+                    <span style={{fontSize:11,padding:'2px 9px',background:c.countBg,borderRadius:99,fontWeight:700}}>
+                      {cnt}件 {cnt > 0 ? (isExp ? '▼' : '▶') : ''}
+                    </span>
+                  </button>
+                );
+              }
+              // ★ 通常の現場カード
+              const isOpen = openCard === site.name;
+              const pjNo = site.projectNumber || (site.projectInfo && site.projectInfo.projectNumber) || '';
           // このカードが選択中現場かどうか
           const isSelected = selectedSite === site.name;
           // 開いているカードのprojectInfo = 選択中現場なら親のprojectInfo, それ以外はsite内のデータ
@@ -1441,23 +1493,6 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           const setCardInfo = isSelected
             ? setProjectInfo
             : (val) => { /* 非選択現場は保存時に別途処理 */ };
-
-          // ★ パターンF: 工期から進捗を自動計算
-          const calcProgress = () => {
-            const sd = cardInfo.startDate;
-            const ed = cardInfo.endDate;
-            if (!sd || !ed) return null;
-            const start = new Date(sd).getTime();
-            const end = new Date(ed).getTime();
-            const now = Date.now();
-            if (isNaN(start) || isNaN(end) || end <= start) return null;
-            const total = end - start;
-            const elapsed = now - start;
-            const pct = Math.max(0, Math.min(100, (elapsed / total) * 100));
-            const daysLeft = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-            return { pct, daysLeft };
-          };
-          const progress = calcProgress();
 
           // 受注金額のフォーマット
           const formatMoney = (n) => {
@@ -1528,29 +1563,19 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                   </div>
                 )}
 
-                {/* 下段: 金額 + 進捗バー */}
+                {/* 下段: 金額 + 工期日付 */}
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
                   <div style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.7)', fontFamily:"'SF Mono', monospace" }}>
-                    {moneyDisplay || '金額未設定'}
+                    {moneyDisplay || '—'}
                   </div>
-                  {progress !== null ? (
-                    <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-                      <div style={{ width:60, height:4, background:'rgba(255,255,255,0.1)', borderRadius:99, overflow:'hidden' }}>
-                        <div style={{
-                          height:'100%',
-                          width: progress.pct + '%',
-                          background: progress.daysLeft < 0 ? 'linear-gradient(90deg,#FF4D4D,#DC2626)'
-                            : progress.daysLeft <= 7 ? 'linear-gradient(90deg,#FBBF24,#F59E0B)'
-                            : 'linear-gradient(90deg,#00D48F,#00A86B)',
-                          borderRadius: 99
-                        }}/>
-                      </div>
-                      <span style={{ fontSize:10, color:'rgba(255,255,255,0.6)', minWidth:48, textAlign:'right' }}>
-                        {progress.daysLeft < 0 ? '超過' : progress.daysLeft === 0 ? '本日' : `あと${progress.daysLeft}日`}
-                      </span>
+                  {(cardInfo.startDate || cardInfo.endDate) ? (
+                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', fontFamily:"'SF Mono', monospace", flexShrink:0 }}>
+                      {cardInfo.startDate ? cardInfo.startDate.replace(/-/g,'/').slice(5) : '?'}
+                      {' 〜 '}
+                      {cardInfo.endDate ? cardInfo.endDate.replace(/-/g,'/').slice(5) : '?'}
                     </div>
                   ) : (
-                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', flexShrink:0 }}>工期未設定</div>
+                    <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', flexShrink:0 }}>—</div>
                   )}
                   <GradChevron open={isOpen} size={16}/>
                 </div>
@@ -5603,11 +5628,35 @@ export default function LOGIOApp() {
     try {
       const data = await sb('sites').select('order=created_at.asc');
       if (Array.isArray(data)) {
-        // project_infoからproject_numberを取得して統合
-        const piData = await sb('project_info').select('select=site_name,project_number');
+        // ★ 全現場のproject_infoを一括ロード(金額・工期表示のため)
+        const piData = await sb('project_info').select('order=site_name.asc');
         const piMap = {};
-        if (Array.isArray(piData)) piData.forEach(p => { if (p.site_name) piMap[p.site_name] = p.project_number || ''; });
-        setSites(data.map(s => ({ name: s.name, createdAt: s.created_at, status: s.status, projectNumber: piMap[s.name] || s.project_number || '' })));
+        if (Array.isArray(piData)) {
+          piData.forEach(p => {
+            if (p.site_name) {
+              piMap[p.site_name] = {
+                projectNumber: p.project_number || '',
+                workType: p.work_type || '',
+                client: p.client || '',
+                workLocation: p.work_location || '',
+                salesPerson: p.sales_person || '',
+                siteManager: p.site_manager || '',
+                startDate: p.start_date || '',
+                endDate: p.end_date || '',
+                contractAmount: p.contract_amount || '',
+                additionalAmount: p.additional_amount || '',
+                status: p.status || '',
+              };
+            }
+          });
+        }
+        setSites(data.map(s => ({
+          name: s.name,
+          createdAt: s.created_at,
+          status: s.status,
+          projectNumber: piMap[s.name]?.projectNumber || s.project_number || '',
+          projectInfo: piMap[s.name] || null
+        })));
       }
     } catch (error) { console.log('loadSites error:', error); }
     setSitesReady(true);

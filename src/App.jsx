@@ -1481,6 +1481,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           const statusBg = cardInfo.status === '完了' ? 'rgba(136,136,136,0.15)' : cardInfo.status === '着工前' ? 'rgba(96,165,250,0.15)' : 'rgba(0,212,143,0.15)';
 
           // ★ アコーディオンモードの_visibleフラグでmaxHeightアニメ
+          // _visible:false → 折りたたみ(高さ0)
+          // _visible:true → 完全表示(maxHeight制限なし)
+          // _visible:undefined → 通常モード(制限なし)
           const wrapperStyle = (site._visible === false) ? {
             maxHeight: 0,
             opacity: 0,
@@ -1488,11 +1491,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             marginBottom: 0,
             transition: 'max-height .35s cubic-bezier(0.4, 0, 0.2, 1), opacity .25s ease, margin-bottom .25s ease'
           } : (site._visible === true ? {
-            maxHeight: 1000,
+            maxHeight: 'none',
             opacity: 1,
-            overflow: 'hidden',
             marginBottom: 8,
-            transition: 'max-height .35s cubic-bezier(0.4, 0, 0.2, 1), opacity .25s ease, margin-bottom .25s ease'
+            transition: 'opacity .25s ease'
           } : {});
 
           return (

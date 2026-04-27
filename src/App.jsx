@@ -1266,9 +1266,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   const [editNameVal, setEditNameVal] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   // ★ ステータスフィルタタブ
-  const [statusFilter, setStatusFilter] = useState('進行中');
-  // ★ アコーディオングループ展開state(「すべて」タブで使用)
-  const [groupExpanded, setGroupExpanded] = useState({ '進行中': true, '着工前': false, '完了': false });
+  const [statusFilter, setStatusFilter] = useState('all');
+  // ★ アコーディオングループ展開state(デフォルト全グループ折りたたみ)
+  const [groupExpanded, setGroupExpanded] = useState({ '進行中': false, '着工前': false, '完了': false });
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const handleAddSite = () => {
@@ -1352,42 +1352,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
         )}
 
         {/* ★ ステータスタブ + 検索 */}
-        {sites.length > 0 && (() => {
-          const countByStatus = {
-            '着工前': sites.filter(s => s.status === '着工前').length,
-            '進行中': sites.filter(s => s.status === '進行中' || !s.status).length,
-            '完了':   sites.filter(s => s.status === '完了').length,
-            'all':    sites.length,
-          };
-          return (
-            <div style={{display:'flex',gap:4,padding:4,background:'rgba(255,255,255,0.05)',borderRadius:10,marginBottom:10}}>
-              {[
-                ['着工前', '着工前', 'PRE-START', countByStatus['着工前']],
-                ['進行中', '進行中', 'RUNNING', countByStatus['進行中']],
-                ['完了',   '完了',   'DONE', countByStatus['完了']],
-                ['all',    'すべて', 'ALL', countByStatus.all],
-              ].map(([v,jp,en,cnt])=>{
-                const isDisabled = cnt === 0 && v !== 'all';
-                return (
-                  <button key={v} onClick={()=> !isDisabled && setStatusFilter(v)} disabled={isDisabled}
-                    style={{
-                      flex:1,padding:'7px 4px',border:'none',
-                      background: statusFilter===v ? '#1E293B' : 'transparent',
-                      color: statusFilter===v ? '#fff' : (isDisabled ? '#444' : '#888'),
-                      fontSize:11, fontWeight: statusFilter===v?700:500,
-                      borderRadius:7, cursor: isDisabled?'not-allowed':'pointer',
-                      fontFamily:'inherit', transition:'all .15s',
-                      display:'flex', flexDirection:'column', alignItems:'center', gap:1,
-                      opacity: isDisabled ? 0.5 : 1
-                    }}>
-                    <span style={{whiteSpace:'nowrap'}}>{jp} ({cnt})</span>
-                    <span style={{ fontSize:8, opacity:0.55, letterSpacing:'.08em', fontWeight:500 }}>{en}</span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })()}
+        {/* タブ削除済み(アコーディオン3グループのみ表示) */}
 
         {/* セクションラベル */}
         {sites.length > 0 && (
@@ -1429,12 +1394,13 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
             const grpPre = filtered.filter(s => s.status === '着工前');
             const grpDone = filtered.filter(s => s.status === '完了');
             displayed = [];
+            // ★ 全てのアイテムをdisplayedに入れて、表示状態(_visible)で管理
             displayed.push({ _isGroup:true, key:'進行中', items:grpRunning });
-            if (groupExpanded['進行中']) grpRunning.forEach(s => displayed.push(s));
+            grpRunning.forEach(s => displayed.push({ ...s, _visible: groupExpanded['進行中'], _grpKey:'進行中' }));
             displayed.push({ _isGroup:true, key:'着工前', items:grpPre });
-            if (groupExpanded['着工前']) grpPre.forEach(s => displayed.push(s));
+            grpPre.forEach(s => displayed.push({ ...s, _visible: groupExpanded['着工前'], _grpKey:'着工前' }));
             displayed.push({ _isGroup:true, key:'完了', items:grpDone });
-            if (groupExpanded['完了']) grpDone.forEach(s => displayed.push(s));
+            grpDone.forEach(s => displayed.push({ ...s, _visible: groupExpanded['完了'], _grpKey:'完了' }));
             remaining = 0;
           } else {
             displayed = (searchQuery || showAllSites) ? filtered : filtered.slice(0, 5);
@@ -1447,32 +1413,40 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               </div>
             )}
             {displayed.map((site) => {
-              // ★ グループヘッダーの場合
+              // ★ グループヘッダーの場合 (案C: 同色ネイビー + 左縦線アクセント)
               if (site._isGroup) {
                 const grp = site.key;
-                const c = grp === '進行中'
-                  ? { color:'#60a5fa', bg:'rgba(59,130,246,0.15)', border:'rgba(59,130,246,0.3)', countBg:'rgba(59,130,246,0.2)' }
-                  : grp === '着工前'
-                  ? { color:'#fbbf24', bg:'rgba(245,158,11,0.15)', border:'rgba(245,158,11,0.3)', countBg:'rgba(245,158,11,0.2)' }
-                  : { color:'#888', bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.06)', countBg:'rgba(255,255,255,0.08)' };
+                // 各グループの左縦線色
+                const accent = grp === '進行中' ? '#3B82F6'
+                  : grp === '着工前' ? '#F59E0B'
+                  : '#6B7280';
                 const isExp = !!groupExpanded[grp];
                 const cnt = site.items.length;
+                const isDisabled = cnt === 0;
                 return (
-                  <button key={'grp-'+grp} onClick={()=> cnt > 0 && setGroupExpanded(prev=>({...prev,[grp]:!prev[grp]}))} disabled={cnt===0}
+                  <button key={'grp-'+grp} onClick={()=> !isDisabled && setGroupExpanded(prev=>({...prev,[grp]:!prev[grp]}))} disabled={isDisabled}
                     style={{
                       width:'100%', padding:'12px 14px', display:'flex', justifyContent:'space-between', alignItems:'center',
-                      background: c.bg, border:`1px solid ${c.border}`, color: c.color,
-                      borderRadius:10, cursor: cnt === 0 ? 'default' : 'pointer',
+                      background: '#1E3A5F',
+                      borderTop: '1px solid rgba(255,255,255,0.06)',
+                      borderRight: '1px solid rgba(255,255,255,0.06)',
+                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                      borderLeft: `4px solid ${accent}`,
+                      color: '#fff',
+                      borderRadius:10, cursor: isDisabled ? 'default' : 'pointer',
                       fontSize:13, fontWeight:700, fontFamily:'inherit',
                       marginTop: grp === '進行中' ? 0 : 14, marginBottom:6,
-                      opacity: cnt === 0 ? 0.6 : 1
-                    }}>
-                    <span style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{width:8,height:8,borderRadius:'50%',background:c.color,display:'inline-block'}}/>
-                      {grp}
-                    </span>
-                    <span style={{fontSize:11,padding:'2px 9px',background:c.countBg,borderRadius:99,fontWeight:700}}>
-                      {cnt}件 {cnt > 0 ? (isExp ? '▼' : '▶') : ''}
+                      opacity: isDisabled ? 0.5 : 1,
+                      transition:'background .15s, transform .15s'
+                    }}
+                    onMouseEnter={e=>{ if(!isDisabled) e.currentTarget.style.background='#234A75'; }}
+                    onMouseLeave={e=>{ e.currentTarget.style.background='#1E3A5F'; }}>
+                    <span>{grp}</span>
+                    <span style={{fontSize:11,padding:'2px 9px',background:'rgba(255,255,255,0.15)',borderRadius:99,fontWeight:700,display:'flex',alignItems:'center',gap:5}}>
+                      {cnt}件
+                      {!isDisabled && (
+                        <span style={{display:'inline-block',transition:'transform .25s cubic-bezier(0.4, 0, 0.2, 1)',transform: isExp ? 'rotate(90deg)' : 'rotate(0deg)',fontSize:10}}>▶</span>
+                      )}
                     </span>
                   </button>
                 );
@@ -1506,15 +1480,31 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           const statusColor = cardInfo.status === '完了' ? '#888' : cardInfo.status === '着工前' ? '#60a5fa' : '#00D48F';
           const statusBg = cardInfo.status === '完了' ? 'rgba(136,136,136,0.15)' : cardInfo.status === '着工前' ? 'rgba(96,165,250,0.15)' : 'rgba(0,212,143,0.15)';
 
+          // ★ アコーディオンモードの_visibleフラグでmaxHeightアニメ
+          const wrapperStyle = (site._visible === false) ? {
+            maxHeight: 0,
+            opacity: 0,
+            overflow: 'hidden',
+            marginBottom: 0,
+            transition: 'max-height .35s cubic-bezier(0.4, 0, 0.2, 1), opacity .25s ease, margin-bottom .25s ease'
+          } : (site._visible === true ? {
+            maxHeight: 1000,
+            opacity: 1,
+            overflow: 'hidden',
+            marginBottom: 8,
+            transition: 'max-height .35s cubic-bezier(0.4, 0, 0.2, 1), opacity .25s ease, margin-bottom .25s ease'
+          } : {});
+
           return (
             <div key={site.name} style={{
-              borderRadius:14, marginBottom:8, overflow:'hidden',
-              width:'100%', maxWidth:'100vw', boxSizing:'border-box', minWidth:0,
-              border: '1px solid rgba(255,255,255,0.06)',
-              background: '#2D2D2D',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              ...wrapperStyle,
+              borderRadius:14, marginBottom: wrapperStyle.marginBottom !== undefined ? wrapperStyle.marginBottom : 8,
+              width:'100%', maxWidth: site._visible === false ? 0 : '100vw',
+              boxSizing:'border-box', minWidth:0,
+              border: site._visible === false ? 'none' : '1px solid rgba(255,255,255,0.06)',
+              background: site._visible === false ? 'transparent' : '#2D2D2D',
+              boxShadow: site._visible === false ? 'none' : '0 1px 3px rgba(0,0,0,0.1)',
               outline: isSelected ? '2px solid rgba(0,212,143,0.4)' : 'none',
-              transition: 'all .2s'
             }}>
               {/* カードヘッダー (Apple Health風) */}
               <button onClick={() => {

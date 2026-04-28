@@ -1059,6 +1059,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 if (w.isScrap === true) return;
                 if (w.kind === 'scrap') return;
                 if (w.manifestNumber === '-') return;
+                // ★ 道具車のみ(materialなし)は処分費に含めない
+                if (!w.material) return;
                 wasteByType[w.material] = (wasteByType[w.material]||0)+(w.amount||0);
               }));
               const wasteEntries = Object.entries(wasteByType).sort((a,b)=>b[1]-a[1]);
@@ -5642,13 +5644,20 @@ export default function LOGIOApp() {
             }
           });
         }
-        setSites(data.map(s => ({
-          name: s.name,
-          createdAt: s.created_at,
-          status: s.status,
-          projectNumber: piMap[s.name]?.projectNumber || s.project_number || '',
-          projectInfo: piMap[s.name] || null
-        })));
+        setSites(data.map(s => {
+          const piStatus = piMap[s.name]?.status;
+          // ★ status: project_info優先、なければsites、両方trim()
+          let resolvedStatus = (piStatus || s.status || '').trim();
+          // 空文字なら未設定なので、デフォルトを'進行中'に
+          if (!resolvedStatus) resolvedStatus = '進行中';
+          return {
+            name: s.name,
+            createdAt: s.created_at,
+            status: resolvedStatus,
+            projectNumber: piMap[s.name]?.projectNumber || s.project_number || '',
+            projectInfo: piMap[s.name] || null
+          };
+        }));
       }
     } catch (error) { console.log('loadSites error:', error); }
     setSitesReady(true);

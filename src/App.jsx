@@ -4225,8 +4225,11 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   // ★ 純額: 処分費 - 金属売上 (原価計算用)
   const totalWasteCost = totalWasteDisposal - totalMetalRevenue;
   const totalHaishiCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0), 0);
-  const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.envItems || []).reduce((s,t)=>s+(t.amount||0),0) + (r.workDetails?.extItems || []).reduce((s,t)=>s+(t.amount||0),0), 0);
-  const totalDailyExpenses = allReports.reduce((sum, r) => sum + (r.workDetails?.dailyExpenses || []).reduce((s,e)=>s+(e.amount||0),0), 0);
+  // ★ 環境課・外注人工費 (envItems + extItems)
+  const totalEnvExtCost = allReports.reduce((sum, r) => sum + (r.workDetails?.envItems || []).reduce((s,t)=>s+(parseFloat(t.amount)||0),0) + (r.workDetails?.extItems || []).reduce((s,t)=>s+(parseFloat(t.amount)||0),0), 0);
+  // ★ 配送費 (transportEntries)
+  const totalTransportCost = allReports.reduce((sum, r) => sum + (r.workDetails?.transportEntries || []).reduce((s,t)=>s+(parseFloat(t.amount)||0),0), 0);
+  const totalDailyExpenses = allReports.reduce((sum, r) => sum + (r.workDetails?.dailyExpenses || []).reduce((s,e)=>s+(parseFloat(e.amount)||0),0), 0);
   // ★ 金属売上: 旧 scrapItems + 新 wasteItems(amount < 0 or isScrap) の両方を合算
   const totalScrapRevenue = allReports.reduce((sum, r) => {
     const oldScrap = Math.abs((r.scrapItems || []).reduce((s, sc) => s + (sc.amount || 0), 0));
@@ -4236,7 +4239,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
   // ★ 車両費は重複除去後の totalAllVehicleCost を使う(haishiAmount は別フィールドなので加算)
   // ★ 原価合計 = 純粋な原価のみ(金属売上は控除しない)
-  const totalCost = totalInHouseCost + totalOutsourcingCost + totalAllVehicleCost + totalHaishiCost + totalMachineryCost + totalTransportCost + totalWasteDisposal + totalDailyExpenses
+  const totalCost = totalInHouseCost + totalOutsourcingCost + totalAllVehicleCost + totalHaishiCost + totalMachineryCost + totalEnvExtCost + totalTransportCost + totalWasteDisposal + totalDailyExpenses
     + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
     + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
@@ -4313,10 +4316,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const pageExtCost     = pageRows.reduce((s,r)=>s+(r.workDetails?.extItems||[]).reduce((a,t)=>a+(t.amount||0),0),0);
           // ★ 配送費(transportEntries)
           const pageTransportCost = pageRows.reduce((s,r)=>s+(r.workDetails?.transportEntries||[]).reduce((a,t)=>a+(parseFloat(t.amount)||0),0),0);
-          // ★ 日々経費
+          // ★ 日々経費(参考表示用)- 原価小計には含めない
           const pageDailyExpCost = pageRows.reduce((s,r)=>s+(r.workDetails?.dailyExpenses||[]).reduce((a,e)=>a+(parseFloat(e.amount)||0),0),0);
-          // ★ 原価小計 = 純粋な原価のみ(金属売上は控除しない)
-          const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteDisposal+pageEnvCost+pageExtCost+pageTransportCost+pageDailyExpCost;
+          // ★ 原価小計 = 日報の純粋な原価のみ(リース費・経費・日々経費は含めない)
+          const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteDisposal+pageEnvCost+pageExtCost+pageTransportCost;
 
           // リース等アイテム集計
           const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];

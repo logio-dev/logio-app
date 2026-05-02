@@ -2053,8 +2053,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     })()
     : { workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], envItems: [], extItems: [], costItems: [], dailyExpenses: [] }
   );
-  const [wasteItems, setWasteItems] = useState(isEditMode ? (editReport.wasteItems || []) : []);
-  const [scrapItems, setScrapItems] = useState(isEditMode ? (editReport.scrapItems || []) : []);
+  // ★ 編集モード時、旧scrapItems(金属売上)を wasteItems にマージして表示
+  const [wasteItems, setWasteItems] = useState(() => {
+    if (!isEditMode) return [];
+    const w = editReport.wasteItems || [];
+    const s = editReport.scrapItems || [];
+    // 旧scrapItemsをwasteItems互換形式に変換 (amountをマイナスに、isScrap:trueに)
+    const migrated = s.map(sc => ({
+      ...sc,
+      amount: -Math.abs(sc.amount || 0),
+      isScrap: true,
+      kind: 'scrap',
+      manifestNumber: sc.manifestNumber || '-',
+    }));
+    return [...w, ...migrated];
+  });
+  const [scrapItems, setScrapItems] = useState([]); // ★ マージ後は空に(保存時に分離)
   const [editingWasteIdx, setEditingWasteIdx] = useState(null);
   const [editingScrapIdx, setEditingScrapIdx] = useState(null);
   const [photoUrls, setPhotoUrls] = useState(isEditMode ? (editReport.photoUrls || []) : []);

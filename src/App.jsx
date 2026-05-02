@@ -2514,7 +2514,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
-    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', zIndex:40 }}>
+    <div style={{ width:'100%', maxWidth:'42rem', margin:'24px auto 0', padding:`16px 16px calc(20px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', boxSizing:'border-box' }}>
       {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#F4F4F4', border:'none', color:'#666', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
       <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'#E8E8E8': nextColor||'#2563eb', border:'none', color: disabled?'#999':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
@@ -2543,7 +2543,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
@@ -2566,7 +2566,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -2794,7 +2794,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       {/* Step 3 */}
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.45)', marginBottom:'14px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 (4タブ統合) */}

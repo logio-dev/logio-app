@@ -2111,9 +2111,21 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [isSaving, setIsSaving] = useState(false);
   // ★ 未追加項目チェック用 確認モーダルstate
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  // ★ 入力中のフォームがあるか判定
+  // ★ 入力中のフォームがあるか判定 (Step1-3 全フォーム)
   const hasUnsavedWasteForm = () => {
-    return !!(wasteForm.type || wasteForm.disposal || (parseFloat(wasteForm.qty) > 0) || (parseFloat(wasteForm.price) > 0));
+    // 産廃
+    const wasteFilled = !!(wasteForm.type || wasteForm.disposal || (parseFloat(wasteForm.qty) > 0) || (parseFloat(wasteForm.price) > 0));
+    // 金属売上
+    const scrapFilled = !!((scrapForm.type && scrapForm.type !== '金属くず') || scrapForm.buyer || (parseFloat(scrapForm.qty) > 0) || (parseFloat(scrapForm.price) > 0));
+    // 自社人工
+    const wFilled = !!(wForm.name || wForm.start || wForm.end);
+    // 外注人工
+    const oFilled = !!(oForm.company || (parseFloat(oForm.count) > 0) || oForm.start || oForm.end);
+    // 車両
+    const vFilled = !!(vForm.type || vForm.number);
+    // 機械
+    const mFilled = !!(mForm.type || (parseFloat(mForm.price) > 0));
+    return wasteFilled || scrapFilled || wFilled || oFilled || vFilled || mFilled;
   };
   const handleSave = async () => {
     if (isSaving) return;
@@ -4205,7 +4217,7 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
             <div style={{ fontSize:32, textAlign:'center', marginBottom:10 }}>⚠️</div>
             <div style={{ fontSize:16, fontWeight:700, textAlign:'center', marginBottom:8, color:'#111' }}>未追加の項目があります</div>
             <div style={{ fontSize:13, color:'#666', textAlign:'center', marginBottom:18, lineHeight:1.6 }}>
-              産廃・スクラップに入力中のフォームがあります。<br/>
+              入力中のフォームがあります。<br/>
               「+追加する」を押さずに保存すると、入力した内容は破棄されます。
             </div>
             <div style={{ display:'flex', gap:8 }}>

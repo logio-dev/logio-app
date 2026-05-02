@@ -2071,6 +2071,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [scrapItems, setScrapItems] = useState([]); // ★ マージ後は空に(保存時に分離)
   const [editingWasteIdx, setEditingWasteIdx] = useState(null);
   const [editingScrapIdx, setEditingScrapIdx] = useState(null);
+  // ★ 編集中インデックス (自社/外注/車両/機械/経費)
+  const [editingWIdx, setEditingWIdx] = useState(null);
+  const [editingOIdx, setEditingOIdx] = useState(null);
+  const [editingVIdx, setEditingVIdx] = useState(null);
+  const [editingMIdx, setEditingMIdx] = useState(null);
+  const [editingExpIdx, setEditingExpIdx] = useState(null);
   const [photoUrls, setPhotoUrls] = useState(isEditMode ? (editReport.photoUrls || []) : []);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [memoText, setMemoText] = useState(isEditMode ? (editReport.memo || '') : '');
@@ -2114,8 +2120,43 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     setIsSaving(true);
     try {
       // ★ 自動追加: 入力中フォームに値があれば、保存前に自動でリストに追加
+      let finalWorkDetails = workDetails;
       let finalWasteItems = wasteItems;
       let finalScrapItems = scrapItems;
+
+      // 自社人工フォーム自動追加 (氏名があれば)
+      if (wForm && wForm.name && wForm.name.trim()) {
+        const amount = getShiftAmount(wForm.shift);
+        finalWorkDetails = {
+          ...finalWorkDetails,
+          inHouseWorkers: [...(finalWorkDetails.inHouseWorkers||[]), {...wForm, amount}]
+        };
+      }
+      // 外注人工フォーム自動追加 (会社名+人数があれば)
+      if (oForm && oForm.company && oForm.company.trim() && parseFloat(oForm.count) > 0) {
+        const count = parseFloat(oForm.count) || 0;
+        const basePrice = oForm.shift === 'nighttime' ? unitPrices.outsourcingNighttime : unitPrices.outsourcingDaytime;
+        const amount = count * basePrice;
+        finalWorkDetails = {
+          ...finalWorkDetails,
+          outsourcingLabor: [...(finalWorkDetails.outsourcingLabor||[]), {...oForm, count, amount}]
+        };
+      }
+      // 車両フォーム自動追加 (車種があれば)
+      if (vForm && vForm.type) {
+        finalWorkDetails = {
+          ...finalWorkDetails,
+          vehicles: [...(finalWorkDetails.vehicles||[]), {...vForm, amount: VEHICLE_UNIT_PRICES[vForm.type]||0}]
+        };
+      }
+      // 機械フォーム自動追加 (種類があれば)
+      if (mForm && mForm.type) {
+        finalWorkDetails = {
+          ...finalWorkDetails,
+          machinery: [...(finalWorkDetails.machinery||[]), {type: mForm.type, unitPrice: parseFloat(mForm.price)||0}]
+        };
+      }
+
       // 産廃フォーム自動追加
       if (wasteForm && wasteForm.type && wasteForm.disposal) {
         const qty = parseFloat(wasteForm.qty) || 0;
@@ -2164,7 +2205,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         }
       }
 
-      const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems: finalWasteItems, scrapItems: finalScrapItems, photoUrls, memo: memoText };
+      const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails: finalWorkDetails, wasteItems: finalWasteItems, scrapItems: finalScrapItems, photoUrls, memo: memoText };
       if (isEditMode && onUpdate) {
         await onUpdate(editReport.id, data);
       } else {
@@ -2187,8 +2228,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     const actualName = wForm.name.trim();
     if (!actualName) return;
     const amount = getShiftAmount(wForm.shift);
-    setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm,amount}]});
+    if (editingWIdx !== null) {
+      const list = [...workDetails.inHouseWorkers];
+      list[editingWIdx] = {...wForm, amount};
+      setWorkDetails({...workDetails, inHouseWorkers: list});
+      setEditingWIdx(null);
+    } else {
+      setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm,amount}]});
+    }
     setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
+  };
+  const loadWorkerForEdit = (i) => {
+    const w = workDetails.inHouseWorkers[i];
+    if (!w) return;
+    setWForm({name:w.name||'', start:w.start||'', end:w.end||'', shift:w.shift||'daytime', dept:w.dept||'k1'});
+    if (w.dept) setCurrentDept(w.dept);
+    setEditingWIdx(i);
   };
   const addOutsource = () => {
     const actualCompany = oForm.company.trim();
@@ -2197,18 +2252,57 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     if (count <= 0) return;
     const basePrice = oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime;
     const amount = count * basePrice;
-    setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,count,amount}]});
+    if (editingOIdx !== null) {
+      const list = [...workDetails.outsourcingLabor];
+      list[editingOIdx] = {...oForm, count, amount};
+      setWorkDetails({...workDetails, outsourcingLabor: list});
+      setEditingOIdx(null);
+    } else {
+      setWorkDetails({...workDetails, outsourcingLabor:[...workDetails.outsourcingLabor,{...oForm,count,amount}]});
+    }
     setOForm({company:'',count:'',shift:'daytime',start:'',end:''});
+  };
+  const loadOutsourceForEdit = (i) => {
+    const o = workDetails.outsourcingLabor[i];
+    if (!o) return;
+    setOForm({company:o.company||'', count:String(o.count||''), shift:o.shift||'daytime', start:o.start||'', end:o.end||''});
+    setEditingOIdx(i);
   };
   const addVehicle = () => {
     if (!vForm.type) return;
-    setWorkDetails({...workDetails, vehicles:[...workDetails.vehicles,{...vForm,amount:VEHICLE_UNIT_PRICES[vForm.type]||0}]});
+    if (editingVIdx !== null) {
+      const list = [...workDetails.vehicles];
+      list[editingVIdx] = {...vForm, amount: VEHICLE_UNIT_PRICES[vForm.type]||0};
+      setWorkDetails({...workDetails, vehicles: list});
+      setEditingVIdx(null);
+    } else {
+      setWorkDetails({...workDetails, vehicles:[...workDetails.vehicles,{...vForm,amount:VEHICLE_UNIT_PRICES[vForm.type]||0}]});
+    }
     setVForm({type:'',number:'',driver:''});
+  };
+  const loadVehicleForEdit = (i) => {
+    const v = workDetails.vehicles[i];
+    if (!v) return;
+    setVForm({type:v.type||'', number:v.number||'', driver:v.driver||''});
+    setEditingVIdx(i);
   };
   const addMachinery = () => {
     if (!mForm.type) return;
-    setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)||0}]});
+    if (editingMIdx !== null) {
+      const list = [...workDetails.machinery];
+      list[editingMIdx] = {type: mForm.type, unitPrice: parseFloat(mForm.price)||0};
+      setWorkDetails({...workDetails, machinery: list});
+      setEditingMIdx(null);
+    } else {
+      setWorkDetails({...workDetails, machinery:[...workDetails.machinery,{type:mForm.type,unitPrice:parseFloat(mForm.price)||0}]});
+    }
     setMForm({type:'',price:''});
+  };
+  const loadMachineryForEdit = (i) => {
+    const m = workDetails.machinery[i];
+    if (!m) return;
+    setMForm({type:m.type||'', price:String(m.unitPrice||'')});
+    setEditingMIdx(i);
   };
   // ※ envForm / extForm の入力UIは未実装のため、addEnv / addExt は削除しました
   //   （未定義変数 envForm, extForm, ENV_PRICES, EXT_PRICES, setEnvForm, setExtForm を参照しており、
@@ -2497,18 +2591,29 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
 
   // ★ ItemCard: アバターは常に1文字
-  const ItemCard = ({ avatarBg, avatarColor, avatarText, name, meta, amount, amountColor, onDel }) => (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px', background:'rgba(255,255,255,0.08)', border:'none', borderRadius:'12px', marginBottom:'8px' }}>
+  const ItemCard = ({ avatarBg, avatarColor, avatarText, name, meta, amount, amountColor, onDel, onEdit, isEditing }) => (
+    <div style={{
+      display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'12px 14px',
+      background: isEditing ? 'rgba(245,158,11,0.08)' : 'linear-gradient(135deg,#fff 0%,#F0F9FF 100%)',
+      border: isEditing ? '2px solid rgba(245,158,11,0.6)' : '2px solid #60A5FA',
+      borderRadius:'12px',
+      marginBottom:'8px',
+      boxShadow: isEditing ? 'none' : '0 2px 8px rgba(96,165,250,0.15)',
+      cursor: onEdit ? 'pointer' : 'default'
+    }} onClick={onEdit}>
       <div style={{ display:'flex', alignItems:'center', gap:'10px', minWidth:0 }}>
-        <div style={{ width:'34px', height:'34px', borderRadius:'9px', background:avatarBg, color:avatarColor, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700', flexShrink:0, fontFamily:'sans-serif' }}>{avatarText}</div>
+        <div style={{ width:'34px', height:'34px', borderRadius:'9px', background:'#2563EB', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', fontWeight:'700', flexShrink:0, fontFamily:'sans-serif' }}>{avatarText}</div>
         <div style={{ minWidth:0 }}>
-          <div style={{ fontSize:'13px', fontWeight:'700', color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{name}</div>
-          <div style={{ fontSize:'11px', color:'rgba(255,255,255,0.45)', marginTop:'2px' }} dangerouslySetInnerHTML={{__html: meta}} />
+          <div style={{ fontSize:'13px', fontWeight:'700', color:'#1E40AF', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{name}</div>
+          <div style={{ fontSize:'11px', color:'#64748B', marginTop:'2px' }} dangerouslySetInnerHTML={{__html: meta}} />
         </div>
       </div>
       <div style={{ display:'flex', alignItems:'center', gap:'8px', flexShrink:0 }}>
-        <span style={{ fontSize:'13px', fontWeight:'700', color: amountColor||'#60a5fa', whiteSpace:'nowrap' }}>{amount}</span>
-        <button onClick={onDel} style={{ width:'32px', height:'32px', borderRadius:'8px', background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.25)', color:'#f87171', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontWeight:700 }}>✕</button>
+        {isEditing && <span style={{ fontSize:9, background:'rgba(245,158,11,0.2)', color:'#B45309', border:'1px solid rgba(245,158,11,0.4)', borderRadius:4, padding:'2px 7px', fontWeight:700 }}>編集中</span>}
+        <span style={{ fontSize:'13px', fontWeight:'700', color: amountColor||'#1E40AF', whiteSpace:'nowrap', fontVariantNumeric:'tabular-nums' }}>{amount}</span>
+        {onEdit && !isEditing && <span style={{ fontSize:11, color:'#94A3B8', flexShrink:0 }}>✏️</span>}
+        <button onClick={(e)=>{e.stopPropagation(); onDel && onDel();}} style={{ width:'32px', height:'32px', borderRadius:'8px', background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.25)', color:'#f87171', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontWeight:700 }}>✕</button>
       </div>
     </div>
   );
@@ -2644,7 +2749,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               name={w.name}
               meta={`${w.start} → ${w.end}　<span style="color:${shiftColor(w.shift)}">${shiftLabel(w.shift)}</span>　<span style="font-size:9px;color:${w.dept==='k1'?'#3b82f6':'#22c55e'};background:${w.dept==='k1'?'rgba(59,130,246,0.1)':'rgba(34,197,94,0.1)'};padding:1px 5px;border-radius:4px">${w.dept==='k1'?'工事1課':'環境課'}</span>`}
               amount={`¥${formatCurrency(w.amount)}`}
-              onDel={()=>setWorkDetails({...workDetails,inHouseWorkers:workDetails.inHouseWorkers.filter((_,j)=>j!==i)})} />
+              onEdit={()=>loadWorkerForEdit(i)}
+              isEditing={editingWIdx===i}
+              onDel={()=>{ if(editingWIdx===i){setEditingWIdx(null); setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});} setWorkDetails({...workDetails,inHouseWorkers:workDetails.inHouseWorkers.filter((_,j)=>j!==i)})}} />
           ))}
           <div style={inputCard}>
             {/* ★ 課タブ（人数なし）*/}
@@ -2692,31 +2799,45 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               {isSaving ? '更新中...' : '✓ 人数を変更したらここで更新'}
             </button>
           )}
-          {workDetails.outsourcingLabor.map((o,i)=>(
-            <div key={i} style={{borderRadius:11,marginBottom:6,background:'rgba(34,211,238,0.06)',border:'1px solid rgba(34,211,238,0.2)',padding:'10px 12px',display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:36,height:36,borderRadius:9,background:'rgba(34,211,238,0.15)',color:'#22d3ee',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900,flexShrink:0}}>{o.company.charAt(0)}</div>
+          {workDetails.outsourcingLabor.map((o,i)=>{
+            const isEditing = editingOIdx===i;
+            return (
+            <div key={i} style={{
+              borderRadius:11, marginBottom:6,
+              background: isEditing ? 'rgba(245,158,11,0.08)' : 'linear-gradient(135deg,#fff 0%,#F0F9FF 100%)',
+              border: isEditing ? '2px solid rgba(245,158,11,0.6)' : '2px solid #60A5FA',
+              boxShadow: isEditing ? 'none' : '0 2px 8px rgba(96,165,250,0.15)',
+              padding:'10px 12px', display:'flex', alignItems:'center', gap:10,
+              cursor: 'pointer'
+            }} onClick={()=>loadOutsourceForEdit(i)}>
+              <div style={{width:36,height:36,borderRadius:9,background:'#2563EB',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900,flexShrink:0}}>{(o.company||'').charAt(0)}</div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:700,color:'#fff'}}>{o.company}</div>
+                <div style={{fontSize:13,fontWeight:700,color:'#1E40AF'}}>{o.company}</div>
                 <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
-                  <input type="number" min="1" inputMode="numeric" value={o.count||''} onChange={e=>{
+                  <input type="number" min="1" inputMode="numeric" value={o.count||''} onClick={e=>e.stopPropagation()} onChange={e=>{
                     const entries=[...workDetails.outsourcingLabor];
                     const newCount=parseInt(e.target.value,10)||0;
                     const newAmount=newCount*(o.shift==='nighttime'?30000:25000);
                     entries[i]={...entries[i],count:newCount,amount:newAmount};
                     setWorkDetails({...workDetails,outsourcingLabor:entries});
-                  }} style={{width:60,padding:'6px 8px',background:'rgba(34,211,238,0.15)',border:'1.5px solid rgba(34,211,238,0.4)',color:'#67E8F9',borderRadius:7,fontSize:18,fontWeight:700,textAlign:'center',outline:'none',fontFamily:'inherit'}}/>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>人</span>
-                  {o.start && o.end && <span style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>{o.start} → {o.end}</span>}
-                  <span style={{color:shiftColor(o.shift),fontSize:11}}>{shiftLabel(o.shift)}</span>
+                  }} style={{width:60,padding:'6px 8px',background:'#fff',border:'1.5px solid #60A5FA',color:'#1E40AF',borderRadius:7,fontSize:18,fontWeight:700,textAlign:'center',outline:'none',fontFamily:'inherit'}}/>
+                  <span style={{fontSize:12,color:'#64748B'}}>人</span>
+                  {o.start && o.end && <span style={{fontSize:11,color:'#64748B'}}>{o.start} → {o.end}</span>}
+                  <span style={{color:shiftColor(o.shift),fontSize:11,fontWeight:700}}>{shiftLabel(o.shift)}</span>
                 </div>
               </div>
-              <div style={{textAlign:'right',flexShrink:0}}>
-                <div style={{fontSize:13,fontWeight:700,color:'#67E8F9'}}>¥{formatCurrency(o.amount)}</div>
-                <button onClick={()=>setWorkDetails({...workDetails,outsourcingLabor:workDetails.outsourcingLabor.filter((_,j)=>j!==i)})}
-                  style={{marginTop:4,width:28,height:28,borderRadius:7,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.08)',color:'#f87171',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
+              <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+                {isEditing && <span style={{ fontSize:9, background:'rgba(245,158,11,0.2)', color:'#B45309', border:'1px solid rgba(245,158,11,0.4)', borderRadius:4, padding:'2px 7px', fontWeight:700 }}>編集中</span>}
+                <div style={{textAlign:'right'}}>
+                  <div style={{fontSize:13,fontWeight:700,color:'#1E40AF',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(o.amount)}</div>
+                </div>
+                {!isEditing && <span style={{ fontSize:11, color:'#94A3B8' }}>✏️</span>}
+                <button onClick={(e)=>{e.stopPropagation(); if(isEditing){setEditingOIdx(null); setOForm({company:'',count:'',shift:'daytime',start:'',end:''});} setWorkDetails({...workDetails,outsourcingLabor:workDetails.outsourcingLabor.filter((_,j)=>j!==i)})}}
+                  style={{width:28,height:28,borderRadius:7,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.08)',color:'#f87171',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
               </div>
             </div>
-          ))}
+            );
+          })}
           {isEditMode && workDetails.outsourcingLabor.length > 0 && (
             <div style={{padding:'8px 12px',background:'rgba(34,211,238,0.06)',border:'1px dashed rgba(34,211,238,0.2)',borderRadius:8,marginBottom:8,fontSize:11,color:'rgba(34,211,238,0.7)',textAlign:'center'}}>
               ↑ 人数を直接変更できます
@@ -2780,7 +2901,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               avatarText="機"
               name={m.type} meta=""
               amount={`¥${formatCurrency(m.unitPrice)}`}
-              onDel={()=>setWorkDetails({...workDetails,machinery:workDetails.machinery.filter((_,j)=>j!==i)})} />
+              onEdit={()=>loadMachineryForEdit(i)}
+              isEditing={editingMIdx===i}
+              onDel={()=>{ if(editingMIdx===i){setEditingMIdx(null); setMForm({type:'',price:''});} setWorkDetails({...workDetails,machinery:workDetails.machinery.filter((_,j)=>j!==i)})}} />
           ))}
           <div style={inputCardAmber}>
             <div style={grid2}>
@@ -2802,16 +2925,32 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
           {/* 経費 */}
           <SectionLabel ja="経費" en="Expenses" />
-          {(workDetails.dailyExpenses||[]).map((e,i)=>(
-            <div key={i} style={{background:'#fff',borderRadius:10,padding:'10px 12px',marginBottom:5,display:'flex',alignItems:'center',gap:8,border:'0.5px solid #E8E8E8'}}>
-              <div style={{flex:1}}>
-                <div style={{fontSize:12,fontWeight:500,color:'#1C1917'}}>{e.name}</div>
-                <div style={{fontSize:10,color:'#999'}}>¥{formatCurrency(e.amount)}</div>
+          {(workDetails.dailyExpenses||[]).map((e,i)=>{
+            const isEditing = editingExpIdx===i;
+            return (
+            <div key={i} style={{
+              borderRadius:11, marginBottom:6,
+              background: isEditing ? 'rgba(245,158,11,0.08)' : 'linear-gradient(135deg,#fff 0%,#F0F9FF 100%)',
+              border: isEditing ? '2px solid rgba(245,158,11,0.6)' : '2px solid #60A5FA',
+              boxShadow: isEditing ? 'none' : '0 2px 8px rgba(96,165,250,0.15)',
+              padding:'10px 12px', display:'flex', alignItems:'center', gap:8,
+              cursor: 'pointer'
+            }} onClick={()=>{
+              setWorkDetails({...workDetails, _expName: e.name, _expAmt: String(e.amount||'')});
+              setEditingExpIdx(i);
+            }}>
+              <div style={{width:34,height:34,borderRadius:9,background:'#2563EB',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900,flexShrink:0}}>{(e.name||'').charAt(0)}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:'#1E40AF'}}>{e.name}</div>
+                <div style={{fontSize:10,color:'#64748B'}}>¥{formatCurrency(e.amount)}</div>
               </div>
-              <button onClick={()=>setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)})}
-                style={{width:24,height:24,borderRadius:6,background:'#FEF2F2',border:'0.5px solid #FECACA',color:'#EF4444',fontSize:11,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+              {isEditing && <span style={{ fontSize:9, background:'rgba(245,158,11,0.2)', color:'#B45309', border:'1px solid rgba(245,158,11,0.4)', borderRadius:4, padding:'2px 7px', fontWeight:700 }}>編集中</span>}
+              {!isEditing && <span style={{ fontSize:11, color:'#94A3B8' }}>✏️</span>}
+              <button onClick={(ev)=>{ev.stopPropagation(); if(isEditing){setEditingExpIdx(null); setWorkDetails({...workDetails, _expName:'', _expAmt:'', dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});} else { setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});}}}
+                style={{width:28,height:28,borderRadius:7,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.08)',color:'#f87171',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontWeight:700}}>✕</button>
             </div>
-          ))}
+            );
+          })}
           <div style={inputCard}>
             <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
               {['パーキング代','高速代','交通費','経費','道具代','アスベスト分析費'].map(n=>(
@@ -2833,7 +2972,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               const name=(workDetails._expName||'').trim();
               const amt=parseFloat(workDetails._expAmt)||0;
               if(!name) return;
-              setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt}],_expName:'',_expAmt:''});
+              if (editingExpIdx !== null) {
+                const list = [...(workDetails.dailyExpenses||[])];
+                list[editingExpIdx] = {name, amount: amt};
+                setWorkDetails({...workDetails, dailyExpenses: list, _expName:'', _expAmt:''});
+                setEditingExpIdx(null);
+              } else {
+                setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt}],_expName:'',_expAmt:''});
+              }
             }} disabled={!(workDetails._expName||'').trim()} />
           </div>
           {(workDetails.dailyExpenses||[]).length>0 && <SubTotal label="経費" value={(workDetails.dailyExpenses||[]).reduce((s,e)=>s+(e.amount||0),0)} />}

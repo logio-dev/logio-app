@@ -4235,7 +4235,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   }, 0);
   const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
   // ★ 車両費は重複除去後の totalAllVehicleCost を使う(haishiAmount は別フィールドなので加算)
-  const totalCost = totalInHouseCost + totalOutsourcingCost + totalAllVehicleCost + totalHaishiCost + totalMachineryCost + totalTransportCost + totalWasteCost + totalDailyExpenses
+  // ★ 原価合計 = 純粋な原価のみ(金属売上は控除しない)
+  const totalCost = totalInHouseCost + totalOutsourcingCost + totalAllVehicleCost + totalHaishiCost + totalMachineryCost + totalTransportCost + totalWasteDisposal + totalDailyExpenses
     + (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
     + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
@@ -4305,7 +4306,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const pageWasteDisposal  = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+((w.amount||0) > 0 ? w.amount : 0),0),0);
           // ★ 金属売上 (マイナス金額の絶対値、売上として別表示)
           const pageMetalRevenue   = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+((w.amount||0) < 0 ? Math.abs(w.amount) : 0),0),0);
-          // ★ 純額(原価計算用): 処分費 - 売上
+          // ★ 純額(参考表示用): 処分費 - 売上
           const pageWasteCost      = pageWasteDisposal - pageMetalRevenue;
           // ★ 環境課・外注の人工費
           const pageEnvCost     = pageRows.reduce((s,r)=>s+(r.workDetails?.envItems||[]).reduce((a,t)=>a+(t.amount||0),0),0);
@@ -4314,7 +4315,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const pageTransportCost = pageRows.reduce((s,r)=>s+(r.workDetails?.transportEntries||[]).reduce((a,t)=>a+(parseFloat(t.amount)||0),0),0);
           // ★ 日々経費
           const pageDailyExpCost = pageRows.reduce((s,r)=>s+(r.workDetails?.dailyExpenses||[]).reduce((a,e)=>a+(parseFloat(e.amount)||0),0),0);
-          const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost+pageEnvCost+pageExtCost+pageTransportCost+pageDailyExpCost;
+          // ★ 原価小計 = 純粋な原価のみ(金属売上は控除しない)
+          const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteDisposal+pageEnvCost+pageExtCost+pageTransportCost+pageDailyExpCost;
 
           // リース等アイテム集計
           const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];

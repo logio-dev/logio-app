@@ -2111,12 +2111,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [isSaving, setIsSaving] = useState(false);
   // ★ 未追加項目チェック用 確認モーダルstate
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  // ★ 入力中のフォームがあるか判定 (Step3 のフォームのみ)
+  // ★ 入力中のフォームがあるか判定 (Step1-3 全フォーム)
   const hasUnsavedWasteForm = () => {
     try {
-      const wasteFilled = !!(wasteForm && (wasteForm.type || wasteForm.disposal || (parseFloat(wasteForm.qty) > 0) || (parseFloat(wasteForm.price) > 0)));
-      const scrapFilled = !!(scrapForm && ((scrapForm.type && scrapForm.type !== '金属くず') || scrapForm.buyer || (parseFloat(scrapForm.qty) > 0) || (parseFloat(scrapForm.price) > 0)));
-      return wasteFilled || scrapFilled;
+      // 産廃
+      if (wasteForm && (wasteForm.type || wasteForm.disposal || (parseFloat(wasteForm.qty) > 0) || (parseFloat(wasteForm.price) > 0))) return true;
+      // 金属売上
+      if (scrapForm && ((scrapForm.type && scrapForm.type !== '金属くず') || scrapForm.buyer || (parseFloat(scrapForm.qty) > 0) || (parseFloat(scrapForm.price) > 0))) return true;
+      // 自社人工
+      if (typeof wForm !== 'undefined' && wForm && (wForm.name || wForm.start || wForm.end)) return true;
+      // 外注人工
+      if (typeof oForm !== 'undefined' && oForm && (oForm.company || (parseFloat(oForm.count) > 0) || oForm.start || oForm.end)) return true;
+      // 車両
+      if (typeof vForm !== 'undefined' && vForm && (vForm.type || vForm.number)) return true;
+      // 機械
+      if (typeof mForm !== 'undefined' && mForm && (mForm.type || (parseFloat(mForm.price) > 0))) return true;
+      return false;
     } catch (e) {
       console.error('hasUnsavedWasteForm error:', e);
       return false;

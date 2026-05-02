@@ -2111,21 +2111,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [isSaving, setIsSaving] = useState(false);
   // ★ 未追加項目チェック用 確認モーダルstate
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  // ★ 入力中のフォームがあるか判定 (Step1-3 全フォーム)
+  // ★ 入力中のフォームがあるか判定 (Step3 のフォームのみ)
   const hasUnsavedWasteForm = () => {
-    // 産廃
-    const wasteFilled = !!(wasteForm.type || wasteForm.disposal || (parseFloat(wasteForm.qty) > 0) || (parseFloat(wasteForm.price) > 0));
-    // 金属売上
-    const scrapFilled = !!((scrapForm.type && scrapForm.type !== '金属くず') || scrapForm.buyer || (parseFloat(scrapForm.qty) > 0) || (parseFloat(scrapForm.price) > 0));
-    // 自社人工
-    const wFilled = !!(wForm.name || wForm.start || wForm.end);
-    // 外注人工
-    const oFilled = !!(oForm.company || (parseFloat(oForm.count) > 0) || oForm.start || oForm.end);
-    // 車両
-    const vFilled = !!(vForm.type || vForm.number);
-    // 機械
-    const mFilled = !!(mForm.type || (parseFloat(mForm.price) > 0));
-    return wasteFilled || scrapFilled || wFilled || oFilled || vFilled || mFilled;
+    try {
+      const wasteFilled = !!(wasteForm && (wasteForm.type || wasteForm.disposal || (parseFloat(wasteForm.qty) > 0) || (parseFloat(wasteForm.price) > 0)));
+      const scrapFilled = !!(scrapForm && ((scrapForm.type && scrapForm.type !== '金属くず') || scrapForm.buyer || (parseFloat(scrapForm.qty) > 0) || (parseFloat(scrapForm.price) > 0)));
+      return wasteFilled || scrapFilled;
+    } catch (e) {
+      console.error('hasUnsavedWasteForm error:', e);
+      return false;
+    }
   };
   const handleSave = async () => {
     if (isSaving) return;
@@ -2146,6 +2141,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       } else {
         await onSave(data);
       }
+    } catch (e) {
+      console.error('save error:', e);
+      alert('保存に失敗しました: ' + (e?.message || e));
     } finally {
       setIsSaving(false);
     }

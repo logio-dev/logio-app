@@ -2115,6 +2115,42 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const isStep1Valid = () => report.date && report.recorder;
   const [isSaving, setIsSaving] = useState(false);
+  // ★ Step2の「次へ」: 自社/外注/車両/機械/経費の自動追加
+  const handleStep2Next = () => {
+    let newWorkDetails = workDetails;
+    // 自社人工
+    if (wForm && wForm.name && wForm.name.trim()) {
+      const amount = getShiftAmount(wForm.shift);
+      newWorkDetails = {...newWorkDetails, inHouseWorkers:[...(newWorkDetails.inHouseWorkers||[]), {...wForm, amount}]};
+      setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
+    }
+    // 外注人工
+    if (oForm && oForm.company && oForm.company.trim() && parseFloat(oForm.count) > 0) {
+      const count = parseFloat(oForm.count) || 0;
+      const basePrice = oForm.shift === 'nighttime' ? unitPrices.outsourcingNighttime : unitPrices.outsourcingDaytime;
+      const amount = count * basePrice;
+      newWorkDetails = {...newWorkDetails, outsourcingLabor:[...(newWorkDetails.outsourcingLabor||[]), {...oForm, count, amount}]};
+      setOForm({company:'',count:'',shift:'daytime',start:'',end:''});
+    }
+    // 車両
+    if (vForm && vForm.type) {
+      newWorkDetails = {...newWorkDetails, vehicles:[...(newWorkDetails.vehicles||[]), {...vForm, amount: VEHICLE_UNIT_PRICES[vForm.type]||0}]};
+      setVForm({type:'',number:'',driver:''});
+    }
+    // 機械
+    if (mForm && mForm.type) {
+      newWorkDetails = {...newWorkDetails, machinery:[...(newWorkDetails.machinery||[]), {type: mForm.type, unitPrice: parseFloat(mForm.price)||0}]};
+      setMForm({type:'',price:''});
+    }
+    // 経費
+    const expName = (newWorkDetails._expName||'').trim();
+    const expAmt = parseFloat(newWorkDetails._expAmt) || 0;
+    if (expName) {
+      newWorkDetails = {...newWorkDetails, dailyExpenses:[...(newWorkDetails.dailyExpenses||[]), {name: expName, amount: expAmt}], _expName:'', _expAmt:''};
+    }
+    setWorkDetails(newWorkDetails);
+    setCurrentStep(3);
+  };
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
@@ -2984,7 +3020,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
           {(workDetails.dailyExpenses||[]).length>0 && <SubTotal label="経費" value={(workDetails.dailyExpenses||[]).reduce((s,e)=>s+(e.amount||0),0)} />}
 
-          <BFooter onBack={()=>setCurrentStep(1)} onNext={()=>setCurrentStep(3)} nextLabel="次へ →" />
+          <BFooter onBack={()=>setCurrentStep(1)} onNext={handleStep2Next} nextLabel="次へ →" />
         </div>
       )}
 

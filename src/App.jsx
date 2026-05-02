@@ -2109,51 +2109,67 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const isStep1Valid = () => report.date && report.recorder;
   const [isSaving, setIsSaving] = useState(false);
-  // ★ 未追加項目チェック用 確認モーダルstate
-  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  // ★ 入力中のフォームがあるか判定 (Step1-3 全フォーム)
-  const hasUnsavedWasteForm = () => {
-    try {
-      // 産廃
-      if (wasteForm && (wasteForm.type || wasteForm.disposal || (parseFloat(wasteForm.qty) > 0) || (parseFloat(wasteForm.price) > 0))) return true;
-      // 金属売上
-      if (scrapForm && ((scrapForm.type && scrapForm.type !== '金属くず') || scrapForm.buyer || (parseFloat(scrapForm.qty) > 0) || (parseFloat(scrapForm.price) > 0))) return true;
-      // 自社人工
-      if (typeof wForm !== 'undefined' && wForm && (wForm.name || wForm.start || wForm.end)) return true;
-      // 外注人工
-      if (typeof oForm !== 'undefined' && oForm && (oForm.company || (parseFloat(oForm.count) > 0) || oForm.start || oForm.end)) return true;
-      // 車両
-      if (typeof vForm !== 'undefined' && vForm && (vForm.type || vForm.number)) return true;
-      // 機械
-      if (typeof mForm !== 'undefined' && mForm && (mForm.type || (parseFloat(mForm.price) > 0))) return true;
-      return false;
-    } catch (e) {
-      console.error('hasUnsavedWasteForm error:', e);
-      return false;
-    }
-  };
   const handleSave = async () => {
-    if (isSaving) return;
-    // ★ 未追加項目があれば確認モーダルを表示
-    if (hasUnsavedWasteForm()) {
-      setShowUnsavedWarning(true);
-      return;
-    }
-    await doSave();
-  };
-  const doSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems, scrapItems, photoUrls, memo: memoText };
+      // ★ 自動追加: 入力中フォームに値があれば、保存前に自動でリストに追加
+      let finalWasteItems = wasteItems;
+      let finalScrapItems = scrapItems;
+      // 産廃フォーム自動追加
+      if (wasteForm && wasteForm.type && wasteForm.disposal) {
+        const qty = parseFloat(wasteForm.qty) || 0;
+        const price = parseFloat(wasteForm.price) || 0;
+        const ENV_P = {day:20000,night:30000}, EXT_P = {day:22000,night:32000};
+        let haishiAmount = 0;
+        if (wasteForm.haisha === 'env' && wasteForm.haishiShift) haishiAmount = ENV_P[wasteForm.haishiShift];
+        else if (wasteForm.haisha === 'ext') haishiAmount = wasteForm.haishiOverride ? parseFloat(wasteForm.haishiPrice)||0 : (wasteForm.haishiShift?EXT_P[wasteForm.haishiShift]:0);
+        const workerVehicleAmount = VEHICLE_UNIT_PRICES[wasteForm.workerVType] || 0;
+        const newWasteItem = {
+          material: wasteForm.type, disposalSite: wasteForm.disposal,
+          quantity: qty, unit: wasteForm.unit, unitPrice: 0, amount: price,
+          manifestNumber: wasteForm.manifest,
+          haisha: wasteForm.haisha || '', driver: wasteForm.driver || '',
+          vType: wasteForm.vType || '', vNumber: wasteForm.vNumber || '',
+          haishiShift: wasteForm.haishiShift || '', haishiAmount,
+          workerName: wasteForm.workerName || '', workerVType: wasteForm.workerVType || '',
+          workerVNumber: wasteForm.workerVNumber || '', vehicleAmount: workerVehicleAmount,
+          volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
+        };
+        if (editingWasteIdx !== null) {
+          finalWasteItems = [...wasteItems];
+          finalWasteItems[editingWasteIdx] = newWasteItem;
+        } else {
+          finalWasteItems = [...wasteItems, newWasteItem];
+        }
+      }
+      // 金属売上フォーム自動追加
+      if (scrapForm && scrapForm.type && scrapForm.buyer && parseFloat(scrapForm.qty) > 0) {
+        const qty = parseFloat(scrapForm.qty);
+        const total = parseFloat(scrapForm.price) || 0;
+        const scrapVehicleAmount = VEHICLE_UNIT_PRICES[scrapForm.workerVType] || 0;
+        const newScrapItem = {
+          type: scrapForm.type, buyer: scrapForm.buyer, quantity: qty,
+          unit: scrapForm.unit, unitPrice: 0, amount: -total,
+          manifestNumber: scrapForm.manifest || '',
+          volumeM3: scrapForm.volumeM3 ? parseFloat(scrapForm.volumeM3) : null,
+          workerName: scrapForm.workerName || '', workerVType: scrapForm.workerVType || '',
+          workerVNumber: scrapForm.workerVNumber || '', vehicleAmount: scrapVehicleAmount
+        };
+        if (editingScrapIdx !== null) {
+          finalScrapItems = [...scrapItems];
+          finalScrapItems[editingScrapIdx] = newScrapItem;
+        } else {
+          finalScrapItems = [...scrapItems, newScrapItem];
+        }
+      }
+
+      const data = { ...report, recorder: report.customRecorder || report.recorder, workDetails, wasteItems: finalWasteItems, scrapItems: finalScrapItems, photoUrls, memo: memoText };
       if (isEditMode && onUpdate) {
         await onUpdate(editReport.id, data);
       } else {
         await onSave(data);
       }
-    } catch (e) {
-      console.error('save error:', e);
-      alert('保存に失敗しました: ' + (e?.message || e));
     } finally {
       setIsSaving(false);
     }
@@ -4215,32 +4231,6 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
           <div>現場責任者：{projectInfo.siteManager || ''}</div>
         </div>
       </div>
-
-      {/* ★ 未追加項目 確認モーダル */}
-      {showUnsavedWarning && (
-        <div onClick={() => setShowUnsavedWarning(false)}
-          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:20, backdropFilter:'blur(4px)' }}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ background:'#fff', borderRadius:14, padding:'22px 20px', width:'100%', maxWidth:340, boxShadow:'0 10px 40px rgba(0,0,0,0.3)' }}>
-            <div style={{ fontSize:32, textAlign:'center', marginBottom:10 }}>⚠️</div>
-            <div style={{ fontSize:16, fontWeight:700, textAlign:'center', marginBottom:8, color:'#111' }}>未追加の項目があります</div>
-            <div style={{ fontSize:13, color:'#666', textAlign:'center', marginBottom:18, lineHeight:1.6 }}>
-              入力中のフォームがあります。<br/>
-              「+追加する」を押さずに保存すると、入力した内容は破棄されます。
-            </div>
-            <div style={{ display:'flex', gap:8 }}>
-              <button onClick={() => setShowUnsavedWarning(false)}
-                style={{ flex:1, padding:'12px', background:'#F4F4F4', border:'none', borderRadius:9, fontSize:13, fontWeight:700, color:'#333', cursor:'pointer', fontFamily:'inherit' }}>
-                ← 戻って追加
-              </button>
-              <button onClick={async () => { setShowUnsavedWarning(false); await doSave(); }}
-                style={{ flex:1, padding:'12px', background:'#DC2626', color:'#fff', border:'none', borderRadius:9, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-                破棄して保存
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

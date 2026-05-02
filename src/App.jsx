@@ -2193,8 +2193,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         };
       }
 
-      // 産廃フォーム自動追加
-      if (wasteForm && wasteForm.type && wasteForm.disposal) {
+      // 産廃フォーム自動追加 (品目+処分先 OR 車両のみでもOK)
+      const hasWasteFull = wasteForm && wasteForm.type && wasteForm.disposal;
+      const hasWasteVehicle = wasteForm && wasteForm.workerVType;
+      if (hasWasteFull || hasWasteVehicle) {
         const qty = parseFloat(wasteForm.qty) || 0;
         const price = parseFloat(wasteForm.price) || 0;
         const ENV_P = {day:20000,night:30000}, EXT_P = {day:22000,night:32000};
@@ -2203,9 +2205,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         else if (wasteForm.haisha === 'ext') haishiAmount = wasteForm.haishiOverride ? parseFloat(wasteForm.haishiPrice)||0 : (wasteForm.haishiShift?EXT_P[wasteForm.haishiShift]:0);
         const workerVehicleAmount = VEHICLE_UNIT_PRICES[wasteForm.workerVType] || 0;
         const newWasteItem = {
-          material: wasteForm.type, disposalSite: wasteForm.disposal,
+          kind: 'self',
+          material: wasteForm.type || '', disposalSite: wasteForm.disposal || '',
           quantity: qty, unit: wasteForm.unit, unitPrice: 0, amount: price,
-          manifestNumber: wasteForm.manifest,
+          manifestNumber: wasteForm.manifest || '',
           haisha: wasteForm.haisha || '', driver: wasteForm.driver || '',
           vType: wasteForm.vType || '', vNumber: wasteForm.vNumber || '',
           haishiShift: wasteForm.haishiShift || '', haishiAmount,

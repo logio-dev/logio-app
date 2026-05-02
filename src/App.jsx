@@ -2109,7 +2109,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const isStep1Valid = () => report.date && report.recorder;
   const [isSaving, setIsSaving] = useState(false);
+  // ★ 未追加項目チェック用 確認モーダルstate
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  // ★ 入力中のフォームがあるか判定
+  const hasUnsavedWasteForm = () => {
+    return !!(wasteForm.type || wasteForm.disposal || (parseFloat(wasteForm.qty) > 0) || (parseFloat(wasteForm.price) > 0));
+  };
   const handleSave = async () => {
+    if (isSaving) return;
+    // ★ 未追加項目があれば確認モーダルを表示
+    if (hasUnsavedWasteForm()) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    await doSave();
+  };
+  const doSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
     try {
@@ -2514,7 +2529,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
 
   const BFooter = ({ onBack, onNext, nextLabel, nextColor, disabled }) => (
-    <div style={{ width:'100%', maxWidth:'42rem', margin:'24px auto 0', padding:`16px 16px calc(20px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', boxSizing:'border-box' }}>
+    <div style={{ position:'fixed', bottom:0, left:'50%', transform:'translateX(-50%)', width:'100%', maxWidth:'42rem', padding:`12px 16px calc(12px + env(safe-area-inset-bottom,0px))`, background:'#fff', borderTop:'1px solid #E8E8E8', display:'flex', gap:'10px', zIndex:40 }}>
       {onBack && <button onClick={onBack} style={{ flex:1, padding:'15px', background:'#F4F4F4', border:'none', color:'#666', borderRadius:'12px', fontSize:'14px', fontWeight:'600', cursor:'pointer' }}>← 戻る</button>}
       <button onClick={onNext} disabled={disabled} style={{ flex:2, padding:'15px', background: disabled?'#E8E8E8': nextColor||'#2563eb', border:'none', color: disabled?'#999':'white', borderRadius:'12px', fontSize:'15px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer' }}>{nextLabel}</button>
     </div>
@@ -2543,7 +2558,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 1 */}
       {currentStep === 1 && (
-        <div className="b-panel" style={{ padding:'16px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <SectionLabel ja="基本情報" en="Basic Info" />
           <div style={inputCard}>
             <div style={{ marginBottom:'16px' }}>
@@ -2566,7 +2581,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       {/* Step 2 */}
       {currentStep === 2 && (
-        <div className="b-panel" style={{ padding:'16px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
 
           {/* 施工情報 */}
           <SectionLabel ja="施工情報" en="Work Info" />
@@ -2794,7 +2809,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       {/* Step 3 */}
       {/* Step 3 */}
       {currentStep === 3 && (
-        <div className="b-panel" style={{ padding:'16px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
+        <div className="b-panel" style={{ padding:'16px 16px 100px', background:'#fff', maxWidth:'42rem', margin:'0 auto', boxSizing:'border-box' }}>
           <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.45)', marginBottom:'14px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 (4タブ統合) */}
@@ -4180,6 +4195,32 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
           <div>現場責任者：{projectInfo.siteManager || ''}</div>
         </div>
       </div>
+
+      {/* ★ 未追加項目 確認モーダル */}
+      {showUnsavedWarning && (
+        <div onClick={() => setShowUnsavedWarning(false)}
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:20, backdropFilter:'blur(4px)' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:'#fff', borderRadius:14, padding:'22px 20px', width:'100%', maxWidth:340, boxShadow:'0 10px 40px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize:32, textAlign:'center', marginBottom:10 }}>⚠️</div>
+            <div style={{ fontSize:16, fontWeight:700, textAlign:'center', marginBottom:8, color:'#111' }}>未追加の項目があります</div>
+            <div style={{ fontSize:13, color:'#666', textAlign:'center', marginBottom:18, lineHeight:1.6 }}>
+              産廃・スクラップに入力中のフォームがあります。<br/>
+              「+追加する」を押さずに保存すると、入力した内容は破棄されます。
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={() => setShowUnsavedWarning(false)}
+                style={{ flex:1, padding:'12px', background:'#F4F4F4', border:'none', borderRadius:9, fontSize:13, fontWeight:700, color:'#333', cursor:'pointer', fontFamily:'inherit' }}>
+                ← 戻って追加
+              </button>
+              <button onClick={async () => { setShowUnsavedWarning(false); await doSave(); }}
+                style={{ flex:1, padding:'12px', background:'#DC2626', color:'#fff', border:'none', borderRadius:9, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                破棄して保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

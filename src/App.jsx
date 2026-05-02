@@ -1059,8 +1059,12 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 if (w.isScrap === true) return;
                 if (w.kind === 'scrap') return;
                 if (w.manifestNumber === '-') return;
-                // ★ 道具車のみ(materialなし)は処分費に含めない
+                // ★ material(品目)が空・または車両名(道具車等)は処分費に含めない
                 if (!w.material) return;
+                if (w.material === '道具車') return;
+                if ((MASTER_DATA.vehicles || []).includes(w.material)) return;
+                // ★ amount(処分費金額)が0以下のものも除外
+                if ((w.amount||0) <= 0) return;
                 wasteByType[w.material] = (wasteByType[w.material]||0)+(w.amount||0);
               }));
               const wasteEntries = Object.entries(wasteByType).sort((a,b)=>b[1]-a[1]);
@@ -4303,7 +4307,14 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const pageMetalRevenue   = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+((w.amount||0) < 0 ? Math.abs(w.amount) : 0),0),0);
           // ★ 純額(原価計算用): 処分費 - 売上
           const pageWasteCost      = pageWasteDisposal - pageMetalRevenue;
-          const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost;
+          // ★ 環境課・外注の人工費
+          const pageEnvCost     = pageRows.reduce((s,r)=>s+(r.workDetails?.envItems||[]).reduce((a,t)=>a+(t.amount||0),0),0);
+          const pageExtCost     = pageRows.reduce((s,r)=>s+(r.workDetails?.extItems||[]).reduce((a,t)=>a+(t.amount||0),0),0);
+          // ★ 配送費(transportEntries)
+          const pageTransportCost = pageRows.reduce((s,r)=>s+(r.workDetails?.transportEntries||[]).reduce((a,t)=>a+(parseFloat(t.amount)||0),0),0);
+          // ★ 日々経費
+          const pageDailyExpCost = pageRows.reduce((s,r)=>s+(r.workDetails?.dailyExpenses||[]).reduce((a,e)=>a+(parseFloat(e.amount)||0),0),0);
+          const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteCost+pageEnvCost+pageExtCost+pageTransportCost+pageDailyExpCost;
 
           // リース等アイテム集計
           const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];

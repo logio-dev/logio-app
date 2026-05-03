@@ -4991,12 +4991,14 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           const w = envW || extW || normW;
                           // ★ isScrap判定: manifestNumber==='-' または amount<0 または isScrapフラグ
                           const isScrapRow = w && (w.manifestNumber==='-' || (w.amount||0) < 0 || w.isScrap === true);
+                          // ★ 道具車行の判定
+                          const isToolRow = w && (w.isToolVehicle === true || w.kind === 'tool' || (w.material === '道具車' && (!w.amount || w.amount === 0) && (!w.quantity || w.quantity === 0)));
                           return (<>
                             <td className="text-[8px]">{w?.material||''}</td>
-                            <td className="text-right text-[8px]" style={{whiteSpace:'nowrap'}}>{w ? (w.volumeM3 ? `${w.quantity}${w.unit}/${w.volumeM3}㎥` : `${w.quantity}${w.unit}`) : ''}</td>
-                            <td className="text-right text-[8px]" style={isScrapRow?{color:'#ef4444',fontWeight:700}:{}}>{w?`¥${formatCurrency(Math.abs(w.amount||0))}`:''}</td>
-                            <td className="text-right text-[8px]" style={isScrapRow?{color:'#ef4444'}:{}}>{w?.disposalSite||''}</td>
-                            <td className="text-right text-[8px]" style={isScrapRow?{color:'#ef4444',fontWeight:700}:{}}>{isScrapRow?'スクラップ':(w?.manifestNumber||'')}</td>
+                            <td className="text-right text-[8px]" style={{whiteSpace:'nowrap'}}>{isToolRow ? '' : (w ? (w.volumeM3 ? `${w.quantity}${w.unit}/${w.volumeM3}㎥` : `${w.quantity}${w.unit}`) : '')}</td>
+                            <td className="text-right text-[8px]" style={isScrapRow?{color:'#ef4444',fontWeight:700}:{}}>{isToolRow ? '' : (w?`¥${formatCurrency(Math.abs(w.amount||0))}`:'')}</td>
+                            <td className="text-right text-[8px]" style={isScrapRow?{color:'#ef4444'}:{}}>{isToolRow ? '' : (w?.disposalSite||'')}</td>
+                            <td className="text-right text-[8px]" style={isScrapRow?{color:'#ef4444',fontWeight:700}:{}}>{isToolRow ? '' : (isScrapRow?'スクラップ':(w?.manifestNumber||''))}</td>
                           </>);
                         })()}
                       </tr>

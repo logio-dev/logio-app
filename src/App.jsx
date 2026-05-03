@@ -5904,23 +5904,40 @@ export default function LOGIOApp() {
     return () => clearTimeout(timer);
   }, [showSplash]);
 
-  // ★ 10分無操作でアニメに戻る(ログインセッションは維持)
+  // ★ 15分無操作でアニメに戻る(ログインセッションは維持)
+  // ★ 案A: 画面非表示中はタイマー停止、画面表示中のみカウント
   useEffect(() => {
     if (showSplash) return; // スプラッシュ中は監視不要
-    const IDLE_MS = 10 * 60 * 1000; // 10分
+    const IDLE_MS = 15 * 60 * 1000; // 15分
     let idleTimer = null;
     const resetIdle = () => {
       if (idleTimer) clearTimeout(idleTimer);
+      // 画面が見えていない時はタイマーをセットしない
+      if (document.hidden) return;
       idleTimer = setTimeout(() => {
         setShowSplash(true);
       }, IDLE_MS);
     };
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // 画面が非表示になった → タイマー停止
+        if (idleTimer) {
+          clearTimeout(idleTimer);
+          idleTimer = null;
+        }
+      } else {
+        // 画面が表示された → タイマー再開
+        resetIdle();
+      }
+    };
     const events = ['mousedown','mousemove','keydown','touchstart','scroll','wheel'];
     events.forEach(e => window.addEventListener(e, resetIdle, {passive:true}));
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     resetIdle(); // 初期起動
     return () => {
       if (idleTimer) clearTimeout(idleTimer);
       events.forEach(e => window.removeEventListener(e, resetIdle));
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [showSplash]);
 

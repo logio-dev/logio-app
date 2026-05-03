@@ -1693,7 +1693,21 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         {/* セクション2: 担当者 */}
                         <div style={{ fontSize:9, color:'#fbbf24', fontWeight:700, letterSpacing:'.08em', marginTop:16, marginBottom:8, paddingBottom:4, borderBottom:'1px solid rgba(251,191,36,0.3)' }}>担当者</div>
                         <Select label="営業担当" labelEn="Sales" options={MASTER_DATA.salesPersons} value={projectInfo.salesPerson||''} onChange={v=>setProjectInfo({...projectInfo,salesPerson:v})} />
-                        <Select label="現場責任者" labelEn="Site Manager" options={MASTER_DATA.employees} value={projectInfo.siteManager||''} onChange={v=>setProjectInfo({...projectInfo,siteManager:v})} />
+                        {/* ★ 現場責任者: マスタ候補から選択 + 直接入力可能 */}
+                        <div style={{ marginBottom:12 }}>
+                          <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>現場責任者 / SITE MANAGER</label>
+                          {MASTER_DATA.employees && MASTER_DATA.employees.length > 0 && (
+                            <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
+                              {MASTER_DATA.employees.map(emp => (
+                                <button key={emp} onClick={()=>setProjectInfo({...projectInfo,siteManager:emp})}
+                                  style={{padding:'5px 10px',borderRadius:6,border:`1px solid ${projectInfo.siteManager===emp?'#FBBF24':'rgba(255,255,255,0.15)'}`,background:projectInfo.siteManager===emp?'rgba(251,191,36,0.2)':'rgba(255,255,255,0.08)',color:projectInfo.siteManager===emp?'#FBBF24':'#fff',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                                  {emp}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <input type="text" value={projectInfo.siteManager||''} onChange={e=>setProjectInfo({...projectInfo,siteManager:e.target.value})} placeholder="マスタにない名前は直接入力(他社現場監督等)" style={{width:'100%',padding:10,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:7,color:'#fff',fontSize:13,fontFamily:'inherit'}} />
+                        </div>
 
                         {/* セクション3: 工期・金額 */}
                         <div style={{ fontSize:9, color:'#fbbf24', fontWeight:700, letterSpacing:'.08em', marginTop:16, marginBottom:8, paddingBottom:4, borderBottom:'1px solid rgba(251,191,36,0.3)' }}>工期・金額</div>
@@ -2416,22 +2430,27 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   };
 
   // ★ 4タブ用の追加関数群
-  // 自社運搬 (担当者+車両、配車費なし) - 処分/売上モード対応
+  // 自社運搬 (担当者+車両、配車費なし) - 処分/道具車/売上モード対応
   const addSelfWaste = () => {
     // ★ 道具車/空車対応: 車種が入っていれば、種類・処分先・数量なしでも追加OK
+    const isToolMode = (wasteModeByTab[wasteTab]||'cost') === 'tool';
     const hasWaste = wasteForm.type && wasteForm.disposal && wasteForm.qty;
     const hasVehicle = wasteForm.workerVType;
-    if (!hasWaste && !hasVehicle) return;
+    if (!isToolMode && !hasWaste && !hasVehicle) return;
+    if (isToolMode && !wasteForm.workerVType) return;
     const qty = parseFloat(wasteForm.qty)||0, price = parseFloat(wasteForm.price)||0;
     const workerVehicleAmount = VEHICLE_UNIT_PRICES[wasteForm.workerVType] || 0;
     const isRevenue = (wasteModeByTab[wasteTab]||'cost') === 'revenue';
     const newItem = {
-      kind:'self',
+      kind: isToolMode ? 'tool' : 'self',
       isScrap: isRevenue,
-      material:wasteForm.type, disposalSite:wasteForm.disposal,
-      quantity:qty, unit:wasteForm.unit, unitPrice:0,
-      amount: isRevenue ? -Math.abs(price) : price,
-      manifestNumber: isRevenue ? '-' : (wasteForm.manifest||''),
+      isToolVehicle: isToolMode, // ★ 道具車フラグ
+      material: isToolMode ? '道具車' : wasteForm.type,
+      disposalSite: isToolMode ? '' : wasteForm.disposal,
+      quantity: isToolMode ? 0 : qty,
+      unit: wasteForm.unit, unitPrice: 0,
+      amount: isToolMode ? 0 : (isRevenue ? -Math.abs(price) : price),
+      manifestNumber: isToolMode ? '-' : (isRevenue ? '-' : (wasteForm.manifest||'')),
       haisha:'', haishiAmount:0,
       workerName:wasteForm.workerName||'',
       workerVType:wasteForm.workerVType||'',
@@ -3142,34 +3161,41 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {/* === 自社運搬フォーム === */}
           {wasteTab === 'self' && (() => {
             const isRev = (wasteModeByTab[wasteTab]||'cost') === 'revenue';
-            const cardBg = isRev ? '#172832' : '#2A2620';
-            const cardBorder = isRev ? '2px solid #06B6D4' : '2px solid #FBBF24';
-            const accentDark = isRev ? '#22D3EE' : '#FBBF24';
-            const accentBg = isRev ? 'rgba(34,211,238,0.15)' : 'rgba(251,191,36,0.15)';
-            const inputBorder = isRev ? '1px solid rgba(34,211,238,0.3)' : '1px solid rgba(251,191,36,0.3)';
+            const isTool = (wasteModeByTab[wasteTab]||'cost') === 'tool';
+            const cardBg = isTool ? '#1F1B2E' : isRev ? '#172832' : '#2A2620';
+            const cardBorder = isTool ? '2px solid #818CF8' : isRev ? '2px solid #06B6D4' : '2px solid #FBBF24';
+            const accentDark = isTool ? '#A5B4FC' : isRev ? '#22D3EE' : '#FBBF24';
+            const accentBg = isTool ? 'rgba(129,140,248,0.15)' : isRev ? 'rgba(34,211,238,0.15)' : 'rgba(251,191,36,0.15)';
+            const inputBorder = isTool ? '1px solid rgba(129,140,248,0.3)' : isRev ? '1px solid rgba(34,211,238,0.3)' : '1px solid rgba(251,191,36,0.3)';
             const allWorkers = (MASTER_DATA.inHouseWorkersByDept[wasteSelfDept==='k1'?'工事1課':'環境課'])||[];
             return (
             <div style={{background:cardBg,border:cardBorder,borderRadius:14,padding:14,marginBottom:10}}>
-              {/* セグメント: 処分 / 売上(金属) */}
+              {/* セグメント: 処分 / 道具車 / 売上(金属) */}
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
                 <span style={{fontSize:11,fontWeight:700,color:accentDark,padding:'3px 10px',background:accentBg,borderRadius:6}}>
-                  自社運搬{isRev?' / 売上（金属）':''}
+                  自社運搬{isRev?' / 売上（金属）':''}{isTool?' / 道具車':''}
                 </span>
               </div>
-              {/* 処分/売上 2分割カード */}
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
+              {/* 処分/道具車/売上 3分割カード */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginBottom:14}}>
                 <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm({mode:'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
-                  style={{padding:'12px 8px',borderRadius:10,border:!isRev?`2px solid ${accentDark}`:'2px solid rgba(255,255,255,0.12)',background:!isRev?accentBg:'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
-                  <div style={{fontSize:13,fontWeight:700,color:!isRev?accentDark:'rgba(255,255,255,0.5)'}}>産廃処分</div>
-                  <div style={{fontSize:9,color:!isRev?accentDark:'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>廃プラ・ボード等</div>
+                  style={{padding:'12px 4px',borderRadius:10,border:(!isRev && !isTool)?`2px solid ${accentDark}`:'2px solid rgba(255,255,255,0.12)',background:(!isRev && !isTool)?accentBg:'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
+                  <div style={{fontSize:12,fontWeight:700,color:(!isRev && !isTool)?accentDark:'rgba(255,255,255,0.5)'}}>産廃処分</div>
+                  <div style={{fontSize:9,color:(!isRev && !isTool)?accentDark:'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>廃プラ等</div>
+                </button>
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'tool'});setWasteForm({mode:'tool',type:'道具車',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
+                  style={{padding:'12px 4px',borderRadius:10,border:isTool?'2px solid #818CF8':'2px solid rgba(255,255,255,0.12)',background:isTool?'rgba(129,140,248,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
+                  <div style={{fontSize:12,fontWeight:700,color:isTool?'#A5B4FC':'rgba(255,255,255,0.5)'}}>道具車</div>
+                  <div style={{fontSize:9,color:isTool?'#A5B4FC':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>担当者+車両</div>
                 </button>
                 <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm({mode:'revenue',type:'',disposal:'',qty:'',unit:'kg',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
-                  style={{padding:'12px 8px',borderRadius:10,border:isRev?'2px solid #06B6D4':'2px solid rgba(255,255,255,0.12)',background:isRev?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
-                  <div style={{fontSize:13,fontWeight:700,color:isRev?'#22D3EE':'rgba(255,255,255,0.5)'}}>金属売上</div>
+                  style={{padding:'12px 4px',borderRadius:10,border:isRev?'2px solid #06B6D4':'2px solid rgba(255,255,255,0.12)',background:isRev?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
+                  <div style={{fontSize:12,fontWeight:700,color:isRev?'#22D3EE':'rgba(255,255,255,0.5)'}}>金属売上</div>
                   <div style={{fontSize:9,color:isRev?'#67e8f9':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>鉄・銅くず等</div>
                 </button>
               </div>
 
+              {!isTool && (<>
               <div style={grid2}>
                 <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder={isRev?'金属くず・鉄くず等':'木くず・廃プラ等'} style={{...inpTxt,border:inputBorder}} /></div>
                 <div>
@@ -3200,6 +3226,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <label style={{...inpLbl,color:'#22D3EE',fontWeight:700}}>㎥換算 <span style={{color:'rgba(255,255,255,0.4)',fontWeight:400,fontSize:'9px'}}>(任意・後日入力可)</span></label>
                   <input type="number" step="0.1" value={wasteForm.volumeM3||''} onChange={e=>setWasteForm({...wasteForm,volumeM3:e.target.value})} placeholder="例）2.5" style={{...inpTxt,border:'1px solid #06B6D4',color:'#22D3EE',fontWeight:500}} />
                   <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginTop:4,lineHeight:1.4}}>kg入力後に後日㎥数値を追加すれば、PDFで「kg/㎥」併記され、㎥合計に加算されます</div>
+                </div>
+              )}
+              </>)}
+              {isTool && (
+                <div style={{padding:'10px 14px',background:'rgba(129,140,248,0.1)',border:'1px solid rgba(129,140,248,0.3)',borderRadius:10,display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                  <div style={{width:32,height:32,borderRadius:8,background:'rgba(129,140,248,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>🚐</div>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700,color:'#A5B4FC'}}>道具車</div>
+                    <div style={{fontSize:11,color:'rgba(255,255,255,0.6)',marginTop:2}}>担当者と車両のみ入力。発生材は「道具車」として記録、数量・金額は空欄</div>
+                  </div>
                 </div>
               )}
 

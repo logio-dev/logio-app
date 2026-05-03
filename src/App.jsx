@@ -2715,15 +2715,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   const AddBtn = ({ onClick, disabled, label, pulse }) => (
     <>
-      <style>{`@keyframes add-pulse{0%,100%{box-shadow:0 0 0 0 rgba(153,27,27,0.7)}50%{box-shadow:0 0 0 10px rgba(153,27,27,0)}}`}</style>
-      <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)':'#991B1B', border:`1px solid ${disabled?'rgba(255,255,255,0.08)':'rgba(248,113,113,0.3)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)':'#fff', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px', animation: !disabled ? 'add-pulse 1.8s ease-out infinite' : 'none' }}>{label || '＋ 追加する'}</button>
+      <style>{`@keyframes add-pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.7);transform:scale(1)}50%{box-shadow:0 0 0 12px rgba(16,185,129,0);transform:scale(1.02)}}`}</style>
+      <button onClick={onClick} disabled={disabled} style={{ width:'100%', padding:'13px', background: disabled?'rgba(255,255,255,0.05)': pulse ? 'linear-gradient(135deg,#10B981,#059669)' : '#991B1B', border:`1px solid ${disabled?'rgba(255,255,255,0.08)': pulse ? 'rgba(16,185,129,0.5)' : 'rgba(248,113,113,0.3)'}`, borderRadius:'10px', color: disabled?'rgba(255,255,255,0.2)':'#fff', fontSize:'13px', fontWeight:'700', cursor: disabled?'not-allowed':'pointer', marginTop:'8px', animation: pulse ? 'add-pulse 1.5s ease-out infinite' : 'none' }}>{label || '＋ 追加する'}</button>
     </>
   );
 
-  const SectionLabel = ({ ja, en }) => (
+  const SectionLabel = ({ ja, en, pending }) => (
     <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'8px' }}>
       <span style={{ fontSize:'10px', fontWeight:'700', color:'#1C1917', textTransform:'uppercase', letterSpacing:'0.08em' }}>{ja} <span style={{color:'#999'}}>/ {en}</span></span>
       <span style={{ flex:1, height:'1px', background:'#E8E8E8' }} />
+      {pending && (
+        <span style={{ fontSize:9, fontWeight:700, padding:'2px 8px', background:'rgba(245,158,11,0.15)', color:'#B45309', border:'1px solid rgba(245,158,11,0.4)', borderRadius:4, animation:'pending-blink 1.5s ease-in-out infinite' }}>⚠ 未追加あり</span>
+      )}
+      <style>{`@keyframes pending-blink{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
     </div>
   );
 
@@ -2799,7 +2803,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           </div>
 
           {/* 自社人工 */}
-          <SectionLabel ja="自社人工" en="In-House Labor" />
+          <SectionLabel ja="自社人工" en="In-House Labor" pending={!!wForm.name.trim()} />
           {workDetails.inHouseWorkers.map((w,i)=>(
             <ItemCard key={i}
               avatarBg={`${shiftColor(w.shift)}20`} avatarColor={shiftColor(w.shift)}
@@ -2850,7 +2854,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {workDetails.inHouseWorkers.length>0 && <SubTotal label="自社人工" value={workDetails.inHouseWorkers.reduce((s,w)=>s+w.amount,0)} />}
 
           {/* 外注人工 */}
-          <SectionLabel ja="外注人工" en="Outsourcing" />
+          <SectionLabel ja="外注人工" en="Outsourcing" pending={!!(oForm.company.trim() && parseFloat(oForm.count) > 0)} />
           {isEditMode && workDetails.outsourcingLabor.length > 0 && (
             <button onClick={handleSave} disabled={isSaving}
               style={{width:'100%',padding:'13px',background:'rgba(34,197,94,0.25)',border:'1.5px solid rgba(34,197,94,0.5)',borderRadius:10,color:'#4ade80',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:10,fontFamily:'inherit'}}>
@@ -2945,14 +2949,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
             </div>
             {oForm.count && <div style={{textAlign:'right',fontSize:'12px',color:'#60a5fa',fontWeight:'600',marginBottom:'8px'}}>¥{formatCurrency(parseFloat(oForm.count||0)*(oForm.shift==='nighttime'?unitPrices.outsourcingNighttime:unitPrices.outsourcingDaytime))}</div>}
-            <AddBtn onClick={addOutsource} disabled={!oForm.company.trim()||!oForm.count} />
+            <AddBtn onClick={addOutsource} disabled={!oForm.company.trim()||!oForm.count} pulse={!!(oForm.company.trim() && parseFloat(oForm.count) > 0)} />
           </div>
           {workDetails.outsourcingLabor.length>0 && <SubTotal label="外注人工" value={workDetails.outsourcingLabor.reduce((s,o)=>s+o.amount,0)} />}
 
           {/* ★ 車両セクションは産廃側で入力するため Step2 からは削除 */}
 
           {/* 重機 */}
-          <SectionLabel ja="重機" en="Machinery" />
+          <SectionLabel ja="重機" en="Machinery" pending={!!mForm.type} />
           {workDetails.machinery.map((m,i)=>(
             <ItemCard key={i}
               avatarBg="rgba(99,102,241,0.12)" avatarColor="#818cf8"
@@ -2977,12 +2981,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               <div><label style={inpLbl}>単価 <span style={{color:'rgba(255,255,255,0.3)',fontSize:9}}>(任意)</span></label><input type="number" value={mForm.price} onChange={e=>setMForm({...mForm,price:e.target.value})} placeholder="0" style={inpTxt} /></div>
             </div>
-            <AddBtn onClick={addMachinery} disabled={!mForm.type} />
+            <AddBtn onClick={addMachinery} disabled={!mForm.type} pulse={!!mForm.type} />
           </div>
           {workDetails.machinery.length>0 && <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />}
 
           {/* 経費 */}
-          <SectionLabel ja="経費" en="Expenses" />
+          <SectionLabel ja="経費" en="Expenses" pending={!!(workDetails._expName||'').trim()} />
           {(workDetails.dailyExpenses||[]).map((e,i)=>{
             const isEditing = editingExpIdx===i;
             return (
@@ -3038,7 +3042,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               } else {
                 setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt}],_expName:'',_expAmt:''});
               }
-            }} disabled={!(workDetails._expName||'').trim()} />
+            }} disabled={!(workDetails._expName||'').trim()} pulse={!!(workDetails._expName||'').trim()} />
           </div>
           {(workDetails.dailyExpenses||[]).length>0 && <SubTotal label="経費" value={(workDetails.dailyExpenses||[]).reduce((s,e)=>s+(e.amount||0),0)} />}
 
@@ -3053,7 +3057,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.45)', marginBottom:'14px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 (4タブ統合) */}
-          <SectionLabel ja="産廃・スクラップ" en="Waste & Scrap" />
+          <SectionLabel ja="産廃・スクラップ" en="Waste & Scrap" pending={!!((wasteForm.type && wasteForm.disposal) || wasteForm.workerVType || (scrapForm && scrapForm.buyer && parseFloat(scrapForm.qty) > 0))} />
 
           {/* 入力済みリスト */}
           {editingWasteIdx === null && wasteItems.length > 0 && (
@@ -3307,7 +3311,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9,color:'#aaa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
                 </div>
               ) : (
-                <AddBtn onClick={handleAddByTab} disabled={!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || wasteForm.workerVType)} />
+                <AddBtn onClick={handleAddByTab} disabled={!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || wasteForm.workerVType)} pulse={!!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || wasteForm.workerVType)} />
               )}
             </div>
             );
@@ -3469,7 +3473,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9,color:'#aaa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
                   </div>
                 ) : (
-                  <AddBtn onClick={handleAddByTab} disabled={!isFormValid} />
+                  <AddBtn onClick={handleAddByTab} disabled={!isFormValid} pulse={isFormValid} />
                 );
               })()}
             </div>
@@ -3630,7 +3634,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9,color:'#aaa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
                   </div>
                 ) : (
-                  <AddBtn onClick={handleAddByTab} disabled={!isFormValid} />
+                  <AddBtn onClick={handleAddByTab} disabled={!isFormValid} pulse={isFormValid} />
                 );
               })()}
             </div>

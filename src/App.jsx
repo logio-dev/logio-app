@@ -2450,7 +2450,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       quantity: isToolMode ? 0 : qty,
       unit: wasteForm.unit, unitPrice: 0,
       amount: isToolMode ? 0 : (isRevenue ? -Math.abs(price) : price),
-      manifestNumber: isToolMode ? '-' : (isRevenue ? '-' : (wasteForm.manifest||'')),
+      manifestNumber: isToolMode ? '' : (isRevenue ? '-' : (wasteForm.manifest||'')),
       haisha:'', haishiAmount:0,
       workerName:wasteForm.workerName||'',
       workerVType:wasteForm.workerVType||'',
@@ -4994,9 +4994,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           // ★ 優先順位: 環境課配車行 > ワイエム配車行 > 通常産廃
                           const w = envW || extW || normW;
                           // ★ isScrap判定: manifestNumber==='-' または amount<0 または isScrapフラグ
-                          const isScrapRow = w && (w.manifestNumber==='-' || (w.amount||0) < 0 || w.isScrap === true);
-                          // ★ 道具車行の判定
+                          // ★ 道具車行の判定(先に判定)
                           const isToolRow = w && (w.isToolVehicle === true || w.kind === 'tool' || (w.material === '道具車' && (!w.amount || w.amount === 0) && (!w.quantity || w.quantity === 0)));
+                          // ★ スクラップ判定(道具車は除外)
+                          const isScrapRow = w && !isToolRow && ((w.amount||0) < 0 || w.isScrap === true || (w.manifestNumber==='-' && w.material !== '道具車'));
                           return (<>
                             <td className="text-[8px]">{w?.material||''}</td>
                             <td className="text-right text-[8px]" style={{whiteSpace:'nowrap'}}>{isToolRow ? '' : (w ? (w.volumeM3 ? `${w.quantity}${w.unit}/${w.volumeM3}㎥` : `${w.quantity}${w.unit}`) : '')}</td>

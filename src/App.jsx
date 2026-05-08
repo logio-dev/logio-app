@@ -4304,7 +4304,16 @@ function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
 function OrderPDFPage({ projectInfo, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    const prev = document.title;
+    const sitename = projectInfo.projectName || projectInfo.workType || '受注表';
+    const datestr = new Date().toISOString().slice(0,10);
+    document.title = `受注表_${sitename}_${datestr}`;
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => { document.title = prev; }, 500);
+    }, 100);
+  };
   const handleDownload = () => {
     // PDF保存の案内表示後に印刷ダイアログを開く
     // ブラウザの印刷ダイアログで「送信先 → PDFとして保存」を選ぶ
@@ -4328,7 +4337,12 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
         @media print {
           .no-print { display: none !important; }
           body { background: #fff !important; }
-          .order-pdf { box-shadow: none !important; }
+          .order-pdf { box-shadow: none !important; padding: 12mm !important; max-width: none !important; margin: 0 !important; }
+          @page { size: A4 portrait; margin: 0; }
+          /* A4縦サイズに収めるため全体を縮小 */
+          .order-pdf { font-size: 9px !important; }
+          .order-pdf h1 { font-size: 16px !important; }
+          .order-table th, .order-table td { padding: 3px 5px !important; font-size: 9px !important; }
         }
         .order-table { border-collapse: collapse; width: 100%; }
         .order-table th, .order-table td { border: 1px solid #555; padding: 6px 8px; font-size: 11px; }
@@ -4564,7 +4578,11 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           .no-print { display: none !important; }
           @page { size: A3 landscape; margin: 6mm; }
           .pdf-container { zoom: 0.85; }
-          .pdf-page-break { page-break-before: always; }
+          .pdf-page-break { page-break-before: always; page-break-inside: avoid; }
+          .pdf-container { page-break-inside: avoid; }
+          /* 表ヘッダーがページ越しでも繰り返されるように */
+          thead { display: table-header-group; }
+          tfoot { display: table-row-group; }
         }
       `}</style>
       <div className="no-print border-b sticky top-0 z-50" style={{ background:'#fff', borderColor:'#E5E7EB' }}>
@@ -4574,7 +4592,16 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           </button>
           <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
             <span style={{fontSize:11,color:'#9CA3AF',whiteSpace:'nowrap'}}>全{allReports.length}件</span>
-            <button onClick={() => window.print()} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#2563EB',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
+            <button onClick={() => {
+              // ★ PDFファイル名に現場名を自動反映
+              const siteName = report.siteName || report.site_name || projectInfo.projectName || '解体作業日報';
+              const today = new Date();
+              const dateStr = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+              const originalTitle = document.title;
+              document.title = `${siteName}_解体作業日報_${dateStr}`;
+              window.print();
+              setTimeout(() => { document.title = originalTitle; }, 1000);
+            }} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#2563EB',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
               <FileText className="w-4 h-4" />PDF出力
             </button>
           </div>

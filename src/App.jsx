@@ -4596,11 +4596,13 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
               // ★ PDFファイル名に現場名を自動反映
               const siteName = report.siteName || report.site_name || projectInfo.projectName || '解体作業日報';
               const today = new Date();
-              const dateStr = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+              const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
               const originalTitle = document.title;
-              document.title = `${siteName}_解体作業日報_${dateStr}`;
-              window.print();
-              setTimeout(() => { document.title = originalTitle; }, 1000);
+              document.title = `解体日報_${siteName}_${dateStr}`;
+              setTimeout(() => {
+                window.print();
+                setTimeout(() => { document.title = originalTitle; }, 500);
+              }, 100);
             }} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'#2563EB',border:'none',borderRadius:8,color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}>
               <FileText className="w-4 h-4" />PDF出力
             </button>

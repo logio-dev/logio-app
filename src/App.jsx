@@ -4338,7 +4338,7 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
           .no-print { display: none !important; }
           body { background: #fff !important; }
           .order-pdf { box-shadow: none !important; padding: 12mm !important; max-width: none !important; margin: 0 !important; }
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: A4 portrait; margin: 12mm 14mm; }
           /* A4縦サイズに収めるため全体を縮小 */
           .order-pdf { font-size: 9px !important; }
           .order-pdf h1 { font-size: 16px !important; }
@@ -4576,7 +4576,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
         .result-table td { color: #111827; text-align: right; background: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 90px; }
         @media print {
           .no-print { display: none !important; }
-          @page { size: A3 landscape; margin: 6mm; }
+          @page { size: A3 landscape; margin: 10mm 12mm; }
           .pdf-container { zoom: 0.85; }
           .pdf-page-break { page-break-before: always; page-break-inside: avoid; }
           .pdf-container { page-break-inside: avoid; }

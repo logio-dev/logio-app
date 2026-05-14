@@ -261,28 +261,37 @@ const getDayOfWeek = (dateStr) => {
 //   - scrapItems[]:      workerVType + workerVNumber + vehicleAmount
 // キーは "車種|車番"。車種だけ・車番だけのときも区別できるように両方使う。
 // 車種が空のものは集計対象外(車両費0)。
+// ★ さらに「isSwap === true」の車両は車両費を計上しない(乗り換え対応)
+// ★ 自動検出: 同じ担当者(workerName)が複数車両を使用する場合、2台目以降を自動的に乗り換えとみなす
 function getReportVehicleCost(report) {
   if (!report) return 0;
   const map = new Map(); // key -> amount
+  const workerVehicleCount = new Map(); // workerName -> count (担当者ごとの車両使用台数)
   const wd = report.workDetails || {};
   (wd.vehicles || []).forEach(v => {
     if (!v || !v.type) return;
+    if (v.isSwap === true) return; // ★ 明示的に乗り換えなら除外
     const key = `${v.type}|${v.number || ''}`;
     const amt = v.amount || 0;
     if (!map.has(key) || map.get(key) < amt) map.set(key, amt);
   });
-  (report.wasteItems || []).forEach(w => {
-    if (!w || !w.workerVType) return;
-    const key = `${w.workerVType}|${w.workerVNumber || ''}`;
-    const amt = w.vehicleAmount || 0;
+  // wasteItems/scrapItems は担当者でグルーピング
+  const processWorkerItem = (item, amountKey) => {
+    if (!item || !item.workerVType) return;
+    if (item.isSwap === true) return; // ★ 明示的に乗り換えなら除外
+    const workerName = item.workerName || '';
+    // ★ 自動検出: 同じ担当者が既に車両を使用している場合、2台目以降は除外
+    if (workerName) {
+      const count = workerVehicleCount.get(workerName) || 0;
+      if (count >= 1) return; // 2台目以降は車両費計上しない
+      workerVehicleCount.set(workerName, count + 1);
+    }
+    const key = `${item.workerVType}|${item.workerVNumber || ''}`;
+    const amt = item[amountKey] || 0;
     if (!map.has(key) || map.get(key) < amt) map.set(key, amt);
-  });
-  (report.scrapItems || []).forEach(sc => {
-    if (!sc || !sc.workerVType) return;
-    const key = `${sc.workerVType}|${sc.workerVNumber || ''}`;
-    const amt = sc.vehicleAmount || 0;
-    if (!map.has(key) || map.get(key) < amt) map.set(key, amt);
-  });
+  };
+  (report.wasteItems || []).forEach(w => processWorkerItem(w, 'vehicleAmount'));
+  (report.scrapItems || []).forEach(sc => processWorkerItem(sc, 'vehicleAmount'));
   let total = 0;
   map.forEach(v => { total += v; });
   return total;
@@ -290,6 +299,41 @@ function getReportVehicleCost(report) {
 // 複数日報の合計
 function getReportsVehicleCost(reports) {
   return (reports || []).reduce((s, r) => s + getReportVehicleCost(r), 0);
+}
+
+// ★ 乗り換え判定ヘルパー: wasteItems と scrapItems を結合した順で
+// 同じ workerName の2回目以降を「自動乗り換え」として返す
+// 返り値: Map<index, true> (index は結合配列内のインデックス)
+function getAutoSwapIndices(wasteItems, scrapItems) {
+  const swapSet = new Set();
+  const seen = new Set();
+  const all = [...(wasteItems||[]).map(w=>({...w,_kind:'waste'})), ...(scrapItems||[]).map(s=>({...s,_kind:'scrap'}))];
+  all.forEach((item, idx) => {
+    if (!item || !item.workerName || !item.workerVType) return;
+    if (item.isSwap === true) { swapSet.add(`${item._kind}:${idx}`); return; }
+    const key = item.workerName;
+    if (seen.has(key)) {
+      swapSet.add(`${item._kind}:${idx}`);
+    } else {
+      seen.add(key);
+    }
+  });
+  return swapSet;
+}
+// 単一の wasteItems / scrapItems 配列内で、index ベースの乗り換えセットを返す
+function getAutoSwapIndicesForArray(items) {
+  const swapSet = new Set();
+  const seen = new Set();
+  (items||[]).forEach((item, idx) => {
+    if (!item || !item.workerName || !item.workerVType) return;
+    if (item.isSwap === true) { swapSet.add(idx); return; }
+    if (seen.has(item.workerName)) {
+      swapSet.add(idx);
+    } else {
+      seen.add(item.workerName);
+    }
+  });
+  return swapSet;
 }
 
 // ========== ブルーglow矢印コンポーネント ==========
@@ -2102,8 +2146,30 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [oForm, setOForm] = useState({ company:'', count:'', shift:'daytime', start:'', end:'' });
   const [vForm, setVForm] = useState({ type:'', number:'' });
   const [mForm, setMForm] = useState({ type:'', price:'' });
-  const [wasteForm, setWasteForm] = useState({ mode:'cost', type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'', workerName:'', workerVType:'', workerVNumber:'', volumeM3:'' });
-  const [scrapForm, setScrapForm] = useState({ type:'金属くず', buyer:'', qty:'', unit:'kg', price:'', manifest:'', volumeM3:'', workerName:'', workerVType:'', workerVNumber:'' });
+  const [wasteForm, setWasteForm] = useState({ mode:'cost', type:'', disposal:'', qty:'', unit:'㎥', price:'', manifest:'', haisha:'', driver:'', vType:'', vNumber:'', haishiShift:'', haishiOverride:false, haishiPrice:'', workerName:'', workerVType:'', workerVNumber:'', volumeM3:'', isSwap:false });
+  const [scrapForm, setScrapForm] = useState({ type:'金属くず', buyer:'', qty:'', unit:'kg', price:'', manifest:'', volumeM3:'', workerName:'', workerVType:'', workerVNumber:'', isSwap:false });
+
+  // ★ 自動検出: wasteForm.workerName と scrapForm.workerName が変わったら、既存リストに同名がいるか確認して自動でisSwap切り替え
+  useEffect(() => {
+    const name = (wasteForm.workerName||'').trim();
+    if (!name || !wasteForm.workerVType) return;
+    // 既存wasteItems・scrapItemsに同じ担当者の車両アイテムがあるか確認 (編集中アイテムは除外)
+    const isDup = wasteItems.some((w, i) => i !== editingWasteIdx && w.workerName === name && w.workerVType)
+               || scrapItems.some((s, i) => i !== editingScrapIdx && s.workerName === name && s.workerVType);
+    if (isDup !== (wasteForm.isSwap === true)) {
+      setWasteForm(prev => ({...prev, isSwap: isDup}));
+    }
+  }, [wasteForm.workerName, wasteForm.workerVType, wasteItems, scrapItems, editingWasteIdx, editingScrapIdx]);
+
+  useEffect(() => {
+    const name = (scrapForm.workerName||'').trim();
+    if (!name || !scrapForm.workerVType) return;
+    const isDup = wasteItems.some((w, i) => w.workerName === name && w.workerVType)
+               || scrapItems.some((s, i) => i !== editingScrapIdx && s.workerName === name && s.workerVType);
+    if (isDup !== (scrapForm.isSwap === true)) {
+      setScrapForm(prev => ({...prev, isSwap: isDup}));
+    }
+  }, [scrapForm.workerName, scrapForm.workerVType, wasteItems, scrapItems, editingScrapIdx]);
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
   // ★ 産廃入力の自社運搬タブ内の部署タブ (k1=工事1課 / k2=環境課)
@@ -2393,7 +2459,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     if (!scrapForm.type||!scrapForm.buyer||!scrapForm.qty) return;
     const qty=parseFloat(scrapForm.qty), total=parseFloat(scrapForm.price)||0;
     const scrapVehicleAmount = VEHICLE_UNIT_PRICES[scrapForm.workerVType] || 0;
-    const newItem = {type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total,manifestNumber:scrapForm.manifest||'',volumeM3:scrapForm.volumeM3?parseFloat(scrapForm.volumeM3):null,workerName:scrapForm.workerName||'',workerVType:scrapForm.workerVType||'',workerVNumber:scrapForm.workerVNumber||'',vehicleAmount:scrapVehicleAmount};
+    const newItem = {type:scrapForm.type,buyer:scrapForm.buyer,quantity:qty,unit:scrapForm.unit,unitPrice:0,amount:-total,manifestNumber:scrapForm.manifest||'',volumeM3:scrapForm.volumeM3?parseFloat(scrapForm.volumeM3):null,workerName:scrapForm.workerName||'',workerVType:scrapForm.workerVType||'',workerVNumber:scrapForm.workerVNumber||'',vehicleAmount:scrapVehicleAmount,isSwap:scrapForm.isSwap===true};
     if (editingScrapIdx !== null) {
       const items = [...scrapItems];
       items[editingScrapIdx] = newItem;
@@ -2457,6 +2523,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       workerVNumber:wasteForm.workerVNumber||'',
       vehicleAmount:workerVehicleAmount,
       volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
+      isSwap: wasteForm.isSwap === true,
     };
     if (editingWasteIdx !== null) {
       const items = [...wasteItems]; items[editingWasteIdx] = newItem;
@@ -2464,7 +2531,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setWasteItems([...wasteItems, newItem]);
     }
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
+    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:'',isSwap:false}));
   };
   // 環境課配車 (運転者+車両+シフト + 産廃情報)
   const addEnvWaste = () => {
@@ -2602,6 +2669,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       haishiShift:w.haishiShift||'', haishiOverride:false, haishiPrice:'',
       workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'',
       volumeM3: w.volumeM3 ? String(w.volumeM3) : '',
+      isSwap: w.isSwap === true,
     });
   };
   // ★ 編集キャンセル
@@ -3082,11 +3150,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px'}}>
                   <div style={{width:36,height:36,borderRadius:9,background:tagBg,color:tagColor,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0}}>{(w.material||'').slice(0,2)}</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2,flexWrap:'wrap'}}>
                       <span style={{fontSize:9,fontWeight:700,color:tagColor,background:tagBg,padding:'1px 6px',borderRadius:4}}>{tagLabel}</span>
+                      {w.isSwap && <span style={{fontSize:9,fontWeight:700,color:'#7C3AED',background:'rgba(124,58,237,0.15)',border:'1px solid rgba(124,58,237,0.4)',padding:'1px 6px',borderRadius:4}}>🔄 乗換</span>}
                       <div style={{fontSize:13,fontWeight:700,color:'#1C1917'}}>{w.material} → {w.disposalSite}</div>
                     </div>
-                    <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　{w.manifestNumber&&w.manifestNumber!=='-'?`マニ:${w.manifestNumber}`:''}{k==='env'&&w.driver?`　運転:${w.driver}`:''}{w.haishiAmount?`　配車:¥${formatCurrency(w.haishiAmount)}`:''}</div>
+                    <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　{w.manifestNumber&&w.manifestNumber!=='-'?`マニ:${w.manifestNumber}`:''}{k==='env'&&w.driver?`　運転:${w.driver}`:''}{w.haishiAmount?`　配車:¥${formatCurrency(w.haishiAmount)}`:''}{w.workerVType?`　車両:${w.workerVType}${w.workerVNumber?'/'+w.workerVNumber:''}${w.isSwap?' (乗換)':''}`:''}</div>
                   </div>
                   {editingWasteIdx===i
                     ? <span style={{fontSize:9,background:'rgba(245,158,11,0.2)',color:'#B45309',border:'1px solid rgba(245,158,11,0.4)',borderRadius:4,padding:'2px 7px',flexShrink:0,fontWeight:700}}>編集中</span>
@@ -3298,6 +3367,16 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   </div>
                 </div>
                 {wasteForm.workerVType && (
+                  <div style={{marginTop:8,padding:'8px 10px',background:wasteForm.isSwap?'rgba(124,58,237,0.15)':'rgba(255,255,255,0.04)',border:`1px solid ${wasteForm.isSwap?'rgba(124,58,237,0.5)':'rgba(255,255,255,0.12)'}`,borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}
+                    onClick={()=>setWasteForm({...wasteForm,isSwap:!wasteForm.isSwap})}>
+                    <div style={{width:18,height:18,border:`2px solid ${wasteForm.isSwap?'#7C3AED':'rgba(255,255,255,0.4)'}`,borderRadius:4,background:wasteForm.isSwap?'#7C3AED':'transparent',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:12,fontWeight:700,flexShrink:0}}>{wasteForm.isSwap?'✓':''}</div>
+                    <div style={{flex:1,fontSize:11,fontWeight:600,color:wasteForm.isSwap?'#C4B5FD':'rgba(255,255,255,0.7)'}}>
+                      🔄 乗り換え車両(車両費は計上しない)
+                    </div>
+                    {wasteForm.isSwap && <span style={{fontSize:11,fontWeight:700,color:'#C4B5FD'}}>¥0</span>}
+                  </div>
+                )}
+                {wasteForm.workerVType && !wasteForm.isSwap && (
                   <div style={{marginTop:6,fontSize:11,color:'#3b82f6',textAlign:'right',fontWeight:700}}>
                     車両費: ¥{formatCurrency(VEHICLE_UNIT_PRICES[wasteForm.workerVType]||0)}
                   </div>
@@ -4807,9 +4886,26 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 const oldScrap = waste.filter(w=>kindOf(w)==='scrap');
                 const scrapInWaste = [...selfScrap, ...oldScrap]
                   .map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, volumeM3:w.volumeM3||null, amount:Math.abs(w.amount), disposalSite:w.disposalSite, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'' }));
+                // ★ 乗り換え判定: wasteItems と scrapItems を結合した順で、同担当者の2回目以降を「乗り換え」とマーク
+                const swapMap = new Map(); // (kind, idx) -> isSwap
+                {
+                  const seen = new Set();
+                  waste.forEach((w, i) => {
+                    if (!w || !w.workerName || !w.workerVType) return;
+                    if (w.isSwap === true) { swapMap.set(`waste:${i}`, true); return; }
+                    if (seen.has(w.workerName)) swapMap.set(`waste:${i}`, true);
+                    else seen.add(w.workerName);
+                  });
+                  scrap.forEach((s, i) => {
+                    if (!s || !s.workerName || !s.workerVType) return;
+                    if (s.isSwap === true) { swapMap.set(`scrap:${i}`, true); return; }
+                    if (seen.has(s.workerName)) swapMap.set(`scrap:${i}`, true);
+                    else seen.add(s.workerName);
+                  });
+                }
                 const scrapRows = [
                   ...scrapInWaste,
-                  ...scrap.map(s=>({ material:s.type, quantity:s.quantity, unit:s.unit, volumeM3:s.volumeM3||null, amount:Math.abs(s.amount), disposalSite:s.buyer, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:s.workerName||'', workerVType:s.workerVType||'', workerVNumber:s.workerVNumber||'' })),
+                  ...scrap.map((s, idx)=>({ material:s.type, quantity:s.quantity, unit:s.unit, volumeM3:s.volumeM3||null, amount:Math.abs(s.amount), disposalSite:s.buyer, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:s.workerName||'', workerVType:s.workerVType||'', workerVNumber:s.workerVNumber||'', isSwap: swapMap.get(`scrap:${idx}`)||false })),
                 ];
 
                 // 行データ統合：自社人工、外注、車両、重機、産廃を行単位で対応
@@ -4818,7 +4914,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 // ワイエム配車産廃行
                 const extWasteRows = extWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:true, vType:'', vNumber:'', isScrap: isScrap(w) }));
                 // 通常産廃＋スクラップ
-                const rawNormWasteRows = [...normWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'' })), ...scrapRows];
+                const rawNormWasteRows = [...normWaste.map((w, _wIdx)=>{
+                  const origIdx = waste.indexOf(w);
+                  return { material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'', isSwap: swapMap.get(`waste:${origIdx}`)||false };
+                }), ...scrapRows];
                 // ★ 担当者(workerName)ごとにグループ化して並び替え
                 //   workersの登場順に従って、同じ担当者の産廃・スクラップを連続して並べる
                 //   → 同じ担当者の2件目以降は表示時に「〃」になる
@@ -4998,9 +5097,11 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             showT = '〃';
                             showN = '〃';
                           }
+                          // ★ 乗り換え判定: wRow2 が isSwap なら車番に★を追加
+                          const isSwapRow = wRow2?.isSwap === true;
                           return (<>
                             <td className="text-center text-[8px]">{showT}</td>
-                            <td className="text-center text-[8px]">{showN}</td>
+                            <td className="text-center text-[8px]">{showN}{isSwapRow && showN !== '〃' ? <span style={{color:'#7C3AED',fontWeight:700,marginLeft:1}}>★</span> : null}</td>
                           </>);
                         })()}
                         <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>

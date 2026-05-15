@@ -2120,6 +2120,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     : { workCategory: '', workContent: '', inHouseWorkers: [], outsourcingLabor: [], vehicles: [], machinery: [], envItems: [], extItems: [], costItems: [], dailyExpenses: [] }
   );
   // ★ 編集モード時、旧scrapItems(金属売上)を wasteItems にマージして表示
+  // ★ さらに同じ担当者の2件目以降を自動的に isSwap: true に再判定
   const [wasteItems, setWasteItems] = useState(() => {
     if (!isEditMode) return [];
     const w = editReport.wasteItems || [];
@@ -2132,7 +2133,21 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       kind: 'scrap',
       manifestNumber: sc.manifestNumber || '-',
     }));
-    return [...w, ...migrated];
+    const merged = [...w, ...migrated];
+    // ★ isSwap を再判定: 同担当者の1台目はfalse、2台目以降はtrue
+    const seen = new Set();
+    return merged.map(item => {
+      if (!item || !item.workerName || !item.workerVType) {
+        return {...item, isSwap: false};
+      }
+      const name = item.workerName;
+      if (seen.has(name)) {
+        return {...item, isSwap: true};
+      } else {
+        seen.add(name);
+        return {...item, isSwap: false};
+      }
+    });
   });
   const [scrapItems, setScrapItems] = useState([]); // ★ マージ後は空に(保存時に分離)
   const [editingWasteIdx, setEditingWasteIdx] = useState(null);
@@ -2522,6 +2537,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     const qty = parseFloat(wasteForm.qty)||0, price = parseFloat(wasteForm.price)||0;
     const workerVehicleAmount = VEHICLE_UNIT_PRICES[wasteForm.workerVType] || 0;
     const isRevenue = (wasteModeByTab[wasteTab]||'cost') === 'revenue';
+
+    // ★ isSwap を保存時に正しく判定: 編集対象/自分自身を除外して同担当者を探す
+    const computeIsSwap = () => {
+      const workerName = (wasteForm.workerName||'').trim();
+      if (!workerName || !wasteForm.workerVType) return false;
+      // 編集中の場合、編集対象のindexを除外
+      const existingWaste = wasteItems.some((w, i) => i !== editingWasteIdx && w.workerName === workerName && w.workerVType);
+      const existingScrap = scrapItems.some((s, i) => i !== editingScrapIdx && s.workerName === workerName && s.workerVType);
+      return existingWaste || existingScrap;
+    };
+    const computedIsSwap = computeIsSwap();
+
     const newItem = {
       kind: isToolMode ? 'tool' : 'self',
       isScrap: isRevenue,
@@ -2538,7 +2565,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       workerVNumber:wasteForm.workerVNumber||'',
       vehicleAmount:workerVehicleAmount,
       volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
-      isSwap: wasteForm.isSwap === true,
+      isSwap: computedIsSwap, // ★ 自動判定の結果を保存
     };
     if (editingWasteIdx !== null) {
       const items = [...wasteItems]; items[editingWasteIdx] = newItem;

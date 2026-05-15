@@ -276,15 +276,23 @@ function getReportVehicleCost(report) {
     if (!map.has(key) || map.get(key) < amt) map.set(key, amt);
   });
   // wasteItems/scrapItems は担当者でグルーピング
+  // ★ 同担当者の「1台目」は isSwap フラグに関わらず必ず計上(誤データ対策)
+  // ★ 2台目以降は isSwap=true or 自動判定で除外
   const processWorkerItem = (item, amountKey) => {
     if (!item || !item.workerVType) return;
-    if (item.isSwap === true) return; // ★ 明示的に乗り換えなら除外
     const workerName = item.workerName || '';
-    // ★ 自動検出: 同じ担当者が既に車両を使用している場合、2台目以降は除外
     if (workerName) {
       const count = workerVehicleCount.get(workerName) || 0;
-      if (count >= 1) return; // 2台目以降は車両費計上しない
+      if (count >= 1) return; // 2台目以降は車両費計上しない(自動乗り換え)
+      // 1台目だが明示的に isSwap=true なら除外
+      if (item.isSwap === true) {
+        workerVehicleCount.set(workerName, count + 1); // カウントは進める
+        return;
+      }
       workerVehicleCount.set(workerName, count + 1);
+    } else {
+      // 担当者なしの場合は isSwap のみで判定
+      if (item.isSwap === true) return;
     }
     const key = `${item.workerVType}|${item.workerVNumber || ''}`;
     const amt = item[amountKey] || 0;
@@ -2152,7 +2160,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   // ★ 自動検出: wasteForm.workerName と scrapForm.workerName が変わったら、既存リストに同名がいるか確認して自動でisSwap切り替え
   useEffect(() => {
     const name = (wasteForm.workerName||'').trim();
-    if (!name || !wasteForm.workerVType) return;
+    // 担当者・車両が未入力なら isSwap は false に戻す
+    if (!name || !wasteForm.workerVType) {
+      if (wasteForm.isSwap === true) setWasteForm(prev => ({...prev, isSwap: false}));
+      return;
+    }
     // 既存wasteItems・scrapItemsに同じ担当者の車両アイテムがあるか確認 (編集中アイテムは除外)
     const isDup = wasteItems.some((w, i) => i !== editingWasteIdx && w.workerName === name && w.workerVType)
                || scrapItems.some((s, i) => i !== editingScrapIdx && s.workerName === name && s.workerVType);
@@ -2163,7 +2175,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   useEffect(() => {
     const name = (scrapForm.workerName||'').trim();
-    if (!name || !scrapForm.workerVType) return;
+    if (!name || !scrapForm.workerVType) {
+      if (scrapForm.isSwap === true) setScrapForm(prev => ({...prev, isSwap: false}));
+      return;
+    }
     const isDup = wasteItems.some((w, i) => w.workerName === name && w.workerVType)
                || scrapItems.some((s, i) => i !== editingScrapIdx && s.workerName === name && s.workerVType);
     if (isDup !== (scrapForm.isSwap === true)) {

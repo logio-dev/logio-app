@@ -2549,10 +2549,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     };
     const computedIsSwap = computeIsSwap();
 
+    const isOutsourceVehicle = wasteSelfDept === 'out';
     const newItem = {
       kind: isToolMode ? 'tool' : 'self',
       isScrap: isRevenue,
       isToolVehicle: isToolMode, // ★ 道具車フラグ
+      isOutsource: isOutsourceVehicle, // ★ 外注車フラグ (個人名なし、車番手入力)
       material: isToolMode ? '道具車' : wasteForm.type,
       disposalSite: isToolMode ? '' : wasteForm.disposal,
       quantity: isToolMode ? 0 : qty,
@@ -2560,12 +2562,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       amount: isToolMode ? 0 : (isRevenue ? -Math.abs(price) : price),
       manifestNumber: isToolMode ? '' : (isRevenue ? '-' : (wasteForm.manifest||'')),
       haisha:'', haishiAmount:0,
-      workerName:wasteForm.workerName||'',
+      workerName: isOutsourceVehicle ? '' : (wasteForm.workerName||''),
       workerVType:wasteForm.workerVType||'',
       workerVNumber:wasteForm.workerVNumber||'',
       vehicleAmount:workerVehicleAmount,
       volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
-      isSwap: computedIsSwap, // ★ 自動判定の結果を保存
+      isSwap: isOutsourceVehicle ? false : computedIsSwap, // ★ 外注は乗り換え判定対象外
     };
     if (editingWasteIdx !== null) {
       const items = [...wasteItems]; items[editingWasteIdx] = newItem;
@@ -2700,6 +2702,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     setWasteTab(kind); // 配車種別タブを開く (scrap でもタブは self/env/ext のいずれか)
     // ★ 該当タブの mode を scrap に応じて設定
     setWasteModeByTab(prev => ({...prev, [kind]: scrap ? 'revenue' : 'cost'}));
+    // ★ 自社運搬の部署タブを復元 (外注車の場合は 'out')
+    if (kind === 'self' || kind === 'tool') {
+      if (w.isOutsource === true) setWasteSelfDept('out');
+    }
     setWasteForm({
       mode: scrap ? 'revenue' : 'cost',
       type:w.material, disposal:w.disposalSite,
@@ -3357,21 +3363,34 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               {/* 担当者 + 車両 (部署タブ + チップ) */}
               <div style={{padding:12,borderRadius:10,background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',marginBottom:10}}>
                 <label style={{...inpLbl,marginBottom:8}}>担当者 / 車両 <span style={{color:'rgba(255,255,255,0.3)',fontSize:9,fontWeight:400}}>(任意)</span></label>
-                {/* 部署タブ */}
+                {/* 部署タブ (工事1課 / 環境課 / 外注車) */}
                 <div style={{display:'flex',gap:5,marginBottom:8}}>
-                  {[['k1','工事1課'],['k2','環境課']].map(([v,label])=>(
-                    <button key={v} onClick={()=>setWasteSelfDept(v)}
+                  {[['k1','工事1課'],['k2','環境課'],['out','外注車']].map(([v,label])=>(
+                    <button key={v} onClick={()=>{
+                      setWasteSelfDept(v);
+                      if (v === 'out') {
+                        setWasteForm(prev=>({...prev,workerName:'',workerVNumber:''}));
+                      } else {
+                        setWasteForm(prev=>({...prev,workerVNumber:''}));
+                      }
+                    }}
                       style={{padding:'4px 12px',borderRadius:6,border:`1px solid ${wasteSelfDept===v?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteSelfDept===v?accentDark:'rgba(255,255,255,0.08)',color:wasteSelfDept===v?'#1F1F1F':accentDark,fontSize:11,fontWeight:wasteSelfDept===v?600:500,cursor:'pointer',fontFamily:'inherit'}}>{label}</button>
                   ))}
                 </div>
-                {/* 担当者チップ(フルネーム) */}
-                <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
-                  {allWorkers.map(n=>(
-                    <button key={n} onClick={()=>setWasteForm({...wasteForm,workerName:n})}
-                      style={{padding:'4px 9px',borderRadius:6,border:`1px solid ${wasteForm.workerName===n?accentDark:'rgba(255,255,255,0.1)'}`,background:wasteForm.workerName===n?accentDark:'rgba(255,255,255,0.06)',color:wasteForm.workerName===n?'#1F1F1F':'rgba(255,255,255,0.8)',fontSize:11,fontWeight:wasteForm.workerName===n?600:400,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
-                  ))}
-                </div>
-                <input type="text" value={wasteForm.workerName} onChange={e=>setWasteForm({...wasteForm,workerName:e.target.value})} placeholder="マスタにない名前は直接入力" style={{...inpTxt,marginBottom:8,fontSize:12}}/>
+                {/* 担当者チップ - 外注車時は非表示 */}
+                {wasteSelfDept !== 'out' ? (<>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                    {allWorkers.map(n=>(
+                      <button key={n} onClick={()=>setWasteForm({...wasteForm,workerName:n})}
+                        style={{padding:'4px 9px',borderRadius:6,border:`1px solid ${wasteForm.workerName===n?accentDark:'rgba(255,255,255,0.1)'}`,background:wasteForm.workerName===n?accentDark:'rgba(255,255,255,0.06)',color:wasteForm.workerName===n?'#1F1F1F':'rgba(255,255,255,0.8)',fontSize:11,fontWeight:wasteForm.workerName===n?600:400,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
+                    ))}
+                  </div>
+                  <input type="text" value={wasteForm.workerName} onChange={e=>setWasteForm({...wasteForm,workerName:e.target.value})} placeholder="マスタにない名前は直接入力" style={{...inpTxt,marginBottom:8,fontSize:12}}/>
+                </>) : (
+                  <div style={{padding:'8px 10px',background:'rgba(251,191,36,0.08)',border:'1px dashed rgba(251,191,36,0.35)',borderRadius:8,marginBottom:8,fontSize:11,color:'rgba(255,255,255,0.7)',lineHeight:1.4}}>
+                    外注車：個人名は記録しません。車種と車番のみ入力してください。
+                  </div>
+                )}
                 <div style={grid2}>
                   <div>
                     <label style={inpLbl}>車種</label>
@@ -3381,8 +3400,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     </select>
                   </div>
                   <div>
-                    <label style={inpLbl}>車番</label>
-                    {(() => {
+                    <label style={inpLbl}>車番{wasteSelfDept==='out' && <span style={{color:'rgba(255,255,255,0.4)',fontSize:9,marginLeft:4}}>(手入力)</span>}</label>
+                    {wasteSelfDept === 'out' ? (
+                      <input type="text" value={(wasteForm.workerVNumber||'').trim()} onChange={e=>setWasteForm({...wasteForm,workerVNumber:e.target.value})} placeholder="例）奈良商事ダンプ" style={{...inpTxt,color:'#fff'}} />
+                    ) : (() => {
                       const candidates = MASTER_DATA.vehicleNumbersByType[wasteForm.workerVType] || [];
                       const inMaster = candidates.includes(wasteForm.workerVNumber);
                       const isCustom = wasteForm.workerVNumber && !inMaster;
@@ -4927,7 +4948,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 const selfScrap = waste.filter(w=>kindOf(w)==='self' && isScrap(w));
                 const oldScrap = waste.filter(w=>kindOf(w)==='scrap');
                 const scrapInWaste = [...selfScrap, ...oldScrap]
-                  .map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, volumeM3:w.volumeM3||null, amount:Math.abs(w.amount), disposalSite:w.disposalSite, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'' }));
+                  .map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, volumeM3:w.volumeM3||null, amount:Math.abs(w.amount), disposalSite:w.disposalSite, manifestNumber:'-', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'', isOutsource: w.isOutsource === true }));
                 // ★ 乗り換え判定: wasteItems と scrapItems を結合した順で、同担当者の2回目以降を「乗り換え」とマーク
                 const swapMap = new Map(); // (kind, idx) -> isSwap
                 {
@@ -4958,7 +4979,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 // 通常産廃＋スクラップ
                 const rawNormWasteRows = [...normWaste.map((w, _wIdx)=>{
                   const origIdx = waste.indexOf(w);
-                  return { material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'', isSwap: swapMap.get(`waste:${origIdx}`)||false };
+                  return { material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:false, vType:'', vNumber:'', workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'', isSwap: swapMap.get(`waste:${origIdx}`)||false, isOutsource: w.isOutsource === true, isToolVehicle: w.isToolVehicle === true || w.kind === 'tool' };
                 }), ...scrapRows];
                 // ★ 担当者(workerName)ごとにグループ化して並び替え
                 //   workersの登場順に従って、同じ担当者の産廃・スクラップを連続して並べる
@@ -4995,6 +5016,11 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   const usedWorkerIdx = new Set();
                   // 1) wasteAndScrap の並びに従って worker を配置
                   wasteAndScrap.forEach((row) => {
+                    // ★ 外注車行は自社作業員と結び付けない (空ダミーを置く)
+                    if (row.isOutsource === true) {
+                      result.push({ name: '', amount: 0, isOutsource: true });
+                      return;
+                    }
                     const wname = row.workerName;
                     if (wname) {
                       const wIdx = workers.findIndex((w, i) => !usedWorkerIdx.has(i) && w.name === wname);
@@ -5073,6 +5099,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             let nIdx = 0;
                             for(let k=0;k<idx;k++){if(!effectiveWorkers[k]?.isEnv) nIdx++;}
                             const w = wasteAndScrap[nIdx];
+                            // ★ 外注車行は「外注」と表示 (個人名は出さない)
+                            if (w?.isOutsource === true) return '外注';
                             const fromW = w?.workerName || '';
                             if (isD) return fromW || '';  // isDitto行は自社人工名は出さない(直後の同名チェックで〃に)
                             return fromW || self;
@@ -5088,9 +5116,11 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           } else {
                             displayName = currentName || (isDittoRow ? '〃' : '');
                           }
+                          // ★ 外注車行は自社人工金額を表示しない(個人名なし＝金額なし)
+                          const isOutsourceRow = wRow?.isOutsource === true;
                           return (<>
                             <td className="text-[8px]" style={isEnvRow?{color:'#374151'}:{}}>{displayName}</td>
-                            <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!isEnvRow&&!isDittoRow?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
+                            <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!isEnvRow&&!isDittoRow&&!isOutsourceRow?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
                           </>);
                         })()}
                         <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseFloat(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>

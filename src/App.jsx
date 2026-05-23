@@ -5099,8 +5099,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             let nIdx = 0;
                             for(let k=0;k<idx;k++){if(!effectiveWorkers[k]?.isEnv) nIdx++;}
                             const w = wasteAndScrap[nIdx];
-                            // ★ 外注車行は「外注」と表示 (個人名は出さない)
-                            if (w?.isOutsource === true) return '外注';
+                            // ★ 外注車行は自社人工欄に何も表示しない
+                            if (w?.isOutsource === true) return '';
                             const fromW = w?.workerName || '';
                             if (isD) return fromW || '';  // isDitto行は自社人工名は出さない(直後の同名チェックで〃に)
                             return fromW || self;

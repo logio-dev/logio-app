@@ -230,7 +230,7 @@ const MASTER_DATA = {
   disposalSites: ['入間緑化', '石坂(直行)', '石坂(積保)', 'ワイエム', 'フルハシ', 'ミダック', 'リバー', '二光産業', '木村建設', 'ウムヴェルト', 'ギプロ', '中央環境', '戸部組', '東和アークス'],
   scrapTypes: ['金属くず'],
   buyers: ['小林金属', '高橋金属', 'ナンセイスチール', '服部金属', 'サンビーム', '光田産業', '青木商店', '長沼商事'],
-  statuses: ['着工前', '進行中', '完了']
+  statuses: ['着工前・進行中', '完了']
 };
 
 const VEHICLE_UNIT_PRICES = {
@@ -774,8 +774,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const [wasteOpen, setWasteOpen] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(false);
   const [siteDropdownOpen, setSiteDropdownOpen] = useState(false);
-  // ★ 現場セレクターのタブフィルタ (all=全て / 着工前 / 進行中 / 完了)
-  const [siteFilterTab, setSiteFilterTab] = useState('進行中');
+  // ★ 現場セレクターのタブフィルタ (all=全て / 着工前・進行中 / 完了)
+  const [siteFilterTab, setSiteFilterTab] = useState('着工前・進行中');
   const [homePhotoOpen, setHomePhotoOpen] = useState(false);
   const [homePhotoUrls, setHomePhotoUrls] = useState([]);
   const [homeMemo, setHomeMemo] = useState('');
@@ -985,20 +985,19 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
               ) : (() => {
                 // タブごとのカウント
                 const countByStatus = {
-                  '着工前': sites.filter(s => s.status === '着工前').length,
-                  '進行中': sites.filter(s => s.status === '進行中' || !s.status).length,
+                  '着工前・進行中': sites.filter(s => s.status === '着工前・進行中' || s.status === '進行中' || s.status === '着工前' || !s.status).length,
                   '完了':   sites.filter(s => s.status === '完了').length,
                 };
                 // 選択中のタブでフィルタ
                 const filteredSites = sites.filter(s => {
-                  if (siteFilterTab === '進行中') return s.status === '進行中' || !s.status;
+                  if (siteFilterTab === '着工前・進行中') return s.status === '着工前・進行中' || s.status === '進行中' || s.status === '着工前' || !s.status;
                   return s.status === siteFilterTab;
                 });
                 return (
                   <>
                     {/* タブ切替 */}
                     <div style={{display:'flex',gap:2,padding:'8px 8px 6px',borderBottom:'1px solid #F0F0F0',background:'#FAFAFA'}}>
-                      {['着工前','進行中','完了'].map(tab => (
+                      {['着工前・進行中','完了'].map(tab => (
                         <button key={tab} onClick={(e) => { e.stopPropagation(); setSiteFilterTab(tab); }}
                           style={{
                             flex:1,padding:'7px 6px',borderRadius:6,border:'none',
@@ -1326,7 +1325,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   // ★ ステータスフィルタタブ
   const [statusFilter, setStatusFilter] = useState('all');
   // ★ アコーディオングループ展開state(デフォルト全グループ折りたたみ)
-  const [groupExpanded, setGroupExpanded] = useState({ '進行中': false, '着工前': false, '完了': false });
+  const [groupExpanded, setGroupExpanded] = useState({ '着工前・進行中': false, '完了': false });
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
   const handleAddSite = () => {
@@ -1432,8 +1431,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           const filtered = sites.filter(s => {
             // ステータス判定
             if (statusFilter !== 'all') {
-              if (statusFilter === '進行中') {
-                if (s.status && s.status !== '進行中') return false;
+              if (statusFilter === '着工前・進行中') {
+                if (s.status && s.status !== '着工前・進行中' && s.status !== '進行中' && s.status !== '着工前') return false;
               } else {
                 if (s.status !== statusFilter) return false;
               }
@@ -1448,15 +1447,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           let displayed, remaining;
           // displayedに「グループヘッダー」と「現場」を混在させる
           if (isAccordionMode) {
-            const grpRunning = filtered.filter(s => !s.status || s.status === '進行中');
-            const grpPre = filtered.filter(s => s.status === '着工前');
+            const grpActive = filtered.filter(s => !s.status || s.status === '着工前・進行中' || s.status === '進行中' || s.status === '着工前');
             const grpDone = filtered.filter(s => s.status === '完了');
             displayed = [];
             // ★ 全てのアイテムをdisplayedに入れて、表示状態(_visible)で管理
-            displayed.push({ _isGroup:true, key:'進行中', items:grpRunning });
-            grpRunning.forEach(s => displayed.push({ ...s, _visible: groupExpanded['進行中'], _grpKey:'進行中' }));
-            displayed.push({ _isGroup:true, key:'着工前', items:grpPre });
-            grpPre.forEach(s => displayed.push({ ...s, _visible: groupExpanded['着工前'], _grpKey:'着工前' }));
+            displayed.push({ _isGroup:true, key:'着工前・進行中', items:grpActive });
+            grpActive.forEach(s => displayed.push({ ...s, _visible: groupExpanded['着工前・進行中'], _grpKey:'着工前・進行中' }));
             displayed.push({ _isGroup:true, key:'完了', items:grpDone });
             grpDone.forEach(s => displayed.push({ ...s, _visible: groupExpanded['完了'], _grpKey:'完了' }));
             remaining = 0;
@@ -1475,8 +1471,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               if (site._isGroup) {
                 const grp = site.key;
                 // 各グループの左縦線色
-                const accent = grp === '進行中' ? '#3B82F6'
-                  : grp === '着工前' ? '#F59E0B'
+                const accent = grp === '着工前・進行中' ? '#3B82F6'
                   : '#6B7280';
                 const isExp = !!groupExpanded[grp];
                 const cnt = site.items.length;
@@ -1493,7 +1488,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                       color: '#fff',
                       borderRadius:10, cursor: isDisabled ? 'default' : 'pointer',
                       fontSize:13, fontWeight:700, fontFamily:'inherit',
-                      marginTop: grp === '進行中' ? 0 : 14, marginBottom:6,
+                      marginTop: grp === '着工前・進行中' ? 0 : 14, marginBottom:6,
                       opacity: isDisabled ? 0.5 : 1,
                       transition:'background .15s, transform .15s'
                     }}
@@ -1535,8 +1530,8 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
           const moneyDisplay = formatMoney(cardInfo.contractAmount);
 
           // ステータス色
-          const statusColor = cardInfo.status === '完了' ? '#888' : cardInfo.status === '着工前' ? '#60a5fa' : '#00D48F';
-          const statusBg = cardInfo.status === '完了' ? 'rgba(136,136,136,0.15)' : cardInfo.status === '着工前' ? 'rgba(96,165,250,0.15)' : 'rgba(0,212,143,0.15)';
+          const statusColor = cardInfo.status === '完了' ? '#888' : '#00D48F';
+          const statusBg = cardInfo.status === '完了' ? 'rgba(136,136,136,0.15)' : 'rgba(0,212,143,0.15)';
 
           // ★ アコーディオンモードの_visibleフラグでmaxHeightアニメ
           // _visible:false → 折りたたみ(高さ0)
@@ -4060,8 +4055,8 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
           </div>
           {projectInfo?.status && (
             <span style={{display:'inline-block',padding:'4px 12px',borderRadius:20,fontSize:11,fontWeight:700,flexShrink:0,
-              background:projectInfo.status==='進行中'?'rgba(34,197,94,0.2)':projectInfo.status==='完了'?'rgba(37,99,235,0.2)':'rgba(245,158,11,0.2)',
-              color:projectInfo.status==='進行中'?'#4ade80':projectInfo.status==='完了'?'#93C5FD':'#FCD34D'
+              background:projectInfo.status==='完了'?'rgba(37,99,235,0.2)':'rgba(34,197,94,0.2)',
+              color:projectInfo.status==='完了'?'#93C5FD':'#4ade80'
             }}>{projectInfo.status}</span>
           )}
         </div>
@@ -5336,18 +5331,18 @@ function AdminPage({ currentUser, onLogout }) {
     sites.forEach(s => {
       const amt = Number(s.contract_amount) || 0;
       // 今月の進行中現場の受注金額を暫定的に今月売上とする
-      if (s.status === '進行中') mRevenue += amt * 0.3; // 進捗30%と仮定
+      if (s.status === '着工前・進行中' || s.status === '進行中' || s.status === '着工前' || !s.status) mRevenue += amt * 0.3; // 進捗30%と仮定
       if (s.status === '完了') mRevenue += amt * 0.1;
     });
 
     const mProfit = mRevenue - mCost;
     const profitRate = mRevenue > 0 ? (mProfit / mRevenue * 100) : 0;
-    const inProgressCount = sites.filter(s => s.status === '進行中' || !s.status).length;
+    const inProgressCount = sites.filter(s => s.status === '着工前・進行中' || s.status === '進行中' || s.status === '着工前' || !s.status).length;
     const completingCount = sites.filter(s => {
       if (!s.end_date) return false;
       const end = new Date(s.end_date);
       const monthLater = new Date(); monthLater.setMonth(monthLater.getMonth() + 1);
-      return end <= monthLater && (s.status === '進行中' || !s.status);
+      return end <= monthLater && (s.status === '着工前・進行中' || s.status === '進行中' || s.status === '着工前' || !s.status);
     }).length;
 
     return { mRevenue, mCost, mProfit, profitRate, lRevenue, lCost, inProgressCount, completingCount, siteStats };
@@ -5385,7 +5380,7 @@ function AdminPage({ currentUser, onLogout }) {
 
   // 現場別ランキング
   const siteRanking = sites
-    .filter(s => s.status === '進行中' || s.status === '完了' || !s.status)
+    .filter(s => s.status === '着工前・進行中' || s.status === '進行中' || s.status === '着工前' || s.status === '完了' || !s.status)
     .map(s => {
       const cost = stats.siteStats[s.name]?.cost || 0;
       const revenue = (Number(s.contract_amount) || 0) * 0.3;
@@ -5529,7 +5524,7 @@ function AdminPage({ currentUser, onLogout }) {
                 <div style={{ fontSize:12, marginTop:8, color: stats.profitRate >= 30 ? '#00D68F' : '#F5A623' }}>粗利率 {stats.profitRate.toFixed(1)}%</div>
               </div>
               <div className="admin-card" style={{ padding: isMobile?'14px':'18px 20px', background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>
-                <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>🏗 進行中現場</div>
+                <div style={{ fontSize:11, color:'#888', fontWeight:500, marginBottom:6 }}>🏗 着工前・進行中現場</div>
                 <div style={{ fontSize: isMobile?20:26, fontWeight:600, letterSpacing:'-0.02em', fontFamily:"'SF Mono', monospace" }}>{stats.inProgressCount}<span style={{ fontSize:13, color:'#888', fontWeight:500, marginLeft:2 }}>件</span></div>
                 <div style={{ fontSize:12, marginTop:8, color:'#888' }}>完了予定 {stats.completingCount}件</div>
               </div>
@@ -5613,7 +5608,7 @@ function AdminPage({ currentUser, onLogout }) {
                       <td style={{ padding: isMobile?'10px 12px':'12px 20px', fontWeight:500 }}>{s.name}</td>
                       <td style={{ padding:'12px 20px' }}>
                         {s.status === '完了' ? <span style={{ padding:'2px 8px', background:'rgba(0,214,143,0.15)', color:'#00D68F', borderRadius:99, fontSize:11, fontWeight:500 }}>● 完了</span>
-                          : <span style={{ padding:'2px 8px', background:'rgba(59,130,246,0.15)', color:'#3B82F6', borderRadius:99, fontSize:11, fontWeight:500 }}>● {s.status || '進行中'}</span>}
+                          : <span style={{ padding:'2px 8px', background:'rgba(59,130,246,0.15)', color:'#3B82F6', borderRadius:99, fontSize:11, fontWeight:500 }}>● {s.status || '着工前・進行中'}</span>}
                       </td>
                       <td style={{ padding: isMobile?'10px 12px':'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{fmt(s.revenue)}</td>
                       <td style={{ padding: isMobile?'10px 12px':'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{fmt(s.cost)}</td>
@@ -5665,7 +5660,7 @@ function AdminPage({ currentUser, onLogout }) {
                     <td style={{ padding: isMobile?'10px 12px':'12px 20px', fontWeight:500 }}>{s.name}</td>
                     <td style={{ padding: isMobile?'10px 12px':'12px 20px', color:'#888', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{s.project_number || '-'}</td>
                     <td style={{ padding:'12px 20px' }}>
-                      <span style={{ padding:'2px 8px', background:'rgba(59,130,246,0.15)', color:'#3B82F6', borderRadius:99, fontSize:11 }}>{s.status || '進行中'}</span>
+                      <span style={{ padding:'2px 8px', background:'rgba(59,130,246,0.15)', color:'#3B82F6', borderRadius:99, fontSize:11 }}>{s.status || '着工前・進行中'}</span>
                     </td>
                     <td style={{ padding: isMobile?'10px 12px':'12px 20px', textAlign:'right', fontFamily:"'SF Mono', monospace", fontSize:12 }}>{s.contract_amount ? fmt(Number(s.contract_amount)) : '-'}</td>
                   </tr>
@@ -6078,7 +6073,7 @@ export default function LOGIOApp() {
   const defaultProjectInfo = {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
-    contractAmount: '', additionalAmount: '', status: '進行中',
+    contractAmount: '', additionalAmount: '', status: '着工前・進行中',
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
     paymentDueDate: '', paymentTerms: '', invoiceRecipient: '',
@@ -6176,8 +6171,10 @@ export default function LOGIOApp() {
           const piStatus = piMap[s.name]?.status;
           // ★ status: project_info優先、なければsites、両方trim()
           let resolvedStatus = (piStatus || s.status || '').trim();
-          // 空文字なら未設定なので、デフォルトを'進行中'に
-          if (!resolvedStatus) resolvedStatus = '進行中';
+          // 空文字なら未設定なので、デフォルトを'着工前・進行中'に
+          if (!resolvedStatus) resolvedStatus = '着工前・進行中';
+          // 旧ステータスを新ステータスに正規化
+          if (resolvedStatus === '着工前' || resolvedStatus === '進行中') resolvedStatus = '着工前・進行中';
           return {
             name: s.name,
             createdAt: s.created_at,
@@ -6233,11 +6230,11 @@ export default function LOGIOApp() {
   const handleAddSite = async (siteName) => {
     try {
       const projectNumber = await generateProjectNumber();
-      await sb('sites').insert({ name: siteName, project_number: projectNumber, status: '進行中' });
-      await sb('project_info').insert({ site_name: siteName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
-      setSites(prev => [...prev, { name: siteName, projectNumber, status: '進行中' }]);
+      await sb('sites').insert({ name: siteName, project_number: projectNumber, status: '着工前・進行中' });
+      await sb('project_info').insert({ site_name: siteName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '着工前・進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
+      setSites(prev => [...prev, { name: siteName, projectNumber, status: '着工前・進行中' }]);
       setSelectedSite(siteName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, contractType: '', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
+      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, contractType: '', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
       alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); }
   };
@@ -6289,7 +6286,7 @@ export default function LOGIOApp() {
         const miscItems = rawMiscItems !== undefined && rawMiscItems !== null
           ? rawMiscItems
           : [...(d.site_expense_items||[]), ...(d.sga_items||[])];
-        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: d.status || '進行中', discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], miscItems, manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '',
+        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: (d.status === '着工前' || d.status === '進行中') ? '着工前・進行中' : (d.status || '着工前・進行中'), discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], miscItems, manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '',
           siteAreaM2: d.site_area_m2 != null ? String(d.site_area_m2) : '',
           siteTsubo:  d.site_tsubo  != null ? String(d.site_tsubo)  : '',
           siteUseType: d.site_use_type  || '',
@@ -6321,7 +6318,7 @@ export default function LOGIOApp() {
   const handleSaveProject = async (silent = false) => {
     if (!selectedSite) return alert('現場を選択してください');
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined, manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '着工前・進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined, manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
           payment_due_date: projectInfo.paymentDueDate || '',
           payment_terms: projectInfo.paymentTerms || '',
           invoice_recipient: projectInfo.invoiceRecipient || '',
@@ -6334,8 +6331,8 @@ export default function LOGIOApp() {
         site_use_type: projectInfo.siteUseType || null,
         work_condition: projectInfo.workCondition || null,
         updated_at: new Date().toISOString() }, 'site_name');
-      await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
-      setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '進行中' } : s));
+      await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
+      setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' } : s));
       if (!silent) alert('✅ プロジェクト情報を保存しました');
       window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + (error?.message || JSON.stringify(error))); }

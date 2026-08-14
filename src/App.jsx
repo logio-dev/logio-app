@@ -4970,7 +4970,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                 // 環境課配車行は (運転者) + 車両 + その産廃 を同じ行に
                 const envWorkerRows = envWaste.map(w=>({ name:`(${w.driver})/${w.haishiShift==='night'?'夜間':'昼間'}`, amount:0, isEnv:true, vType:w.vType||'', vNumber:w.vNumber||'', haishiShift:w.haishiShift, waste:{ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:w.driver, extHaisha:false, vType:w.vType||'', vNumber:w.vNumber||'', isScrap: isScrap(w) } }));
                 // ワイエム配車産廃行
-                const extWasteRows = extWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:true, vType:'', vNumber:'', isScrap: isScrap(w) }));
+                // ★修正: 以前は subIdx で直接引いていたため、自社運搬の産廃行と行位置が衝突し
+                //   同じ日の自社運搬の産廃が1件消える不具合があった。
+                //   → 独立した行として wasteAndScrap に連結し、車両欄には配車車両(車種/車番)を出す。
+                const extWasteRows = extWaste.map(w=>({ material:w.material, quantity:w.quantity, unit:w.unit, volumeM3:w.volumeM3||null, amount:w.amount, disposalSite:w.disposalSite, manifestNumber:w.manifestNumber||'', envDriver:'', extHaisha:true, vType:w.vType||'', vNumber:w.vNumber||'', workerName:'', workerVType:w.vType||'', workerVNumber:w.vNumber||'', isExt:true, isScrap: isScrap(w) }));
                 // 通常産廃＋スクラップ
                 const rawNormWasteRows = [...normWaste.map((w, _wIdx)=>{
                   const origIdx = waste.indexOf(w);
@@ -4999,18 +5002,16 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                   });
                   return grouped;
                 })();
-                const wasteAndScrap = normWasteRows;
-
                 const allWorkers = [ ...workers, ...envWorkerRows ];
-                // ★修正: effectiveWorkers を wasteAndScrap の並びに合わせて再構築
-                //   各wasteAndScrapエントリの workerName に対応する worker を探し、
+                // ★修正: baseWorkerRows を normWasteRows の並びに合わせて再構築
+                //   各normWasteRowsエントリの workerName に対応する worker を探し、
                 //   初出なら本物(金額あり)、2回目以降なら isDitto(〃) として配置する。
                 //   これにより氏名と金額が正しく対応する(間野の金額は間野の行に表示される)。
-                const effectiveWorkers = (() => {
+                const baseWorkerRows = (() => {
                   const result = [];
                   const usedWorkerIdx = new Set();
-                  // 1) wasteAndScrap の並びに従って worker を配置
-                  wasteAndScrap.forEach((row) => {
+                  // 1) normWasteRows の並びに従って worker を配置
+                  normWasteRows.forEach((row) => {
                     // ★ 外注車行は自社作業員と結び付けない (空ダミーを置く)
                     if (row.isOutsource === true) {
                       result.push({ name: '', amount: 0, isOutsource: true });
@@ -5041,17 +5042,32 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       result.push({ ...last, isDitto: true, amount: 0 });
                     }
                   });
-                  // 2) wasteAndScrap で使われなかった残りの worker を末尾に追加(産廃を持たない作業員)
+                  // 2) 産廃で使われなかった残りの worker を末尾に追加(産廃を持たない作業員)
                   workers.forEach((w, i) => {
                     if (!usedWorkerIdx.has(i)) result.push(w);
                   });
-                  // 3) 環境課配車行(envWorkerRows)を末尾に追加
-                  envWorkerRows.forEach(e => result.push(e));
-                  // 4) wasteAndScrap も workers も空のとき、最低限 workers を返す
+                  return result;
+                })();
+                // ★ 行の並び: [自社運搬の産廃行] → [産廃を持たない作業員行] → [ワイエム配車行] → [環境課配車行]
+                //   wasteAndScrap と effectiveWorkers は index を 1:1 で対応させる
+                //   (作業員のみの行は産廃なし=null、ワイエム配車行は自社人工なし=空ダミー)
+                const padCount = Math.max(0, baseWorkerRows.length - normWasteRows.length);
+                const wasteAndScrap = [
+                  ...normWasteRows,
+                  ...Array.from({ length: padCount }, () => null),
+                  ...extWasteRows,
+                ];
+                const effectiveWorkers = (() => {
+                  const result = [
+                    ...baseWorkerRows,
+                    ...extWasteRows.map(() => ({ name: '', amount: 0, isExt: true })),
+                    ...envWorkerRows,
+                  ];
+                  // 産廃も作業員も空のとき、最低限 workers を返す
                   if (result.length === 0) return [...workers, ...envWorkerRows];
                   return result;
                 })();
-                const maxSubRows = Math.max(1, effectiveWorkers.length, outsourcing.length, vehicles.length, machinery.length, extWasteRows.length, envWorkerRows.length + wasteAndScrap.length);
+                const maxSubRows = Math.max(1, effectiveWorkers.length, outsourcing.length, vehicles.length, machinery.length, envWorkerRows.length + wasteAndScrap.length);
                 const allStartTimes = [...workers.map(w => w.start || w.startTime), ...outsourcing.map(o => o.start || o.startTime)].filter(Boolean).sort();
                 const allEndTimes = [...workers.map(w => w.end || w.endTime), ...outsourcing.map(o => o.end || o.endTime)].filter(Boolean).sort().reverse();
                 return (
@@ -5094,8 +5110,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             let nIdx = 0;
                             for(let k=0;k<idx;k++){if(!effectiveWorkers[k]?.isEnv) nIdx++;}
                             const w = wasteAndScrap[nIdx];
-                            // ★ 外注車行は自社人工欄に何も表示しない
-                            if (w?.isOutsource === true) return '';
+                            // ★ 外注車行・ワイエム配車行は自社人工欄に何も表示しない
+                            if (w?.isOutsource === true || w?.isExt === true) return '';
                             const fromW = w?.workerName || '';
                             if (isD) return fromW || '';  // isDitto行は自社人工名は出さない(直後の同名チェックで〃に)
                             return fromW || self;
@@ -5111,8 +5127,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           } else {
                             displayName = currentName || (isDittoRow ? '〃' : '');
                           }
-                          // ★ 外注車行は自社人工金額を表示しない(個人名なし＝金額なし)
-                          const isOutsourceRow = wRow?.isOutsource === true;
+                          // ★ 外注車行・ワイエム配車行は自社人工金額を表示しない(個人名なし＝金額なし)
+                          const isOutsourceRow = wRow?.isOutsource === true || wRow?.isExt === true;
                           return (<>
                             <td className="text-[8px]" style={isEnvRow?{color:'#374151'}:{}}>{displayName}</td>
                             <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!isEnvRow&&!isDittoRow&&!isOutsourceRow?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
@@ -5128,16 +5144,17 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           let normIdx3 = 0;
                           for(let k=0;k<subIdx;k++){if(!effectiveWorkers[k]?.isEnv) normIdx3++;}
                           const wRow2 = !isEnvRow2 ? wasteAndScrap[normIdx3] : null;
-                          const vt = vehicles[subIdx]?.type
+                          // ★ ワイエム配車行は入力された配車車両(車種/車番)を表示。未入力なら「配車/ワイエム」
+                          const vt = (wRow2?.isExt ? ((wRow2.workerVType || '配車')) : '')
+                            || vehicles[subIdx]?.type
                             || (isEnvRow2 ? effectiveWorkers[subIdx].vType : '')
                             || (wRow2?.workerVType || '')
-                            || (isDittoRow2 ? '〃' : '')
-                            || (extWasteRows[subIdx] ? '配車' : '');
-                          const vn = vehicles[subIdx] ? vehicles[subIdx].number
+                            || (isDittoRow2 ? '〃' : '');
+                          const vn = (wRow2?.isExt ? ((wRow2.workerVNumber || 'ワイエム')) : '')
+                            || (vehicles[subIdx] ? vehicles[subIdx].number
                             : (isEnvRow2 ? effectiveWorkers[subIdx].vNumber : '')
                             || (wRow2?.workerVNumber || '')
-                            || (isDittoRow2 ? '〃' : '')
-                            || (extWasteRows[subIdx] ? 'ワイエム' : '');
+                            || (isDittoRow2 ? '〃' : ''));
                           // ★ 前行の車種・車番を取得して、連続する同じ値なら 〃 に置換
                           const resolveVehicle = (idx) => {
                             const isE = effectiveWorkers[idx]?.isEnv;
@@ -5145,14 +5162,14 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             let nIdx = 0;
                             for(let k=0;k<idx;k++){if(!effectiveWorkers[k]?.isEnv) nIdx++;}
                             const w = !isE ? wasteAndScrap[nIdx] : null;
-                            const t = vehicles[idx]?.type
+                            const t = (w?.isExt ? (w.workerVType || '配車') : '')
+                              || vehicles[idx]?.type
                               || (isE ? effectiveWorkers[idx].vType : '')
-                              || (w?.workerVType || '')
-                              || (extWasteRows[idx] ? '配車' : '');
-                            const n = vehicles[idx] ? vehicles[idx].number
+                              || (w?.workerVType || '');
+                            const n = (w?.isExt ? (w.workerVNumber || 'ワイエム') : '')
+                              || (vehicles[idx] ? vehicles[idx].number
                               : (isE ? effectiveWorkers[idx].vNumber : '')
-                              || (w?.workerVNumber || '')
-                              || (extWasteRows[idx] ? 'ワイエム' : '');
+                              || (w?.workerVNumber || ''));
                             return { t, n, isD };
                           };
                           const prev = subIdx > 0 ? resolveVehicle(subIdx - 1) : { t:'', n:'', isD:false };
@@ -5166,16 +5183,21 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           }
                           // ★ 乗り換え判定: wRow2 が isSwap なら車番に★を追加
                           const isSwapRow = wRow2?.isSwap === true;
+                          // ★ ワイエム配車行は車番の下に「（ワイエム車）」を併記して自社車両と区別する
+                          const showExtLabel = wRow2?.isExt === true && showN !== '〃' && !!(wRow2.workerVNumber || '');
                           return (<>
                             <td className="text-center text-[8px]">{showT}</td>
-                            <td className="text-center text-[8px]">{showN}{isSwapRow && showN !== '〃' ? <span style={{color:'#7C3AED',fontWeight:700,marginLeft:1}}>★</span> : null}</td>
+                            <td className="text-center text-[8px]">
+                              {showN}{isSwapRow && showN !== '〃' ? <span style={{color:'#7C3AED',fontWeight:700,marginLeft:1}}>★</span> : null}
+                              {showExtLabel ? <div style={{fontSize:'6px',lineHeight:1.15,color:'#4338CA',fontWeight:700}}>（ワイエム車）</div> : null}
+                            </td>
                           </>);
                         })()}
                         <td className="text-[8px]">{machinery[subIdx]?.type || ''}</td>
-                        {/* 産廃：環境課行はwaste、ワイエム行はextWaste、通常行はwasteAndScrap */}
+                        {/* 産廃：環境課行はwaste、それ以外(自社運搬・ワイエム配車)はwasteAndScrap */}
                         {(()=>{
                           const envW = effectiveWorkers[subIdx]?.isEnv ? effectiveWorkers[subIdx].waste : null;
-                          const extW = !effectiveWorkers[subIdx]?.isEnv && !effectiveWorkers[subIdx]?.isDitto ? extWasteRows[subIdx] : null;
+                          // ★修正: ワイエム配車行は wasteAndScrap に統合済み(subIdx直引きの衝突を解消)
                           // ★修正: isDittoは除外しない
                           //   isDitto行は「自社人工を〃で補完する行」だが、wasteAndScrapに合わせて足された行のため、
                           //   産廃データ(断熱材・金属など2件目以降)はisDitto行に表示する必要がある。
@@ -5188,8 +5210,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             }
                           }
                           const normW = (normIdx >= 0) ? wasteAndScrap[normIdx] : null;
-                          // ★ 優先順位: 環境課配車行 > ワイエム配車行 > 通常産廃
-                          const w = envW || extW || normW;
+                          // ★ 優先順位: 環境課配車行 > 通常産廃/ワイエム配車行
+                          const w = envW || normW;
                           // ★ isScrap判定: manifestNumber==='-' または amount<0 または isScrapフラグ
                           // ★ 道具車行の判定(先に判定)
                           const isToolRow = w && (w.isToolVehicle === true || w.kind === 'tool' || (w.material === '道具車' && (!w.amount || w.amount === 0) && (!w.quantity || w.quantity === 0)));

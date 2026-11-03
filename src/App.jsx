@@ -809,10 +809,20 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
   const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
 
+  const getInHouseWorkerCount = (worker = {}) => {
+    const raw = Number.parseFloat(worker.count);
+    if (Number.isFinite(raw) && raw > 0) return raw;
+    return worker.shift === 'halfDay' ? 0.5 : 1;
+  };
+  const getOutsourcingCount = (entry = {}) => {
+    const raw = Number.parseFloat(entry.count ?? entry.workers ?? 0);
+    return Number.isFinite(raw) && raw > 0 ? raw : 0;
+  };
+
   // 稼働日数・人工数
   const workingDays = (reports||[]).length;
-  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss)=>ss+1,s),0);
-  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+(parseFloat(o.count||o.workers)||0),s),0);
+  const totalInHouseRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.inHouseWorkers||[]).reduce((ss,w)=>ss+getInHouseWorkerCount(w),s),0);
+  const totalOutsourcingRaw = (reports||[]).reduce((s,r)=>(r.workDetails?.outsourcingLabor||[]).reduce((ss,o)=>ss+getOutsourcingCount(o),s),0);
   const totalInHouse = totalInHouseRaw;
   const totalOutsourcing = totalOutsourcingRaw;
   const totalWorkers = totalInHouse + totalOutsourcing;
@@ -2228,8 +2238,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     let newWorkDetails = workDetails;
     // 自社人工
     if (wForm && wForm.name && wForm.name.trim()) {
+      const count = getShiftCount(wForm.shift);
       const amount = getShiftAmount(wForm.shift);
-      newWorkDetails = {...newWorkDetails, inHouseWorkers:[...(newWorkDetails.inHouseWorkers||[]), {...wForm, amount}]};
+      newWorkDetails = {...newWorkDetails, inHouseWorkers:[...(newWorkDetails.inHouseWorkers||[]), {...wForm, count, amount}]};
       setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
     }
     // 外注人工
@@ -2270,10 +2281,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
       // 自社人工フォーム自動追加 (氏名があれば)
       if (wForm && wForm.name && wForm.name.trim()) {
+        const count = getShiftCount(wForm.shift);
         const amount = getShiftAmount(wForm.shift);
         finalWorkDetails = {
           ...finalWorkDetails,
-          inHouseWorkers: [...(finalWorkDetails.inHouseWorkers||[]), {...wForm, amount}]
+          inHouseWorkers: [...(finalWorkDetails.inHouseWorkers||[]), {...wForm, count, amount}]
         };
       }
       // 外注人工フォーム自動追加 (会社名+人数があれば)
@@ -2370,18 +2382,20 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     if (shift === 'halfDay') return unitPrices.inHouseHalfDay;
     return unitPrices.inHouseDaytime;
   };
+  const getShiftCount = (shift) => (shift === 'halfDay' ? 0.5 : 1);
 
   const addWorker = () => {
     const actualName = wForm.name.trim();
     if (!actualName) return;
+    const count = getShiftCount(wForm.shift);
     const amount = getShiftAmount(wForm.shift);
     if (editingWIdx !== null) {
       const list = [...workDetails.inHouseWorkers];
-      list[editingWIdx] = {...wForm, amount};
+      list[editingWIdx] = {...wForm, count, amount};
       setWorkDetails({...workDetails, inHouseWorkers: list});
       setEditingWIdx(null);
     } else {
-      setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm,amount}]});
+      setWorkDetails({...workDetails, inHouseWorkers:[...workDetails.inHouseWorkers,{...wForm, count, amount}]});
     }
     setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
   };
@@ -2990,10 +3004,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:'#1E40AF'}}>{o.company}</div>
                 <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
-                  <input type="number" min="1" inputMode="numeric" value={o.count||''} onClick={e=>e.stopPropagation()} onChange={e=>{
+                  <input type="number" min="0" step="0.5" inputMode="decimal" value={o.count||''} onClick={e=>e.stopPropagation()} onChange={e=>{
                     const entries=[...workDetails.outsourcingLabor];
-                    const newCount=parseInt(e.target.value,10)||0;
-                    const newAmount=newCount*(o.shift==='nighttime'?30000:25000);
+                    const newCount = Number.parseFloat(e.target.value) || 0;
+                    const newAmount = newCount * (o.shift==='nighttime'?30000:25000);
                     entries[i]={...entries[i],count:newCount,amount:newAmount};
                     setWorkDetails({...workDetails,outsourcingLabor:entries});
                   }} style={{width:60,padding:'6px 8px',background:'#fff',border:'1.5px solid #60A5FA',color:'#1E40AF',borderRadius:7,fontSize:18,fontWeight:700,textAlign:'center',outline:'none',fontFamily:'inherit'}}/>
@@ -3912,17 +3926,17 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
               <p style={{fontSize:10,fontWeight:700,color:"#999",letterSpacing:".08em",textTransform:"uppercase",marginBottom:10}}>原価明細</p>
               {report.workDetails.inHouseWorkers?.length > 0 && (
                 <div style={{marginBottom:10,borderRadius:8,padding:"10px 12px",background:"#F0F0F0"}}>
-                  <p style={{fontSize:11,fontWeight:700,color:"#1D4ED8",marginBottom:6}}>自社人工: {report.workDetails.inHouseWorkers.length}名</p>
+                  <p style={{fontSize:11,fontWeight:700,color:"#1D4ED8",marginBottom:6}}>自社人工: {report.workDetails.inHouseWorkers.reduce((sum, w) => sum + getInHouseWorkerCount(w), 0)}人</p>
                   {report.workDetails.inHouseWorkers.map((w, idx) => (
-                    <p key={idx} style={{fontSize:12,color:"#333",marginLeft:8,marginBottom:4}}>• {w.name} <span style={{color:"#999"}}>{w.start||w.startTime}-{w.end||w.endTime}</span> <span style={{color:"#B45309",fontWeight:600}}>¥{formatCurrency(w.amount)}</span></p>
+                    <p key={idx} style={{fontSize:12,color:"#333",marginLeft:8,marginBottom:4}}>• {w.name} <span style={{color:"#999"}}>{w.start||w.startTime}-{w.end||w.endTime}</span> <span style={{color:"#999"}}>{getInHouseWorkerCount(w)}人</span> <span style={{color:"#B45309",fontWeight:600}}>¥{formatCurrency(w.amount)}</span></p>
                   ))}
                 </div>
               )}
               {report.workDetails.outsourcingLabor?.length > 0 && (
                 <div style={{marginBottom:10,borderRadius:8,padding:"10px 12px",background:"#F0F0F0"}}>
-                  <p style={{fontSize:11,fontWeight:700,color:"#0369A1",marginBottom:6}}>外注人工: {report.workDetails.outsourcingLabor.length}件</p>
+                  <p style={{fontSize:11,fontWeight:700,color:"#0369A1",marginBottom:6}}>外注人工: {report.workDetails.outsourcingLabor.reduce((sum, o) => sum + getOutsourcingCount(o), 0)}人</p>
                   {report.workDetails.outsourcingLabor.map((o, idx) => (
-                    <p key={idx} style={{fontSize:12,color:"#333",marginLeft:8,marginBottom:4}}>• {o.company} <span style={{color:"#999"}}>{o.count || o.workers}人</span> <span style={{color:"#B45309",fontWeight:600}}>¥{formatCurrency(o.amount)}</span></p>
+                    <p key={idx} style={{fontSize:12,color:"#333",marginLeft:8,marginBottom:4}}>• {o.company} <span style={{color:"#999"}}>{getOutsourcingCount(o)}人</span> <span style={{color:"#B45309",fontWeight:600}}>¥{formatCurrency(o.amount)}</span></p>
                   ))}
                 </div>
               )}
@@ -4653,9 +4667,9 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
 
   if (loading) return <div className="min-h-screen bg-transparent flex items-center justify-center"><p className="text-gray-400">読み込み中...</p></div>;
 
-  const totalInHouseWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.inHouseWorkers?.length || 0), 0);
+  const totalInHouseWorkers = allReports.reduce((sum, r) => sum + ((r.workDetails?.inHouseWorkers || []).reduce((s, w) => s + getInHouseWorkerCount(w), 0)), 0);
   const totalInHouseCost = allReports.reduce((sum, r) => sum + (r.workDetails?.inHouseWorkers || []).reduce((s, w) => s + (w.amount || 0), 0), 0);
-  const totalOutsourcingWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (parseFloat(o.count || o.workers) || 0), 0), 0);
+  const totalOutsourcingWorkers = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + getOutsourcingCount(o), 0), 0);
   const totalOutsourcingCost = allReports.reduce((sum, r) => sum + (r.workDetails?.outsourcingLabor || []).reduce((s, o) => s + (o.amount || 0), 0), 0);
   const totalVehicleCost = allReports.reduce((sum, r) => sum + (r.workDetails?.vehicles || []).reduce((s, v) => s + (v.amount || 0), 0), 0);
   const totalWasteVehicleCost = allReports.reduce((sum, r) => sum + (r.wasteItems || []).reduce((s, w) => s + (w.vehicleAmount || 0), 0) + (r.scrapItems || []).reduce((s, sc) => s + (sc.vehicleAmount || 0), 0), 0);
@@ -4754,9 +4768,9 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const isLastPage = pageIdx === pages.length - 1;
           const pageOffset = pageIdx * ROWS_PER_PAGE;
           const pageEmptyRows = ROWS_PER_PAGE - pageRows.length;
-          const pageInHouseWorkers = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).length,0);
+          const pageInHouseWorkers = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+getInHouseWorkerCount(w),0),0);
           const pageInHouseCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0),0);
-          const pageOutWorkers     = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(parseFloat(o.count||o.workers)||0),0),0);
+          const pageOutWorkers     = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+getOutsourcingCount(o),0),0);
           const pageOutCost        = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
           const pageVehicleCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.vehicles||[]).reduce((a,v)=>a+(v.amount||0),0),0);
           const pageHaishiCost     = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.haishiAmount||0),0),0);
@@ -5137,7 +5151,7 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                             <td className="text-right text-[8px]">{effectiveWorkers[subIdx]&&!isEnvRow&&!isDittoRow&&!isOutsourceRow?`¥${formatCurrency(effectiveWorkers[subIdx].amount)}`:''}</td>
                           </>);
                         })()}
-                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${parseFloat(outsourcing[subIdx].count || outsourcing[subIdx].workers || 0)}人` : ''}</td>
+                        <td className="text-[8px]">{outsourcing[subIdx] ? `${outsourcing[subIdx].company} ${getOutsourcingCount(outsourcing[subIdx])}人` : ''}</td>
                         <td className="text-right text-[8px]">{outsourcing[subIdx] ? `¥${formatCurrency(outsourcing[subIdx].amount)}` : ''}</td>
                         {/* 車両：通常車両 or 環境課車両 or ワイエム or 〃 */}
                         {(()=>{

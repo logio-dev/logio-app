@@ -1900,11 +1900,15 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                         <div style={{marginBottom:16}}>
                           <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>マニフェスト / MANIFEST</label>
                           {/* 排出事業者（1回のみ） */}
-                          <div style={{marginBottom:14}}>
-                            <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.35)',letterSpacing:'.08em',marginBottom:4}}>排出事業者</div>
+                          <div style={{marginBottom:14, padding:'10px 10px 12px', borderRadius:10, background: !projectInfo.manifestDischarger?.trim() ? 'rgba(239, 68, 68, 0.06)' : 'rgba(255,255,255,0.04)', border: !projectInfo.manifestDischarger?.trim() ? '1px solid rgba(239,68,68,0.75)' : '1px solid rgba(255,255,255,0.08)', boxShadow: !projectInfo.manifestDischarger?.trim() ? '0 0 0 1px rgba(239,68,68,0.25)' : 'none' }}>
+                            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, fontSize:9, fontWeight:700, color: !projectInfo.manifestDischarger?.trim() ? '#fca5a5' : 'rgba(255,255,255,0.45)', letterSpacing:'.08em', marginBottom:6}}>
+                              <span>排出事業者</span>
+                            </div>
                             <input type="text" value={projectInfo.manifestDischarger||''} onChange={e=>setProjectInfo({...projectInfo,manifestDischarger:e.target.value})}
                               placeholder="排出事業者名を入力"
-                              style={{width:'100%',padding:'9px 11px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',fontFamily:'inherit'}}/>
+                              aria-label="排出事業者"
+                              required
+                              style={{width:'100%',padding:'11px 12px',background:'rgba(17,24,39,0.42)',border: !projectInfo.manifestDischarger?.trim() ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)',color:'#fff',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'inherit',fontWeight:600,boxShadow: !projectInfo.manifestDischarger?.trim() ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none'}}/>
                           </div>
                           {/* マニ伝種類 */}
                           <div style={{marginBottom:14}}>

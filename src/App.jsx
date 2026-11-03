@@ -252,6 +252,15 @@ const getDayOfWeek = (dateStr) => {
   const days = ['日', '月', '火', '水', '木', '金', '土'];
   return days[new Date(dateStr).getDay()];
 };
+const getInHouseWorkerCount = (worker = {}) => {
+  const raw = Number.parseFloat(worker.count);
+  if (Number.isFinite(raw) && raw > 0) return raw;
+  return worker.shift === 'halfDay' ? 0.5 : 1;
+};
+const getOutsourcingCount = (entry = {}) => {
+  const raw = Number.parseFloat(entry.count ?? entry.workers ?? 0);
+  return Number.isFinite(raw) && raw > 0 ? raw : 0;
+};
 
 // ========== 車両費の重複除去ヘルパー ==========
 // 1日の日報内で「車両」「産廃担当者の車両」「スクラップ担当者の車両」に
@@ -808,16 +817,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   }, [siteDropdownOpen]);
 
   const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
-
-  const getInHouseWorkerCount = (worker = {}) => {
-    const raw = Number.parseFloat(worker.count);
-    if (Number.isFinite(raw) && raw > 0) return raw;
-    return worker.shift === 'halfDay' ? 0.5 : 1;
-  };
-  const getOutsourcingCount = (entry = {}) => {
-    const raw = Number.parseFloat(entry.count ?? entry.workers ?? 0);
-    return Number.isFinite(raw) && raw > 0 ? raw : 0;
-  };
 
   // 稼働日数・人工数
   const workingDays = (reports||[]).length;
@@ -6807,6 +6806,7 @@ export default function LOGIOApp() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="現場名を入力..."
+
                 style={{ width:'100%', padding:'12px 14px 12px 36px', background:'#F4F4F4', border:'none', borderRadius:'12px', fontSize:'16px', outline:'none', color:'#1C1917', boxSizing:'border-box' }}
               />
             </div>

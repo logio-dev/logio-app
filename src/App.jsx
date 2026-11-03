@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown, MessageCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import SplashScreen from './components/SplashScreen/SplashScreen';
 
 
 // ========== Supabase設定 ==========
@@ -634,40 +635,6 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
           </div>
         </div>
       )}
-    </>
-  );
-}
-
-// ========== SplashScreen ==========
-function SplashScreen() {
-  return (
-    <>
-      <style>{`
-        @keyframes splashBounceIn { 0%{opacity:0;transform:translateY(60px) scale(0.8)} 60%{opacity:1;transform:translateY(-15px) scale(1.05)} 80%{transform:translateY(8px) scale(0.97)} 100%{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes mascotFloat    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-        @keyframes titleSlide     { 0%{opacity:0;transform:translateY(20px)} 100%{opacity:1;transform:translateY(0)} }
-        .splash-bg { position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999; }
-        .splash-mascot-kun  { opacity:0; animation:splashBounceIn 0.9s cubic-bezier(0.34,1.56,0.64,1) 0.2s forwards, mascotFloat 2.5s ease-in-out 1.1s infinite; transform-origin:center bottom; }
-        .splash-mascot-chan { opacity:0; animation:splashBounceIn 0.9s cubic-bezier(0.34,1.56,0.64,1) 0.5s forwards, mascotFloat 2.5s ease-in-out 1.4s infinite; transform-origin:center bottom; }
-        .splash-title { animation:titleSlide 0.6s ease-out 0.8s both; }
-        .splash-sub   { animation:titleSlide 0.6s ease-out 1.1s both; }
-      `}</style>
-      <div className="splash-bg">
-        <div style={{display:'flex', gap:24, alignItems:'flex-end', marginBottom:0}}>
-          <div className="splash-mascot-kun">
-            <img src="/face-kun.svg" alt="フェイスくん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
-          </div>
-          <div className="splash-mascot-chan">
-            <img src="/face-chan.svg" alt="フェイスちゃん" style={{width:130,height:130,filter:'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'}} />
-          </div>
-        </div>
-        <div className="splash-title" style={{marginTop:24,textAlign:'center'}}>
-          <span style={{fontSize:42,fontWeight:900,letterSpacing:'0.1em',color:'#fff',fontFamily:'Roboto Condensed,-apple-system,sans-serif',textShadow:'0 2px 12px rgba(0,0,0,0.4)'}}>Wac</span>
-        </div>
-        <div className="splash-sub" style={{marginTop:8}}>
-          <span style={{fontSize:13,color:'rgba(255,255,255,0.6)',letterSpacing:'0.08em'}}>現場管理をスマートに</span>
-        </div>
-      </div>
     </>
   );
 }
@@ -6092,6 +6059,7 @@ function ChatPage({ sites, currentUser, selectedSite, onSelectSite, onNavigate }
 export default function LOGIOApp() {
   // ★ 起動アニメーション: 毎回起動時に表示
   const [showSplash, setShowSplash] = useState(true);
+  const [splashReady, setSplashReady] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try { return !!localStorage.getItem('wac_user'); } catch { return false; }
   });
@@ -6137,51 +6105,22 @@ export default function LOGIOApp() {
   }, [currentPage]);
 
   useEffect(() => {
-    if (!showSplash) return;
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [showSplash]);
-
-  // ★ 15分無操作でアニメに戻る(ログインセッションは維持)
-  // ★ 案A: 画面非表示中はタイマー停止、画面表示中のみカウント
-  useEffect(() => {
-    if (showSplash) return; // スプラッシュ中は監視不要
-    const IDLE_MS = 15 * 60 * 1000; // 15分
-    let idleTimer = null;
-    const resetIdle = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      // 画面が見えていない時はタイマーをセットしない
-      if (document.hidden) return;
-      idleTimer = setTimeout(() => {
-        setShowSplash(true);
-      }, IDLE_MS);
-    };
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // 画面が非表示になった → タイマー停止
-        if (idleTimer) {
-          clearTimeout(idleTimer);
-          idleTimer = null;
-        }
-      } else {
-        // 画面が表示された → タイマー再開
-        resetIdle();
+    let cancelled = false;
+    const initializeApp = async () => {
+      if (!isLoggedIn) {
+        if (!cancelled) setSplashReady(true);
+        return;
+      }
+      try {
+        await loadSites();
+      } finally {
+        if (!cancelled) setSplashReady(true);
       }
     };
-    const events = ['mousedown','mousemove','keydown','touchstart','scroll','wheel'];
-    events.forEach(e => window.addEventListener(e, resetIdle, {passive:true}));
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    resetIdle(); // 初期起動
-    return () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      events.forEach(e => window.removeEventListener(e, resetIdle));
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [showSplash]);
 
-  useEffect(() => { if (isLoggedIn) loadSites(); }, [isLoggedIn]);
+    initializeApp();
+    return () => { cancelled = true; };
+  }, [isLoggedIn]);
 
   const loadSites = async () => {
     try {
@@ -6557,7 +6496,7 @@ export default function LOGIOApp() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  if (showSplash) return <SplashScreen />;
+  if (showSplash) return <SplashScreen ready={splashReady} onFinish={() => setShowSplash(false)} />;
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
   // ★ 管理者ログイン時は AdminPage を表示
   if (currentUser?.type === 'admin') return <AdminPage currentUser={currentUser} onLogout={handleLogout} />;

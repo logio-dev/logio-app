@@ -1328,10 +1328,13 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   const [groupExpanded, setGroupExpanded] = useState({ '着工前・進行中': false, '完了': false });
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
 
-  const handleAddSite = () => {
+  const handleAddSite = async () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
     const name = newSiteName.trim();
-    onAddSite(name);
+    const added = await onAddSite(name);
+    if (!added) {
+      return;
+    }
     setNewSiteName(''); setShowAddSite(false);
     // 追加後に自動でカードを開く（少し待ってから）
     setTimeout(() => { setOpenCard(name); onSelectSite && onSelectSite(name); }, 300);
@@ -3865,7 +3868,7 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
             <span style={{fontSize:12,color:"rgba(255,255,255,0.6)"}}>({getDayOfWeek(report.date)})</span>
             
             {/* 記入者＋更新日時 */}
-            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:'rgba(255,255,255,0.65)', fontFamily:'monospace', background:'#E8E8E8', border:'none', padding:'2px 7px', borderRadius:99, color:'#555' }}>
+            <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, fontFamily:'monospace', background:'#E8E8E8', border:'none', padding:'2px 7px', borderRadius:99, color:'#555' }}>
               {report.updatedBy || report.recorder || ''}
               {report.updatedAt && (
                 <span style={{ color:'rgba(255,255,255,0.45)' }}>
@@ -6167,6 +6170,14 @@ export default function LOGIOApp() {
     try {
       const data = await sb('sites').select('order=created_at.asc');
       if (Array.isArray(data)) {
+        const seenNames = new Set();
+        const dedupedSites = data.filter(s => {
+          const key = String(s?.name ?? '').trim().toLowerCase();
+          if (!key || seenNames.has(key)) return false;
+          seenNames.add(key);
+          return true;
+        });
+
         // ★ 全現場のproject_infoを一括ロード(金額・工期表示のため)
         const piData = await sb('project_info').select('order=site_name.asc');
         const piMap = {};
@@ -6189,7 +6200,7 @@ export default function LOGIOApp() {
             }
           });
         }
-        setSites(data.map(s => {
+        setSites(dedupedSites.map(s => {
           const piStatus = piMap[s.name]?.status;
           // ★ status: project_info優先、なければsites、両方trim()
           let resolvedStatus = (piStatus || s.status || '').trim();
@@ -6251,14 +6262,31 @@ export default function LOGIOApp() {
 
   const handleAddSite = async (siteName) => {
     try {
+      const normalizedName = String(siteName || '').trim();
+      if (!normalizedName) {
+        alert('現場名を入力してください');
+        return false;
+      }
+
+      const existingSites = await sb('sites').select();
+      const duplicate = Array.isArray(existingSites) && existingSites.some(s => {
+        const current = String(s?.name ?? '').trim().toLowerCase();
+        return current && current === normalizedName.toLowerCase();
+      });
+      if (duplicate) {
+        alert(`同じ現場名は登録できません: ${normalizedName}`);
+        return false;
+      }
+
       const projectNumber = await generateProjectNumber();
-      await sb('sites').insert({ name: siteName, project_number: projectNumber, status: '着工前・進行中' });
-      await sb('project_info').insert({ site_name: siteName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '着工前・進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
-      setSites(prev => [...prev, { name: siteName, projectNumber, status: '着工前・進行中' }]);
-      setSelectedSite(siteName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: siteName, contractType: '', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
-      alert(`✅ 現場「${siteName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
-    } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); }
+      await sb('sites').insert({ name: normalizedName, project_number: projectNumber, status: '着工前・進行中' });
+      await sb('project_info').insert({ site_name: normalizedName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '着工前・進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
+      setSites(prev => [...prev, { name: normalizedName, projectNumber, status: '着工前・進行中' }]);
+      setSelectedSite(normalizedName);
+      setProjectInfo({ projectId: '', projectNumber, projectName: normalizedName, contractType: '', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
+      alert(`✅ 現場「${normalizedName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
+      return true;
+    } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); return false; }
   };
 
   const handleDeleteSite = async (siteName) => {

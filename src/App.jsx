@@ -2153,6 +2153,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   // ★ 自動検出: wasteForm.workerName と scrapForm.workerName が変わったら、既存リストに同名がいるか確認して自動でisSwap切り替え
   useEffect(() => {
     const name = (wasteForm.workerName||'').trim();
+    // ★ 編集中は自動再判定しない: 既存データの isSwap を勝手に書き換えない
+    if (editingWasteIdx !== null) return;
     // 担当者・車両が未入力なら isSwap は false に戻す
     if (!name || !wasteForm.workerVType) {
       if (wasteForm.isSwap === true) setWasteForm(prev => ({...prev, isSwap: false}));
@@ -2168,16 +2170,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
 
   useEffect(() => {
     const name = (scrapForm.workerName||'').trim();
+    if (editingScrapIdx !== null) return;
     if (!name || !scrapForm.workerVType) {
       if (scrapForm.isSwap === true) setScrapForm(prev => ({...prev, isSwap: false}));
       return;
     }
-    const isDup = wasteItems.some((w, i) => w.workerName === name && w.workerVType)
+    const isDup = wasteItems.some((w, i) => i !== editingWasteIdx && w.workerName === name && w.workerVType)
                || scrapItems.some((s, i) => i !== editingScrapIdx && s.workerName === name && s.workerVType);
     if (isDup !== (scrapForm.isSwap === true)) {
       setScrapForm(prev => ({...prev, isSwap: isDup}));
     }
-  }, [scrapForm.workerName, scrapForm.workerVType, wasteItems, scrapItems, editingScrapIdx]);
+  }, [scrapForm.workerName, scrapForm.workerVType, wasteItems, scrapItems, editingWasteIdx, editingScrapIdx]);
   // ★ 課タブ
   const [currentDept, setCurrentDept] = useState('k1');
   // ★ 産廃入力の自社運搬タブ内の部署タブ (k1=工事1課 / k2=環境課)
@@ -2520,11 +2523,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     const workerVehicleAmount = VEHICLE_UNIT_PRICES[wasteForm.workerVType] || 0;
     const isRevenue = (wasteModeByTab[wasteTab]||'cost') === 'revenue';
 
-    // ★ isSwap を保存時に正しく判定: 編集対象/自分自身を除外して同担当者を探す
+    // ★ 編集中は現在のフォーム値を尊重し、新規追加時だけ重複判定を行う
     const computeIsSwap = () => {
+      if (editingWasteIdx !== null) return wasteForm.isSwap === true;
       const workerName = (wasteForm.workerName||'').trim();
       if (!workerName || !wasteForm.workerVType) return false;
-      // 編集中の場合、編集対象のindexを除外
       const existingWaste = wasteItems.some((w, i) => i !== editingWasteIdx && w.workerName === workerName && w.workerVType);
       const existingScrap = scrapItems.some((s, i) => i !== editingScrapIdx && s.workerName === workerName && s.workerVType);
       return existingWaste || existingScrap;

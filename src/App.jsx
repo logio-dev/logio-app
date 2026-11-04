@@ -1776,11 +1776,13 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                 style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:15, outline:'none', boxSizing:'border-box', fontFamily:'inherit' }} />
                             </div>
                           </div>
-                          <div>
-                            <label style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>工事条件</label>
-                            <textarea value={projectInfo.workCondition||''} onChange={e=>setProjectInfo({...projectInfo,workCondition:e.target.value})} placeholder="例) アスベスト有り、夜間作業あり..."
-                              style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:'inherit', minHeight:64, resize:'vertical' }} />
-                          </div>
+                        </div>
+
+                        {/* ★ 備考欄（工事条件・メモ等） */}
+                        <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
+                          <div style={{ fontSize:10, fontWeight:700, color:'#60a5fa', textTransform:'uppercase', letterSpacing:'.08em', marginBottom:12 }}>備考欄（工事条件・メモ等）</div>
+                          <textarea value={projectInfo.workCondition||''} onChange={e=>setProjectInfo({...projectInfo,workCondition:e.target.value})} placeholder="例) アスベスト有り、夜間作業あり..."
+                            style={{ width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:'inherit', minHeight:92, resize:'vertical' }} />
                         </div>
 
                         {/* ===== 経費2分類タブ ===== */}
@@ -4835,7 +4837,6 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                         <tr><th style={{fontSize:'9px'}}>面積</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteAreaM2 ? `${projectInfo.siteAreaM2} ㎡` : '—'}</td></tr>
                         <tr><th style={{fontSize:'9px'}}>坪数</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteTsubo  ? `${projectInfo.siteTsubo} 坪`  : '—'}</td></tr>
                         <tr><th style={{fontSize:'9px'}}>業態</th><td style={{fontSize:'9px',textAlign:'right'}}>{projectInfo.siteUseType || '—'}</td></tr>
-                        <tr><th style={{fontSize:'9px',whiteSpace:'nowrap'}}>工事条件</th><td style={{fontSize:'8px',textAlign:'right',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'80px'}}>{projectInfo.workCondition || '—'}</td></tr>
                         <tr style={{borderTop:'1px solid #374151'}}><th colSpan={2} style={{textAlign:'center',color:'#C4B5FD',background:'#374151',fontSize:'9px',fontWeight:700,letterSpacing:'.05em'}}>原　価　単　価</th></tr>
                         <tr><th style={{fontSize:'9px'}}>処分費㎥単価</th><td style={{fontSize:'9px',textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitWaste   > 0 ? `¥${formatCurrency(unitWaste)}`   : '—'}</td></tr>
                         <tr><th style={{fontSize:'9px'}}>人件費㎡単価</th><td style={{fontSize:'9px',textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{unitLaborM2 > 0 ? `¥${formatCurrency(unitLaborM2)}` : '—'}</td></tr>
@@ -4867,6 +4868,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                           )}
                         </tbody>
                       </table>
+                      <div style={{ marginTop:10, border:'1px solid #374151', background:'#f9fafb', padding:'8px 10px', width:'100%' }}>
+                        <div style={{ fontSize:10, fontWeight:700, color:'#374151', borderBottom:'1px solid #D1D5DB', paddingBottom:4, marginBottom:6 }}>【備考欄（工事条件・メモ等)】</div>
+                        <div style={{ fontSize:9, color:'#374151', lineHeight:1.6, whiteSpace:'pre-wrap', minHeight:'4.5em' }}>
+                          {projectInfo.workCondition || '—'}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

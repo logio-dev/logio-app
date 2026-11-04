@@ -1738,12 +1738,21 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           </div>
                         </div>
                         <div style={{marginBottom:12}}>
-                        <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>売上（税抜） / REVENUE</label>
+                        <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>見積金額（想定金額） / ESTIMATED AMOUNT</label>
                         <input type="text" inputMode="numeric"
                           value={projectInfo.contractAmount ? Number(String(projectInfo.contractAmount).replace(/,/g,'')).toLocaleString() : ''}
                           onChange={e=>setProjectInfo({...projectInfo,contractAmount:e.target.value.replace(/,/g,'')})}
                           placeholder="5,000,000"
                           style={{width:'100%',padding:'10px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
+                      </div>
+                        <div style={{marginBottom:12, padding:'10px 10px 12px', borderRadius:10, background: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? 'rgba(239, 68, 68, 0.06)' : 'rgba(255,255,255,0.04)', border: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? '1px solid rgba(239,68,68,0.75)' : '1px solid rgba(255,255,255,0.08)', boxShadow: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? '0 0 0 1px rgba(239,68,68,0.25)' : 'none' }}>
+                        <label style={{display:'block',fontSize:9,fontWeight:700,color: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? '#fca5a5' : 'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>請求金額 / BILLING AMOUNT</label>
+                        <input type="text" inputMode="numeric"
+                          value={projectInfo.billingAmount ? Number(String(projectInfo.billingAmount).replace(/,/g,'')).toLocaleString() : ''}
+                          onChange={e=>setProjectInfo({...projectInfo,billingAmount:e.target.value.replace(/,/g,'')})}
+                          placeholder="0"
+                          style={{width:'100%',padding:'10px',background:'rgba(17,24,39,0.42)',border: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)',color:'#fbbf24',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace',fontWeight:700,boxShadow: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none'}}/>
+                          <div style={{marginTop:8,fontSize:10, lineHeight:1.5, color:'#fca5a5'}}>※ 請求金額を入力しないとステータスを「完了」に移行できません。</div>
                       </div>
                         <div>
                         <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>追加金額（税抜） / ADDITIONAL</label>
@@ -1852,7 +1861,17 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             </div>
                           );
                         })()}
-                                                                        <Select label="ステータス" labelEn="Status" options={MASTER_DATA.statuses} value={projectInfo.status||''} onChange={v=>setProjectInfo({...projectInfo,status:v})} />
+                                                                        <div style={{ marginBottom:16, padding:'10px 10px 12px', borderRadius:10, background: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? 'rgba(239, 68, 68, 0.06)' : 'rgba(255,255,255,0.04)', border: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? '1px solid rgba(239,68,68,0.75)' : '1px solid rgba(255,255,255,0.08)', boxShadow: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? '0 0 0 1px rgba(239,68,68,0.25)' : 'none' }}>
+                                  <label style={{display:'block',fontSize:9,fontWeight:700,color: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? '#fca5a5' : 'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>ステータス / STATUS</label>
+                                  <select value={projectInfo.status||''} onChange={(e)=>handleStatusChange(e.target.value)}
+                                    style={{ width:'100%', padding:'11px 12px', background:'rgba(17,24,39,0.42)', border: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit', WebkitAppearance:'none', boxShadow: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none' }}>
+                                    <option value="" style={{background:'#fff',color:'#111'}}>選択してください</option>
+                                    {MASTER_DATA.statuses.map(opt => <option key={opt} value={opt} style={{background:'#fff',color:'#111'}}>{opt}</option>)}
+                                  </select>
+                                  <div style={{marginTop:8,fontSize:10,lineHeight:1.5,color:'#fca5a5'}}>
+                                    ※ 請求金額・原価の入力確認後に完了へ移行してください。
+                                  </div>
+                                </div>
                         {/* マニフェスト */}
                         <div style={{marginBottom:16}}>
                           <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:10}}>マニフェスト / MANIFEST</label>
@@ -4657,7 +4676,10 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
     const newScrap = (r.wasteItems || []).reduce((s, w) => s + ((w.amount || 0) < 0 ? Math.abs(w.amount) : 0), 0);
     return sum + oldScrap + newScrap;
   }, 0);
-  const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
+  const estimateRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
+  const formalRevenue = parseFloat(projectInfo.billingAmount) || 0;
+  const totalRevenue = formalRevenue > 0 ? formalRevenue : estimateRevenue;
+  const isRevenueProvisional = !(formalRevenue > 0);
   // ★ 車両費は重複除去後の totalAllVehicleCost を使う(haishiAmount は別フィールドなので加算)
   // ★ 原価合計 = 純粋な原価のみ(金属売上は控除しない)
   const totalCost = totalInHouseCost + totalOutsourcingCost + totalAllVehicleCost + totalHaishiCost + totalMachineryCost + totalEnvExtCost + totalTransportCost + totalWasteDisposal + totalDailyExpenses
@@ -4849,15 +4871,19 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
                       <div className="text-center py-1 font-bold text-[10px] tracking-widest" style={{background:'#374151',color:'#EAB308',border:'1px solid #374151'}}>【　収　支　結　果　】</div>
                       <table className="result-table" style={{width:'100%'}}>
                         <tbody>
-                          {[['見積金額', totalRevenue],['原価金額', totalCost],['追加金額', parseFloat(projectInfo.additionalAmount) || 0]].map(([label, val]) => (
-                            <tr key={label}><th>{label}</th><td>¥{formatCurrency(val)}</td></tr>
+                          {[
+                            ['見積金額（想定金額）', estimateRevenue, '#1D4ED8'],
+                            ['請求金額', formalRevenue, '#DC2626'],
+                            ['原価金額', totalCost, '#D97706']
+                          ].map(([label, val, color]) => (
+                            <tr key={label}><th style={{ color: color, fontWeight: 700 }}>{label}</th><td style={{ color: color, fontWeight: 700 }}>¥{formatCurrency(val)}</td></tr>
                           ))}
                           <tr style={{ borderTop: '2px solid #374151' }}>
-                            <th style={{color:'#B45309',fontWeight:700}}>粗利</th>
+                            <th style={{color:'#B45309',fontWeight:700}}>{isRevenueProvisional ? '粗利（仮）' : '粗利'}</th>
                             <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>¥{formatCurrency(grossProfit)}</td>
                           </tr>
                           <tr>
-                            <th style={{color:'#B45309'}}>粗利率</th>
+                            <th style={{color:'#B45309'}}>{isRevenueProvisional ? '粗利率（仮）' : '粗利率'}</th>
                             <td style={{ color: grossProfit >= 0 ? '#1D4ED8' : '#DC2626', fontWeight:700 }}>{totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0'}%</td>
                           </tr>
                           {totalScrapRevenue > 0 && (
@@ -6081,7 +6107,7 @@ export default function LOGIOApp() {
   const defaultProjectInfo = {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
-    contractAmount: '', additionalAmount: '', status: '着工前・進行中',
+    contractAmount: '', additionalAmount: '', billingAmount: '', status: '着工前・進行中',
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
     paymentDueDate: '', paymentTerms: '', invoiceRecipient: '',
@@ -6237,7 +6263,7 @@ export default function LOGIOApp() {
       await sb('project_info').insert({ site_name: normalizedName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '着工前・進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
       setSites(prev => [...prev, { name: normalizedName, projectNumber, status: '着工前・進行中' }]);
       setSelectedSite(normalizedName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: normalizedName, contractType: '', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', status: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
+      setProjectInfo({ projectId: '', projectNumber, projectName: normalizedName, contractType: '', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', billingAmount: '', status: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
       alert(`✅ 現場「${normalizedName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
       return true;
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); return false; }
@@ -6290,7 +6316,9 @@ export default function LOGIOApp() {
         const miscItems = rawMiscItems !== undefined && rawMiscItems !== null
           ? rawMiscItems
           : [...(d.site_expense_items||[]), ...(d.sga_items||[])];
-        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', status: (d.status === '着工前' || d.status === '進行中') ? '着工前・進行中' : (d.status || '着工前・進行中'), discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], miscItems, manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '',
+        const normalizedStatus = (d.status === '着工前' || d.status === '進行中') ? '着工前・進行中' : (d.status || '着工前・進行中');
+        const estimateBase = (parseFloat(d.contract_amount) || 0) + (parseFloat(d.additional_amount) || 0);
+        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', billingAmount: d.billing_amount != null ? String(d.billing_amount) : (normalizedStatus === '完了' ? String(estimateBase) : ''), status: normalizedStatus, discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], miscItems, manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '',
           siteAreaM2: d.site_area_m2 != null ? String(d.site_area_m2) : '',
           siteTsubo:  d.site_tsubo  != null ? String(d.site_tsubo)  : '',
           siteUseType: d.site_use_type  || '',
@@ -6319,10 +6347,29 @@ export default function LOGIOApp() {
     } catch (error) { setReports([]); }
   };
 
+  const estimateRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
+  const billingRevenue = parseFloat(projectInfo.billingAmount) || 0;
+  const hasFormalBilling = billingRevenue > 0;
+  const displayRevenue = hasFormalBilling ? billingRevenue : estimateRevenue;
+
+  const handleStatusChange = (nextStatus) => {
+    if (nextStatus === '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) {
+      alert('請求金額を入力してからステータスを「完了」に移行してください。');
+      return;
+    }
+    setProjectInfo({ ...projectInfo, status: nextStatus });
+  };
+
   const handleSaveProject = async (silent = false) => {
     if (!selectedSite) return alert('現場を選択してください');
+    const normalizedBilling = projectInfo.billingAmount && Number(projectInfo.billingAmount) > 0 ? Number(projectInfo.billingAmount) : (projectInfo.status === '完了' ? estimateRevenue : 0);
+    if (projectInfo.status === '完了' && normalizedBilling <= 0) {
+      alert('請求金額を入力してからステータスを「完了」に移行してください。');
+      return;
+    }
+    const finalProjectInfo = { ...projectInfo, billingAmount: normalizedBilling > 0 ? String(normalizedBilling) : projectInfo.billingAmount || '' };
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, status: projectInfo.status || '着工前・進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined, manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
+      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, billing_amount: normalizedBilling > 0 ? normalizedBilling : null, status: projectInfo.status || '着工前・進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined, manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
           payment_due_date: projectInfo.paymentDueDate || '',
           payment_terms: projectInfo.paymentTerms || '',
           invoice_recipient: projectInfo.invoiceRecipient || '',

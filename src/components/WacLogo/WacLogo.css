@@ -1,0 +1,78 @@
+/* Wac ロゴ（E案「Wac by FACE」） */
+@font-face {
+  font-family: "WacLogo Inter";
+  font-weight: 800;
+  font-display: block;
+  src: url("./fonts/wac-logo-inter-800.woff2") format("woff2");
+}
+@font-face {
+  font-family: "WacLogo Inter";
+  font-weight: 500;
+  font-display: block;
+  src: url("./fonts/wac-logo-inter-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "WacLogo Archivo";
+  font-weight: 900;
+  font-display: block;
+  src: url("./fonts/wac-logo-archivo-900-85.woff2") format("woff2");
+}
+
+.wac-logo {
+  --wac-ink: #15171c;
+  --wac-by: #6b6f7a;
+  --wac-face: #2a1a0c;
+  --wac-glow: 248, 181, 0; /* フェイスの黄色 #F8B500 */
+  line-height: 1;
+  white-space: nowrap;
+}
+.wac-logo__wac {
+  font-family: "WacLogo Inter", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: var(--wac-ink);
+}
+.wac-logo__by {
+  font-family: "WacLogo Inter", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500;
+  color: var(--wac-by);
+}
+.wac-logo__face {
+  font-family: "WacLogo Archivo", "Arial Black", "Helvetica Neue", sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: var(--wac-face);
+}
+
+/* ヘッダー */
+.wac-logo--header { display: inline-flex; align-items: baseline; gap: 5px; }
+.wac-logo--header .wac-logo__wac { font-size: 29px; }
+.wac-logo--header .wac-logo__by { font-size: 10px; }
+.wac-logo--header .wac-logo__face {
+  font-size: 14px;
+  text-shadow: 0 0 6px rgba(var(--wac-glow), 0.9), 0 0 1px rgba(var(--wac-glow), 0.9);
+}
+
+/* メニュー（ドロワー） */
+.wac-logo--menu { display: inline-flex; align-items: baseline; gap: 6px; }
+.wac-logo--menu .wac-logo__wac { font-size: 42px; }
+.wac-logo--menu .wac-logo__by { font-size: 12px; }
+.wac-logo--menu .wac-logo__face {
+  font-size: 18px;
+  text-shadow: 0 0 8px rgba(var(--wac-glow), 0.9), 0 0 1px rgba(var(--wac-glow), 0.9);
+}
+
+/* ログイン */
+.wac-logo--login { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.wac-logo--login .wac-logo__row { display: flex; align-items: center; justify-content: center; }
+.wac-logo--login .wac-logo__wac { font-size: 64px; }
+.wac-logo__mascot { height: auto; position: relative; z-index: 1; user-select: none; -webkit-user-drag: none; }
+.wac-logo__mascot--left { width: 58px; margin-right: -8px; }
+.wac-logo__mascot--right { width: 56px; margin-left: -6px; }
+.wac-logo--login .wac-logo__sub { display: inline-flex; align-items: baseline; gap: 7px; }
+.wac-logo--login .wac-logo__by { font-size: 14px; }
+.wac-logo--login .wac-logo__face {
+  font-size: 30px;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 12px rgba(var(--wac-glow), 0.95), 0 0 2px rgba(var(--wac-glow), 0.9);
+}

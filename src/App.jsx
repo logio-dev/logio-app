@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown, MessageCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SplashScreen from './components/SplashScreen/SplashScreen';
+import WacLogo from './components/WacLogo/WacLogo';
 
 
 // ========== Supabase設定 ==========
@@ -402,7 +403,7 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
           )}
         </div>
         {/* 中央：ロゴ */}
-        <span style={{ fontSize:'22px', fontWeight:900, letterSpacing:'0.05em', color:'#1C1917', fontFamily:'Roboto Condensed, -apple-system, sans-serif', userSelect:'none' }}>Wac</span>
+        <WacLogo variant="header" />
         {/* 右：マスコット＋アイコン */}
         <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', gap:'2px', alignItems:'center' }}>
           {/* マスコット */}
@@ -604,7 +605,7 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
             </div>
             <div className="flex-1 h-0 overflow-y-auto" style={{ paddingTop:'calc(env(safe-area-inset-top, 0px) + 20px)', paddingBottom:'16px' }}>
               <div className="flex items-center flex-shrink-0 px-4 mb-8">
-                <span style={{fontSize:24,fontWeight:900,letterSpacing:'0.05em',color:'#1C1917',fontFamily:'Roboto Condensed,-apple-system,sans-serif'}}>Wac</span>
+                <WacLogo variant="menu" />
               </div>
               <nav className="px-2 space-y-1">
                 {navItems.map((item) => {
@@ -680,16 +681,13 @@ function LoginPage({ onLogin }) {
         .mascot-toggle:hover { opacity:0.8; }
       `}</style>
       <div style={{minHeight:'100vh', background:'linear-gradient(160deg,#f0f4ff 0%,#faf8ff 60%,#fff0f8 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'0 16px'}}>
-        {/* マスコット */}
-        <div style={{marginBottom:16, position:'relative'}}>
-          <img
-            src={mascot === 'kun' ? '/face-kun.svg' : '/face-chan.svg'}
-            alt={mascot === 'kun' ? 'フェイスくん' : 'フェイスちゃん'}
-            className={`mascot-idle${error ? ' mascot-error' : ''}${isLoggingIn ? ' mascot-success' : ''}`}
-            style={{width:120, height:120, filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.15))', display:'block', margin:'0 auto'}}
-          />
-          {/* 切り替えボタン */}
-          <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:10}}>
+        <div style={{width:'100%', maxWidth:360, display:'flex', flexDirection:'column', alignItems:'center', marginBottom:16}}>
+          <WacLogo variant="login" />
+        </div>
+
+        {/* ログインカード */}
+        <div className="login-card" style={{width:'100%', maxWidth:360}}>
+          <div style={{display:'flex', gap:8, justifyContent:'center', marginBottom:14}}>
             <button className="mascot-toggle" onClick={()=>{setMascot('kun');setUserId('');setPassword('');setError('');}}
               style={{width:32,height:32,borderRadius:'50%',border:`2px solid ${mascot==='kun'?'#6366F1':'#E5E7EB'}`,background:mascot==='kun'?'#EEF2FF':'#fff',overflow:'hidden',padding:2}}>
               <img src="/face-kun.svg" alt="くん" style={{width:'100%',height:'100%'}} />
@@ -699,19 +697,9 @@ function LoginPage({ onLogin }) {
               <img src="/face-chan.svg" alt="ちゃん" style={{width:'100%',height:'100%'}} />
             </button>
           </div>
-          <div style={{display:'flex',gap:24,justifyContent:'center',marginTop:6}}>
+          <div style={{display:'flex',gap:24,justifyContent:'center',marginBottom:16}}>
             <span style={{fontSize:10,color:mascot==='kun'?'#6366F1':'#9CA3AF',fontWeight:mascot==='kun'?700:400}}>一般</span>
             <span style={{fontSize:10,color:mascot==='chan'?'#EC4899':'#9CA3AF',fontWeight:mascot==='chan'?700:400}}>管理者</span>
-          </div>
-        </div>
-
-        {/* ログインカード */}
-        <div className="login-card" style={{width:'100%', maxWidth:360}}>
-          <div style={{textAlign:'center', marginBottom:24}}>
-            <span style={{fontSize:32, fontWeight:900, letterSpacing:'0.08em', color:'#1C1917', fontFamily:'Roboto Condensed,-apple-system,sans-serif'}}>Wac</span>
-            <p style={{fontSize:12, color: mascot === 'chan' ? '#EC4899' : '#9CA3AF', marginTop:4, fontWeight: mascot === 'chan' ? 700 : 400}}>
-              {mascot === 'chan' ? '管理者ログイン' : '現場管理をスマートに'}
-            </p>
           </div>
           <div style={{borderRadius:20, padding:24, background:'#fff', boxShadow:'0 8px 32px rgba(0,0,0,0.08)', border:'1px solid rgba(0,0,0,0.06)'}}>
             {[['ID', 'text', userId, setUserId], ['パスワード', 'password', password, setPassword]].map(([lbl, tp, val, setter]) => (

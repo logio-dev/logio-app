@@ -22,6 +22,20 @@ async function uploadPhoto(file, siteName, date) {
   return `https://ruomhthswdxylopkhmnh.supabase.co/storage/v1/object/public/report-photos/${encodeURIComponent(path)}`;
 }
 
+// Supabase の応答を読み、失敗なら Supabase のエラー文で Error を投げる
+async function parseResponseOrThrow(res, label) {
+  const bodyText = await res.text();
+  if (!res.ok) {
+    let parsed = null;
+    try { parsed = bodyText ? JSON.parse(bodyText) : null; } catch (e) { parsed = null; }
+    const msg = parsed?.message || bodyText || `${label} failed (${res.status})`;
+    console.error(`${label} error:`, res.status, msg);
+    throw new Error(msg);
+  }
+  if (!bodyText) return null;
+  try { return JSON.parse(bodyText); } catch (e) { return bodyText; }
+}
+
 function sb(table) {
   const _url = 'https://ruomhthswdxylopkhmnh.supabase.co';
   const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1b21odGhzd2R4eWxvcGtobW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzQ1NjMsImV4cCI6MjA4NzUxMDU2M30.kH60ggCa7t_M7iJQbTpgJOgUUEl_rMQZM5e6Mob6hEE';
@@ -39,28 +53,29 @@ function sb(table) {
       if (!res.ok) console.error('select error:', res.status, url);
       return res.json();
     },
+    // insert / update は失敗しても例外を出さない（既存の呼び出し元はこの動きが前提）。
+    // 失敗を確実に知りたいときは insertOrThrow / updateOrThrow を使う
     async insert(data) {
       const res = await fetch(base, { method: 'POST', headers: h, body: JSON.stringify(data) });
       return res.json();
+    },
+    async insertOrThrow(data) {
+      const res = await fetch(base, { method: 'POST', headers: h, body: JSON.stringify(data) });
+      return parseResponseOrThrow(res, 'insert');
     },
     async upsert(data, onConflict) {
       const h2 = Object.assign({}, h, { 'Prefer': 'resolution=merge-duplicates,return=representation' });
       const url = onConflict ? (base + '?on_conflict=' + encodeURIComponent(onConflict)) : base;
       const res = await fetch(url, { method: 'POST', headers: h2, body: JSON.stringify(data) });
-      const bodyText = await res.text();
-      if (!res.ok) {
-        let parsed = null;
-        try { parsed = bodyText ? JSON.parse(bodyText) : null; } catch (e) { parsed = null; }
-        const msg = parsed?.message || bodyText || 'Upsert failed';
-        console.error('upsert error:', res.status, msg);
-        throw new Error(msg);
-      }
-      if (!bodyText) return null;
-      try { return JSON.parse(bodyText); } catch (e) { return bodyText; }
+      return parseResponseOrThrow(res, 'upsert');
     },
     async update(data, filter) {
       const res = await fetch(base + '?' + filter, { method: 'PATCH', headers: h, body: JSON.stringify(data) });
       return res.json();
+    },
+    async updateOrThrow(data, filter) {
+      const res = await fetch(base + '?' + filter, { method: 'PATCH', headers: h, body: JSON.stringify(data) });
+      return parseResponseOrThrow(res, 'update');
     },
     async delete(filter) {
       const res = await fetch(base + '?' + filter, { method: 'DELETE', headers: h });
@@ -762,12 +777,15 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
     try {
       const allUrls = [...(latest.photoUrls||[]), ...homePhotoUrls];
       const newMemo = [latest.memo||'', homeMemo].filter(Boolean).join('\n');
-      await window.__updateReportPhotos(latest.id, allUrls, newMemo);
-      setHomePhotoUrls([]);
-      setHomeMemo('');
-      setHomePhotoOpen(false);
-      alert('✅ 保存しました');
-    } catch(e) { alert('❌ 保存失敗: '+e.message); }
+      const droppedColumns = (await window.__updateReportPhotos(latest.id, allUrls, newMemo)) || [];
+      // 保存できた方だけ入力を空にする（保存されなかった方は残す）
+      const photosSaved = !droppedColumns.includes('photo_urls');
+      const memoSaved = !droppedColumns.includes('memo');
+      if (photosSaved) setHomePhotoUrls([]);
+      if (memoSaved) setHomeMemo('');
+      if (photosSaved && memoSaved) setHomePhotoOpen(false);
+      alert(droppedColumns.length > 0 ? buildMissingColumnsWarning(droppedColumns, REPORT_COLUMN_LABELS) : '✅ 保存しました');
+    } catch(e) { alert(`❌ 保存できませんでした\n\n理由: ${e.message}`); }
     finally { setHomeSaving(false); }
   };
   const dropdownRef = useRef(null);
@@ -1360,6 +1378,83 @@ const extractMissingColumns = (message) => {
     ...[...text.matchAll(/column "([^"]+)" of relation "[^"]+" does not exist/gi)].map(m => m[1]),
   ];
   return Array.from(new Set(names));
+};
+
+// reports の欄名 → 画面の項目名
+const REPORT_COLUMN_LABELS = {
+  site_name: '現場名',
+  date: '日付',
+  weather: '天気',
+  recorder: '記録者',
+  work_details: '作業内容',
+  waste_items: '廃棄物',
+  scrap_items: 'スクラップ',
+  photo_urls: '写真',
+  memo: '備考',
+  updated_by: '更新者',
+  updated_at: '更新日時',
+};
+
+// 日報で、DBに欄がなければ外して保存してよい欄（それ以外が足りないときは保存失敗にする）
+const REPORT_DROPPABLE_COLUMNS = ['photo_urls', 'memo', 'updated_by', 'updated_at'];
+
+// DBにない欄を外しながら保存し直す。canDrop が true の欄だけ外す。
+// 外した欄名の一覧を返す。欄の不足以外のエラー、外せない欄の不足はそのまま投げる
+const saveDroppingMissingColumns = async (payload, save, canDrop) => {
+  const currentPayload = { ...payload };
+  const droppedColumns = [];
+  // Supabase は1回のエラーで1欄しか教えてくれないため、欄の数だけ再試行できるようにする
+  const maxAttempts = Object.keys(currentPayload).length + 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const result = await save(currentPayload);
+      return { result, droppedColumns };
+    } catch (error) {
+      const missingColumns = extractMissingColumns(error?.message || String(error || ''));
+      const droppable = missingColumns.filter(column => Object.prototype.hasOwnProperty.call(currentPayload, column));
+      if (droppable.length === 0 || !droppable.every(canDrop)) throw error;
+      droppable.forEach(column => {
+        delete currentPayload[column];
+        droppedColumns.push(column);
+      });
+      // 保存する欄が1つも残らなければ、保存できなかった扱いにする
+      if (Object.keys(currentPayload).length === 0) throw error;
+    }
+  }
+  throw new Error('save retry limit exceeded');
+};
+
+// 日報を1件更新する。対象の日報がなければ（削除済みなど）失敗にする
+const updateReportOrThrow = async (reportId, payload) => {
+  const updated = await sb('reports').updateOrThrow(payload, `id=eq.${reportId}`);
+  // 対象の行がないとき、Supabase はエラーではなく空の一覧を返す
+  if (Array.isArray(updated) && updated.length === 0) {
+    throw new Error('対象の日報が見つかりませんでした（削除された可能性があります）');
+  }
+  return updated;
+};
+
+// 「○○が保存されていません（DBに欄がありません）」の警告文
+const buildMissingColumnsWarning = (droppedColumns, labels) => {
+  const names = droppedColumns.map(column => labels[column] || column);
+  return `⚠️ ${names.join('、')}が保存されていません（DBに欄がありません）\n\n` +
+    `それ以外の項目は保存しました。\n` +
+    `管理者にDBへの欄の追加を依頼してください。\n` +
+    `（DBの欄名: ${droppedColumns.join(', ')}）`;
+};
+
+// 保存失敗の理由を、現場の人が読んで分かる文にする
+const describeSaveError = (error, labels = {}) => {
+  const message = error?.message || String(error || '');
+  const missingColumns = extractMissingColumns(message);
+  if (missingColumns.length > 0) {
+    return `DBに「${missingColumns.map(column => labels[column] || column).join('」「')}」の欄がありません（${missingColumns.join(', ')}）`;
+  }
+  // ブラウザごとの通信失敗の文言: Chrome / Safari / Firefox
+  if (/Failed to fetch|Load failed|NetworkError/i.test(message)) {
+    return '通信できませんでした。電波の状況を確認してください';
+  }
+  return message || '原因不明のエラー';
 };
 
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite, onStatusChange }) {
@@ -6558,42 +6653,18 @@ export default function LOGIOApp() {
         projectPayload.billing_amount = normalizedBilling > 0 ? normalizedBilling : null;
       }
 
-      // DBに欄がない項目は外して保存し直す。外した欄名を返し、画面で警告する
-      const saveProjectPayload = async (payload) => {
-        const currentPayload = { ...payload };
-        const droppedColumns = [];
-        // Supabase は1回のエラーで1欄しか教えてくれないため、欄の数だけ再試行できるようにする
-        const maxAttempts = Object.keys(currentPayload).length + 1;
-        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-          try {
-            await sb('project_info').upsert(currentPayload, 'site_name');
-            return droppedColumns;
-          } catch (error) {
-            const missingColumns = extractMissingColumns(error?.message || String(error || ''))
-              .filter(column => column !== 'site_name' && Object.prototype.hasOwnProperty.call(currentPayload, column));
-            if (missingColumns.length === 0) throw error;
-            missingColumns.forEach(column => {
-              delete currentPayload[column];
-              droppedColumns.push(column);
-            });
-          }
-        }
-        throw new Error('project save retry limit exceeded');
-      };
-
-      const droppedColumns = await saveProjectPayload(projectPayload);
+      // DBに欄がない項目は外して保存し直し、外した項目は画面で警告する（site_name は外さない）
+      const { droppedColumns } = await saveDroppingMissingColumns(
+        projectPayload,
+        payload => sb('project_info').upsert(payload, 'site_name'),
+        column => column !== 'site_name'
+      );
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' } : s));
       if (droppedColumns.length > 0) {
         // 保存されなかった項目があるときは silent 指定でも必ず知らせる
-        const labels = droppedColumns.map(column => PROJECT_INFO_COLUMN_LABELS[column] || column);
         console.warn('project_info: DBに欄がないため保存されなかった項目:', droppedColumns);
-        alert(
-          `⚠️ ${labels.join('、')}が保存されていません（DBに欄がありません）\n\n` +
-          `それ以外の項目は保存しました。\n` +
-          `管理者にDBへの欄の追加を依頼してください。\n` +
-          `（DBの欄名: ${droppedColumns.join(', ')}）`
-        );
+        alert(buildMissingColumnsWarning(droppedColumns, PROJECT_INFO_COLUMN_LABELS));
       } else if (!silent) {
         alert('✅ プロジェクト情報を保存しました');
       }
@@ -6602,56 +6673,77 @@ export default function LOGIOApp() {
   };
 
   // ★ 保存後にロック解放
+  // 戻り値: 保存できたら true。失敗したら理由を表示して false（入力画面に留まるので入力内容は消えない）
   const handleSaveReport = async (reportData) => {
-    if (!selectedSite) return alert('現場を選択してください');
+    if (!selectedSite) { alert('現場を選択してください'); return false; }
+    const now = new Date().toISOString();
+    const updatedBy = reportData.recorder || currentUser?.userId || '';
+    const payload = { site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now, photo_urls: reportData.photoUrls || [], memo: reportData.memo || '' };
+    let droppedColumns = [];
     try {
-      const now = new Date().toISOString();
-      const updatedBy = reportData.recorder || currentUser?.userId || '';
-      // updated_by・updated_atカラムがない場合も保存できるよう try/catch で2段階対応
-      try {
-        await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], updated_by: updatedBy, updated_at: now, photo_urls: reportData.photoUrls || [], memo: reportData.memo || '' });
-      } catch(e) {
-        // カラムなしの場合はupdated_by・updated_atなしで再試行
-        await sb('reports').insert({ site_name: selectedSite, date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: reportData.workDetails || {}, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] });
-      }
-      const userName = currentUser?.userId || 'unknown';
-      await siteLocks.release(selectedSite, userName);
-      setLockStatus(null);
-      await loadReports(selectedSite);
+      // 写真・備考・更新者・更新日時の欄がDBになければ、外して保存し直す（外した項目は警告する）
+      ({ droppedColumns } = await saveDroppingMissingColumns(
+        payload,
+        p => sb('reports').insertOrThrow(p),
+        column => REPORT_DROPPABLE_COLUMNS.includes(column)
+      ));
+    } catch (error) {
+      console.error('handleSaveReport error:', error);
+      alert(`❌ 日報を保存できませんでした\n\n理由: ${describeSaveError(error, REPORT_COLUMN_LABELS)}\n\n入力した内容は画面に残っています。`);
+      return false;
+    }
+    // ここから先は保存済み。ロック解除や再読み込みが失敗しても「保存失敗」とは出さない
+    // （出すと保存し直されて日報が二重に登録されるため）
+    const userName = currentUser?.userId || 'unknown';
+    await siteLocks.release(selectedSite, userName);
+    setLockStatus(null);
+    await loadReports(selectedSite);
+    if (droppedColumns.length > 0) {
+      console.warn('reports: DBに欄がないため保存されなかった項目:', droppedColumns);
+      alert(buildMissingColumnsWarning(droppedColumns, REPORT_COLUMN_LABELS));
+    } else {
       alert('✅ 日報を保存しました');
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      setCurrentPage('home');
-    } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + error.message); }
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    setCurrentPage('home');
+    return true;
   };
 
+  // 戻り値: 更新できたら true。失敗したら理由を表示して false（編集画面に留まる）
   const handleUpdateReport = async (reportId, reportData) => {
+    const now = new Date().toISOString();
+    const updatedBy = reportData.recorder || currentUser?.userId || '';
+    const wd = {
+      ...reportData.workDetails,
+      outsourcingLabor: (reportData.workDetails?.outsourcingLabor || []).map(o => ({
+        ...o,
+        count: parseFloat(o.count || o.workers || 0),
+      }))
+    };
+    // ★修正: photo_urls と memo も更新対象に含める（編集時に消失するバグの修正）
+    const payload = { date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], photo_urls: reportData.photoUrls || [], memo: reportData.memo || '', updated_by: updatedBy, updated_at: now };
+    let droppedColumns = [];
     try {
-      const now = new Date().toISOString();
-      const updatedBy = reportData.recorder || currentUser?.userId || '';
-      const wd = {
-        ...reportData.workDetails,
-        outsourcingLabor: (reportData.workDetails?.outsourcingLabor || []).map(o => ({
-          ...o,
-          count: parseFloat(o.count || o.workers || 0),
-        }))
-      };
-      // ★修正: photo_urls と memo も更新対象に含める（編集時に消失するバグの修正）
-      try {
-        await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], photo_urls: reportData.photoUrls || [], memo: reportData.memo || '', updated_by: updatedBy, updated_at: now }, `id=eq.${reportId}`);
-      } catch(e) {
-        // updated_by / updated_at カラムなしの場合のフォールバック
-        try {
-          await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [], photo_urls: reportData.photoUrls || [], memo: reportData.memo || '' }, `id=eq.${reportId}`);
-        } catch(e2) {
-          // photo_urls / memo カラムもなしの場合の最終フォールバック
-          await sb('reports').update({ date: reportData.date, weather: reportData.weather || '', recorder: reportData.recorder || '', work_details: wd, waste_items: reportData.wasteItems || [], scrap_items: reportData.scrapItems || [] }, `id=eq.${reportId}`);
-        }
-      }
-      await loadReports(selectedSite);
-      setEditingReport(null);
+      ({ droppedColumns } = await saveDroppingMissingColumns(
+        payload,
+        p => updateReportOrThrow(reportId, p),
+        column => REPORT_DROPPABLE_COLUMNS.includes(column)
+      ));
+    } catch (error) {
+      console.error('handleUpdateReport error:', error);
+      alert(`❌ 日報を更新できませんでした\n\n理由: ${describeSaveError(error, REPORT_COLUMN_LABELS)}\n\n入力した内容は画面に残っています。`);
+      return false;
+    }
+    await loadReports(selectedSite);
+    setEditingReport(null);
+    if (droppedColumns.length > 0) {
+      console.warn('reports: DBに欄がないため保存されなかった項目:', droppedColumns);
+      alert(buildMissingColumnsWarning(droppedColumns, REPORT_COLUMN_LABELS));
+    } else {
       alert('✅ 日報を更新しました');
-      setCurrentPage('home');
-    } catch (error) { console.error(error); alert('❌ 更新に失敗しました: ' + error.message); }
+    }
+    setCurrentPage('home');
+    return true;
   };
 
   const handleDeleteReport = async (reportId) => {
@@ -6729,19 +6821,24 @@ export default function LOGIOApp() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
   window.__navigateEdit = (report) => { setEditingReport(report); setCurrentPage('edit'); window.scrollTo({ top: 0, behavior: 'instant' }); };
+  // ホーム画面からの写真・メモ追加。失敗したら理由を Error で投げる（呼び出し側で表示）
+  // 戻り値: DBに欄がなく保存されなかった欄名の一覧
   window.__updateReportPhotos = async (reportId, photoUrls, memo) => {
     const now = new Date().toISOString();
-    // ★修正: updated_at カラムなしの場合のフォールバック
+    let droppedColumns = [];
     try {
-      await sb('reports').update({ photo_urls: photoUrls, memo: memo, updated_at: now }, `id=eq.${reportId}`);
-    } catch(e) {
-      try {
-        await sb('reports').update({ photo_urls: photoUrls, memo: memo }, `id=eq.${reportId}`);
-      } catch(e2) {
-        console.error('updateReportPhotos error:', e2);
-      }
+      ({ droppedColumns } = await saveDroppingMissingColumns(
+        { photo_urls: photoUrls, memo: memo, updated_at: now },
+        p => updateReportOrThrow(reportId, p),
+        column => REPORT_DROPPABLE_COLUMNS.includes(column)
+      ));
+    } catch (error) {
+      console.error('updateReportPhotos error:', error);
+      throw new Error(describeSaveError(error, REPORT_COLUMN_LABELS));
     }
+    if (droppedColumns.length > 0) console.warn('reports: DBに欄がないため保存されなかった項目:', droppedColumns);
     if (selectedSite) await loadReports(selectedSite);
+    return droppedColumns;
   };
 
   window.__navigatePdf = async (report) => {

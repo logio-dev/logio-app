@@ -1299,6 +1299,14 @@ const formatNumericInput = (value) => {
   return Number.isFinite(numeric) ? numeric.toLocaleString() : '';
 };
 
+// 発注者名から請負区分を決める（ProjectSettingsPage と LOGIOApp の両方で使う）
+const resolveContractTypeByClient = (clientName) => {
+  const value = String(clientName || '').trim();
+  if (!value) return 'フェイス';
+  const names = ['スペース', 'バウハウス丸栄', '伊藤忠'];
+  return names.some(name => value.includes(name)) ? '入間緑化' : 'フェイス';
+};
+
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite, onStatusChange }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
@@ -6126,12 +6134,6 @@ export default function LOGIOApp() {
   const [editingReport, setEditingReport] = useState(null);
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState('');
-  const resolveContractTypeByClient = (clientName) => {
-    const value = String(clientName || '').trim();
-    if (!value) return 'フェイス';
-    const names = ['スペース', 'バウハウス丸栄', '伊藤忠'];
-    return names.some(name => value.includes(name)) ? '入間緑化' : 'フェイス';
-  };
 
   const defaultProjectInfo = {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',

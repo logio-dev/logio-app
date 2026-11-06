@@ -1307,6 +1307,61 @@ const resolveContractTypeByClient = (clientName) => {
   return names.some(name => value.includes(name)) ? '入間緑化' : 'フェイス';
 };
 
+// project_info の欄名 → 画面の項目名（DBに欄がなく保存できなかったときの警告に使う）
+const PROJECT_INFO_COLUMN_LABELS = {
+  project_number: 'PROJECT NO.',
+  work_type: '工事種別',
+  client: '発注者',
+  work_location: '現場住所',
+  sales_person: '営業担当',
+  site_manager: '現場責任者',
+  start_date: '工期開始',
+  end_date: '工期終了',
+  contract_type: '請負区分',
+  contract_amount: '見積金額',
+  additional_amount: '追加金額',
+  billing_amount: '請求金額',
+  status: 'ステータス',
+  discharger: '排出事業者',
+  transport_company: '運搬会社',
+  contracted_disposal_sites: '処分先',
+  transfer_cost: '回送費',
+  lease_cost: 'リース費',
+  materials_cost: '資材費',
+  expenses: '経費',
+  outsourcing_items: '外注費',
+  sga_items: '販管費',
+  site_expense_items: '現場経費',
+  misc_items: '直接原価',
+  manifest_entries: 'マニフェスト',
+  manifest_discharger: 'マニフェスト排出事業者',
+  site_area_m2: '面積',
+  site_tsubo: '坪数',
+  site_use_type: '業態',
+  work_condition: '備考欄',
+  payment_due_date: '入金予定日',
+  payment_terms: '支払条件',
+  invoice_recipient: '請求書送付先',
+  subcontract_amount: '下請金額',
+  subcontractor: '下請業者',
+  subcontract_terms: '下請の支払条件',
+  subcontract_invoice_recipient: '下請の請求書送付先',
+  documents_checklist: '書類確認',
+  updated_at: '更新日時',
+};
+
+// Supabase のエラー文から「DBにない欄」の名前を取り出す
+const extractMissingColumns = (message) => {
+  const text = String(message || '');
+  const names = [
+    // PostgREST: Could not find the 'billing_amount' column of 'project_info' in the schema cache
+    ...[...text.matchAll(/Could not find the '([^']+)' column/gi)].map(m => m[1]),
+    // PostgreSQL: column "billing_amount" of relation "project_info" does not exist
+    ...[...text.matchAll(/column "([^"]+)" of relation "[^"]+" does not exist/gi)].map(m => m[1]),
+  ];
+  return Array.from(new Set(names));
+};
+
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite, onStatusChange }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
@@ -6503,26 +6558,45 @@ export default function LOGIOApp() {
         projectPayload.billing_amount = normalizedBilling > 0 ? normalizedBilling : null;
       }
 
+      // DBに欄がない項目は外して保存し直す。外した欄名を返し、画面で警告する
       const saveProjectPayload = async (payload) => {
-        let currentPayload = { ...payload };
-        for (let attempt = 0; attempt < 5; attempt += 1) {
+        const currentPayload = { ...payload };
+        const droppedColumns = [];
+        // Supabase は1回のエラーで1欄しか教えてくれないため、欄の数だけ再試行できるようにする
+        const maxAttempts = Object.keys(currentPayload).length + 1;
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
           try {
-            return await sb('project_info').upsert(currentPayload, 'site_name');
+            await sb('project_info').upsert(currentPayload, 'site_name');
+            return droppedColumns;
           } catch (error) {
-            const message = error?.message || String(error || '');
-            const missingColumns = Array.from(new Set([...message.matchAll(/'([^']+)' column/gi)].map(match => match[1])));
+            const missingColumns = extractMissingColumns(error?.message || String(error || ''))
+              .filter(column => column !== 'site_name' && Object.prototype.hasOwnProperty.call(currentPayload, column));
             if (missingColumns.length === 0) throw error;
-            missingColumns.forEach(column => { delete currentPayload[column]; });
-            if (Object.keys(currentPayload).length === 0) throw error;
+            missingColumns.forEach(column => {
+              delete currentPayload[column];
+              droppedColumns.push(column);
+            });
           }
         }
         throw new Error('project save retry limit exceeded');
       };
 
-      await saveProjectPayload(projectPayload);
+      const droppedColumns = await saveProjectPayload(projectPayload);
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' } : s));
-      if (!silent) alert('✅ プロジェクト情報を保存しました');
+      if (droppedColumns.length > 0) {
+        // 保存されなかった項目があるときは silent 指定でも必ず知らせる
+        const labels = droppedColumns.map(column => PROJECT_INFO_COLUMN_LABELS[column] || column);
+        console.warn('project_info: DBに欄がないため保存されなかった項目:', droppedColumns);
+        alert(
+          `⚠️ ${labels.join('、')}が保存されていません（DBに欄がありません）\n\n` +
+          `それ以外の項目は保存しました。\n` +
+          `管理者にDBへの欄の追加を依頼してください。\n` +
+          `（DBの欄名: ${droppedColumns.join(', ')}）`
+        );
+      } else if (!silent) {
+        alert('✅ プロジェクト情報を保存しました');
+      }
       window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (error) { console.error(error); alert('❌ 保存に失敗しました: ' + (error?.message || JSON.stringify(error))); }
   };

@@ -6632,7 +6632,8 @@ export default function LOGIOApp() {
         outsourcing_items: projectInfo.outsourcingItems || [],
         sga_items: projectInfo.sgaItems || [],
         site_expense_items: projectInfo.siteExpenseItems || [],
-        misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined,
+        // 0件でも [] を保存する（送らないとDBの古い一覧が残り、全部消しても次に開くと戻ってくる）
+        misc_items: Array.isArray(projectInfo.miscItems) ? projectInfo.miscItems : [],
         manifest_entries: projectInfo.manifestRows || [],
         manifest_discharger: projectInfo.manifestDischarger || '',
         site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,

@@ -47,8 +47,16 @@ function sb(table) {
       const h2 = Object.assign({}, h, { 'Prefer': 'resolution=merge-duplicates,return=representation' });
       const url = onConflict ? (base + '?on_conflict=' + encodeURIComponent(onConflict)) : base;
       const res = await fetch(url, { method: 'POST', headers: h2, body: JSON.stringify(data) });
-      if (!res.ok) { const err = await res.text(); console.error('upsert error:', res.status, err); }
-      return res.json();
+      const bodyText = await res.text();
+      if (!res.ok) {
+        let parsed = null;
+        try { parsed = bodyText ? JSON.parse(bodyText) : null; } catch (e) { parsed = null; }
+        const msg = parsed?.message || bodyText || 'Upsert failed';
+        console.error('upsert error:', res.status, msg);
+        throw new Error(msg);
+      }
+      if (!bodyText) return null;
+      try { return JSON.parse(bodyText); } catch (e) { return bodyText; }
     },
     async update(data, filter) {
       const res = await fetch(base + '?' + filter, { method: 'PATCH', headers: h, body: JSON.stringify(data) });
@@ -1277,7 +1285,21 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 }
 
 // ========== ProjectSettingsPage ==========
-function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite }) {
+const parseNumericValue = (value) => {
+  if (value === null || value === undefined || value === '') return 0;
+  const cleaned = String(value).replace(/[￥¥,\s]/g, '').trim();
+  if (!cleaned) return 0;
+  const numeric = Number(cleaned);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
+const formatNumericInput = (value) => {
+  if (value === null || value === undefined || value === '') return '';
+  const numeric = parseNumericValue(value);
+  return Number.isFinite(numeric) ? numeric.toLocaleString() : '';
+};
+
+function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite, onStatusChange }) {
   const [showAddSite, setShowAddSite] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
   const [openCard, setOpenCard] = useState(null);
@@ -1529,10 +1551,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
               outline: isSelected ? '2px solid rgba(0,212,143,0.4)' : 'none',
             }}>
               {/* カードヘッダー (Apple Health風) */}
-              <button onClick={() => {
+              <div role="button" tabIndex={0} onClick={() => {
                   if (!isSelected && !isOpen) onSelectSite && onSelectSite(site.name);
                   setOpenCard(isOpen ? null : site.name);
-                }}
+                }} onKeyDown={(e)=>{ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!isSelected && !isOpen) onSelectSite && onSelectSite(site.name); setOpenCard(isOpen ? null : site.name); } }}
                 style={{ width:'100%', padding:'14px 16px', background:'none', border:'none', cursor:'pointer', textAlign:'left', display:'flex', flexDirection:'column', gap:10 }}>
 
                 {/* 上段: 番号 + ステータス + 編集ボタン */}
@@ -1592,7 +1614,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                   <GradChevron open={isOpen} size={16}/>
                 </div>
 
-              </button>
+              </div>
 
               {/* 展開コンテンツ */}
               {isOpen && (
@@ -1701,7 +1723,7 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 <div style={{ fontSize:9, color:'#fbbf24', fontWeight:700, letterSpacing:'.08em', marginBottom:8, paddingBottom:4, borderBottom:'1px solid rgba(251,191,36,0.3)' }}>契約情報</div>
 <Select label="請負区分" labelEn="Contract Type" options={['フェイス','入間緑化']} value={projectInfo.contractType||''} onChange={v=>setProjectInfo({...projectInfo,contractType:v})} />
 <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={v=>setProjectInfo({...projectInfo,workType:v})} />
-                        <TextInput label="発注者" labelEn="Client" value={projectInfo.client||''} onChange={v=>setProjectInfo({...projectInfo,client:v})} placeholder="○○建設株式会社" />
+                        <TextInput label="発注者" labelEn="Client" value={projectInfo.client||''} onChange={v=>setProjectInfo({...projectInfo, client: v, contractType: resolveContractTypeByClient(v)})} placeholder="○○建設株式会社" />
                         <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation||''} onChange={v=>setProjectInfo({...projectInfo,workLocation:v})} placeholder="東京都渋谷区..." />
 
                         {/* セクション2: 担当者 */}
@@ -1745,13 +1767,13 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           placeholder="5,000,000"
                           style={{width:'100%',padding:'10px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace'}}/>
                       </div>
-                        <div style={{marginBottom:12, padding:'10px 10px 12px', borderRadius:10, background: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? 'rgba(239, 68, 68, 0.06)' : 'rgba(255,255,255,0.04)', border: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? '1px solid rgba(239,68,68,0.75)' : '1px solid rgba(255,255,255,0.08)', boxShadow: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? '0 0 0 1px rgba(239,68,68,0.25)' : 'none' }}>
-                        <label style={{display:'block',fontSize:9,fontWeight:700,color: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? '#fca5a5' : 'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>請求金額 / BILLING AMOUNT</label>
+                        <div style={{marginBottom:12, padding:'10px 10px 12px', borderRadius:10, background: parseNumericValue(projectInfo.billingAmount) <= 0 ? 'rgba(239, 68, 68, 0.06)' : 'rgba(255,255,255,0.04)', border: parseNumericValue(projectInfo.billingAmount) <= 0 ? '1px solid rgba(239,68,68,0.75)' : '1px solid rgba(255,255,255,0.08)', boxShadow: parseNumericValue(projectInfo.billingAmount) <= 0 ? '0 0 0 1px rgba(239,68,68,0.25)' : 'none' }}>
+                        <label style={{display:'block',fontSize:9,fontWeight:700,color: parseNumericValue(projectInfo.billingAmount) <= 0 ? '#fca5a5' : 'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>請求金額 / BILLING AMOUNT</label>
                         <input type="text" inputMode="numeric"
-                          value={projectInfo.billingAmount ? Number(String(projectInfo.billingAmount).replace(/,/g,'')).toLocaleString() : ''}
-                          onChange={e=>setProjectInfo({...projectInfo,billingAmount:e.target.value.replace(/,/g,'')})}
+                          value={formatNumericInput(projectInfo.billingAmount)}
+                          onChange={e=>setProjectInfo({...projectInfo, billingAmount: e.target.value.replace(/[^\d.]/g, '')})}
                           placeholder="0"
-                          style={{width:'100%',padding:'10px',background:'rgba(17,24,39,0.42)',border: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)',color:'#fbbf24',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace',fontWeight:700,boxShadow: !projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0 ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none'}}/>
+                          style={{width:'100%',padding:'10px',background:'rgba(17,24,39,0.42)',border: parseNumericValue(projectInfo.billingAmount) <= 0 ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)',color:'#fbbf24',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace',fontWeight:700,boxShadow: parseNumericValue(projectInfo.billingAmount) <= 0 ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none'}}/>
                           <div style={{marginTop:8,fontSize:10, lineHeight:1.5, color:'#fca5a5'}}>※ 請求金額を入力しないとステータスを「完了」に移行できません。</div>
                       </div>
                         <div>
@@ -1861,10 +1883,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                             </div>
                           );
                         })()}
-                                                                        <div style={{ marginBottom:16, padding:'10px 10px 12px', borderRadius:10, background: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? 'rgba(239, 68, 68, 0.06)' : 'rgba(255,255,255,0.04)', border: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? '1px solid rgba(239,68,68,0.75)' : '1px solid rgba(255,255,255,0.08)', boxShadow: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? '0 0 0 1px rgba(239,68,68,0.25)' : 'none' }}>
-                                  <label style={{display:'block',fontSize:9,fontWeight:700,color: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? '#fca5a5' : 'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>ステータス / STATUS</label>
-                                  <select value={projectInfo.status||''} onChange={(e)=>handleStatusChange(e.target.value)}
-                                    style={{ width:'100%', padding:'11px 12px', background:'rgba(17,24,39,0.42)', border: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit', WebkitAppearance:'none', boxShadow: (projectInfo.status !== '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none' }}>
+                                                                        <div style={{ marginBottom:16, padding:'10px 10px 12px', borderRadius:10, background: (projectInfo.status !== '完了' && parseNumericValue(projectInfo.billingAmount) <= 0) ? 'rgba(239, 68, 68, 0.06)' : 'rgba(255,255,255,0.04)', border: (projectInfo.status !== '完了' && parseNumericValue(projectInfo.billingAmount) <= 0) ? '1px solid rgba(239,68,68,0.75)' : '1px solid rgba(255,255,255,0.08)', boxShadow: (projectInfo.status !== '完了' && parseNumericValue(projectInfo.billingAmount) <= 0) ? '0 0 0 1px rgba(239,68,68,0.25)' : 'none' }}>
+                                  <label style={{display:'block',fontSize:9,fontWeight:700,color: (projectInfo.status !== '完了' && parseNumericValue(projectInfo.billingAmount) <= 0) ? '#fca5a5' : 'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>ステータス / STATUS</label>
+                                  <select value={projectInfo.status||''} onChange={(e)=>onStatusChange ? onStatusChange(e.target.value) : setProjectInfo({ ...projectInfo, status: e.target.value })}
+                                    style={{ width:'100%', padding:'11px 12px', background:'rgba(17,24,39,0.42)', border: (projectInfo.status !== '完了' && parseNumericValue(projectInfo.billingAmount) <= 0) ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit', WebkitAppearance:'none', boxShadow: (projectInfo.status !== '完了' && parseNumericValue(projectInfo.billingAmount) <= 0) ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none' }}>
                                     <option value="" style={{background:'#fff',color:'#111'}}>選択してください</option>
                                     {MASTER_DATA.statuses.map(opt => <option key={opt} value={opt} style={{background:'#fff',color:'#111'}}>{opt}</option>)}
                                   </select>
@@ -6104,15 +6126,48 @@ export default function LOGIOApp() {
   const [editingReport, setEditingReport] = useState(null);
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState('');
+  const resolveContractTypeByClient = (clientName) => {
+    const value = String(clientName || '').trim();
+    if (!value) return 'フェイス';
+    const names = ['スペース', 'バウハウス丸栄', '伊藤忠'];
+    return names.some(name => value.includes(name)) ? '入間緑化' : 'フェイス';
+  };
+
   const defaultProjectInfo = {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
-    contractAmount: '', additionalAmount: '', billingAmount: '', status: '着工前・進行中',
+    contractType: 'フェイス', contractAmount: '', additionalAmount: '', billingAmount: '', status: '着工前・進行中',
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
+    siteTsubo: '', siteUseType: '', workCondition: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
     paymentDueDate: '', paymentTerms: '', invoiceRecipient: '',
     subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '',
     documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false}
+  };
+
+  const normalizeProjectInfo = (overrides = {}, siteName = '') => {
+    const safeChecklist = { ...defaultProjectInfo.documentsChecklist, ...(overrides.documentsChecklist || {}) };
+    const safeManifestRows = Array.isArray(overrides.manifestRows) && overrides.manifestRows.length > 0
+      ? overrides.manifestRows
+      : (Array.isArray(overrides.manifest_entries) && overrides.manifest_entries.length > 0 ? overrides.manifest_entries : [{disposal:'',transport:'',count:'1'}]);
+    return {
+      ...defaultProjectInfo,
+      ...overrides,
+      projectName: overrides.projectName || siteName || defaultProjectInfo.projectName,
+      status: overrides.status || '着工前・進行中',
+      contractType: overrides.contractType || resolveContractTypeByClient(overrides.client || ''),
+      documentsChecklist: safeChecklist,
+      manifestRows: safeManifestRows,
+      miscItems: Array.isArray(overrides.miscItems) ? overrides.miscItems : [],
+      expenses: Array.isArray(overrides.expenses) ? overrides.expenses : [],
+      contractedDisposalSites: Array.isArray(overrides.contractedDisposalSites) ? overrides.contractedDisposalSites : [],
+      outsourcingItems: Array.isArray(overrides.outsourcingItems) ? overrides.outsourcingItems : [],
+      sgaItems: Array.isArray(overrides.sgaItems) ? overrides.sgaItems : [],
+      siteExpenseItems: Array.isArray(overrides.siteExpenseItems) ? overrides.siteExpenseItems : [],
+      siteTsubo: overrides.siteTsubo ?? '',
+      siteUseType: overrides.siteUseType ?? '',
+      workCondition: overrides.workCondition ?? '',
+    };
   };
   const [projectInfo, setProjectInfo] = useState(defaultProjectInfo);
   const [reports, setReports] = useState([]);
@@ -6263,7 +6318,7 @@ export default function LOGIOApp() {
       await sb('project_info').insert({ site_name: normalizedName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '着工前・進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
       setSites(prev => [...prev, { name: normalizedName, projectNumber, status: '着工前・進行中' }]);
       setSelectedSite(normalizedName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: normalizedName, contractType: '', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', billingAmount: '', status: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
+      setProjectInfo({ projectId: '', projectNumber, projectName: normalizedName, contractType: 'フェイス', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', billingAmount: '', status: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
       alert(`✅ 現場「${normalizedName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
       return true;
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); return false; }
@@ -6299,7 +6354,7 @@ export default function LOGIOApp() {
   // ★ 現場選択時にロック状態確認
   const handleSelectSite = async (siteName) => {
     setSelectedSite(siteName);
-    setProjectInfo(defaultProjectInfo);
+    setProjectInfo(normalizeProjectInfo({ projectName: siteName }, siteName));
     setReports([]);
     await loadProjectInfo(siteName);
     await loadReports(siteName);
@@ -6318,10 +6373,40 @@ export default function LOGIOApp() {
           : [...(d.site_expense_items||[]), ...(d.sga_items||[])];
         const normalizedStatus = (d.status === '着工前' || d.status === '進行中') ? '着工前・進行中' : (d.status || '着工前・進行中');
         const estimateBase = (parseFloat(d.contract_amount) || 0) + (parseFloat(d.additional_amount) || 0);
-        const info = { projectId: d.id || '', projectNumber: d.project_number || '', projectName: siteName, workType: d.work_type || '', client: d.client || '', workLocation: d.work_location || '', salesPerson: d.sales_person || '', siteManager: d.site_manager || '', startDate: d.start_date || '', endDate: d.end_date || '', contractAmount: d.contract_amount || '', additionalAmount: d.additional_amount || '', billingAmount: d.billing_amount != null ? String(d.billing_amount) : (normalizedStatus === '完了' ? String(estimateBase) : ''), status: normalizedStatus, discharger: d.discharger || '', transportCompany: d.transport_company || '', contractedDisposalSites: d.contracted_disposal_sites || [], transferCost: d.transfer_cost || '', leaseCost: d.lease_cost || '', materialsCost: d.materials_cost || '', expenses: d.expenses || [], outsourcingItems: d.outsourcing_items || [], sgaItems: d.sga_items || [], siteExpenseItems: d.site_expense_items || [], miscItems, manifestRows: (d.manifest_entries||[]).length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}], manifestDischarger: d.manifest_discharger || d.discharger || '', completionDate: d.completion_date || '',
+        const contractType = d.contract_type || resolveContractTypeByClient(d.client || '');
+        const info = normalizeProjectInfo({
+          projectId: d.id || '',
+          projectNumber: d.project_number || '',
+          projectName: siteName,
+          workType: d.work_type || '',
+          client: d.client || '',
+          workLocation: d.work_location || '',
+          salesPerson: d.sales_person || '',
+          siteManager: d.site_manager || '',
+          startDate: d.start_date || '',
+          endDate: d.end_date || '',
+          contractType,
+          contractAmount: d.contract_amount || '',
+          additionalAmount: d.additional_amount || '',
+          billingAmount: d.billing_amount != null ? String(d.billing_amount) : (normalizedStatus === '完了' ? String(estimateBase) : ''),
+          status: normalizedStatus,
+          discharger: d.discharger || '',
+          transportCompany: d.transport_company || '',
+          contractedDisposalSites: Array.isArray(d.contracted_disposal_sites) ? d.contracted_disposal_sites : [],
+          transferCost: d.transfer_cost || '',
+          leaseCost: d.lease_cost || '',
+          materialsCost: d.materials_cost || '',
+          expenses: Array.isArray(d.expenses) ? d.expenses : [],
+          outsourcingItems: Array.isArray(d.outsourcing_items) ? d.outsourcing_items : [],
+          sgaItems: Array.isArray(d.sga_items) ? d.sga_items : [],
+          siteExpenseItems: Array.isArray(d.site_expense_items) ? d.site_expense_items : [],
+          miscItems,
+          manifestRows: Array.isArray(d.manifest_entries) && d.manifest_entries.length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}],
+          manifestDischarger: d.manifest_discharger || d.discharger || '',
+          completionDate: d.completion_date || '',
           siteAreaM2: d.site_area_m2 != null ? String(d.site_area_m2) : '',
-          siteTsubo:  d.site_tsubo  != null ? String(d.site_tsubo)  : '',
-          siteUseType: d.site_use_type  || '',
+          siteTsubo: d.site_tsubo != null ? String(d.site_tsubo) : '',
+          siteUseType: d.site_use_type || '',
           workCondition: d.work_condition || '',
           paymentDueDate: d.payment_due_date || '',
           paymentTerms: d.payment_terms || '',
@@ -6331,10 +6416,11 @@ export default function LOGIOApp() {
           subcontractTerms: d.subcontract_terms || '',
           subcontractInvoiceRecipient: d.subcontract_invoice_recipient || '',
           documentsChecklist: d.documents_checklist || {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false},
-        };
+        }, siteName);
         setProjectInfo(info);
         return info;
       }
+      setProjectInfo(normalizeProjectInfo({ projectName: siteName }, siteName));
     } catch (error) { console.error('loadProjectInfo error:', error); }
     return null;
   };
@@ -6348,12 +6434,12 @@ export default function LOGIOApp() {
   };
 
   const estimateRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-  const billingRevenue = parseFloat(projectInfo.billingAmount) || 0;
+  const billingRevenue = parseNumericValue(projectInfo.billingAmount);
   const hasFormalBilling = billingRevenue > 0;
   const displayRevenue = hasFormalBilling ? billingRevenue : estimateRevenue;
 
   const handleStatusChange = (nextStatus) => {
-    if (nextStatus === '完了' && (!projectInfo.billingAmount || Number(projectInfo.billingAmount) <= 0)) {
+    if (nextStatus === '完了' && parseNumericValue(projectInfo.billingAmount) <= 0) {
       alert('請求金額を入力してからステータスを「完了」に移行してください。');
       return;
     }
@@ -6362,26 +6448,76 @@ export default function LOGIOApp() {
 
   const handleSaveProject = async (silent = false) => {
     if (!selectedSite) return alert('現場を選択してください');
-    const normalizedBilling = projectInfo.billingAmount && Number(projectInfo.billingAmount) > 0 ? Number(projectInfo.billingAmount) : (projectInfo.status === '完了' ? estimateRevenue : 0);
+    const normalizedBilling = parseNumericValue(projectInfo.billingAmount) > 0 ? parseNumericValue(projectInfo.billingAmount) : (projectInfo.status === '完了' ? estimateRevenue : 0);
     if (projectInfo.status === '完了' && normalizedBilling <= 0) {
       alert('請求金額を入力してからステータスを「完了」に移行してください。');
       return;
     }
-    const finalProjectInfo = { ...projectInfo, billingAmount: normalizedBilling > 0 ? String(normalizedBilling) : projectInfo.billingAmount || '' };
+    const finalProjectInfo = { ...projectInfo, billingAmount: normalizedBilling > 0 ? String(normalizedBilling) : (projectInfo.billingAmount || '') };
     try {
-      await sb('project_info').upsert({ site_name: selectedSite, project_number: projectInfo.projectNumber || '', work_type: projectInfo.workType || '', client: projectInfo.client || '', work_location: projectInfo.workLocation || '', sales_person: projectInfo.salesPerson || '', site_manager: projectInfo.siteManager || '', start_date: projectInfo.startDate || '', end_date: projectInfo.endDate || '', contract_amount: parseFloat(projectInfo.contractAmount) || 0, additional_amount: parseFloat(projectInfo.additionalAmount) || 0, billing_amount: normalizedBilling > 0 ? normalizedBilling : null, status: projectInfo.status || '着工前・進行中', discharger: projectInfo.manifestDischarger || '', transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','), contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))], transfer_cost: parseFloat(projectInfo.transferCost) || 0, lease_cost: parseFloat(projectInfo.leaseCost) || 0, materials_cost: parseFloat(projectInfo.materialsCost) || 0, expenses: projectInfo.expenses || [], outsourcing_items: projectInfo.outsourcingItems || [], sga_items: projectInfo.sgaItems || [], site_expense_items: projectInfo.siteExpenseItems || [], misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined, manifest_entries: projectInfo.manifestRows || [], manifest_discharger: projectInfo.manifestDischarger || '', site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
-          payment_due_date: projectInfo.paymentDueDate || '',
-          payment_terms: projectInfo.paymentTerms || '',
-          invoice_recipient: projectInfo.invoiceRecipient || '',
-          subcontract_amount: projectInfo.subcontractAmount ? parseFloat(projectInfo.subcontractAmount) : null,
-          subcontractor: projectInfo.subcontractor || '',
-          subcontract_terms: projectInfo.subcontractTerms || '',
-          subcontract_invoice_recipient: projectInfo.subcontractInvoiceRecipient || '',
-          documents_checklist: projectInfo.documentsChecklist || null,
+      const contractTypeValue = projectInfo.contractType || resolveContractTypeByClient(projectInfo.client || '');
+      const projectPayload = {
+        site_name: selectedSite,
+        project_number: projectInfo.projectNumber || '',
+        work_type: projectInfo.workType || '',
+        client: projectInfo.client || '',
+        work_location: projectInfo.workLocation || '',
+        sales_person: projectInfo.salesPerson || '',
+        site_manager: projectInfo.siteManager || '',
+        start_date: projectInfo.startDate || '',
+        end_date: projectInfo.endDate || '',
+        contract_type: contractTypeValue,
+        contract_amount: parseFloat(projectInfo.contractAmount) || 0,
+        additional_amount: parseFloat(projectInfo.additionalAmount) || 0,
+        status: projectInfo.status || '着工前・進行中',
+        discharger: projectInfo.manifestDischarger || '',
+        transport_company: (projectInfo.manifestRows||[]).map(r=>r.transport).filter(Boolean).join(','),
+        contracted_disposal_sites: [...new Set((projectInfo.manifestRows||[]).map(r=>r.disposal).filter(Boolean))],
+        transfer_cost: parseFloat(projectInfo.transferCost) || 0,
+        lease_cost: parseFloat(projectInfo.leaseCost) || 0,
+        materials_cost: parseFloat(projectInfo.materialsCost) || 0,
+        expenses: projectInfo.expenses || [],
+        outsourcing_items: projectInfo.outsourcingItems || [],
+        sga_items: projectInfo.sgaItems || [],
+        site_expense_items: projectInfo.siteExpenseItems || [],
+        misc_items: (projectInfo.miscItems && projectInfo.miscItems.length > 0) ? projectInfo.miscItems : undefined,
+        manifest_entries: projectInfo.manifestRows || [],
+        manifest_discharger: projectInfo.manifestDischarger || '',
+        site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
+        payment_due_date: projectInfo.paymentDueDate || '',
+        payment_terms: projectInfo.paymentTerms || '',
+        invoice_recipient: projectInfo.invoiceRecipient || '',
+        subcontract_amount: projectInfo.subcontractAmount ? parseFloat(projectInfo.subcontractAmount) : null,
+        subcontractor: projectInfo.subcontractor || '',
+        subcontract_terms: projectInfo.subcontractTerms || '',
+        subcontract_invoice_recipient: projectInfo.subcontractInvoiceRecipient || '',
+        documents_checklist: projectInfo.documentsChecklist || null,
         site_tsubo: projectInfo.siteTsubo ? parseFloat(projectInfo.siteTsubo) : null,
         site_use_type: projectInfo.siteUseType || null,
         work_condition: projectInfo.workCondition || null,
-        updated_at: new Date().toISOString() }, 'site_name');
+        updated_at: new Date().toISOString(),
+      };
+      if (projectInfo.billingAmount !== '' && projectInfo.billingAmount !== null && projectInfo.billingAmount !== undefined) {
+        projectPayload.billing_amount = normalizedBilling > 0 ? normalizedBilling : null;
+      }
+
+      const saveProjectPayload = async (payload) => {
+        let currentPayload = { ...payload };
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          try {
+            return await sb('project_info').upsert(currentPayload, 'site_name');
+          } catch (error) {
+            const message = error?.message || String(error || '');
+            const missingColumns = Array.from(new Set([...message.matchAll(/'([^']+)' column/gi)].map(match => match[1])));
+            if (missingColumns.length === 0) throw error;
+            missingColumns.forEach(column => { delete currentPayload[column]; });
+            if (Object.keys(currentPayload).length === 0) throw error;
+          }
+        }
+        throw new Error('project save retry limit exceeded');
+      };
+
+      await saveProjectPayload(projectPayload);
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' } : s));
       if (!silent) alert('✅ プロジェクト情報を保存しました');
@@ -6658,7 +6794,7 @@ export default function LOGIOApp() {
               onViewPdf={(report)=>{ window.__navigatePdf && window.__navigatePdf(report); }}
             />
           )}
-          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={handleNavigate} onSelectSite={handleSelectSite} />}
+          {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={handleNavigate} onSelectSite={handleSelectSite} onStatusChange={handleStatusChange} />}
           {currentPage === 'input' && (
             <ReportInputPage
               key={editingReport ? editingReport.id : 'new'}

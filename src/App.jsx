@@ -2388,6 +2388,42 @@ const wasteFormAfterAdd = (prev, tab) => ({
 // 引き継いだだけで、種類・数量・処分費が空のフォーム（「入力中」とみなさない）
 const isCarriedOnlyWasteForm = (form) => form.carried === true && !form.type && !form.qty && !form.price;
 
+// 産廃フォームに「追加していない入力」が残っているか（空の状態・引き継いだだけの状態は除く）
+const WASTE_ENTRY_FIELDS = ['type', 'disposal', 'qty', 'price', 'manifest', 'workerName', 'workerVType', 'workerVNumber', 'driver', 'vType', 'vNumber', 'haishiShift', 'haishiPrice', 'volumeM3'];
+const isWasteFormPending = (form, tab) => {
+  if (!form || isCarriedOnlyWasteForm(form)) return false;
+  const blank = blankWasteForm(tab, form.mode || 'cost');
+  return WASTE_ENTRY_FIELDS.some(key => String(form[key] ?? '').trim() !== String(blank[key] ?? '').trim());
+};
+
+// ワイエム配車の行のマニフェストNo.（空欄・金属売上の「-」は対象外）
+const extManifestKey = (item) => {
+  if (!item || item.isScrap === true || (item.amount || 0) < 0) return '';
+  const manifest = String(item.manifestNumber || '').trim();
+  return manifest && manifest !== '-' ? manifest : '';
+};
+
+// 同じ担当者の、この行より前（beforeIdx より前）の行に、同じ車両（車種・車番）があるか。
+// 乗換（車を乗り換えた）と、同じ車で運んだ品目を分けただけの行を表示で区別するために使う
+const hasEarlierSameVehicle = (items, item, beforeIdx) =>
+  !!item && !!item.workerName && !!item.workerVType &&
+  (items || []).some((w, j) => j < beforeIdx && w && w.workerName === item.workerName &&
+    (w.workerVType || '') === (item.workerVType || '') &&
+    String(w.workerVNumber || '').trim() === String(item.workerVNumber || '').trim());
+
+// 乗換の印を行の順番で付け直す（担当者ごとに、車両つきの1行目は印なし・2行目以降は印あり）。
+// 保存済みの日報を開いたときと同じ決め方。行の削除・上書きで1行目に印が残り、車両費が日計から落ちるのを防ぐ
+const normalizeSwapFlags = (items) => {
+  const seen = new Set();
+  return (items || []).map(item => {
+    if (!item) return item;
+    if (!item.workerName || !item.workerVType) return item.isSwap === true ? { ...item, isSwap: false } : item;
+    const isSwap = seen.has(item.workerName);
+    seen.add(item.workerName);
+    return item.isSwap === isSwap ? item : { ...item, isSwap };
+  });
+};
+
 function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editReport, onUpdate, ymUnitPrices = [] }) {
   const isEditMode = !!editReport;
   // ワイエムの単価マスタ（読めなかったときは空 → 種類は自由入力・処分費は手入力のまま）
@@ -2560,6 +2596,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   };
   const handleSave = async () => {
     if (isSaving) return;
+    // ★ 産廃フォームに「追加」していない入力があれば保存しない（どのタブでも自社運搬として勝手に保存しない）
+    if (isWasteFormPending(wasteForm, wasteTab)) {
+      alert((editingWasteIdx !== null
+        ? '編集中の行があります。『この内容で上書き』か『キャンセル』を押してから保存してください'
+        : '入力中の行があります。『＋追加する』を押してから保存してください')
+        + '\n\n（いらない入力は、上の「自社運搬／環境課配車／ワイエム配車」のタブを押し直すと消えます）');
+      return;
+    }
     setIsSaving(true);
     try {
       // ★ 自動追加: 入力中フォームに値があれば、保存前に自動でリストに追加
@@ -2601,36 +2645,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         };
       }
 
-      // 産廃フォーム自動追加 (品目+処分先 OR 車両のみでもOK)
-      const hasWasteFull = wasteForm && wasteForm.type && wasteForm.disposal;
-      const hasWasteVehicle = wasteForm && wasteForm.workerVType;
-      if (!isCarriedOnlyWasteForm(wasteForm) && (hasWasteFull || hasWasteVehicle)) {
-        const qty = parseFloat(wasteForm.qty) || 0;
-        const price = parseFloat(wasteForm.price) || 0;
-        const ENV_P = {day:20000,night:30000}, EXT_P = {day:22000,night:32000};
-        let haishiAmount = 0;
-        if (wasteForm.haisha === 'env' && wasteForm.haishiShift) haishiAmount = ENV_P[wasteForm.haishiShift];
-        else if (wasteForm.haisha === 'ext') haishiAmount = wasteForm.haishiOverride ? parseFloat(wasteForm.haishiPrice)||0 : (wasteForm.haishiShift?EXT_P[wasteForm.haishiShift]:0);
-        const workerVehicleAmount = VEHICLE_UNIT_PRICES[wasteForm.workerVType] || 0;
-        const newWasteItem = {
-          kind: 'self',
-          material: wasteForm.type || '', disposalSite: wasteForm.disposal || '',
-          quantity: qty, ...wastePriceFields(wasteForm), amount: price,
-          manifestNumber: wasteForm.manifest || '',
-          haisha: wasteForm.haisha || '', driver: wasteForm.driver || '',
-          vType: wasteForm.vType || '', vNumber: wasteForm.vNumber || '',
-          haishiShift: wasteForm.haishiShift || '', haishiAmount,
-          workerName: wasteForm.workerName || '', workerVType: wasteForm.workerVType || '',
-          workerVNumber: wasteForm.workerVNumber || '', vehicleAmount: workerVehicleAmount,
-          volumeM3: wasteForm.volumeM3 ? parseFloat(wasteForm.volumeM3) : null,
-        };
-        if (editingWasteIdx !== null) {
-          finalWasteItems = [...wasteItems];
-          finalWasteItems[editingWasteIdx] = newWasteItem;
-        } else {
-          finalWasteItems = [...wasteItems, newWasteItem];
-        }
-      }
+      // 産廃フォームの入力中の行は自動で追加しない（保存の前に止めている）
       // 金属売上フォーム自動追加
       if (scrapForm && scrapForm.type && scrapForm.buyer && parseFloat(scrapForm.qty) > 0) {
         const qty = parseFloat(scrapForm.qty);
@@ -2802,16 +2817,24 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   };
 
   // ★ wasteItems の配車費を正規化する
-  //   同じ配車(kind+driver+vType+vNumber+shift)が複数ある場合、
-  //   最初の1件だけ配車費を保持し、残りは haishiAmount=0 に。
+  //   ワイエム配車で同じマニフェストNo.（空欄以外）の行が複数ある場合、1行目だけ配車費を保持し、残りは0に
+  //   （1台分のマニフェストを品目ごとに行を分けたとき、配車費が2回付かないようにする）。
+  //   同じ配車(kind+driver+vType+vNumber+shift)が複数ある場合も、最初の1件だけ配車費を保持し、残りは0に。
   //   haishiOverride(例外金額) は重複対象外。
   const normalizeHaishiAmounts = (items) => {
     const seen = new Set();
+    const seenExtManifests = new Set();
     return items.map(it => {
       if (!it) return it;
       const kind = it.haisha || it.kind || '';
       if (kind !== 'env' && kind !== 'ext') return it;
-      if (it.haishiOverride) return it;
+      const manifest = kind === 'ext' ? extManifestKey(it) : '';
+      if (manifest) {
+        if (seenExtManifests.has(manifest)) return { ...it, haishiAmount: 0 };
+        seenExtManifests.add(manifest);
+      }
+      // 例外金額の行は金額をそのまま使う（印のない古い行も、シフトなしで金額があれば例外金額とみなす）
+      if (it.haishiOverride || (!it.haishiShift && (it.haishiAmount || 0) > 0)) return it;
       const key = `${kind}|${it.driver||''}|${it.vType||''}|${it.vNumber||''}|${it.haishiShift||''}`;
       if (seen.has(key)) {
         return { ...it, haishiAmount: 0 };
@@ -2879,7 +2902,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     };
     if (editingWasteIdx !== null) {
       const items = [...wasteItems]; items[editingWasteIdx] = newItem;
-      setWasteItems(items); setEditingWasteIdx(null);
+      setWasteItems(normalizeSwapFlags(items)); setEditingWasteIdx(null);
     } else {
       setWasteItems([...wasteItems, newItem]);
     }
@@ -2936,13 +2959,21 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     }
     setWasteForm(prev => resetWasteFormAfterAdd(prev, editingWasteIdx !== null));
   };
+  // ★ ワイエム配車: 同じマニフェストNo.の配車費をすでに計上している行（この行より前）
+  const findExtManifestCountedBy = (form) => {
+    const manifest = String(form.manifest || '').trim();
+    if (!manifest || (form.mode || 'cost') !== 'cost') return null;
+    const limit = editingWasteIdx !== null ? editingWasteIdx : wasteItems.length;
+    return wasteItems.find((it, j) => j < limit && detectKind(it) === 'ext' && extManifestKey(it) === manifest) || null;
+  };
   // ワイエム配車 (シフト or 例外金額 + 車両任意 + 産廃情報)
   const addExtWaste = () => {
     if (!wasteForm.type||!wasteForm.disposal||!wasteForm.qty) return;
-    // ★ シフト/例外金額未選択時、同配車の既存シフトを自動継承
+    const manifestCountedBy = findExtManifestCountedBy(wasteForm);
+    // ★ シフト/例外金額未選択時、同じマニフェストNo.の行 → 同配車の既存シフトの順で自動継承
     let effectiveShiftExt = wasteForm.haishiShift;
     if (!wasteForm.haishiOverride && !effectiveShiftExt) {
-      const existing = wasteItems.find((it,idx)=>
+      const existing = manifestCountedBy || wasteItems.find((it,idx)=>
         idx !== editingWasteIdx &&
         (it.haisha==='ext' || it.kind==='ext') &&
         (it.vType||'') === (wasteForm.vType||'') &&
@@ -2962,12 +2993,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       it.haishiShift === effectiveShiftExt &&
       !it.haishiOverride
     );
-    const haishiAmount = wasteForm.haishiOverride
+    const haishiAmount = manifestCountedBy ? 0 : wasteForm.haishiOverride
       ? (parseFloat(wasteForm.haishiPrice)||0)
       : (alreadyCountedExt ? 0 : (EXT_PRICES[effectiveShiftExt] || 0));
     const isRevenue = (wasteModeByTab[wasteTab]||'cost') === 'revenue';
     const newItem = {
       kind:'ext',
+      // ★ 例外金額の行に印を残す（印がないと配車費の正規化で 0 に戻ってしまっていた）
+      haishiOverride: !manifestCountedBy && wasteForm.haishiOverride === true,
       isScrap: isRevenue,
       material:wasteForm.type, disposalSite:wasteForm.disposal,
       quantity:qty, ...wastePriceFields(wasteForm),
@@ -3022,7 +3055,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       manifest:(w.manifestNumber==='-'?'':w.manifestNumber||''),
       haisha:w.haisha||'',
       driver:w.driver||'', vType:w.vType||'', vNumber:w.vNumber||'',
-      haishiShift:w.haishiShift||'', haishiOverride:false, haishiPrice:'',
+      // 例外金額の行は金額ごと開く（印のない古い行も、シフトなしで金額があれば例外金額とみなす）
+      haishiShift:w.haishiShift||'',
+      haishiOverride: kind === 'ext' && (w.haishiOverride === true || (!w.haishiShift && (w.haishiAmount||0) > 0)),
+      haishiPrice: kind === 'ext' && (w.haishiOverride === true || (!w.haishiShift && (w.haishiAmount||0) > 0)) ? String(w.haishiAmount||0) : '',
       workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'',
       volumeM3: w.volumeM3 ? String(w.volumeM3) : '',
       isSwap: w.isSwap === true,
@@ -3590,7 +3626,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.45)', marginBottom:'14px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 (4タブ統合) */}
-          <SectionLabel ja="産廃・スクラップ" en="Waste & Scrap" pending={!!((!isCarriedOnlyWasteForm(wasteForm) && ((wasteForm.type && wasteForm.disposal) || wasteForm.workerVType)) || (scrapForm && scrapForm.buyer && parseFloat(scrapForm.qty) > 0))} />
+          <SectionLabel ja="産廃・スクラップ" en="Waste & Scrap" pending={!!(isWasteFormPending(wasteForm, wasteTab) || (scrapForm && scrapForm.buyer && parseFloat(scrapForm.qty) > 0))} />
 
           {/* 入力済みリスト */}
           {editingWasteIdx === null && wasteItems.length > 0 && (
@@ -3617,17 +3653,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2,flexWrap:'wrap'}}>
                       <span style={{fontSize:9,fontWeight:700,color:tagColor,background:tagBg,padding:'1px 6px',borderRadius:4}}>{tagLabel}</span>
-                      {w.isSwap && <span style={{fontSize:9,fontWeight:700,color:'#7C3AED',background:'rgba(124,58,237,0.15)',border:'1px solid rgba(124,58,237,0.4)',padding:'1px 6px',borderRadius:4}}>🔄 乗換</span>}
+                      {w.isSwap && (hasEarlierSameVehicle(wasteItems, w, i)
+                        ? <span style={{fontSize:9,fontWeight:700,color:'#475569',background:'rgba(100,116,139,0.15)',border:'1px solid rgba(100,116,139,0.4)',padding:'1px 6px',borderRadius:4}}>同じ車両（車両費計上済み）</span>
+                        : <span style={{fontSize:9,fontWeight:700,color:'#7C3AED',background:'rgba(124,58,237,0.15)',border:'1px solid rgba(124,58,237,0.4)',padding:'1px 6px',borderRadius:4}}>🔄 乗換</span>)}
                       <div style={{fontSize:13,fontWeight:700,color:'#1C1917'}}>{w.material} → {w.disposalSite}</div>
                     </div>
-                    <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　{w.manifestNumber&&w.manifestNumber!=='-'?`マニ:${w.manifestNumber}`:''}{k==='env'&&w.driver?`　運転:${w.driver}`:''}{w.haishiAmount?`　配車:¥${formatCurrency(w.haishiAmount)}`:''}{w.workerVType?`　車両:${w.workerVType}${w.workerVNumber?'/'+w.workerVNumber:''}${w.isSwap?' (乗換)':''}`:''}</div>
+                    <div style={{fontSize:10,color:'#999'}}>{w.quantity}{w.unit}　{w.manifestNumber&&w.manifestNumber!=='-'?`マニ:${w.manifestNumber}`:''}{k==='env'&&w.driver?`　運転:${w.driver}`:''}{w.haishiAmount?`　配車:¥${formatCurrency(w.haishiAmount)}`:((k==='env'||k==='ext')&&w.haishiShift&&!w.haishiOverride?'　配車費計上済み':'')}{w.workerVType?`　車両:${w.workerVType}${w.workerVNumber?'/'+w.workerVNumber:''}${w.isSwap&&!hasEarlierSameVehicle(wasteItems, w, i)?' (乗換)':''}`:''}</div>
                   </div>
                   {editingWasteIdx===i
                     ? <span style={{fontSize:9,background:'rgba(245,158,11,0.2)',color:'#B45309',border:'1px solid rgba(245,158,11,0.4)',borderRadius:4,padding:'2px 7px',flexShrink:0,fontWeight:700}}>編集中</span>
                     : <span style={{fontSize:11,color:'rgba(245,158,11,0.5)',flexShrink:0}}>✏️</span>
                   }
                   <div style={{fontSize:12,fontWeight:700,color:scrap?'#0E7490':'#B45309',fontVariantNumeric:'tabular-nums',flexShrink:0}}>¥{formatCurrency(Math.abs(w.amount))}</div>
-                  <button onClick={e=>{e.stopPropagation();if(editingWasteIdx===i){cancelEdit();}setWasteItems(wasteItems.filter((_,j)=>j!==i));}} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,flexShrink:0}}>✕</button>
+                  <button onClick={e=>{e.stopPropagation();if(editingWasteIdx===i){cancelEdit();}setWasteItems(normalizeSwapFlags(normalizeHaishiAmounts(wasteItems.filter((_,j)=>j!==i))));}} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,flexShrink:0}}>✕</button>
                 </div>
               </div>
             );
@@ -3828,7 +3866,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                     onClick={()=>setWasteForm({...wasteForm,isSwap:!wasteForm.isSwap})}>
                     <div style={{width:18,height:18,border:`2px solid ${wasteForm.isSwap?'#7C3AED':'rgba(255,255,255,0.4)'}`,borderRadius:4,background:wasteForm.isSwap?'#7C3AED':'transparent',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:12,fontWeight:700,flexShrink:0}}>{wasteForm.isSwap?'✓':''}</div>
                     <div style={{flex:1,fontSize:11,fontWeight:600,color:wasteForm.isSwap?'#C4B5FD':'rgba(255,255,255,0.7)'}}>
-                      🔄 乗り換え車両(車両費は計上しない)
+                      {wasteForm.isSwap && hasEarlierSameVehicle(wasteItems, wasteForm, editingWasteIdx !== null ? editingWasteIdx : wasteItems.length)
+                        ? '同じ車両（車両費計上済み）'
+                        : '🔄 乗り換え車両(車両費は計上しない)'}
                     </div>
                     {wasteForm.isSwap && <span style={{fontSize:11,fontWeight:700,color:'#C4B5FD'}}>¥0</span>}
                   </div>
@@ -4003,6 +4043,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
             const accentDark = isRev ? '#22D3EE' : '#a5b4fc';
             const accentBg = isRev ? 'rgba(34,211,238,0.15)' : 'rgba(165,180,252,0.15)';
             const inputBorder = isRev ? '1px solid rgba(34,211,238,0.3)' : '1px solid rgba(165,180,252,0.3)';
+            // 同じマニフェストNo.の配車費をすでに計上している行（あればこの行の配車費は ¥0）
+            const extManifestCountedBy = !isRev ? findExtManifestCountedBy(wasteForm) : null;
             return (
             <div style={{background:cardBg,border:cardBorder,borderRadius:14,padding:14,marginBottom:10}}>
               {/* セグメント: 処分 / 売上(金属) */}
@@ -4040,7 +4082,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               <label style={{...inpLbl,marginBottom:6}}>シフト <span style={{color:'#f87171'}}>*</span> <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>※例外時は下のチェック</span></label>
               <div style={{...grid2,marginBottom:8,marginTop:14}}>
                 {[['day','昼',22000],['night','夜',32000]].map(([v,label,price])=>{
-                  const counted = wasteItems.some((it,idx)=>
+                  const counted = !!extManifestCountedBy || wasteItems.some((it,idx)=>
                     idx !== editingWasteIdx &&
                     (it.haisha==='ext' || it.kind==='ext') &&
                     (it.vType||'') === (wasteForm.vType||'') &&
@@ -4101,6 +4143,9 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 </div>
               </div>
 
+              {extManifestCountedBy ? (
+                <div style={{fontSize:11,color:accentDark,marginBottom:8,lineHeight:1.5}}>同じマニフェストNo.（{String(wasteForm.manifest||'').trim()}）の配車費は計上済みです。この行の配車費は ¥0 です。</div>
+              ) : (<>
               <button onClick={()=>setWasteForm({...wasteForm,haishiOverride:!wasteForm.haishiOverride,haishiShift:''})}
                 style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',padding:0,fontFamily:'inherit',marginBottom:6}}>
                 <div style={{width:14,height:14,borderRadius:3,border:`1px solid ${wasteForm.haishiOverride?accentDark:'rgba(255,255,255,0.3)'}`,background:wasteForm.haishiOverride?accentDark:'transparent',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#1F1F1F',flexShrink:0}}>{wasteForm.haishiOverride?'✓':''}</div>
@@ -4109,6 +4154,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               {wasteForm.haishiOverride && (
                 <input type="number" value={wasteForm.haishiPrice} onChange={e=>setWasteForm({...wasteForm,haishiPrice:e.target.value})} placeholder="配車費を入力" style={{...inpTxt,border:`1px solid ${accentDark}`,marginBottom:8}}/>
               )}
+              </>)}
 
               {(() => {
                 // 同配車(車両)が既に計上されているかチェック
@@ -4120,7 +4166,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   !it.haishiOverride &&
                   wasteForm.vType
                 );
-                const isFormValid = wasteForm.type && wasteForm.disposal && wasteForm.qty && (wasteForm.haishiOverride || wasteForm.haishiShift || hasExistingShiftExt);
+                const isFormValid = wasteForm.type && wasteForm.disposal && wasteForm.qty && (wasteForm.haishiOverride || wasteForm.haishiShift || hasExistingShiftExt || !!extManifestCountedBy);
                 return editingWasteIdx !== null ? (
                   <div style={{display:'flex',gap:6}}>
                     <button onClick={handleAddByTab} disabled={!isFormValid}

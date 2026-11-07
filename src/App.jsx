@@ -2265,8 +2265,134 @@ const SubTotal = ({ label, value }) => value > 0 ? (
   </div>
 ) : <div style={{marginBottom:'14px'}} />;
 
-function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editReport, onUpdate }) {
+// ========== ワイエム処分費の自動計算（unit_prices） ==========
+const YM_VENDOR = 'ワイエム';
+const WASTE_TYPE_OTHER = '__other__'; // 種類プルダウンの「その他（直接入力）」
+const WASTE_UNIT_OPTIONS = ['㎥', 'kg', 't'];
+const isYmDisposal = (disposal) => String(disposal || '').trim() === YM_VENDOR;
+
+// ワイエムの単価マスタを読む。読めなければ空の一覧を返す（自動にならないだけで、手入力で使える）
+async function loadYmUnitPrices() {
+  try {
+    const data = await sb('unit_prices').select(`vendor=eq.${encodeURIComponent(YM_VENDOR)}&active=eq.true&order=sort_order.asc.nullslast`);
+    if (!Array.isArray(data)) return [];
+    return data
+      .filter(row => row && row.item && row.active !== false)
+      .sort((a, b) => (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9));
+  } catch (e) {
+    console.warn('unit_prices を読めませんでした（手入力で続けます）:', e);
+    return [];
+  }
+}
+
+// 産廃フォームの空の状態。ワイエム配車タブの産廃処分は処分先をワイエムにしておく
+const blankWasteForm = (tab, mode = 'cost') => ({
+  mode, type: mode === 'tool' ? '道具車' : '',
+  disposal: (tab === 'ext' && mode === 'cost') ? YM_VENDOR : '',
+  qty: '', unit: mode === 'revenue' ? 'kg' : '㎥', price: '', manifest: '',
+  haisha: '', driver: '', vType: '', vNumber: '', haishiShift: '', haishiOverride: false, haishiPrice: '',
+  workerName: '', workerVType: '', workerVNumber: '', volumeM3: '', isSwap: false,
+  // priceSource: 'master'=単価マスタで自動 / 'manual'=手入力。priceOverride: 自動の金額を手で直した
+  priceSource: 'manual', priceOverride: false, unitPrice: 0,
+  typeCustom: false, // ワイエムで「その他（直接入力）」を選んだ
+  carried: false,    // 前の行から処分先・マニNo.・担当者/車両を引き継いだだけの状態
+});
+
+// 処分費 = 数量 × 単価（円未満は四捨五入）
+const calcYmAmount = (qty, unitPrice) => {
+  const q = parseFloat(qty);
+  if (!Number.isFinite(q) || q <= 0) return '';
+  return String(Math.round(q * (Number(unitPrice) || 0)));
+};
+
+// 単価マスタの品目を選んでいれば、その行を返す（その他・ワイエム以外・マスタにない品名は null）
+const getYmMasterRow = (form, ymMap) => {
+  if (!ymMap || form.typeCustom || !isYmDisposal(form.disposal)) return null;
+  return ymMap.get(form.type) || null;
+};
+
+// マスタの単位・単価を入れて処分費を計算する（手で直した行は金額を変えない）
+const applyYmMaster = (form, row) => {
+  const unitPrice = Number(row.price) || 0;
+  const next = { ...form, unit: row.unit || form.unit, unitPrice, priceSource: 'master' };
+  if (!next.priceOverride) next.price = calcYmAmount(next.qty, unitPrice);
+  return next;
+};
+
+// 自動で入れた単位・処分費を外し、手入力の状態に戻す
+const clearYmAutoPrice = (form) => ({
+  ...form,
+  ...(form.priceSource === 'master' ? { price: '', unit: '㎥' } : {}),
+  priceSource: 'manual', priceOverride: false, unitPrice: 0,
+});
+
+// 処分先を変えたとき（指示書 3-2）
+const changeWasteDisposal = (form, disposal, ymMap) => {
+  const next = { ...form, disposal };
+  if (!ymMap || ymMap.size === 0) return next; // マスタが読めていなければ今までどおり
+  const wasYm = isYmDisposal(form.disposal);
+  const toYm = isYmDisposal(disposal);
+  if (wasYm === toYm) return next;
+  // ワイエム → ほか: 種類を空にして自由入力へ。自動の処分費は 0 に戻す
+  if (wasYm) return { ...clearYmAutoPrice(next), type: '', typeCustom: false };
+  // ほか → ワイエム: 種類がマスタの品名と完全一致ならそのまま使う。違えば空にしてプルダウンから選ばせる
+  const row = ymMap.get(next.type);
+  if (row) return applyYmMaster({ ...next, typeCustom: false, priceOverride: false }, row);
+  return { ...clearYmAutoPrice(next), type: '', typeCustom: false };
+};
+
+// 種類のプルダウンを選んだとき
+const selectWasteType = (form, value, ymMap) => {
+  if (value === WASTE_TYPE_OTHER) return { ...clearYmAutoPrice(form), type: '', typeCustom: true };
+  const row = ymMap && ymMap.get(value);
+  if (!row) return { ...clearYmAutoPrice(form), type: '', typeCustom: false };
+  return applyYmMaster({ ...form, type: value, typeCustom: false, priceOverride: false }, row);
+};
+
+// 数量を変えたとき: マスタの品目なら処分費を計算し直す
+const changeWasteQty = (form, qty, ymMap) => {
+  const next = { ...form, qty };
+  const row = getYmMasterRow(next, ymMap);
+  return row ? applyYmMaster(next, row) : next;
+};
+
+// 処分費を手で直したとき: 自動の行なら手修正にする（以降は数量を変えても上書きしない）
+const changeWastePrice = (form, price) => ({
+  ...form, price,
+  priceOverride: form.priceSource === 'master' ? true : form.priceOverride === true,
+});
+
+// 「自動に戻す」
+const resetWasteAutoPrice = (form, ymMap) => {
+  const row = getYmMasterRow(form, ymMap);
+  return row ? applyYmMaster({ ...form, priceOverride: false }, row) : form;
+};
+
+// wasteItems の行に入れる単位・単価の情報（指示書 3-5）
+const wastePriceFields = (form) => {
+  const isMaster = form.priceSource === 'master' && !form.typeCustom && isYmDisposal(form.disposal) && !!form.type;
+  return isMaster
+    ? { unit: form.unit, unitPrice: Number(form.unitPrice) || 0, priceSource: 'master', priceOverride: form.priceOverride === true }
+    : { unit: form.unit, unitPrice: 0, priceSource: 'manual', priceOverride: false };
+};
+
+// 追加したあとのフォーム: 処分先・マニNo.・担当者/車両を引き継ぎ、種類・数量・処分費は空にする（指示書 3-4）
+const wasteFormAfterAdd = (prev, tab) => ({
+  ...blankWasteForm(tab, 'cost'),
+  disposal: prev.disposal || '', manifest: prev.manifest || '',
+  workerName: prev.workerName || '', workerVType: prev.workerVType || '', workerVNumber: prev.workerVNumber || '',
+  driver: prev.driver || '', vType: prev.vType || '', vNumber: prev.vNumber || '',
+  carried: true,
+});
+
+// 引き継いだだけで、種類・数量・処分費が空のフォーム（「入力中」とみなさない）
+const isCarriedOnlyWasteForm = (form) => form.carried === true && !form.type && !form.qty && !form.price;
+
+function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editReport, onUpdate, ymUnitPrices = [] }) {
   const isEditMode = !!editReport;
+  // ワイエムの単価マスタ（読めなかったときは空 → 種類は自由入力・処分費は手入力のまま）
+  const ymMaster = Array.isArray(ymUnitPrices) ? ymUnitPrices : [];
+  const ymMap = new Map(ymMaster.map(row => [row.item, row]));
   const [currentStep, setCurrentStep] = useState(1);
   const [report, setReport] = useState(
     isEditMode
@@ -2478,7 +2604,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       // 産廃フォーム自動追加 (品目+処分先 OR 車両のみでもOK)
       const hasWasteFull = wasteForm && wasteForm.type && wasteForm.disposal;
       const hasWasteVehicle = wasteForm && wasteForm.workerVType;
-      if (hasWasteFull || hasWasteVehicle) {
+      if (!isCarriedOnlyWasteForm(wasteForm) && (hasWasteFull || hasWasteVehicle)) {
         const qty = parseFloat(wasteForm.qty) || 0;
         const price = parseFloat(wasteForm.price) || 0;
         const ENV_P = {day:20000,night:30000}, EXT_P = {day:22000,night:32000};
@@ -2489,7 +2615,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         const newWasteItem = {
           kind: 'self',
           material: wasteForm.type || '', disposalSite: wasteForm.disposal || '',
-          quantity: qty, unit: wasteForm.unit, unitPrice: 0, amount: price,
+          quantity: qty, ...wastePriceFields(wasteForm), amount: price,
           manifestNumber: wasteForm.manifest || '',
           haisha: wasteForm.haisha || '', driver: wasteForm.driver || '',
           vType: wasteForm.vType || '', vNumber: wasteForm.vNumber || '',
@@ -2699,6 +2825,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     });
   };
 
+  // 行を追加・上書きしたあとのフォーム。
+  // 産廃処分で新しい行を追加したときは、処分先・マニNo.・担当者/車両を引き継ぐ（指示書 3-4）
+  const resetWasteFormAfterAdd = (prev, wasOverwrite) => {
+    const mode = wasteModeByTab[wasteTab] || 'cost';
+    if (!wasOverwrite && mode === 'cost') return wasteFormAfterAdd(prev, wasteTab);
+    return blankWasteForm(wasteTab, mode);
+  };
+
   // ★ 4タブ用の追加関数群
   // 自社運搬 (担当者+車両、配車費なし) - 処分/道具車/売上モード対応
   const addSelfWaste = () => {
@@ -2732,7 +2866,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       material: isToolMode ? '道具車' : wasteForm.type,
       disposalSite: isToolMode ? '' : wasteForm.disposal,
       quantity: isToolMode ? 0 : qty,
-      unit: wasteForm.unit, unitPrice: 0,
+      ...wastePriceFields(wasteForm),
       amount: isToolMode ? 0 : (isRevenue ? -Math.abs(price) : price),
       manifestNumber: isToolMode ? '' : (isRevenue ? '-' : (wasteForm.manifest||'')),
       haisha:'', haishiAmount:0,
@@ -2749,7 +2883,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setWasteItems([...wasteItems, newItem]);
     }
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:'',isSwap:false}));
+    setWasteForm(prev => resetWasteFormAfterAdd(prev, editingWasteIdx !== null));
   };
   // 環境課配車 (運転者+車両+シフト + 産廃情報)
   const addEnvWaste = () => {
@@ -2784,7 +2918,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       kind:'env',
       isScrap: isRevenue,
       material:wasteForm.type, disposalSite:wasteForm.disposal,
-      quantity:qty, unit:wasteForm.unit, unitPrice:0,
+      quantity:qty, ...wastePriceFields(wasteForm),
       amount: isRevenue ? -Math.abs(price) : price,
       manifestNumber: isRevenue ? '-' : (wasteForm.manifest||''),
       haisha:'env',
@@ -2800,7 +2934,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setWasteItems(normalizeHaishiAmounts([...wasteItems, newItem]));
     }
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
+    setWasteForm(prev => resetWasteFormAfterAdd(prev, editingWasteIdx !== null));
   };
   // ワイエム配車 (シフト or 例外金額 + 車両任意 + 産廃情報)
   const addExtWaste = () => {
@@ -2836,7 +2970,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       kind:'ext',
       isScrap: isRevenue,
       material:wasteForm.type, disposalSite:wasteForm.disposal,
-      quantity:qty, unit:wasteForm.unit, unitPrice:0,
+      quantity:qty, ...wastePriceFields(wasteForm),
       amount: isRevenue ? -Math.abs(price) : price,
       manifestNumber: isRevenue ? '-' : (wasteForm.manifest||''),
       haisha:'ext',
@@ -2852,7 +2986,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     } else {
       setWasteItems(normalizeHaishiAmounts([...wasteItems, newItem]));
     }
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
+    setWasteForm(prev => resetWasteFormAfterAdd(prev, editingWasteIdx !== null));
   };
 
   const detectKind = (w) => {
@@ -2892,12 +3026,19 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       workerName:w.workerName||'', workerVType:w.workerVType||'', workerVNumber:w.workerVNumber||'',
       volumeM3: w.volumeM3 ? String(w.volumeM3) : '',
       isSwap: w.isSwap === true,
+      // priceSource がない既存の行は手入力扱い（金額を勝手に計算し直さない。指示書 3-6）
+      priceSource: w.priceSource === 'master' ? 'master' : 'manual',
+      priceOverride: w.priceOverride === true,
+      unitPrice: w.priceSource === 'master' ? (Number(w.unitPrice) || 0) : 0,
+      // ワイエムでマスタにない品名なら「その他（直接入力）」として開く
+      typeCustom: !scrap && isYmDisposal(w.disposalSite) && ymMap.size > 0 && !!w.material && !ymMap.has(w.material),
+      carried: false,
     });
   };
   // ★ 編集キャンセル
   const cancelEdit = () => {
     setEditingWasteIdx(null);
-    setWasteForm(prev=>({mode:prev.mode||'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''}));
+    setWasteForm(blankWasteForm(wasteTab, wasteModeByTab[wasteTab] || 'cost'));
     setScrapForm({type:'金属くず',buyer:'',qty:'',unit:'kg',price:'',manifest:'',volumeM3:'',workerName:'',workerVType:'',workerVNumber:''});
   };
   // ★ タブに応じた add 関数 (scrap は mode='revenue' で各タブから入力)
@@ -2937,6 +3078,108 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const inpLbl = { display:'block', fontSize:'11px', fontWeight:'700', color:'rgba(255,255,255,0.5)', marginBottom:'6px', letterSpacing:'0.04em' };
   const grid2 = { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'10px' };
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
+
+  // ★ 産廃フォームの 処分先 → 種類 / 数量・単位・処分費（自社運搬・環境課配車・ワイエム配車で共通）
+  //   処分先がワイエムで単価マスタが読めていれば、種類はプルダウン、単位と処分費は自動
+  const renderWasteMainFields = ({ isRev, accentDark, inputBorder }) => {
+    const optStyle = { color:'#000', background:'#fff' };
+    const ymSelectable = !isRev && ymMaster.length > 0 && isYmDisposal(wasteForm.disposal);
+    const masterRow = !isRev ? getYmMasterRow(wasteForm, ymMap) : null;
+    const isAuto = !!masterRow && wasteForm.priceSource === 'master';
+    const setDisposal = (value) => setWasteForm(prev => isRev ? { ...prev, disposal: value } : changeWasteDisposal(prev, value, ymMap));
+    const disposalChips = isRev
+      ? METAL_BUYERS
+      : [...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)];
+    // プルダウンの中身: よく使う → 分類ごと → その他（直接入力）
+    const ymGroups = [];
+    ymMaster.forEach(row => {
+      const category = row.category || 'その他の品目';
+      let group = ymGroups.find(g => g.category === category);
+      if (!group) { group = { category, rows: [] }; ymGroups.push(group); }
+      group.rows.push(row);
+    });
+    const unitOptions = [...WASTE_UNIT_OPTIONS, ...(wasteForm.unit && !WASTE_UNIT_OPTIONS.includes(wasteForm.unit) ? [wasteForm.unit] : [])];
+    return (<>
+      <div style={grid2}>
+        {/* 処分先（先に選ぶ） */}
+        <div>
+          <label style={inpLbl}>{isRev?'買取業者':'処分先'}</label>
+          {disposalChips.length > 0 && (
+            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+              {disposalChips.map(s=>(
+                <button key={s} onClick={()=>setDisposal(s)}
+                  style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+          <input type="text" value={wasteForm.disposal} onChange={e=>setDisposal(e.target.value)} placeholder={isRev?'買取業者を入力':'処分先を入力'} style={{...inpTxt,border:inputBorder}} />
+        </div>
+        {/* 種類（処分先で切り替え） */}
+        <div>
+          <label style={inpLbl}>種類</label>
+          {ymSelectable ? (<>
+            <select value={wasteForm.typeCustom ? WASTE_TYPE_OTHER : (ymMap.has(wasteForm.type) ? wasteForm.type : '')}
+              onChange={e=>{ const v = e.target.value; setWasteForm(prev => selectWasteType(prev, v, ymMap)); }}
+              style={{...inpSel,border:inputBorder}}>
+              <option value="" style={optStyle}>種類を選択</option>
+              <optgroup label="よく使う" style={optStyle}>
+                {ymMaster.filter(row => row.popular).map(row => <option key={`popular-${row.item}`} value={row.item} style={optStyle}>{row.item}</option>)}
+              </optgroup>
+              {ymGroups.map(group => (
+                <optgroup key={group.category} label={group.category} style={optStyle}>
+                  {group.rows.map(row => <option key={`${group.category}-${row.item}`} value={row.item} style={optStyle}>{row.item}</option>)}
+                </optgroup>
+              ))}
+              <option value={WASTE_TYPE_OTHER} style={optStyle}>その他（直接入力）</option>
+            </select>
+            {wasteForm.typeCustom && (
+              <input type="text" value={wasteForm.type} onChange={e=>{ const v = e.target.value; setWasteForm(prev => ({ ...prev, type: v })); }} placeholder="品名を入力" style={{...inpTxt,border:inputBorder,marginTop:6}} autoFocus />
+            )}
+          </>) : (<>
+            <input type="text" value={wasteForm.type} onChange={e=>{ const v = e.target.value; setWasteForm(prev => ({ ...prev, type: v })); }}
+              placeholder={isRev ? '金属くず・鉄くず等' : '木くず・廃プラ等'}
+              style={{...inpTxt,border:inputBorder}} />
+            {/* 処分先が未選択のとき（自由入力はできる） */}
+            {!isRev && ymMaster.length > 0 && !String(wasteForm.disposal||'').trim() && (
+              <div style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginTop:4,lineHeight:1.4}}>先に処分先を選んでください</div>
+            )}
+          </>)}
+        </div>
+      </div>
+      <div style={{...grid3, marginBottom: isAuto ? 4 : grid3.marginBottom}}>
+        <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>{ const v = e.target.value; setWasteForm(prev => isRev ? { ...prev, qty: v } : changeWasteQty(prev, v, ymMap)); }} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
+        <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (
+          <select value={wasteForm.unit} disabled={isAuto} onChange={e=>{ const v = e.target.value; setWasteForm(prev => ({ ...prev, unit: v })); }} style={{...inpSel,border:inputBorder,opacity:isAuto?0.75:1}}>
+            {unitOptions.map(u => <option key={u} value={u} style={optStyle}>{u}</option>)}
+          </select>
+        )}</div>
+        <div><label style={{...inpLbl,color:isRev?accentDark:'#fff',fontWeight:isRev?700:500}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>{ const v = e.target.value; setWasteForm(prev => isRev ? { ...prev, price: v } : changeWastePrice(prev, v)); }} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
+      </div>
+      {/* 処分費の根拠（自動の行だけ）。手で直した行は「自動に戻す」 */}
+      {isAuto && (
+        <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8,marginBottom:10,fontSize:10,color:'rgba(255,255,255,0.55)'}}>
+          {wasteForm.priceOverride ? (<>
+            <span>手で修正済み</span>
+            <button onClick={()=>setWasteForm(prev => resetWasteAutoPrice(prev, ymMap))}
+              style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${accentDark}`,background:'transparent',color:accentDark,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>自動に戻す</button>
+          </>) : (
+            <span style={{fontVariantNumeric:'tabular-nums'}}>@{formatCurrency(wasteForm.unitPrice)}/{wasteForm.unit}{parseFloat(wasteForm.qty) > 0 ? ` × ${wasteForm.qty}${wasteForm.unit}` : ''}</span>
+          )}
+        </div>
+      )}
+    </>);
+  };
+
+  // ★ マニフェスト No.（産廃処分のみ。3タブ共通）
+  const renderWasteManifestField = (inputBorder) => (
+    <div style={{marginBottom:10}}>
+      <label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label>
+      <input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} />
+      <div style={{fontSize:9,color:'rgba(255,255,255,0.4)',marginTop:4,lineHeight:1.4}}>品目が複数あるときは1品目ずつ追加（同じNo.でOK）</div>
+    </div>
+  );
 
   // ★ ItemCard: アバターは常に1文字
   const ItemCard = ({ avatarBg, avatarColor, avatarText, name, meta, amount, amountColor, onDel, onEdit, isEditing }) => (
@@ -3347,7 +3590,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           <p style={{ fontSize:'12px', color:'rgba(255,255,255,0.45)', marginBottom:'14px' }}>※ない場合はそのまま保存できます</p>
 
           {/* 産廃 (4タブ統合) */}
-          <SectionLabel ja="産廃・スクラップ" en="Waste & Scrap" pending={!!((wasteForm.type && wasteForm.disposal) || wasteForm.workerVType || (scrapForm && scrapForm.buyer && parseFloat(scrapForm.qty) > 0))} />
+          <SectionLabel ja="産廃・スクラップ" en="Waste & Scrap" pending={!!((!isCarriedOnlyWasteForm(wasteForm) && ((wasteForm.type && wasteForm.disposal) || wasteForm.workerVType)) || (scrapForm && scrapForm.buyer && parseFloat(scrapForm.qty) > 0))} />
 
           {/* 入力済みリスト */}
           {editingWasteIdx === null && wasteItems.length > 0 && (
@@ -3414,7 +3657,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 setWasteTab(v);
                 // ★ タブ切替時にフォーム完全クリア(産廃/金属の独立化)
                 const currentMode = wasteModeByTab[v]||'cost';
-                setWasteForm({mode:currentMode,type:'',disposal:'',qty:'',unit:currentMode==='revenue'?'kg':'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});
+                setWasteForm(blankWasteForm(v, currentMode));
                 setEditingWasteIdx(null);
               }}
                 style={{
@@ -3473,17 +3716,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {/* 処分/道具車/売上 3分割カード */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginBottom:14}}>
-                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm({mode:'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm(blankWasteForm(wasteTab,'cost'));setEditingWasteIdx(null);}}
                   style={{padding:'12px 4px',borderRadius:10,border:(!isRev && !isTool)?`2px solid ${accentDark}`:'2px solid rgba(255,255,255,0.12)',background:(!isRev && !isTool)?accentBg:'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:12,fontWeight:700,color:(!isRev && !isTool)?accentDark:'rgba(255,255,255,0.5)'}}>産廃処分</div>
                   <div style={{fontSize:9,color:(!isRev && !isTool)?accentDark:'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>廃プラ等</div>
                 </button>
-                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'tool'});setWasteForm({mode:'tool',type:'道具車',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'tool'});setWasteForm(blankWasteForm(wasteTab,'tool'));setEditingWasteIdx(null);}}
                   style={{padding:'12px 4px',borderRadius:10,border:isTool?'2px solid #818CF8':'2px solid rgba(255,255,255,0.12)',background:isTool?'rgba(129,140,248,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:12,fontWeight:700,color:isTool?'#A5B4FC':'rgba(255,255,255,0.5)'}}>道具車</div>
                   <div style={{fontSize:9,color:isTool?'#A5B4FC':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>担当者+車両</div>
                 </button>
-                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm({mode:'revenue',type:'',disposal:'',qty:'',unit:'kg',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm(blankWasteForm(wasteTab,'revenue'));setEditingWasteIdx(null);}}
                   style={{padding:'12px 4px',borderRadius:10,border:isRev?'2px solid #06B6D4':'2px solid rgba(255,255,255,0.12)',background:isRev?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:12,fontWeight:700,color:isRev?'#22D3EE':'rgba(255,255,255,0.5)'}}>金属売上</div>
                   <div style={{fontSize:9,color:isRev?'#67e8f9':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>鉄・銅くず等</div>
@@ -3491,31 +3734,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
 
               {!isTool && (<>
-              <div style={grid2}>
-                <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder={isRev?'金属くず・鉄くず等':'木くず・廃プラ等'} style={{...inpTxt,border:inputBorder}} /></div>
-                <div>
-                  <label style={inpLbl}>{isRev?'買取業者':'処分先'}</label>
-                  {(isRev ? METAL_BUYERS.length > 0 : ((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal))) && (
-                    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
-                      {(isRev ? METAL_BUYERS : [...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)]).map(s=>(
-                        <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
-                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <input type="text" value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} placeholder={isRev?'買取業者を入力':'処分先を入力'} style={{...inpTxt,border:inputBorder}} />
-                </div>
-              </div>
-              <div style={grid3}>
-                <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
-                <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:'#fff',fontWeight:isRev?700:500}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
-              </div>
-              {!isRev && (
-                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
-              )}
+              {renderWasteMainFields({ isRev, accentDark, inputBorder })}
+              {!isRev && renderWasteManifestField(inputBorder)}
               {isRev && (
                 <div style={{marginBottom:10}}>
                   <label style={{...inpLbl,color:'#22D3EE',fontWeight:700}}>㎥換算 <span style={{color:'rgba(255,255,255,0.4)',fontWeight:400,fontSize:'9px'}}>(任意・後日入力可)</span></label>
@@ -3627,7 +3847,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <button onClick={cancelEdit} style={{flex:1,padding:'11px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9,color:'#aaa',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>キャンセル</button>
                 </div>
               ) : (
-                <AddBtn onClick={handleAddByTab} disabled={!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || wasteForm.workerVType)} pulse={!!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || wasteForm.workerVType)} />
+                <AddBtn onClick={handleAddByTab} disabled={!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || (wasteForm.workerVType && !isCarriedOnlyWasteForm(wasteForm)))} pulse={!!((wasteForm.type&&wasteForm.disposal&&wasteForm.qty) || (wasteForm.workerVType && !isCarriedOnlyWasteForm(wasteForm)))} />
               )}
             </div>
             );
@@ -3652,12 +3872,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {/* 処分/売上 2分割カード */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
-                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm({mode:'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm(blankWasteForm(wasteTab,'cost'));setEditingWasteIdx(null);}}
                   style={{padding:'12px 8px',borderRadius:10,border:!isRev?`2px solid ${accentDark}`:'2px solid rgba(255,255,255,0.12)',background:!isRev?accentBg:'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:!isRev?accentDark:'rgba(255,255,255,0.5)'}}>産廃処分</div>
                   <div style={{fontSize:9,color:!isRev?accentDark:'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>廃プラ・ボード等</div>
                 </button>
-                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm({mode:'revenue',type:'',disposal:'',qty:'',unit:'kg',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm(blankWasteForm(wasteTab,'revenue'));setEditingWasteIdx(null);}}
                   style={{padding:'12px 8px',borderRadius:10,border:isRev?'2px solid #06B6D4':'2px solid rgba(255,255,255,0.12)',background:isRev?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:isRev?'#22D3EE':'rgba(255,255,255,0.5)'}}>金属売上</div>
                   <div style={{fontSize:9,color:isRev?'#67e8f9':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>鉄・銅くず等</div>
@@ -3665,29 +3885,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
 
               {/* 産廃情報 */}
-              <div style={grid2}>
-                <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder={isRev?'金属くず・鉄くず等':'木くず・廃プラ等'} style={{...inpTxt,border:inputBorder}} /></div>
-                <div><label style={inpLbl}>{isRev?'買取業者':'処分先'}</label>
-                  {(isRev ? METAL_BUYERS.length > 0 : ((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal))) && (
-                    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
-                      {(isRev ? METAL_BUYERS : [...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)]).map(s=>(
-                        <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
-                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <input type="text" value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} placeholder={isRev?'買取業者を入力':'処分先を入力'} style={{...inpTxt,border:inputBorder}} /></div>
-              </div>
-              <div style={grid3}>
-                <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
-                <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:'#fff',fontWeight:isRev?700:500}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
-              </div>
-              {!isRev && (
-                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
-              )}
+              {renderWasteMainFields({ isRev, accentDark, inputBorder })}
+              {!isRev && renderWasteManifestField(inputBorder)}
               {isRev && (
                 <div style={{marginBottom:10}}>
                   <label style={{...inpLbl,color:'#22D3EE',fontWeight:700}}>㎥換算 <span style={{color:'rgba(255,255,255,0.4)',fontWeight:400,fontSize:'9px'}}>(任意・後日入力可)</span></label>
@@ -3814,12 +4013,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {/* 処分/売上 2分割カード */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
-                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm({mode:'cost',type:'',disposal:'',qty:'',unit:'㎥',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'cost'});setWasteForm(blankWasteForm(wasteTab,'cost'));setEditingWasteIdx(null);}}
                   style={{padding:'12px 8px',borderRadius:10,border:!isRev?`2px solid ${accentDark}`:'2px solid rgba(255,255,255,0.12)',background:!isRev?accentBg:'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:!isRev?accentDark:'rgba(255,255,255,0.5)'}}>産廃処分</div>
                   <div style={{fontSize:9,color:!isRev?accentDark:'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>廃プラ・ボード等</div>
                 </button>
-                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm({mode:'revenue',type:'',disposal:'',qty:'',unit:'kg',price:'',manifest:'',haisha:'',driver:'',vType:'',vNumber:'',haishiShift:'',haishiOverride:false,haishiPrice:'',workerName:'',workerVType:'',workerVNumber:'',volumeM3:''});setEditingWasteIdx(null);}}
+                <button onClick={()=>{setWasteModeByTab({...wasteModeByTab,[wasteTab]:'revenue'});setWasteForm(blankWasteForm(wasteTab,'revenue'));setEditingWasteIdx(null);}}
                   style={{padding:'12px 8px',borderRadius:10,border:isRev?'2px solid #06B6D4':'2px solid rgba(255,255,255,0.12)',background:isRev?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all 0.15s'}}>
                   <div style={{fontSize:13,fontWeight:700,color:isRev?'#22D3EE':'rgba(255,255,255,0.5)'}}>金属売上</div>
                   <div style={{fontSize:9,color:isRev?'#67e8f9':'rgba(255,255,255,0.35)',marginTop:2,opacity:0.8}}>鉄・銅くず等</div>
@@ -3827,29 +4026,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
 
               {/* 産廃情報 */}
-              <div style={grid2}>
-                <div><label style={inpLbl}>種類</label><input type="text" value={wasteForm.type} onChange={e=>setWasteForm({...wasteForm,type:e.target.value})} placeholder={isRev?'金属くず・鉄くず等':'木くず・廃プラ等'} style={{...inpTxt,border:inputBorder}} /></div>
-                <div><label style={inpLbl}>{isRev?'買取業者':'処分先'}</label>
-                  {(isRev ? METAL_BUYERS.length > 0 : ((projectInfo?.contractedDisposalSites||[]).length > 0 || (projectInfo?.manifestRows||[]).some(r=>r.disposal))) && (
-                    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
-                      {(isRev ? METAL_BUYERS : [...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)]).map(s=>(
-                        <button key={s} onClick={()=>setWasteForm({...wasteForm,disposal:s})}
-                          style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.12)'}`,background:wasteForm.disposal===s?accentDark:'rgba(255,255,255,0.08)',color:wasteForm.disposal===s?'#1F1F1F':accentDark,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  <input type="text" value={wasteForm.disposal} onChange={e=>setWasteForm({...wasteForm,disposal:e.target.value})} placeholder={isRev?'買取業者を入力':'処分先を入力'} style={{...inpTxt,border:inputBorder}} /></div>
-              </div>
-              <div style={grid3}>
-                <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>setWasteForm({...wasteForm,qty:e.target.value})} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
-                <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (<select value={wasteForm.unit} onChange={e=>setWasteForm({...wasteForm,unit:e.target.value})} style={{...inpSel,border:inputBorder}}><option value="㎥" style={{color:"#000",background:"#fff"}}>㎥</option><option value="kg" style={{color:"#000",background:"#fff"}}>kg</option><option value="t" style={{color:"#000",background:"#fff"}}>t</option></select>)}</div>
-                <div><label style={{...inpLbl,color:isRev?accentDark:'#fff',fontWeight:isRev?700:500}}>{isRev?'売上金額':'処分費'}</label><input type="number" value={wasteForm.price} onChange={e=>setWasteForm({...wasteForm,price:e.target.value})} placeholder="0" style={{...inpTxt,border:isRev?'1px solid #06B6D4':inputBorder,color:isRev?accentDark:'#fff',fontWeight:isRev?500:400}} /></div>
-              </div>
-              {!isRev && (
-                <div style={{marginBottom:10}}><label style={inpLbl}>マニフェスト No. <span style={{color:'rgba(255,255,255,0.3)',fontWeight:400,fontSize:'9px'}}>(任意)</span></label><input type="text" value={wasteForm.manifest} onChange={e=>setWasteForm({...wasteForm,manifest:e.target.value})} placeholder="例）A-12345" style={{...inpTxt,border:inputBorder}} /></div>
-              )}
+              {renderWasteMainFields({ isRev, accentDark, inputBorder })}
+              {!isRev && renderWasteManifestField(inputBorder)}
               {isRev && (
                 <div style={{marginBottom:10}}>
                   <label style={{...inpLbl,color:'#22D3EE',fontWeight:700}}>㎥換算 <span style={{color:'rgba(255,255,255,0.4)',fontWeight:400,fontSize:'9px'}}>(任意・後日入力可)</span></label>
@@ -6284,6 +6462,8 @@ export default function LOGIOApp() {
   const [editingReport, setEditingReport] = useState(null);
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState('');
+  // ワイエムの処分単価（ログイン後に1回読む。読めなければ空 = 手入力で使う）
+  const [ymUnitPrices, setYmUnitPrices] = useState([]);
 
   const defaultProjectInfo = {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
@@ -6342,6 +6522,8 @@ export default function LOGIOApp() {
         if (!cancelled) setSplashReady(true);
         return;
       }
+      // 単価マスタは現場一覧と並行して読む（失敗しても空の一覧が返るだけで止まらない）
+      loadYmUnitPrices().then(rows => { if (!cancelled) setYmUnitPrices(rows); });
       try {
         await loadSites();
       } finally {
@@ -6978,6 +7160,7 @@ export default function LOGIOApp() {
               onReleaseLock={releaseLock}
               editReport={editingReport}
               onUpdate={handleUpdateReport}
+              ymUnitPrices={ymUnitPrices}
             />
           )}
           {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={handleNavigate} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}

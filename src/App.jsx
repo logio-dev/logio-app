@@ -154,6 +154,22 @@ const siteLocks = {
       await sb('site_locks').delete(`site_name=eq.${encodeURIComponent(siteName)}&user_name=eq.${encodeURIComponent(userName)}`);
     } catch(e) { console.error('lock release error:', e); }
   },
+  // 現場名の変更に合わせて、その現場のロックの site_name を新しい名前に書き換える。
+  // 失敗しても例外は出さない（名前変更は成功扱いのまま）。コンソールに記録だけ残す
+  async renameSite(oldName, newName) {
+    try {
+      const result = await sb('site_locks').update({ site_name: newName }, `site_name=eq.${encodeURIComponent(oldName)}`);
+      if (!Array.isArray(result)) console.error('lock renameSite error:', oldName, '→', newName, result);
+    } catch(e) { console.error('lock renameSite error:', oldName, '→', newName, e); }
+  },
+  // 現場の削除に合わせて、その現場のロックをすべて消す。
+  // 失敗しても例外は出さない（削除は成功扱いのまま）。コンソールに記録だけ残す
+  async removeSite(siteName) {
+    try {
+      const ok = await sb('site_locks').delete(`site_name=eq.${encodeURIComponent(siteName)}`);
+      if (!ok) console.error('lock removeSite error:', siteName);
+    } catch(e) { console.error('lock removeSite error:', siteName, e); }
+  },
   // ホームの「入力中」表示用。時間切れのロックは無視し、ほかの人のロックを優先して返す
   async check(siteName, userName = '') {
     try {
@@ -6743,6 +6759,8 @@ export default function LOGIOApp() {
       await sb('sites').delete(`name=eq.${encodeURIComponent(siteName)}`);
       await sb('project_info').delete(`site_name=eq.${encodeURIComponent(siteName)}`);
       await sb('reports').delete(`site_name=eq.${encodeURIComponent(siteName)}`);
+      // site_locks: その現場の入力中ロックも消す（失敗しても削除は成功扱い）
+      await siteLocks.removeSite(siteName);
       setSites(prev => prev.filter(s => s.name !== siteName));
       if (selectedSite === siteName) { setSelectedSite(''); setLockStatus(null); }
       alert(`✅ 現場「${siteName}」を削除しました`);
@@ -6759,6 +6777,8 @@ export default function LOGIOApp() {
       await sb('project_info').update({ site_name: n }, `site_name=eq.${encodeURIComponent(oldName)}`);
       // reports テーブル更新
       await sb('reports').update({ site_name: n }, `site_name=eq.${encodeURIComponent(oldName)}`);
+      // site_locks: 入力中ロックの現場名も書き換える（失敗しても名前変更は成功扱い）
+      await siteLocks.renameSite(oldName, n);
       setSites(prev => prev.map(s => s.name === oldName ? { ...s, name: n } : s));
       if (selectedSite === oldName) { setSelectedSite(n); }
       alert(`✅ 現場名を「${n}」に変更しました`);

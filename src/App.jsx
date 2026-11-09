@@ -95,34 +95,58 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// ========== ★ site_locks ヘルパー ==========
-// Supabaseで以下のテーブルを作成してください:
-// CREATE TABLE site_locks (
-//   id uuid default gen_random_uuid() primary key,
-//   site_name text not null unique,
-//   user_name text not null,
-//   updated_at timestamptz default now()
-// );
+// ========== ★ site_locks ヘルパー（日報の「入力中」ロック） ==========
+// 使う欄: site_name（現場名）/ user_name（ログインID）/ updated_at（登録・更新日時）
+// ・updated_at から LOCK_EXPIRE_MINUTES 分以上たったロックは「時間切れ」として無視する
+//   （ブラウザを閉じるなどで解除されなかったロックが残り続け、入力できなくなるのを防ぐ）
+// ・site_name の一意制約には頼らない（同じ現場に行が複数あっても動くよう、ほかの人の行を消してから自分の行を入れる）
+const LOCK_EXPIRE_MINUTES = 60;
+
+// 時間切れのロックか（時刻が読めないロックも時間切れとみなす）
+const isLockExpired = (lock, now = Date.now()) => {
+  const time = Date.parse(lock?.updated_at || '');
+  if (!Number.isFinite(time)) return true;
+  return now - time >= LOCK_EXPIRE_MINUTES * 60 * 1000;
+};
+
+// ほかの人の有効な（時間切れでない）ロックのうち、いちばん新しいもの
+const findOtherActiveLock = (rows, userName, now = Date.now()) =>
+  (Array.isArray(rows) ? rows : [])
+    .filter(row => row && row.user_name !== userName && !isLockExpired(row, now))
+    .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0] || null;
+
+// ロックの時刻を「HH:MM」で表す
+const formatLockTime = (updatedAt) => {
+  const date = new Date(updatedAt || '');
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+};
+
 const siteLocks = {
-  async acquire(siteName, userName) {
+  // 日報入力を始める。ほかの人の有効なロックがあれば { ok: false, lock } を返す。
+  // force: true なら、そのロックを解除して自分のロックに置き換える
+  async acquire(siteName, userName, { force = false } = {}) {
+    const siteFilter = `site_name=eq.${encodeURIComponent(siteName)}`;
     try {
       const db = sb('site_locks');
-      const existing = await db.select(`site_name=eq.${encodeURIComponent(siteName)}`);
-      if (Array.isArray(existing) && existing.length > 0) {
-        const lock = existing[0];
-        // 自分のロックなら更新して続行
-        if (lock.user_name === userName) {
-          await db.update({ updated_at: new Date().toISOString() }, `site_name=eq.${encodeURIComponent(siteName)}`);
-          return { ok: true, lockedBy: null };
-        }
-        // 他人のロック → ブロック
-        return { ok: false, lockedBy: lock.user_name };
+      const existing = await db.select(siteFilter);
+      const rows = Array.isArray(existing) ? existing : [];
+      const otherLock = findOtherActiveLock(rows, userName);
+      if (otherLock && !force) return { ok: false, lock: otherLock, lockedBy: otherLock.user_name };
+      const now = new Date().toISOString();
+      // ほかの人の行（時間切れ・解除したもの）を消す
+      if (rows.some(row => row && row.user_name !== userName)) {
+        await db.delete(`${siteFilter}&user_name=neq.${encodeURIComponent(userName)}`);
       }
-      await db.insert({ site_name: siteName, user_name: userName, updated_at: new Date().toISOString() });
-      return { ok: true, lockedBy: null };
+      // 自分の行があれば時刻を更新、なければ登録（どちらも updated_at に今の時刻を入れる）
+      if (rows.some(row => row && row.user_name === userName)) {
+        await db.update({ updated_at: now }, `${siteFilter}&user_name=eq.${encodeURIComponent(userName)}`);
+      } else {
+        await db.insert({ site_name: siteName, user_name: userName, updated_at: now });
+      }
+      return { ok: true, lock: null, lockedBy: null };
     } catch(e) {
       console.error('lock acquire error:', e);
-      return { ok: true, lockedBy: null }; // エラー時は通す
+      return { ok: true, lock: null, lockedBy: null }; // エラー時は通す
     }
   },
   async release(siteName, userName) {
@@ -130,11 +154,13 @@ const siteLocks = {
       await sb('site_locks').delete(`site_name=eq.${encodeURIComponent(siteName)}&user_name=eq.${encodeURIComponent(userName)}`);
     } catch(e) { console.error('lock release error:', e); }
   },
-  async check(siteName) {
+  // ホームの「入力中」表示用。時間切れのロックは無視し、ほかの人のロックを優先して返す
+  async check(siteName, userName = '') {
     try {
       const data = await sb('site_locks').select(`site_name=eq.${encodeURIComponent(siteName)}`);
-      if (Array.isArray(data) && data.length > 0) return data[0].user_name;
-      return null;
+      const active = (Array.isArray(data) ? data : []).filter(row => row && !isLockExpired(row));
+      const lock = findOtherActiveLock(active, userName) || active[0];
+      return lock ? lock.user_name : null;
     } catch(e) { return null; }
   }
 };
@@ -1039,7 +1065,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             <span style={{ fontSize:'18px', flexShrink:0 }}>🔒</span>
             <div>
               <p style={{ fontSize:'12px', fontWeight:700, color:'#f59e0b' }}>入力中: {lockStatus}</p>
-              <p style={{ fontSize:'10px', color:'#6b7280', marginTop:'1px' }}>閲覧は可能ですが、日報入力は完了後にお試しください</p>
+              <p style={{ fontSize:'10px', color:'#6b7280', marginTop:'1px' }}>閲覧は可能です。日報入力を開くと、解除して入力するか選べます</p>
             </div>
           </div>
         )}
@@ -6676,7 +6702,7 @@ export default function LOGIOApp() {
       if (selectedSite) {
         await loadProjectInfo(selectedSite);
         await loadReports(selectedSite);
-        const locker = await siteLocks.check(selectedSite);
+        const locker = await siteLocks.check(selectedSite, currentUser?.userId || 'unknown');
         setLockStatus(locker);
       }
     } catch(e) { console.error(e); }
@@ -6746,7 +6772,7 @@ export default function LOGIOApp() {
     setReports([]);
     await loadProjectInfo(siteName);
     await loadReports(siteName);
-    const locker = await siteLocks.check(siteName);
+    const locker = await siteLocks.check(siteName, currentUser?.userId || 'unknown');
     setLockStatus(locker);
   };
 
@@ -7024,6 +7050,17 @@ export default function LOGIOApp() {
     return { totalRevenue, accumulatedCost, accumulatedScrap, grossProfit, grossProfitRateContract: totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0', grossProfitRateWithScrap: (totalRevenue + accumulatedScrap) > 0 ? (grossProfit / (totalRevenue + accumulatedScrap) * 100).toFixed(1) : '0.0' };
   };
 
+  // ★ ほかの人が入力中のときの確認画面（「解除して入力する」→ true / 「やめる」→ false）
+  const [lockPrompt, setLockPrompt] = useState(null); // { lockedBy, since, resolve }
+  const askLockTakeover = (lock) => new Promise(resolve => {
+    setLockPrompt({ lockedBy: lock?.user_name || '', since: formatLockTime(lock?.updated_at), resolve });
+  });
+  const answerLockPrompt = (takeOver) => {
+    const prompt = lockPrompt;
+    setLockPrompt(null);
+    if (prompt) prompt.resolve(takeOver);
+  };
+
   // ★ handleNavigate: 日報入力時にロック取得
   const handleNavigate = (page) => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -7031,10 +7068,13 @@ export default function LOGIOApp() {
       (async () => {
         if (!selectedSite) return;
         const userName = currentUser?.userId || 'unknown';
+        // 時間切れ（LOCK_EXPIRE_MINUTES 分以上前）のロックは、確認なしで自分のロックに置き換わる
         const result = await siteLocks.acquire(selectedSite, userName);
         if (!result.ok) {
-          alert(`🔒 現在「${result.lockedBy}」が入力中です。\n入力が完了するまでお待ちください。`);
-          return;
+          // ほかの人が入力中: 「解除して入力する」か「やめる」かを選んでもらう
+          const takeOver = await askLockTakeover(result.lock);
+          if (!takeOver) return;
+          await siteLocks.acquire(selectedSite, userName, { force: true });
         }
         setLockStatus(userName);
         setEditingReport(null);
@@ -7361,6 +7401,31 @@ export default function LOGIOApp() {
               {sites.filter(s => !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
                 <p style={{ textAlign:'center', padding:'20px', color:'#999', fontSize:'13px' }}>「{searchQuery}」に一致する現場がありません</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ★ ほかの人が入力中のときの確認（解除して入力する / やめる） */}
+      {lockPrompt && (
+        <div role="dialog" aria-modal="true" aria-labelledby="lock-prompt-title"
+          style={{ position:'fixed', inset:0, zIndex:10000, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
+          <div style={{ width:'100%', maxWidth:'360px', background:'#fff', borderRadius:'16px', padding:'20px', boxShadow:'0 20px 50px rgba(0,0,0,0.3)' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'10px' }}>
+              <span style={{ fontSize:'20px' }}>🔒</span>
+              <p id="lock-prompt-title" style={{ fontSize:'15px', fontWeight:700, color:'#1C1917' }}>入力中の人がいます</p>
+            </div>
+            <p style={{ fontSize:'14px', color:'#1C1917', lineHeight:1.6 }}>
+              {lockPrompt.lockedBy}さんが {lockPrompt.since || '--:--'} から入力中です。解除して入力しますか？
+            </p>
+            <p style={{ fontSize:'11px', color:'#6b7280', lineHeight:1.5, marginTop:'6px' }}>
+              解除しても、{lockPrompt.lockedBy}さんが入力中の内容は保存できます（同じ日の日報が2件になることがあります）。
+            </p>
+            <div style={{ display:'flex', gap:'8px', marginTop:'16px' }}>
+              <button onClick={() => answerLockPrompt(false)}
+                style={{ flex:1, padding:'12px', borderRadius:'10px', border:'1px solid #E5E7EB', background:'#F3F4F6', color:'#374151', fontSize:'14px', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>やめる</button>
+              <button onClick={() => answerLockPrompt(true)}
+                style={{ flex:2, padding:'12px', borderRadius:'10px', border:'none', background:'#F59E0B', color:'#fff', fontSize:'14px', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>解除して入力する</button>
             </div>
           </div>
         </div>

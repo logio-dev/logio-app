@@ -445,7 +445,7 @@ function GradChevronUp({ size = 16 }) {
 }
 
 // ========== ★ Header（リロードアイコン追加）==========
-function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSearch, reloading = false, mascots = null }) {
+function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSearch, reloading = false, mascots = null, themeSong = null }) {
   return (
     <header className="bg-transparent no-print" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
@@ -455,8 +455,8 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
     }}>
       <style>{`@keyframes logio-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
       <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'center', height:'52px', paddingLeft:'16px', paddingRight:'16px', pointerEvents:'auto' }}>
-        {/* 左：ハンバーガー */}
-        <div style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)' }}>
+        {/* 左：ハンバーガー（テーマ曲の再生中は、右隣に「♪ ■」停止ボタン） */}
+        <div style={{ position:'absolute', left:'16px', top:'50%', transform:'translateY(-50%)', display:'flex', alignItems:'center', gap:'4px' }}>
           {showMenuButton && (
             <button onClick={onMenuClick} style={{ color:'rgba(28,25,23,0.7)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
               onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
@@ -467,6 +467,7 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
               </svg>
             </button>
           )}
+          {themeSong && themeSong.state !== 'idle' && <ThemeStopButton onStop={themeSong.stop} />}
         </div>
         {/* 中央：ロゴ */}
         <WacLogo variant="header" />
@@ -886,7 +887,10 @@ const THEME_BANNER_CSS = `
   }
 `;
 
-function ThemeBanner() {
+// ★ テーマ曲を鳴らす部分（アプリ全体の土台 LOGIOApp で1つだけ使う）。
+//   画面を切り替えても消えないので、現場を選んだり別の画面に移ったりしても続きが流れる。
+//   止めるのは: 停止ボタン（バナー・ヘッダー）、ログアウト、最後まで流れたとき
+function useThemeSong() {
   const audioRef = useRef(null);
   const errorTimerRef = useRef(null);
   const [state, setState] = useState('idle'); // idle（止まっている）/ loading（読み込み中）/ playing（再生中）
@@ -946,7 +950,7 @@ function ThemeBanner() {
     return () => clearTimeout(timer);
   }, [state]);
 
-  // バナーが画面から消えたら止める（現場を選んだ・ホーム以外の画面に移った・ログアウトした）
+  // アプリが閉じられたら止める
   useEffect(() => () => {
     clearTimeout(errorTimerRef.current);
     const audio = audioRef.current;
@@ -954,6 +958,12 @@ function ThemeBanner() {
     if (audio) { audio.pause(); audio.currentTime = 0; }
   }, []);
 
+  return { state, failed, toggle, stop };
+}
+
+// ★ テーマ曲のバナー（見た目だけ。鳴らすのは useThemeSong）
+function ThemeBanner({ song }) {
+  const { state, failed, toggle } = song;
   return (
     <button type="button" onClick={toggle} className="face-theme-banner" data-state={state}
       aria-label="フェイスのテーマ曲を再生" aria-pressed={state !== 'idle'}
@@ -986,8 +996,21 @@ function ThemeBanner() {
   );
 }
 
+// ★ 再生中だけ出す小さな「♪ ■」停止ボタン（ヘッダーの左側。ヘッダーが隠れる画面では右下に浮かべる）
+function ThemeStopButton({ onStop, floating = false }) {
+  return (
+    <button type="button" onClick={onStop} className="no-print face-theme-stop" aria-label="テーマ曲を止める" title="テーマ曲を止める"
+      style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:4, height:28, padding:'0 9px', borderRadius:999, border:'none',
+        background:'#FFC400', color:'#111', fontSize:13, fontWeight:700, lineHeight:1, cursor:'pointer', fontFamily:'inherit', WebkitTapHighlightColor:'transparent',
+        ...(floating ? { position:'fixed', right:16, bottom:'calc(20px + env(safe-area-inset-bottom, 0px))', zIndex:150, height:36, padding:'0 12px', boxShadow:'0 4px 12px rgba(0,0,0,0.25)' } : {}) }}>
+      <span aria-hidden="true">♪</span>
+      <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10"><rect width="10" height="10" rx="1.5" fill="#111" /></svg>
+    </button>
+  );
+}
+
 // ========== HomePage ==========
-function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId, sitesReady, currentPage, onViewPdf }) {
+function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId, sitesReady, currentPage, onViewPdf, themeSong }) {
   const [financeOpen, setFinanceOpen] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
   const [wasteOpen, setWasteOpen] = useState(false);
@@ -1462,8 +1485,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
         {/* ★ お知らせ（現場を選ぶ前だけ出す。文は src/notices.js） */}
         {!selectedSite && sitesReady && <HomeNotices />}
-        {/* ★ テーマ曲のバナー（お知らせが0件でも出す。現場を選ぶと消えて曲も止まる） */}
-        {!selectedSite && sitesReady && <ThemeBanner />}
+        {/* ★ テーマ曲のバナー（お知らせが0件でも出す。現場を選ぶとバナーは消えるが、曲は止めない） */}
+        {!selectedSite && sitesReady && themeSong && <ThemeBanner song={themeSong} />}
       </div>
 
       {/* ★ マスコット（非表示中） */}
@@ -6755,6 +6778,9 @@ export default function LOGIOApp() {
   const [selectedSite, setSelectedSite] = useState('');
   // ワイエムの処分単価（ログイン後に1回読む。読めなければ空 = 手入力で使う）
   const [ymUnitPrices, setYmUnitPrices] = useState([]);
+  // ★ テーマ曲（アプリ全体で1つ。画面を切り替えても続きが流れる。ログアウトで止める）
+  const themeSong = useThemeSong();
+  useEffect(() => { if (!isLoggedIn) themeSong.stop(); }, [isLoggedIn]);
 
   const defaultProjectInfo = {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
@@ -6897,6 +6923,7 @@ export default function LOGIOApp() {
   };
   const handleLogout = () => {
     if (confirm('ログアウトしますか？')) {
+      themeSong.stop(); // テーマ曲はログアウトで止める
       if (selectedSite && currentUser) siteLocks.release(selectedSite, currentUser.userId);
       try { localStorage.removeItem('wac_user'); } catch {}
       setIsLoggedIn(false); setCurrentUser(null); setSelectedSite(''); setSidebarOpen(false); setLockStatus(null);
@@ -7358,6 +7385,9 @@ export default function LOGIOApp() {
     setLockStatus(null);
   };
 
+  // 日報PDFの画面は全画面でヘッダーの上に重なる（テーマ曲の停止ボタンはヘッダーではなく右下に出す）
+  const pdfCoversHeader = currentPage === 'pdf' && !!selectedReport;
+
   return (
     <div className="min-h-screen bg-transparent flex" style={{ overflowX: (currentPage === 'pdf' || currentPage === 'order_pdf') ? 'auto' : 'hidden' }}>
       <Sidebar currentPage={currentPage} onNavigate={handleNavigate} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
@@ -7368,6 +7398,7 @@ export default function LOGIOApp() {
           onReload={handleReload}
           onSearch={() => setShowSearchModal(true)}
           reloading={reloading}
+          themeSong={pdfCoversHeader ? null : themeSong}
         />
         <main className="flex-1" style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))', overflowX: (currentPage === 'pdf' || currentPage === 'order_pdf') ? 'auto' : 'hidden' }}>
           {/* ★ ボトム固定ナビ - Dock Style */}
@@ -7457,6 +7488,7 @@ export default function LOGIOApp() {
               sitesReady={sitesReady}
               currentPage={currentPage}
               onViewPdf={(report)=>{ window.__navigatePdf && window.__navigatePdf(report); }}
+              themeSong={themeSong}
             />
           )}
           {currentPage === 'settings' && <ProjectSettingsPage sites={sites} selectedSite={selectedSite} projectInfo={projectInfo} setProjectInfo={setProjectInfo} onSave={handleSaveProject} onAddSite={handleAddSite} onDeleteSite={handleDeleteSite} onRenameSite={handleRenameSite} onNavigate={handleNavigate} onSelectSite={handleSelectSite} onStatusChange={handleStatusChange} />}
@@ -7477,6 +7509,8 @@ export default function LOGIOApp() {
           {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'pdf' && selectedReport && <ReportPDFPage report={selectedReport} projectInfo={projectInfo} onNavigate={handleNavigate} />}
+          {/* 日報PDFの画面はヘッダーが隠れるので、再生中は右下に停止ボタンを浮かべる */}
+          {pdfCoversHeader && themeSong.state !== 'idle' && <ThemeStopButton floating onStop={themeSong.stop} />}
           {currentPage === 'order_pdf' && <OrderPDFPage projectInfo={projectInfo} onNavigate={handleNavigate} />}
         </main>
       </div>

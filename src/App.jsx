@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, Fil
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SplashScreen from './components/SplashScreen/SplashScreen';
 import WacLogo from './components/WacLogo/WacLogo';
+import NOTICES from './notices';
 
 
 // ========== Supabase設定 ==========
@@ -796,6 +797,76 @@ function LoginPage({ onLogin }) {
 }
 
 
+// ========== ホームの「お知らせ」欄（文は src/notices.js にだけ書く） ==========
+const NOTICE_CATEGORIES = ['お知らせ', '新着', 'お願い'];
+const NOTICE_NEW_DAYS = 7;       // newFrom の日から何日間「NEW」を付けるか
+const NOTICE_SHOW_FIRST = 4;     // これより多いときは、この件数まで出して「もっと見る」
+const NOTICE_LABEL_STYLES = {
+  'お願い':   { background: '#FFC400', color: '#000' },
+  '新着':     { background: '#22C55E', color: '#fff' },
+  'お知らせ': { background: '#E5E7EB', color: '#374151' },
+};
+
+// notices.js に書き間違いがあっても画面が止まらないよう整える
+// （見出しが空・かたまりでない行は飛ばす。種類が3つ以外なら「お知らせ」として出す）
+const normalizeNotices = (list) => (Array.isArray(list) ? list : []).flatMap(item => {
+  if (!item || typeof item !== 'object') return [];
+  const title = typeof item.title === 'string' ? item.title.trim() : '';
+  if (!title) return [];
+  return [{
+    category: NOTICE_CATEGORIES.includes(item.category) ? item.category : 'お知らせ',
+    title,
+    body: typeof item.body === 'string' && item.body.trim() ? item.body : '',
+    newFrom: typeof item.newFrom === 'string' ? item.newFrom.trim() : '',
+  }];
+});
+
+// newFrom（YYYY-MM-DD）の日から NOTICE_NEW_DAYS 日間だけ true。日付の書き方が違えば false
+const isNoticeNew = (newFrom, today = new Date()) => {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(newFrom || '');
+  if (!m) return false;
+  const from = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  if (from.getMonth() !== Number(m[2]) - 1 || from.getDate() !== Number(m[3])) return false;
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const days = Math.round((start - from) / 86400000);
+  return days >= 0 && days < NOTICE_NEW_DAYS;
+};
+
+function HomeNotices() {
+  const [expanded, setExpanded] = useState(false);
+  const notices = normalizeNotices(NOTICES);
+  if (notices.length === 0) return null; // 0件ならお知らせ欄そのものを出さない
+  const collapsible = notices.length > NOTICE_SHOW_FIRST;
+  const shown = collapsible && !expanded ? notices.slice(0, NOTICE_SHOW_FIRST) : notices;
+  return (
+    <section aria-label="お知らせ" className="mb-4" style={{ background:'#fff', borderRadius:18, padding:'14px 16px', border:'0.5px solid #E8E8E8', boxShadow:'0 2px 8px rgba(0,0,0,0.06)' }}>
+      <p style={{ fontSize:9, fontWeight:700, color:'#1E3A5F', letterSpacing:'.1em', marginBottom:5 }}>NOTICE</p>
+      <h2 style={{ fontSize:15, fontWeight:800, color:'#111', marginBottom:4 }}>お知らせ</h2>
+      <ul style={{ listStyle:'none', margin:0, padding:0 }}>
+        {shown.map((notice, i) => (
+          <li key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, padding:'10px 0', borderTop: i === 0 ? 'none' : '0.5px solid #EEEEEE' }}>
+            <span style={{ ...NOTICE_LABEL_STYLES[notice.category], flexShrink:0, minWidth:54, textAlign:'center', boxSizing:'border-box', fontSize:10, fontWeight:700, lineHeight:1, padding:'4px 6px', borderRadius:6, marginTop:2, whiteSpace:'nowrap' }}>{notice.category}</span>
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ fontSize:14, fontWeight:700, color:'#1C1917', lineHeight:1.45, overflowWrap:'anywhere' }}>
+                {notice.title}
+                {isNoticeNew(notice.newFrom) && <span style={{ marginLeft:6, fontSize:9, fontWeight:800, color:'#EF4444', letterSpacing:'.04em', verticalAlign:'middle' }}>NEW</span>}
+              </p>
+              {/* 本文は文字としてそのまま出す（改行はそのまま改行。HTML は解釈しない） */}
+              {notice.body && <p style={{ fontSize:12.5, color:'#6B7280', lineHeight:1.6, marginTop:3, whiteSpace:'pre-wrap', overflowWrap:'anywhere' }}>{notice.body}</p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+      {collapsible && (
+        <button onClick={() => setExpanded(!expanded)}
+          style={{ width:'100%', marginTop:4, padding:'10px', background:'#F4F4F4', border:'none', borderRadius:10, fontSize:13, fontWeight:600, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
+          {expanded ? '閉じる' : `もっと見る（あと${notices.length - NOTICE_SHOW_FIRST}件）`}
+        </button>
+      )}
+    </section>
+  );
+}
+
 // ========== HomePage ==========
 function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId, sitesReady, currentPage, onViewPdf }) {
   const [financeOpen, setFinanceOpen] = useState(false);
@@ -1269,6 +1340,9 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
             </button>
           </div>
         )}
+
+        {/* ★ お知らせ（現場を選ぶ前だけ出す。文は src/notices.js） */}
+        {!selectedSite && sitesReady && <HomeNotices />}
       </div>
 
       {/* ★ マスコット（非表示中） */}

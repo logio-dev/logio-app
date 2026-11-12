@@ -867,6 +867,124 @@ function HomeNotices() {
   );
 }
 
+// ========== テーマ曲のバナー（お知らせ欄の下。曲・画像は public/music/） ==========
+const THEME_SONG_URL = '/music/face_theme.mp3';
+const THEME_SONG_VOLUME = 0.5;          // 音量（0〜1）。iPhone はブラウザから音量を変えられないので端末の音量になる
+const THEME_SONG_LOAD_TIMEOUT_MS = 15000; // これだけ待っても鳴らなければ「再生できませんでした」
+const THEME_BANNER_CSS = `
+  @keyframes faceThemeKunSway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+  @keyframes faceThemeLogoBreathe { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.18); } }
+  @keyframes faceThemeSpin { to { transform: rotate(360deg); } }
+  .face-theme-banner[data-state="playing"] .face-theme-kun { animation: faceThemeKunSway 1.2s ease-in-out infinite; }
+  .face-theme-banner[data-state="playing"] .face-theme-logo { animation: faceThemeLogoBreathe 2s ease-in-out infinite; }
+  .face-theme-spinner { animation: faceThemeSpin 0.9s linear infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .face-theme-banner .face-theme-kun, .face-theme-banner .face-theme-logo { animation: none !important; }
+  }
+`;
+
+function ThemeBanner() {
+  const audioRef = useRef(null);
+  const errorTimerRef = useRef(null);
+  const [state, setState] = useState('idle'); // idle（止まっている）/ loading（読み込み中）/ playing（再生中）
+  const [failed, setFailed] = useState(false); // 「再生できませんでした」を出している
+
+  // 再生できなかったとき: 止まった状態に戻し、短く知らせる（次のタップで読み込み直す）
+  const fail = (audio) => {
+    if (audioRef.current !== audio) return;
+    audio.pause();
+    audioRef.current = null;
+    setState('idle');
+    setFailed(true);
+    clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => setFailed(false), 3000);
+  };
+
+  // 曲は最初にタップされたときに初めて読み込む（画面を開いただけでは読み込まない）
+  const getAudio = () => {
+    if (audioRef.current) return audioRef.current;
+    const audio = new Audio(THEME_SONG_URL);
+    audio.preload = 'auto';
+    audio.volume = THEME_SONG_VOLUME;
+    audio.addEventListener('playing', () => { if (audioRef.current === audio) setState('playing'); });
+    audio.addEventListener('waiting', () => { if (audioRef.current === audio && !audio.paused) setState('loading'); });
+    audio.addEventListener('ended', () => {
+      if (audioRef.current !== audio) return;
+      audio.currentTime = 0;
+      setState('idle');
+    });
+    audio.addEventListener('error', () => fail(audio));
+    audioRef.current = audio;
+    return audio;
+  };
+
+  const stop = () => {
+    const audio = audioRef.current;
+    if (audio) { audio.pause(); audio.currentTime = 0; } // 次は頭から
+    setState('idle');
+  };
+
+  const toggle = () => {
+    setFailed(false);
+    if (state !== 'idle') { stop(); return; }
+    const audio = getAudio();
+    setState('loading');
+    const played = audio.play();
+    if (played && played.catch) {
+      played.catch(err => { if (err?.name !== 'AbortError') fail(audio); }); // AbortError は読み込み中に止めたとき
+    }
+  };
+
+  // 読み込みがいつまでも終わらないとき（通信が切れたなど）は止める
+  useEffect(() => {
+    if (state !== 'loading') return undefined;
+    const audio = audioRef.current;
+    const timer = setTimeout(() => fail(audio), THEME_SONG_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [state]);
+
+  // バナーが画面から消えたら止める（現場を選んだ・ホーム以外の画面に移った・ログアウトした）
+  useEffect(() => () => {
+    clearTimeout(errorTimerRef.current);
+    const audio = audioRef.current;
+    audioRef.current = null;
+    if (audio) { audio.pause(); audio.currentTime = 0; }
+  }, []);
+
+  return (
+    <button type="button" onClick={toggle} className="face-theme-banner" data-state={state}
+      aria-label="フェイスのテーマ曲を再生" aria-pressed={state !== 'idle'}
+      style={{ position:'relative', display:'block', width:'100%', height:95, padding:0, marginBottom:16, background:'#151B26', border:'1px solid #2A3240', borderRadius:18, boxShadow:'0 2px 8px rgba(0,0,0,0.12)', overflow:'hidden', cursor:'pointer', WebkitTapHighlightColor:'transparent' }}>
+      <style>{THEME_BANNER_CSS}</style>
+      {/* 主役のロゴ。左右の端は背景になじむようにぼかす */}
+      <img src="/music/face_music_logo.jpg" alt="" className="face-theme-logo" draggable={false}
+        style={{ position:'absolute', left:'50%', top:'50%', height:90, width:'auto', transform:'translate(-50%, -50%)',
+          WebkitMaskImage:'linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%)',
+          maskImage:'linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%)' }} />
+      {/* フェイスくん（左端・小さめ） */}
+      <img src="/music/face_kun.png" alt="" className="face-theme-kun" draggable={false}
+        style={{ position:'absolute', left:14, top:'50%', height:55, width:'auto', marginTop:-27.5, transformOrigin:'50% 90%' }} />
+      {/* 再生ボタン（右端） */}
+      <span aria-hidden="true"
+        style={{ position:'absolute', right:14, top:'50%', width:42, height:42, marginTop:-21, borderRadius:'50%', background:'#FFC400', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        {state === 'loading' ? (
+          <svg className="face-theme-spinner" width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="rgba(0,0,0,0.2)" strokeWidth="3" />
+            <path d="M21 12a9 9 0 0 0-9-9" stroke="#111" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+        ) : state === 'playing' ? (
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1.5" fill="#111" /></svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 18 18" style={{ marginLeft:3 }}><path d="M3 1.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 3 1.8z" fill="#111" /></svg>
+        )}
+      </span>
+      {failed && (
+        <span role="status" style={{ position:'absolute', left:'50%', bottom:6, transform:'translateX(-50%)', fontSize:11, fontWeight:600, color:'#fff', background:'rgba(0,0,0,0.7)', padding:'3px 10px', borderRadius:999, whiteSpace:'nowrap' }}>再生できませんでした</span>
+      )}
+    </button>
+  );
+}
+
 // ========== HomePage ==========
 function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, projectInfo, reports, lockStatus, currentUserId, sitesReady, currentPage, onViewPdf }) {
   const [financeOpen, setFinanceOpen] = useState(false);
@@ -1343,6 +1461,8 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
         {/* ★ お知らせ（現場を選ぶ前だけ出す。文は src/notices.js） */}
         {!selectedSite && sitesReady && <HomeNotices />}
+        {/* ★ テーマ曲のバナー（お知らせが0件でも出す。現場を選ぶと消えて曲も止まる） */}
+        {!selectedSite && sitesReady && <ThemeBanner />}
       </div>
 
       {/* ★ マスコット（非表示中） */}

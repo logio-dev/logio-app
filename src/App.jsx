@@ -872,14 +872,17 @@ const THEME_SONG_URL = '/music/face_theme.mp3';
 const THEME_SONG_VOLUME = 0.5;          // 音量（0〜1）。iPhone はブラウザから音量を変えられないので端末の音量になる
 const THEME_SONG_LOAD_TIMEOUT_MS = 15000; // これだけ待っても鳴らなければ「再生できませんでした」
 const THEME_BANNER_CSS = `
-  @keyframes faceThemeKunSway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
-  @keyframes faceThemeLogoBreathe { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.18); } }
+  @keyframes faceThemeLogoSpin { to { transform: rotate(360deg); } }
+  @keyframes faceThemeLogoGlow {
+    0%,100% { box-shadow: 0 0 6px 1px rgba(255,196,0,0.28); }
+    50%     { box-shadow: 0 0 20px 6px rgba(255,196,0,0.62); }
+  }
   @keyframes faceThemeSpin { to { transform: rotate(360deg); } }
-  .face-theme-banner[data-state="playing"] .face-theme-kun { animation: faceThemeKunSway 1.2s ease-in-out infinite; }
-  .face-theme-banner[data-state="playing"] .face-theme-logo { animation: faceThemeLogoBreathe 2s ease-in-out infinite; }
+  .face-theme-banner[data-state="playing"] .face-theme-logo { animation: faceThemeLogoSpin 8s linear infinite; }
+  .face-theme-banner[data-state="playing"] .face-theme-logo-glow { animation: faceThemeLogoGlow 2s ease-in-out infinite; }
   .face-theme-spinner { animation: faceThemeSpin 0.9s linear infinite; }
   @media (prefers-reduced-motion: reduce) {
-    .face-theme-banner .face-theme-kun, .face-theme-banner .face-theme-logo { animation: none !important; }
+    .face-theme-banner .face-theme-logo, .face-theme-banner .face-theme-logo-glow { animation: none !important; }
   }
 `;
 
@@ -954,19 +957,17 @@ function ThemeBanner() {
   return (
     <button type="button" onClick={toggle} className="face-theme-banner" data-state={state}
       aria-label="フェイスのテーマ曲を再生" aria-pressed={state !== 'idle'}
-      style={{ position:'relative', display:'block', width:'100%', height:95, padding:0, marginBottom:16, background:'#151B26', border:'1px solid #2A3240', borderRadius:18, boxShadow:'0 2px 8px rgba(0,0,0,0.12)', overflow:'hidden', cursor:'pointer', WebkitTapHighlightColor:'transparent' }}>
+      style={{ position:'relative', display:'block', width:'100%', height:140, padding:0, marginBottom:16, background:'linear-gradient(135deg, #3A4558 0%, #2A3343 100%)', border:'1px solid #4A5568', borderRadius:18, boxShadow:'0 2px 8px rgba(0,0,0,0.12)', overflow:'hidden', cursor:'pointer', WebkitTapHighlightColor:'transparent' }}>
       <style>{THEME_BANNER_CSS}</style>
-      {/* 主役のロゴ。左右の端は背景になじむようにぼかす */}
-      <img src="/music/face_music_logo.jpg" alt="" className="face-theme-logo" draggable={false}
-        style={{ position:'absolute', left:'50%', top:'50%', height:90, width:'auto', transform:'translate(-50%, -50%)',
-          WebkitMaskImage:'linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%)',
-          maskImage:'linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%)' }} />
-      {/* フェイスくん（左端・小さめ） */}
-      <img src="/music/face_kun.png" alt="" className="face-theme-kun" draggable={false}
-        style={{ position:'absolute', left:14, top:'50%', height:55, width:'auto', marginTop:-27.5, transformOrigin:'50% 90%' }} />
+      {/* ロゴ（丸く切り抜いた全体を真ん中に。再生中はレコードのように回り、周りが黄色く光る） */}
+      <span className="face-theme-logo-glow"
+        style={{ position:'absolute', left:'50%', top:'50%', width:128, height:128, marginLeft:-64, marginTop:-64, borderRadius:'50%' }}>
+        <img src="/music/face_music_logo_round.png" alt="" className="face-theme-logo" draggable={false}
+          style={{ display:'block', width:128, height:128 }} />
+      </span>
       {/* 再生ボタン（右端） */}
       <span aria-hidden="true"
-        style={{ position:'absolute', right:14, top:'50%', width:42, height:42, marginTop:-21, borderRadius:'50%', background:'#FFC400', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        style={{ position:'absolute', right:16, top:'50%', width:44, height:44, marginTop:-22, borderRadius:'50%', background:'#FFC400', display:'flex', alignItems:'center', justifyContent:'center' }}>
         {state === 'loading' ? (
           <svg className="face-theme-spinner" width="22" height="22" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="9" stroke="rgba(0,0,0,0.2)" strokeWidth="3" />

@@ -2525,25 +2525,56 @@ const SubTotal = ({ label, value }) => value > 0 ? (
   </div>
 ) : <div style={{marginBottom:'14px'}} />;
 
-// ========== ワイエム処分費の自動計算（unit_prices） ==========
+// ========== 処分費の自動計算（unit_prices。ワイエム・入間緑化開発） ==========
 const YM_VENDOR = 'ワイエム';
+const IRIMA_VENDOR = '入間緑化開発';
+// 単価表（unit_prices）を使う業者と、処分先の名前がその業者に当たるかの決め方。業者を足すときはここに1行足す
+// ※入間緑化開発は処分先の名前で判定する（案件の請負区分 contract_type の「入間緑化」とは別物）
+const PRICE_MASTER_VENDORS = [
+  { vendor: YM_VENDOR, matches: (name) => name === YM_VENDOR },             // 完全一致（今までどおり）
+  { vendor: IRIMA_VENDOR, matches: (name) => name.includes('入間緑化') },   // 「入間緑化」「入間緑化開発」「入間緑化開発㈱」など
+];
 const WASTE_TYPE_OTHER = '__other__'; // 種類プルダウンの「その他（直接入力）」
 const WASTE_UNIT_OPTIONS = ['㎥', 'kg', 't'];
 const isYmDisposal = (disposal) => String(disposal || '').trim() === YM_VENDOR;
 
-// ワイエムの単価マスタを読む。読めなければ空の一覧を返す（自動にならないだけで、手入力で使える）
-async function loadYmUnitPrices() {
+// 処分先の名前から、単価表を使う業者を決める（当たらなければ null＝手入力）
+const priceVendorForDisposal = (disposal) => {
+  const name = String(disposal || '').trim();
+  if (!name) return null;
+  const hit = PRICE_MASTER_VENDORS.find(v => v.matches(name));
+  return hit ? hit.vendor : null;
+};
+
+// 単価表を業者ごとに分けて読む。読めない・行がない業者は空の一覧（自動にならないだけで、手入力で使える）
+async function loadPriceMasters() {
+  const byVendor = Object.fromEntries(PRICE_MASTER_VENDORS.map(v => [v.vendor, []]));
   try {
-    const data = await sb('unit_prices').select(`vendor=eq.${encodeURIComponent(YM_VENDOR)}&active=eq.true&order=sort_order.asc.nullslast`);
-    if (!Array.isArray(data)) return [];
-    return data
-      .filter(row => row && row.item && row.active !== false)
-      .sort((a, b) => (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9));
+    const vendors = `(${PRICE_MASTER_VENDORS.map(v => `"${v.vendor}"`).join(',')})`;
+    const data = await sb('unit_prices').select(`vendor=in.${encodeURIComponent(vendors)}&active=eq.true&order=sort_order.asc.nullslast`);
+    if (!Array.isArray(data)) return byVendor;
+    data
+      .filter(row => row && row.item && row.active !== false && byVendor[row.vendor])
+      .sort((a, b) => (a.sort_order ?? 1e9) - (b.sort_order ?? 1e9))
+      .forEach(row => byVendor[row.vendor].push(row));
+    return byVendor;
   } catch (e) {
     console.warn('unit_prices を読めませんでした（手入力で続けます）:', e);
-    return [];
+    return byVendor;
   }
 }
+
+// 業者ごとの「品名 → 単価の行」の表
+const buildPriceMaps = (byVendor) => Object.fromEntries(
+  Object.entries(byVendor || {}).map(([vendor, rows]) => [vendor, new Map((rows || []).map(row => [row.item, row]))])
+);
+
+// 処分先に当たる業者の単価表（業者に当たらない・行がないときは null）
+const masterMapFor = (disposal, priceMaps) => {
+  const vendor = priceVendorForDisposal(disposal);
+  const map = vendor && priceMaps ? priceMaps[vendor] : null;
+  return map && map.size > 0 ? map : null;
+};
 
 // 産廃フォームの空の状態。ワイエム配車タブの産廃処分は処分先をワイエムにしておく
 const blankWasteForm = (tab, mode = 'cost') => ({
@@ -2554,66 +2585,70 @@ const blankWasteForm = (tab, mode = 'cost') => ({
   workerName: '', workerVType: '', workerVNumber: '', volumeM3: '', isSwap: false,
   // priceSource: 'master'=単価マスタで自動 / 'manual'=手入力。priceOverride: 自動の金額を手で直した
   priceSource: 'manual', priceOverride: false, unitPrice: 0,
-  typeCustom: false, // ワイエムで「その他（直接入力）」を選んだ
+  typeCustom: false, // 単価表のある処分先で「その他（直接入力）」を選んだ
   carried: false,    // 前の行から処分先・マニNo.・担当者/車両を引き継いだだけの状態
 });
 
 // 処分費 = 数量 × 単価（円未満は四捨五入）
-const calcYmAmount = (qty, unitPrice) => {
+const calcMasterAmount = (qty, unitPrice) => {
   const q = parseFloat(qty);
   if (!Number.isFinite(q) || q <= 0) return '';
   return String(Math.round(q * (Number(unitPrice) || 0)));
 };
 
-// 単価マスタの品目を選んでいれば、その行を返す（その他・ワイエム以外・マスタにない品名は null）
-const getYmMasterRow = (form, ymMap) => {
-  if (!ymMap || form.typeCustom || !isYmDisposal(form.disposal)) return null;
-  return ymMap.get(form.type) || null;
+// 単価表の品目を選んでいれば、その行を返す（その他・単価表のない処分先・表にない品名は null）
+const getMasterRow = (form, priceMaps) => {
+  if (form.typeCustom) return null;
+  const map = masterMapFor(form.disposal, priceMaps);
+  return map ? map.get(form.type) || null : null;
 };
 
-// マスタの単位・単価を入れて処分費を計算する（手で直した行は金額を変えない）
-const applyYmMaster = (form, row) => {
+// 単価表の単位・単価を入れて処分費を計算する（手で直した行は金額を変えない）
+const applyMasterPrice = (form, row) => {
   const unitPrice = Number(row.price) || 0;
   const next = { ...form, unit: row.unit || form.unit, unitPrice, priceSource: 'master' };
-  if (!next.priceOverride) next.price = calcYmAmount(next.qty, unitPrice);
+  if (!next.priceOverride) next.price = calcMasterAmount(next.qty, unitPrice);
   return next;
 };
 
 // 自動で入れた単位・処分費を外し、手入力の状態に戻す
-const clearYmAutoPrice = (form) => ({
+const clearAutoPrice = (form) => ({
   ...form,
   ...(form.priceSource === 'master' ? { price: '', unit: '㎥' } : {}),
   priceSource: 'manual', priceOverride: false, unitPrice: 0,
 });
 
-// 処分先を変えたとき（指示書 3-2）
-const changeWasteDisposal = (form, disposal, ymMap) => {
+// 処分先を変えたとき（指示書 3-2。ワイエム・入間緑化開発で共通）
+const changeWasteDisposal = (form, disposal, priceMaps) => {
   const next = { ...form, disposal };
-  if (!ymMap || ymMap.size === 0) return next; // マスタが読めていなければ今までどおり
-  const wasYm = isYmDisposal(form.disposal);
-  const toYm = isYmDisposal(disposal);
-  if (wasYm === toYm) return next;
-  // ワイエム → ほか: 種類を空にして自由入力へ。自動の処分費は 0 に戻す
-  if (wasYm) return { ...clearYmAutoPrice(next), type: '', typeCustom: false };
-  // ほか → ワイエム: 種類がマスタの品名と完全一致ならそのまま使う。違えば空にしてプルダウンから選ばせる
-  const row = ymMap.get(next.type);
-  if (row) return applyYmMaster({ ...next, typeCustom: false, priceOverride: false }, row);
-  return { ...clearYmAutoPrice(next), type: '', typeCustom: false };
+  // 単価表が読めている業者だけを対象にする（読めていなければ今までどおり）
+  const fromVendor = masterMapFor(form.disposal, priceMaps) ? priceVendorForDisposal(form.disposal) : null;
+  const toMap = masterMapFor(disposal, priceMaps);
+  const toVendor = toMap ? priceVendorForDisposal(disposal) : null;
+  if (fromVendor === toVendor) return next;
+  // 単価表のある処分先 → ほか: 種類を空にして自由入力へ。自動の処分費は 0 に戻す
+  const base = fromVendor ? { ...clearAutoPrice(next), type: '', typeCustom: false } : next;
+  if (!toVendor) return base;
+  // → 単価表のある処分先: 種類が品名と完全一致ならそのまま使う。違えば空にしてプルダウンから選ばせる
+  const row = toMap.get(base.type);
+  if (row) return applyMasterPrice({ ...base, typeCustom: false, priceOverride: false }, row);
+  return { ...clearAutoPrice(base), type: '', typeCustom: false };
 };
 
 // 種類のプルダウンを選んだとき
-const selectWasteType = (form, value, ymMap) => {
-  if (value === WASTE_TYPE_OTHER) return { ...clearYmAutoPrice(form), type: '', typeCustom: true };
-  const row = ymMap && ymMap.get(value);
-  if (!row) return { ...clearYmAutoPrice(form), type: '', typeCustom: false };
-  return applyYmMaster({ ...form, type: value, typeCustom: false, priceOverride: false }, row);
+const selectWasteType = (form, value, priceMaps) => {
+  if (value === WASTE_TYPE_OTHER) return { ...clearAutoPrice(form), type: '', typeCustom: true };
+  const map = masterMapFor(form.disposal, priceMaps);
+  const row = map && map.get(value);
+  if (!row) return { ...clearAutoPrice(form), type: '', typeCustom: false };
+  return applyMasterPrice({ ...form, type: value, typeCustom: false, priceOverride: false }, row);
 };
 
-// 数量を変えたとき: マスタの品目なら処分費を計算し直す
-const changeWasteQty = (form, qty, ymMap) => {
+// 数量を変えたとき: 単価表の品目なら処分費を計算し直す（手で直した行は金額を変えない）
+const changeWasteQty = (form, qty, priceMaps) => {
   const next = { ...form, qty };
-  const row = getYmMasterRow(next, ymMap);
-  return row ? applyYmMaster(next, row) : next;
+  const row = getMasterRow(next, priceMaps);
+  return row ? applyMasterPrice(next, row) : next;
 };
 
 // 処分費を手で直したとき: 自動の行なら手修正にする（以降は数量を変えても上書きしない）
@@ -2623,14 +2658,14 @@ const changeWastePrice = (form, price) => ({
 });
 
 // 「自動に戻す」
-const resetWasteAutoPrice = (form, ymMap) => {
-  const row = getYmMasterRow(form, ymMap);
-  return row ? applyYmMaster({ ...form, priceOverride: false }, row) : form;
+const resetWasteAutoPrice = (form, priceMaps) => {
+  const row = getMasterRow(form, priceMaps);
+  return row ? applyMasterPrice({ ...form, priceOverride: false }, row) : form;
 };
 
 // wasteItems の行に入れる単位・単価の情報（指示書 3-5）
 const wastePriceFields = (form) => {
-  const isMaster = form.priceSource === 'master' && !form.typeCustom && isYmDisposal(form.disposal) && !!form.type;
+  const isMaster = form.priceSource === 'master' && !form.typeCustom && priceVendorForDisposal(form.disposal) !== null && !!form.type;
   return isMaster
     ? { unit: form.unit, unitPrice: Number(form.unitPrice) || 0, priceSource: 'master', priceOverride: form.priceOverride === true }
     : { unit: form.unit, unitPrice: 0, priceSource: 'manual', priceOverride: false };
@@ -2687,11 +2722,11 @@ const normalizeSwapFlags = (items) => {
   });
 };
 
-function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editReport, onUpdate, ymUnitPrices = [] }) {
+function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editReport, onUpdate, unitPricesByVendor = {} }) {
   const isEditMode = !!editReport;
-  // ワイエムの単価マスタ（読めなかったときは空 → 種類は自由入力・処分費は手入力のまま）
-  const ymMaster = Array.isArray(ymUnitPrices) ? ymUnitPrices : [];
-  const ymMap = new Map(ymMaster.map(row => [row.item, row]));
+  // 業者ごとの単価表（ワイエム・入間緑化開発）。読めない・行がない業者は空 → 種類は自由入力・処分費は手入力のまま
+  const priceMaps = buildPriceMaps(unitPricesByVendor);
+  const hasAnyPriceMaster = Object.values(priceMaps).some(map => map.size > 0);
   const [currentStep, setCurrentStep] = useState(1);
   const [report, setReport] = useState(
     isEditMode
@@ -3331,8 +3366,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       priceSource: w.priceSource === 'master' ? 'master' : 'manual',
       priceOverride: w.priceOverride === true,
       unitPrice: w.priceSource === 'master' ? (Number(w.unitPrice) || 0) : 0,
-      // ワイエムでマスタにない品名なら「その他（直接入力）」として開く
-      typeCustom: !scrap && isYmDisposal(w.disposalSite) && ymMap.size > 0 && !!w.material && !ymMap.has(w.material),
+      // 単価表のある処分先で、表にない品名なら「その他（直接入力）」として開く
+      typeCustom: !scrap && !!masterMapFor(w.disposalSite, priceMaps) && !!w.material && !masterMapFor(w.disposalSite, priceMaps).has(w.material),
       carried: false,
     });
   };
@@ -3381,22 +3416,25 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
 
   // ★ 産廃フォームの 処分先 → 種類 / 数量・単位・処分費（自社運搬・環境課配車・ワイエム配車で共通）
-  //   処分先がワイエムで単価マスタが読めていれば、種類はプルダウン、単位と処分費は自動
+  //   処分先がワイエム・入間緑化開発で単価表が読めていれば、種類はその業者の品目のプルダウン、単位と処分費は自動
   const renderWasteMainFields = ({ isRev, accentDark, inputBorder }) => {
     const optStyle = { color:'#000', background:'#fff' };
-    const ymSelectable = !isRev && ymMaster.length > 0 && isYmDisposal(wasteForm.disposal);
-    const masterRow = !isRev ? getYmMasterRow(wasteForm, ymMap) : null;
+    const masterMap = !isRev ? masterMapFor(wasteForm.disposal, priceMaps) : null;
+    const masterRows = masterMap ? [...masterMap.values()] : []; // 業者ごとに分かれている（ほかの業者の品目は混ざらない）
+    const masterSelectable = masterRows.length > 0;
+    const masterRow = !isRev ? getMasterRow(wasteForm, priceMaps) : null;
     const isAuto = !!masterRow && wasteForm.priceSource === 'master';
-    const setDisposal = (value) => setWasteForm(prev => isRev ? { ...prev, disposal: value } : changeWasteDisposal(prev, value, ymMap));
+    const setDisposal = (value) => setWasteForm(prev => isRev ? { ...prev, disposal: value } : changeWasteDisposal(prev, value, priceMaps));
     const disposalChips = isRev
       ? METAL_BUYERS
       : [...(projectInfo?.contractedDisposalSites||[]),...(projectInfo?.manifestRows||[]).map(r=>r.disposal).filter(Boolean).filter(d=>!(projectInfo?.contractedDisposalSites||[]).includes(d)).filter((d,i,a)=>a.indexOf(d)===i)];
-    // プルダウンの中身: よく使う → 分類ごと → その他（直接入力）
-    const ymGroups = [];
-    ymMaster.forEach(row => {
-      const category = row.category || 'その他の品目';
-      let group = ymGroups.find(g => g.category === category);
-      if (!group) { group = { category, rows: [] }; ymGroups.push(group); }
+    // プルダウンの中身: よく使う（ある業者だけ）→ 分類ごと（分類のない品目はそのまま並べる）→ その他（直接入力）
+    const popularRows = masterRows.filter(row => row.popular);
+    const plainRows = masterRows.filter(row => !row.category);
+    const masterGroups = [];
+    masterRows.filter(row => row.category).forEach(row => {
+      let group = masterGroups.find(g => g.category === row.category);
+      if (!group) { group = { category: row.category, rows: [] }; masterGroups.push(group); }
       group.rows.push(row);
     });
     const unitOptions = [...WASTE_UNIT_OPTIONS, ...(wasteForm.unit && !WASTE_UNIT_OPTIONS.includes(wasteForm.unit) ? [wasteForm.unit] : [])];
@@ -3420,15 +3458,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         {/* 種類（処分先で切り替え） */}
         <div>
           <label style={inpLbl}>種類</label>
-          {ymSelectable ? (<>
-            <select value={wasteForm.typeCustom ? WASTE_TYPE_OTHER : (ymMap.has(wasteForm.type) ? wasteForm.type : '')}
-              onChange={e=>{ const v = e.target.value; setWasteForm(prev => selectWasteType(prev, v, ymMap)); }}
+          {masterSelectable ? (<>
+            <select value={wasteForm.typeCustom ? WASTE_TYPE_OTHER : (masterMap.has(wasteForm.type) ? wasteForm.type : '')}
+              onChange={e=>{ const v = e.target.value; setWasteForm(prev => selectWasteType(prev, v, priceMaps)); }}
               style={{...inpSel,border:inputBorder}}>
               <option value="" style={optStyle}>種類を選択</option>
-              <optgroup label="よく使う" style={optStyle}>
-                {ymMaster.filter(row => row.popular).map(row => <option key={`popular-${row.item}`} value={row.item} style={optStyle}>{row.item}</option>)}
-              </optgroup>
-              {ymGroups.map(group => (
+              {popularRows.length > 0 && (
+                <optgroup label="よく使う" style={optStyle}>
+                  {popularRows.map(row => <option key={`popular-${row.item}`} value={row.item} style={optStyle}>{row.item}</option>)}
+                </optgroup>
+              )}
+              {plainRows.map(row => <option key={`plain-${row.item}`} value={row.item} style={optStyle}>{row.item}</option>)}
+              {masterGroups.map(group => (
                 <optgroup key={group.category} label={group.category} style={optStyle}>
                   {group.rows.map(row => <option key={`${group.category}-${row.item}`} value={row.item} style={optStyle}>{row.item}</option>)}
                 </optgroup>
@@ -3443,14 +3484,14 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               placeholder={isRev ? '金属くず・鉄くず等' : '木くず・廃プラ等'}
               style={{...inpTxt,border:inputBorder}} />
             {/* 処分先が未選択のとき（自由入力はできる） */}
-            {!isRev && ymMaster.length > 0 && !String(wasteForm.disposal||'').trim() && (
+            {!isRev && hasAnyPriceMaster && !String(wasteForm.disposal||'').trim() && (
               <div style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginTop:4,lineHeight:1.4}}>先に処分先を選んでください</div>
             )}
           </>)}
         </div>
       </div>
       <div style={{...grid3, marginBottom: isAuto ? 4 : grid3.marginBottom}}>
-        <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>{ const v = e.target.value; setWasteForm(prev => isRev ? { ...prev, qty: v } : changeWasteQty(prev, v, ymMap)); }} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
+        <div><label style={inpLbl}>数量</label><input type="number" step="0.1" value={wasteForm.qty} onChange={e=>{ const v = e.target.value; setWasteForm(prev => isRev ? { ...prev, qty: v } : changeWasteQty(prev, v, priceMaps)); }} placeholder="0" style={{...inpTxt,border:inputBorder}} /></div>
         <div><label style={inpLbl}>単位</label>{isRev ? (<div style={{...inpTxt,border:inputBorder,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(6,182,212,0.1)',color:'#22D3EE',fontWeight:700}}>kg</div>) : (
           <select value={wasteForm.unit} disabled={isAuto} onChange={e=>{ const v = e.target.value; setWasteForm(prev => ({ ...prev, unit: v })); }} style={{...inpSel,border:inputBorder,opacity:isAuto?0.75:1}}>
             {unitOptions.map(u => <option key={u} value={u} style={optStyle}>{u}</option>)}
@@ -3463,7 +3504,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
         <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8,marginBottom:10,fontSize:10,color:'rgba(255,255,255,0.55)'}}>
           {wasteForm.priceOverride ? (<>
             <span>手で修正済み</span>
-            <button onClick={()=>setWasteForm(prev => resetWasteAutoPrice(prev, ymMap))}
+            <button onClick={()=>setWasteForm(prev => resetWasteAutoPrice(prev, priceMaps))}
               style={{padding:'3px 10px',borderRadius:6,border:`1px solid ${accentDark}`,background:'transparent',color:accentDark,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>自動に戻す</button>
           </>) : (
             <span style={{fontVariantNumeric:'tabular-nums'}}>@{formatCurrency(wasteForm.unitPrice)}/{wasteForm.unit}{parseFloat(wasteForm.qty) > 0 ? ` × ${wasteForm.qty}${wasteForm.unit}` : ''}</span>
@@ -6777,7 +6818,7 @@ export default function LOGIOApp() {
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState('');
   // ワイエムの処分単価（ログイン後に1回読む。読めなければ空 = 手入力で使う）
-  const [ymUnitPrices, setYmUnitPrices] = useState([]);
+  const [unitPricesByVendor, setUnitPricesByVendor] = useState({}); // 業者ごとの処分単価（ワイエム・入間緑化開発）
   // ★ テーマ曲（アプリ全体で1つ。画面を切り替えても続きが流れる。ログアウトで止める）
   const themeSong = useThemeSong();
   useEffect(() => { if (!isLoggedIn) themeSong.stop(); }, [isLoggedIn]);
@@ -6840,7 +6881,7 @@ export default function LOGIOApp() {
         return;
       }
       // 単価マスタは現場一覧と並行して読む（失敗しても空の一覧が返るだけで止まらない）
-      loadYmUnitPrices().then(rows => { if (!cancelled) setYmUnitPrices(rows); });
+      loadPriceMasters().then(byVendor => { if (!cancelled) setUnitPricesByVendor(byVendor); });
       try {
         await loadSites();
       } finally {
@@ -7501,7 +7542,7 @@ export default function LOGIOApp() {
               onReleaseLock={releaseLock}
               editReport={editingReport}
               onUpdate={handleUpdateReport}
-              ymUnitPrices={ymUnitPrices}
+              unitPricesByVendor={unitPricesByVendor}
             />
           )}
           {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={handleNavigate} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}

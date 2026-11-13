@@ -273,7 +273,7 @@ const MASTER_DATA = {
       '繊維くず': 1300, '非飛散性アスベスト（運搬費含む）': 35000
     }
   },
-  outsourcingCompanies: ['TCY興業', 'ALTEQ', '山田興業', '川田工業', 'マルカイ工業', 'MM興業'],
+  outsourcingCompanies: ['TCY興業', 'ALTEQ', 'MC興業', 'ケー', 'マルカイ工業', '川田工業'],
   weather: ['晴', '曇', '雨', '雪'],
   workCategories: ['解体', '清掃', '積込', '搬出'],
   vehicles: ['軽バン', '2td', '3td', '4td', '4tc', '4tu', '8tc', '増td', '10tc', '東リース2t', '東リース3t', '道具車'],

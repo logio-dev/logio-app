@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
-import { ChevronLeft, ChevronDown, ChevronUp, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown, MessageCircle } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown, MessageCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SplashScreen from './components/SplashScreen/SplashScreen';
 import WacLogo from './components/WacLogo/WacLogo';
@@ -504,7 +504,7 @@ function GradChevronUp({ size = 16 }) {
 }
 
 // ========== ★ Header（リロードアイコン追加）==========
-function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSearch, reloading = false, mascots = null, themeSong = null }) {
+function Header({ showMenuButton = false, onMenuClick, onReload, onSearch, reloading = false, mascots = null, themeSong = null }) {
   return (
     <header className="bg-transparent no-print" style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 40,
@@ -543,17 +543,6 @@ function Header({ showMenuButton = false, onMenuClick, onExport, onReload, onSea
               style={{ animation: reloading ? 'logio-spin 0.6s linear infinite' : 'none' }}>
               <polyline points="23 4 23 10 17 10"/>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
-          </button>
-          {/* エクスポート */}
-          <button onClick={onExport} title="エクスポート"
-            style={{ color:'rgba(28,25,23,0.45)', background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}
-            onMouseEnter={e => e.currentTarget.style.color='#1C1917'}
-            onMouseLeave={e => e.currentTarget.style.color='rgba(28,25,23,0.45)'}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
           </button>
           {/* 検索 */}
@@ -714,7 +703,6 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
     { id: 'input', label: '日報入力', icon: Plus },
     { id: 'list', label: '日報一覧', icon: FileText },
     { id: 'analysis', label: '原価分析', icon: BarChart3 },
-    { id: 'export', label: 'EXPORT', icon: ChevronUp },
     { id: 'settings', label: '設定・編集', icon: Settings }
   ];
 
@@ -766,6 +754,21 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
   );
 }
 
+// ========== ブラウザに残ったログイン ==========
+// 2026-11-14 アプリを開いたとき、前回のログインが会社用の2つか管理者のIDのときだけ、そのまま使う。
+// それ以外のID（外した協力会社用など）や、古い形で判断できないときは null を返し、ログイン画面を出す。
+// ブラウザに残ったデータは消さない（ログインし直すと上書きされる）。
+// ※ ログインできるIDを変えるときは、下の LoginPage の handleLogin と一緒にここも直す。
+function restoreSavedLogin() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('wac_user'));
+    const userId = saved && typeof saved === 'object' ? saved.userId : null;
+    if (userId === 'face1991' || userId === 'ryokuka2005') return { type: 'company', userId };
+    if (userId === 'admin2026') return { type: 'admin', userId };
+  } catch {}
+  return null;
+}
+
 // ========== LoginPage ==========
 function LoginPage({ onLogin }) {
   const [userId, setUserId] = useState('');
@@ -783,10 +786,6 @@ function LoginPage({ onLogin }) {
     }
     if (userId === 'admin2026' && password === 'admin2026') {
       onLogin({ type: 'admin', userId }); return;
-    }
-    const validPartnerIds = ['TCY001', 'ALT001', 'YMD001', 'KWD001', 'MRK001', 'MM001'];
-    if (validPartnerIds.includes(userId) && password === userId.toLowerCase()) {
-      onLogin({ type: 'partner', userId }); return;
     }
     setIsLoggingIn(false);
     setError('IDまたはパスワードが正しくありません');
@@ -5096,6 +5095,8 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
 
 
 // ========== ExportPage ==========
+// 2026-11-14 入口を外した。使っていないため（左のメニューの「EXPORT」と上の帯のボタン）。
+// 関数は残してある。戻すときは Sidebar の navItems に { id: 'export', … } を足す。
 function ExportPage({ sites, reports, projectInfo, selectedSite, onNavigate }) {
   const [gasUrl, setGasUrl] = useState('');
   const [gasMonthlyUrl, setGasMonthlyUrl] = useState('');
@@ -6849,12 +6850,9 @@ export default function LOGIOApp() {
   // ★ 起動アニメーション: 毎回起動時に表示
   const [showSplash, setShowSplash] = useState(true);
   const [splashReady, setSplashReady] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    try { return !!localStorage.getItem('wac_user'); } catch { return false; }
-  });
-  const [currentUser, setCurrentUser] = useState(() => {
-    try { const u = localStorage.getItem('wac_user'); return u ? JSON.parse(u) : null; } catch { return null; }
-  });
+  // 前回のログイン（会社用・管理者のIDのときだけ使う。restoreSavedLogin を参照）
+  const [currentUser, setCurrentUser] = useState(restoreSavedLogin);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => currentUser !== null);
   const [currentPage, setCurrentPage] = useState('home');
 
   const [navHoverId, setNavHoverId] = useState(null);
@@ -7456,7 +7454,6 @@ export default function LOGIOApp() {
       <div className="flex flex-col flex-1 bg-transparent">
         <Header
           showMenuButton onMenuClick={() => setSidebarOpen(true)}
-          onExport={() => handleNavigate('export')}
           onReload={handleReload}
           onSearch={() => setShowSearchModal(true)}
           reloading={reloading}

@@ -386,6 +386,65 @@ function getReportsVehicleCost(reports) {
   return (reports || []).reduce((s, r) => s + getReportVehicleCost(r), 0);
 }
 
+// ========== 現場のお金の数え方（日報PDFの集計と同じ） ==========
+// 工事売上・原価・金属売上・粗利は、どの画面でもこの2つの関数で数える。
+// 保存されている金額をそのまま足すだけで、単価の計算や保存する値は変えない。
+const toYen = (v) => parseFloat(v) || 0;
+const sumYen = (list, key = 'amount') => (list || []).reduce((s, x) => s + toYen(x?.[key]), 0);
+
+// 1日ぶん: 日報1件の原価（その日の分）と金属売上
+function calcReportDayMoney(report) {
+  const wd = report?.workDetails || {};
+  const waste = report?.wasteItems || [];
+  const parts = {
+    inHouse: sumYen(wd.inHouseWorkers),              // 自社人工
+    outsourcing: sumYen(wd.outsourcingLabor),        // 外注人工
+    vehicle: getReportVehicleCost(report),           // 車両費（同じ車両は1回）
+    haishi: sumYen(waste, 'haishiAmount'),           // 配車費
+    machinery: sumYen(wd.machinery, 'unitPrice'),    // 重機
+    envItems: sumYen(wd.envItems),                   // 旧形式: 環境課配車
+    extItems: sumYen(wd.extItems),                   // 旧形式: 外部運搬
+    transport: sumYen(wd.transportEntries),          // 旧形式: 配送費
+    disposal: waste.reduce((s, w) => s + Math.max(toYen(w?.amount), 0), 0), // 処分費（金額がプラスの行だけ）
+    dailyExpenses: sumYen(wd.dailyExpenses),         // その日の経費
+  };
+  const cost = Object.values(parts).reduce((s, v) => s + v, 0);
+  // 金属売上: 処分の行のマイナス金額（絶対値）＋ 旧形式 scrapItems（その日の合計の絶対値。日報PDFと同じ）
+  // 原価からは引かない
+  const metal = waste.reduce((s, w) => s + Math.max(-toYen(w?.amount), 0), 0) + Math.abs(sumYen(report?.scrapItems));
+  return { cost, parts, metal };
+}
+
+// 現場ぶん: 日報の配列と案件情報から、工事売上・原価・金属売上・粗利を数える
+function calcSiteMoney(reports, projectInfo) {
+  const pi = projectInfo || {};
+  const days = (reports || []).map(calcReportDayMoney);
+  const reportParts = {}; // 日報の分（項目ごとの合計）
+  days.forEach(d => Object.entries(d.parts).forEach(([k, v]) => { reportParts[k] = (reportParts[k] || 0) + v; }));
+  const reportCost = days.reduce((s, d) => s + d.cost, 0);
+  const projectParts = { // 案件の分
+    transfer: toYen(pi.transferCost),   // 回送費
+    lease: toYen(pi.leaseCost),         // リース費
+    materials: toYen(pi.materialsCost), // 資材費
+    direct: sumYen(pi.miscItems || [...(pi.outsourcingItems || []), ...(pi.siteExpenseItems || []), ...(pi.sgaItems || [])]), // 直接原価
+    expenses: sumYen(pi.expenses),      // 案件の経費
+  };
+  const projectCost = Object.values(projectParts).reduce((s, v) => s + v, 0);
+  const estimateRevenue = toYen(pi.contractAmount) + toYen(pi.additionalAmount); // 見積金額＋追加金額
+  const billingRevenue = toYen(pi.billingAmount);                                // 請求金額
+  const isProvisional = !(billingRevenue > 0); // 請求金額が無い間は「仮」
+  const revenue = isProvisional ? estimateRevenue : billingRevenue;              // 工事売上
+  const cost = reportCost + projectCost;                                          // 原価
+  const grossProfit = revenue - cost;                                             // 粗利（金属売上は入れない）
+  return {
+    revenue, isProvisional, estimateRevenue, billingRevenue,
+    cost, reportCost, projectCost, reportParts, projectParts,
+    metalRevenue: days.reduce((s, d) => s + d.metal, 0), // 金属売上（工事売上・原価とは別）
+    grossProfit,
+    grossMargin: revenue > 0 ? grossProfit / revenue * 100 : 0, // 粗利率（％）
+  };
+}
+
 // ★ 乗り換え判定ヘルパー: wasteItems と scrapItems を結合した順で
 // 同じ workerName の2回目以降を「自動乗り換え」として返す
 // 返り値: Map<index, true> (index は結合配列内のインデックス)
@@ -1052,7 +1111,7 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
     if (siteDropdownOpen) { document.addEventListener('mousedown', handleClickOutside); return () => document.removeEventListener('mousedown', handleClickOutside); }
   }, [siteDropdownOpen]);
 
-  const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+  const costRatio = totals.revenue > 0 ? (totals.cost / totals.revenue) * 100 : 0; // 原価率 ＝ 原価 ÷ 工事売上
 
   // 稼働日数・人工数
   const workingDays = (reports||[]).length;
@@ -4531,15 +4590,8 @@ function ReportListPage({ reports, onDelete, onNavigate, onEdit }) {
       {months.map(month => {
         const monthReports = filteredReports.filter(r => r.date.startsWith(month)).sort((a,b) => new Date(b.date)-new Date(a.date));
         const isOpen = !!openMonths[month];
-        const monthCost = monthReports.reduce((sum, r) => sum +
-          (r.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
-          (r.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
-          getReportVehicleCost(r) +
-          (r.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
-          (r.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-          (r.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-          (r.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0) +
-          (r.wasteItems?.reduce((s,w)=>s+(w.haishiAmount||0),0)||0), 0);
+        // 月の合計 ＝ 1日ぶんの原価の合計（金属売上は引かない・その日の経費は入れる）
+        const monthCost = monthReports.reduce((sum, r) => sum + calcReportDayMoney(r).cost, 0);
         return (
           <div key={month} className="mb-3">
             <button onClick={() => toggleMonth(month)}
@@ -4595,15 +4647,8 @@ function ReportAccordion({ report, onDelete, onEdit, isLast }) {
               <span style={{padding:'2px 7px',borderRadius:6,background:'rgba(99,102,241,0.08)',border:'1px solid rgba(99,102,241,0.2)',fontSize:10,fontWeight:700,color:'#a5b4fc'}}>ワイエム配車</span>
             )}
             {(() => {
-              const totalCost =
-                (report.workDetails?.inHouseWorkers?.reduce((s,w)=>s+(w.amount||0),0)||0) +
-                (report.workDetails?.outsourcingLabor?.reduce((s,o)=>s+(o.amount||0),0)||0) +
-                getReportVehicleCost(report) +
-                (report.workDetails?.machinery?.reduce((s,m)=>s+(m.unitPrice||0),0)||0) +
-                (report.workDetails?.envItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-                (report.workDetails?.extItems?.reduce((s,t)=>s+(t.amount||0),0)||0) +
-                (report.wasteItems?.reduce((s,w)=>s+(w.amount||0),0)||0) +
-                (report.wasteItems?.reduce((s,w)=>s+(w.haishiAmount||0),0)||0);
+              // 日計 ＝ その日の原価（金属売上は引かない・その日の経費は入れる）
+              const totalCost = calcReportDayMoney(report).cost;
               return totalCost > 0 && <span style={{color:"#B45309",fontWeight:700,fontSize:13,fontVariantNumeric:"tabular-nums"}}>¥{formatCurrency(totalCost)}</span>;
             })()}
           </div>
@@ -4828,27 +4873,24 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const chartRef3 = React.useRef(null);
   const chartInst = React.useRef({});
 
-  // データ計算
-  const costByCategory = { '人工費': 0, '車両費': 0, '重機費': 0, '産廃費': 0 };
-  reports.forEach(r => {
-    if (r.workDetails) {
-      r.workDetails.inHouseWorkers?.forEach(w => costByCategory['人工費'] += w.amount || 0);
-      r.workDetails.outsourcingLabor?.forEach(o => costByCategory['人工費'] += o.amount || 0);
-      r.workDetails.machinery?.forEach(m => costByCategory['重機費'] += m.unitPrice || 0);
-      r.workDetails.envItems?.forEach(t => costByCategory['環境課配車'] = (costByCategory['環境課配車']||0) + (t.amount || 0));
-      r.workDetails.extItems?.forEach(t => costByCategory['外部運搬'] = (costByCategory['外部運搬']||0) + (t.amount || 0));
-    }
-    // ★ 車両費(配車費込み = 従来の設計通り)
-    costByCategory['車両費'] += getReportVehicleCost(r);
-    costByCategory['車両費'] += (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0);
-    // ★ 産廃費は処分のみ(プラス金額のみ)。金属売上は含めない
-    r.wasteItems?.forEach(w => {
-      if ((w.amount||0) > 0 && !w.isScrap) costByCategory['産廃費'] += w.amount || 0;
-    });
-  });
-  if (projectInfo?.transferCost) costByCategory['回送費'] = parseFloat(projectInfo.transferCost) || 0;
-  if (projectInfo?.leaseCost) costByCategory['リース費'] = parseFloat(projectInfo.leaseCost) || 0;
-  if (projectInfo?.materialsCost) costByCategory['資材費'] = parseFloat(projectInfo.materialsCost) || 0;
+  // データ計算（項目の合計が財務タブの「原価」と一致する。数え方は calcSiteMoney と同じ）
+  const rp = totals.reportParts || {};
+  const pp = totals.projectParts || {};
+  const costByCategory = {
+    '人工費': (rp.inHouse || 0) + (rp.outsourcing || 0), // 自社人工＋外注人工
+    '車両費': (rp.vehicle || 0) + (rp.haishi || 0),      // 車両費（配車費込み）
+    '重機費': rp.machinery || 0,
+    '産廃費': rp.disposal || 0,                          // 処分費（金属売上は含めない）
+    '環境課配車': rp.envItems || 0,                      // 旧形式（金額があるときだけ出る）
+    '外部運搬': rp.extItems || 0,                        // 旧形式
+    '回送費': pp.transfer || 0,
+    'リース費': pp.lease || 0,
+    '資材費': pp.materials || 0,
+    '経費': rp.dailyExpenses || 0,                       // その日の経費
+    '配送費': rp.transport || 0,                         // 旧形式
+    '直接原価': pp.direct || 0,
+    '案件の経費': pp.expenses || 0,
+  };
 
   const pieData = Object.keys(costByCategory).map(key => ({ name: key, value: costByCategory[key] })).filter(d => d.value > 0);
   const COLORS = ['#1E3A8A','#378ADD','#60A5FA','#6366F1','#A78BFA','#8B5CF6','#93C5FD'];
@@ -4859,24 +4901,20 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   reports.forEach(r => {
     const month = r.date.substring(0, 7);
     if (!monthlyData[month]) { monthlyData[month] = 0; monthlyWorkers[month] = 0; }
+    // 月ごとの原価 ＝ 1日ぶんの原価の合計（金属売上は引かない・その日の経費は入れる・案件の原価は入れない）
+    monthlyData[month] += calcReportDayMoney(r).cost;
     if (r.workDetails) {
-      r.workDetails.inHouseWorkers?.forEach(w => { monthlyData[month] += w.amount || 0; monthlyWorkers[month] += w.count || 1; });
-      r.workDetails.outsourcingLabor?.forEach(o => { monthlyData[month] += o.amount || 0; monthlyWorkers[month] += o.count || 1; });
-      r.workDetails.machinery?.forEach(m => monthlyData[month] += m.unitPrice || 0);
-      r.workDetails.envItems?.forEach(t => monthlyData[month] += t.amount || 0);
-      r.workDetails.extItems?.forEach(t => monthlyData[month] += t.amount || 0);
+      r.workDetails.inHouseWorkers?.forEach(w => { monthlyWorkers[month] += w.count || 1; });
+      r.workDetails.outsourcingLabor?.forEach(o => { monthlyWorkers[month] += o.count || 1; });
     }
-    // ★ 車両費(配車費込み)
-    monthlyData[month] += getReportVehicleCost(r);
-    monthlyData[month] += (r.wasteItems || []).reduce((s, w) => s + (w.haishiAmount || 0), 0);
-    r.wasteItems?.forEach(w => monthlyData[month] += w.amount || 0);
   });
   const sortedMonths = Object.keys(monthlyData).sort();
   const barLabels = sortedMonths.map(m => m.substring(5)+'月');
   const barValues = sortedMonths.map(m => Math.round(monthlyData[m] / 10000));
   const workerValues = sortedMonths.map(m => monthlyWorkers[m]);
 
-  const grossMargin = totals.totalRevenue > 0 ? ((totals.grossProfit / totals.totalRevenue) * 100).toFixed(1) : '0.0';
+  const grossMargin = totals.grossMargin.toFixed(1);
+  const kari = totals.isProvisional ? '（仮）' : ''; // 請求金額が無い間は「仮」
   const grossMarginNum = parseFloat(grossMargin);
   const marginColor = grossMarginNum >= 40 ? '#639922' : grossMarginNum >= 20 ? '#BA7517' : '#D85A30';
 
@@ -4948,9 +4986,9 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         <>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
             {[
-              {label:'売上',value:`¥${formatCurrency(totals.totalRevenue)}`,color:'#111'},
-              {label:'原価',value:`¥${formatCurrency(totals.accumulatedCost)}`,color:'#D85A30'},
-              {label:'粗利',value:`¥${formatCurrency(totals.grossProfit)}`,color:'#639922'},
+              {label:`工事売上${kari}`,value:`¥${formatCurrency(totals.revenue)}`,color:'#111'},
+              {label:'原価',value:`¥${formatCurrency(totals.cost)}`,color:'#D85A30'},
+              {label:`粗利${kari}`,value:`¥${formatCurrency(totals.grossProfit)}`,color:'#639922'},
             ].map((k,i) => (
               <div key={i} style={{background:'#fff',borderRadius:14,padding:'12px 10px',border:'0.5px solid #E8E8E8'}}>
                 <div style={{fontSize:11,color:'#1E3A5F',marginBottom:4}}>{k.label}</div>
@@ -4959,24 +4997,24 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             ))}
           </div>
           <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:12,display:'flex',flexDirection:'column',alignItems:'center',border:'0.5px solid #E8E8E8'}}>
-            <div style={{fontSize:12,color:'#1E3A5F',marginBottom:6}}>粗利率 / Gross Margin</div>
+            <div style={{fontSize:12,color:'#1E3A5F',marginBottom:6}}>粗利率{kari} / Gross Margin</div>
             <div style={{fontSize:36,fontWeight:500,color:marginColor,fontVariantNumeric:'tabular-nums'}}>{grossMargin}%</div>
             <div style={{width:'100%',height:8,background:'#F0F0F0',borderRadius:4,overflow:'hidden',margin:'10px 0 6px'}}>
               <div style={{width:`${Math.min(100,grossMarginNum)}%`,height:'100%',background:marginColor,borderRadius:4,transition:'width 0.8s ease'}}></div>
             </div>
-            {totals.accumulatedScrap > 0 && <div style={{fontSize:12,color:'#888'}}>スクラップ売上 ¥{formatCurrency(totals.accumulatedScrap)}</div>}
+            {totals.metalRevenue > 0 && <div style={{fontSize:12,color:'#888'}}>金属売上 ¥{formatCurrency(totals.metalRevenue)}</div>}
           </div>
           <div style={{background:'#2C2825',borderRadius:12,padding:14}}>
             <div style={{fontSize:12,color:'#888',marginBottom:10}}>収支内訳</div>
             {[
-              {label:'売上',value:totals.totalRevenue,color:'#378ADD'},
-              {label:'原価',value:totals.accumulatedCost,color:'#D85A30'},
+              {label:'工事売上',value:totals.revenue,color:'#378ADD'},
+              {label:'原価',value:totals.cost,color:'#D85A30'},
               {label:'粗利',value:Math.abs(totals.grossProfit),color:marginColor},
             ].map((b,i) => (
               <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
                 <div style={{fontSize:11,color:'#888',width:52,textAlign:'right',flexShrink:0}}>{b.label}</div>
                 <div style={{flex:1,height:10,background:'#F0F0F0',borderRadius:5,overflow:'hidden'}}>
-                  <div style={{width:`${Math.round((b.value/Math.max(totals.totalRevenue,1))*100)}%`,height:'100%',background:b.color,borderRadius:5,transition:'width 0.8s ease'}}></div>
+                  <div style={{width:`${Math.round((b.value/Math.max(totals.revenue,1))*100)}%`,height:'100%',background:b.color,borderRadius:5,transition:'width 0.8s ease'}}></div>
                 </div>
                 <div style={{fontSize:11,color:'#888',width:60,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(b.value)}</div>
               </div>
@@ -5027,6 +5065,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
               ? <div style={{position:'relative',width:'100%',height:200}}><canvas ref={chartRef2} role="img" aria-label="月別原価推移グラフ"></canvas></div>
               : <div style={{textAlign:'center',padding:32,color:'#888',fontSize:13}}>データがありません</div>
             }
+            {barLabels.length > 0 && <div style={{fontSize:10,color:'#888',marginTop:6}}>回送費など案件全体の原価は含みません</div>}
           </div>
           <div style={{background:'#F4F4F4',borderRadius:12,padding:14}}>
             <div style={{fontSize:12,color:'#888',marginBottom:10}}>月別人工推移（人）</div>
@@ -7301,38 +7340,6 @@ export default function LOGIOApp() {
     } catch (error) { alert('❌ 削除に失敗しました'); }
   };
 
-  const calculateTotals = () => {
-    const totalRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-    let accumulatedCost = 0, accumulatedScrap = 0;
-    reports.forEach(report => {
-      if (report.workDetails) {
-        report.workDetails.inHouseWorkers?.forEach(w => accumulatedCost += w.amount || 0);
-        report.workDetails.outsourcingLabor?.forEach(o => accumulatedCost += o.amount || 0);
-        // ★ 車両費は重複除去して計上(vehicles + wasteItems + scrapItems の同一車両は1回のみ)
-        accumulatedCost += getReportVehicleCost(report);
-        report.workDetails.machinery?.forEach(m => accumulatedCost += m.unitPrice || 0);
-        report.workDetails.envItems?.forEach(t => accumulatedCost += t.amount || 0);
-        report.workDetails.extItems?.forEach(t => accumulatedCost += t.amount || 0);
-        report.workDetails.dailyExpenses?.forEach(e => accumulatedCost += e.amount || 0);
-      }
-      report.wasteItems?.forEach(w => accumulatedCost += (w.amount || 0));
-      report.wasteItems?.forEach(w => accumulatedCost += (w.haishiAmount || 0)); // 配車費は車両費扱い
-      // ★ vehicleAmount は getReportVehicleCost に集約済みのため、ここでは加算しない
-      // ★ スクラップ売上集計: 旧 scrapItems[] と 新UIの wasteItems 内スクラップ(amount<0 or isScrap)の両方を拾う
-      report.scrapItems?.forEach(s => accumulatedScrap += Math.abs(s.amount || 0));
-      report.wasteItems?.forEach(w => {
-        if (w.isScrap === true || (w.amount || 0) < 0 || w.kind === 'scrap' || w.manifestNumber === '-') {
-          accumulatedScrap += Math.abs(w.amount || 0);
-        }
-      });
-    });
-    accumulatedCost += (parseFloat(projectInfo.transferCost) || 0) + (parseFloat(projectInfo.leaseCost) || 0) + (parseFloat(projectInfo.materialsCost) || 0)
-      + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s,i) => s + (parseFloat(i.amount)||0), 0)
-      + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-    const grossProfit = totalRevenue - accumulatedCost;
-    return { totalRevenue, accumulatedCost, accumulatedScrap, grossProfit, grossProfitRateContract: totalRevenue > 0 ? (grossProfit / totalRevenue * 100).toFixed(1) : '0.0', grossProfitRateWithScrap: (totalRevenue + accumulatedScrap) > 0 ? (grossProfit / (totalRevenue + accumulatedScrap) * 100).toFixed(1) : '0.0' };
-  };
-
   // ★ ほかの人が入力中のときの確認画面（「解除して入力する」→ true / 「やめる」→ false）
   const [lockPrompt, setLockPrompt] = useState(null); // { lockedBy, since, resolve }
   const askLockTakeover = (lock) => new Promise(resolve => {
@@ -7368,7 +7375,8 @@ export default function LOGIOApp() {
 
   // handlePasswordSubmit: パスワード認証廃止に伴い削除
 
-  const totals = calculateTotals();
+  // 工事売上・原価・金属売上・粗利（日報PDFの集計と同じ数え方）
+  const totals = calcSiteMoney(reports, projectInfo);
   window.__navigatePDF = async (report) => {
     const siteName = report.siteName || report.site_name;
     let info = projectInfo;
@@ -7610,7 +7618,7 @@ export default function LOGIOApp() {
 
       {/* 通知モーダル */}
       {showNotificationModal && (() => {
-        const costRatio = totals.totalRevenue > 0 ? (totals.accumulatedCost / totals.totalRevenue) * 100 : 0;
+        const costRatio = totals.revenue > 0 ? (totals.cost / totals.revenue) * 100 : 0; // 原価率 ＝ 原価 ÷ 工事売上
 
 
         const alerts = [];

@@ -4919,15 +4919,26 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   const marginColor = grossMarginNum >= 40 ? '#639922' : grossMarginNum >= 20 ? '#BA7517' : '#D85A30';
 
   // Chart.js動的ロード
+  // 読み込みが終わるまではグラフを描かない（途中でタブを押しても画面が真っ白にならないように）。
+  // 読み込みが終わったら chartReady が true になり、開いているタブのグラフを描く。
+  const [chartReady, setChartReady] = useState(() => !!window.Chart);
   React.useEffect(() => {
-    if (window.Chart) return;
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
-    document.head.appendChild(script);
+    if (window.Chart) { setChartReady(true); return; }
+    const src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    let script = document.querySelector(`script[src="${src}"]`); // 前に開いたときの読み込み中のものがあれば使い回す
+    if (!script) {
+      script = document.createElement('script');
+      script.src = src;
+      document.head.appendChild(script);
+    }
+    const onLoad = () => setChartReady(!!window.Chart);
+    script.addEventListener('load', onLoad);
+    return () => script.removeEventListener('load', onLoad);
   }, []);
 
   // Chart描画
   React.useEffect(() => {
+    if (!chartReady) return;
     if (activeTab !== 1 || !chartRef1.current) return;
     if (chartInst.current.pie) chartInst.current.pie.destroy();
     if (pieData.length === 0) return;
@@ -4936,12 +4947,14 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       data: { labels: pieData.map(d=>d.name), datasets: [{ data: pieData.map(d=>d.value), backgroundColor: COLORS, borderWidth: 0 }] },
       options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, cutout:'65%' }
     });
-  }, [activeTab]);
+  }, [activeTab, chartReady]);
 
   React.useEffect(() => {
+    if (!chartReady) return;
     if (activeTab !== 2) return;
     if (barLabels.length === 0) return;
     setTimeout(() => {
+      if (!window.Chart) return;
       if (chartRef2.current) {
         if (chartInst.current.bar) chartInst.current.bar.destroy();
         chartInst.current.bar = new window.Chart(chartRef2.current, {
@@ -4959,7 +4972,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         });
       }
     }, 50);
-  }, [activeTab]);
+  }, [activeTab, chartReady]);
 
   const maxBar = Math.max(...pieData.map(d=>d.value), 1);
 

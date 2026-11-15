@@ -712,14 +712,14 @@ function Sidebar({ currentPage, onNavigate, sidebarOpen, setSidebarOpen, onLogou
         <div className="fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} />
           <div className="relative flex-1 flex flex-col max-w-xs w-full border-r" style={{background:'#fff', borderColor:'#E8E8E8'}}>
-            <div className="absolute top-0 right-0 -mr-12 pt-2">
-              <button onClick={() => setSidebarOpen(false)} className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none">
-                <X className="h-6 w-6" style={{color:'#1C1917'}} />
-              </button>
-            </div>
             <div className="flex-1 h-0 overflow-y-auto" style={{ paddingTop:'calc(env(safe-area-inset-top, 0px) + 20px)', paddingBottom:'16px' }}>
-              <div className="flex items-center flex-shrink-0 px-4 mb-8">
+              {/* ロゴの行。閉じる「✕」は行の右端（白い板の外に出すと上の帯のアイコンに重なり、幅320pxでは画面の外に出るため） */}
+              <div className="flex items-center justify-between flex-shrink-0 px-4 mb-8">
                 <WacLogo variant="menu" />
+                <button onClick={() => setSidebarOpen(false)} aria-label="メニューを閉じる" title="メニューを閉じる"
+                  className="flex items-center justify-center flex-shrink-0 h-10 w-10 rounded-full focus:outline-none">
+                  <X className="h-6 w-6" style={{color:'#1C1917'}} />
+                </button>
               </div>
               <nav className="px-2 space-y-1">
                 {navItems.map((item) => {

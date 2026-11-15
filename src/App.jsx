@@ -6112,6 +6112,345 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   );
 }
 
+// ========== 管理画面「売上」タブ ==========
+// 請求月（invoice_month）ごとに、工事売上・原価・粗利・金属売上を集計する。
+// ・1現場の金額は calcSiteMoney（日報PDFと同じ数え方）で出す。ここで別の計算はしない
+// ・請求月が入っている現場は、ステータスに関係なく集計に入れる。請求月が空の現場は入れない
+// ・請求金額がまだ無い現場は、見積＋追加で「仮」として数える
+// ・DBは読むだけ
+const SALES_UNSET = '（未入力）';
+const salesLabel = (v) => (String(v ?? '').trim() === '' ? SALES_UNSET : String(v));
+const salesYen = (n) => `¥${formatCurrency(Math.round(n))}`;
+const salesRate = (profit, revenue) => (revenue > 0 ? `${(profit / revenue * 100).toFixed(1)}%` : '—');
+
+// 表をすべて読む（1回で返ってくる件数に上限があるので、空になるまで続けて読む）
+async function loadAllRowsForSales(table, columns, order) {
+  const all = [];
+  for (let offset = 0; ; ) {
+    const page = await sb(table).select(`select=${columns}&order=${order}&limit=1000&offset=${offset}`);
+    if (!Array.isArray(page)) throw new Error(`${table} を読み込めませんでした`);
+    if (page.length === 0) return all;
+    all.push(...page);
+    offset += page.length;
+  }
+}
+
+// project_info の1行を、calcSiteMoney が読む形にする（お金の欄は loadProjectInfo と同じ読み方）。
+// 請求金額は DB の値そのまま（完了でも見積＋追加で埋めない。請求金額が無ければ「仮」になる）
+function salesProjectInfoFromRow(d) {
+  const list = (v) => (Array.isArray(v) ? v : []);
+  const rawMisc = d.misc_items !== undefined && d.misc_items !== null ? d.misc_items : [...list(d.site_expense_items), ...list(d.sga_items)];
+  return {
+    contractAmount: d.contract_amount || '',
+    additionalAmount: d.additional_amount || '',
+    billingAmount: d.billing_amount != null ? String(d.billing_amount) : '',
+    transferCost: d.transfer_cost || '',
+    leaseCost: d.lease_cost || '',
+    materialsCost: d.materials_cost || '',
+    expenses: list(d.expenses),
+    outsourcingItems: list(d.outsourcing_items),
+    sgaItems: list(d.sga_items),
+    siteExpenseItems: list(d.site_expense_items),
+    miscItems: list(rawMisc),
+  };
+}
+
+// 現場の配列の合計（件数・工事売上・原価・粗利・金属売上・うち仮）
+function sumSalesSites(list) {
+  return list.reduce((t, s) => ({
+    count: t.count + 1,
+    revenue: t.revenue + s.revenue,
+    cost: t.cost + s.cost,
+    grossProfit: t.grossProfit + s.grossProfit,
+    metalRevenue: t.metalRevenue + s.metalRevenue,
+    provisionalCount: t.provisionalCount + (s.isProvisional ? 1 : 0),
+    provisionalRevenue: t.provisionalRevenue + (s.isProvisional ? s.revenue : 0),
+  }), { count: 0, revenue: 0, cost: 0, grossProfit: 0, metalRevenue: 0, provisionalCount: 0, provisionalRevenue: 0 });
+}
+
+// 月別の棒グラフ（工事売上と粗利）。ライブラリは使わず SVG で描く
+function SalesBarChart({ months, isMobile }) {
+  const W = isMobile ? 380 : 760, H = isMobile ? 200 : 230;
+  const padL = isMobile ? 40 : 52, padR = 6, padT = 12, padB = 24;
+  const vals = months.flatMap(m => [m.revenue, m.grossProfit]);
+  const max = Math.max(0, ...vals), min = Math.min(0, ...vals);
+  const span = (max - min) || 1;
+  const y = (v) => padT + (max - v) / span * (H - padT - padB);
+  const groupW = (W - padL - padR) / months.length;
+  const barW = groupW * 0.34;
+  const man = (v) => `${Math.round(v / 10000).toLocaleString()}万`;
+  const fs = isMobile ? 9 : 11;
+  const ticks = [max, 0, ...(min < 0 ? [min] : [])].filter((v, i, a) => a.indexOf(v) === i);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width:'100%', height:'auto', display:'block' }} role="img" aria-label="月別の工事売上と粗利のグラフ">
+      {ticks.map(v => (
+        <g key={v}>
+          <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke={v === 0 ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'} />
+          <text x={padL - 4} y={y(v) + 3} textAnchor="end" fontSize={fs} fill="#888">{v === 0 ? '0' : man(v)}</text>
+        </g>
+      ))}
+      {months.map((m, i) => {
+        const x0 = padL + i * groupW + groupW * 0.13;
+        const bar = (v, x, color, label) => (
+          <rect x={x} y={Math.min(y(v), y(0))} width={barW} height={Math.max(Math.abs(y(v) - y(0)), v !== 0 ? 1 : 0)} fill={color} rx="1.5">
+            <title>{`${m.label} ${label} ${salesYen(v)}`}</title>
+          </rect>
+        );
+        return (
+          <g key={m.key}>
+            {bar(m.revenue, x0, '#3B82F6', '工事売上')}
+            {bar(m.grossProfit, x0 + barW + groupW * 0.06, m.grossProfit >= 0 ? '#00D68F' : '#FF4D4D', '粗利')}
+            <text x={padL + i * groupW + groupW / 2} y={H - 7} textAnchor="middle" fontSize={fs} fill="#888">{i + 1}{isMobile ? '' : '月'}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function AdminSalesTab({ isMobile }) {
+  const thisYear = new Date().getFullYear();
+  const [data, setData] = useState({ loading: true, error: '', projects: [], reports: [] });
+  const [year, setYear] = useState(thisYear);
+  const [person, setPerson] = useState('全員');
+  const [contract, setContract] = useState('全部');
+  const [openMonth, setOpenMonth] = useState(null);
+  const [openClient, setOpenClient] = useState(null);
+  const [showMissing, setShowMissing] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [projects, reports] = await Promise.all([
+          loadAllRowsForSales('project_info', '*', 'site_name.asc'),
+          loadAllRowsForSales('reports', 'id,site_name,work_details,waste_items,scrap_items', 'id.asc'),
+        ]);
+        if (alive) setData({ loading: false, error: '', projects, reports });
+      } catch (e) {
+        if (alive) setData({ loading: false, error: e?.message || String(e), projects: [], reports: [] });
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  // 1現場ずつの金額（calcSiteMoney）
+  const sites = React.useMemo(() => {
+    const reportsBySite = new Map();
+    data.reports.forEach(r => {
+      if (!reportsBySite.has(r.site_name)) reportsBySite.set(r.site_name, []);
+      reportsBySite.get(r.site_name).push({ workDetails: r.work_details || {}, wasteItems: r.waste_items || [], scrapItems: r.scrap_items || [] });
+    });
+    return data.projects.filter(d => d.site_name).map(d => {
+      const money = calcSiteMoney(reportsBySite.get(d.site_name) || [], salesProjectInfoFromRow(d));
+      return {
+        siteName: d.site_name,
+        salesPerson: salesLabel(d.sales_person),
+        client: salesLabel(d.client),
+        // 請負区分は設定・編集と同じ決め方（DBの値、空なら発注者名から）
+        contractType: d.contract_type || resolveContractTypeByClient(d.client || ''),
+        status: (d.status === '着工前' || d.status === '進行中') ? '着工前・進行中' : (d.status || '着工前・進行中'),
+        invoiceMonth: normalizeInvoiceMonth(d.invoice_month),
+        revenue: money.revenue, cost: money.cost, grossProfit: money.grossProfit,
+        metalRevenue: money.metalRevenue, isProvisional: money.isProvisional,
+      };
+    });
+  }, [data]);
+
+  // 担当の選択肢：全員／営業担当1人ずつ（件数の多い順）／（未入力）
+  const personOptions = React.useMemo(() => {
+    const counts = new Map();
+    sites.forEach(s => counts.set(s.salesPerson, (counts.get(s.salesPerson) || 0) + 1));
+    const names = [...counts.keys()].filter(n => n !== SALES_UNSET).sort((a, b) => counts.get(b) - counts.get(a) || a.localeCompare(b, 'ja'));
+    return ['全員', ...names, ...(counts.has(SALES_UNSET) ? [SALES_UNSET] : [])];
+  }, [sites]);
+  const yearOptions = React.useMemo(() => {
+    const ys = new Set([thisYear]);
+    sites.forEach(s => { const m = /^(\d{4})-\d{2}$/.exec(s.invoiceMonth); if (m) ys.add(Number(m[1])); });
+    return [...ys].sort((a, b) => b - a);
+  }, [sites, thisYear]);
+
+  const scoped = sites.filter(s => (person === '全員' || s.salesPerson === person) && (contract === '全部' || s.contractType === contract));
+  const inYear = scoped.filter(s => /^\d{4}-\d{2}$/.test(s.invoiceMonth) && s.invoiceMonth.startsWith(`${year}-`));
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const key = `${year}-${String(i + 1).padStart(2, '0')}`;
+    const list = inYear.filter(s => s.invoiceMonth === key).sort((a, b) => b.revenue - a.revenue);
+    return { key, label: `${i + 1}月`, list, ...sumSalesSites(list) };
+  });
+  const total = sumSalesSites(inYear);
+  const clientMap = new Map();
+  inYear.forEach(s => { if (!clientMap.has(s.client)) clientMap.set(s.client, []); clientMap.get(s.client).push(s); });
+  const clients = [...clientMap.entries()]
+    .map(([client, list]) => ({ client, list: [...list].sort((a, b) => b.revenue - a.revenue), ...sumSalesSites(list) }))
+    .sort((a, b) => b.revenue - a.revenue);
+  const missing = scoped.filter(s => s.status === '完了' && !s.invoiceMonth).sort((a, b) => a.siteName.localeCompare(b.siteName, 'ja'));
+
+  // ---------- 見た目 ----------
+  const card = { background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, padding: isMobile ? '14px' : '18px 20px', marginBottom: isMobile ? 16 : 20 };
+  const cardTitle = { fontSize:13, fontWeight:600, marginBottom:10 };
+  const th = { padding:'8px 10px', fontSize:11, color:'#888', fontWeight:500, textAlign:'right', whiteSpace:'nowrap', borderBottom:'1px solid rgba(255,255,255,0.08)' };
+  const td = { padding:'9px 10px', fontSize:12, textAlign:'right', whiteSpace:'nowrap', fontFamily:"'SF Mono', monospace", borderBottom:'1px solid rgba(255,255,255,0.05)' };
+  const left = { textAlign:'left', fontFamily:'inherit' };
+  const selectStyle = { padding:'8px 10px', background:'#141414', color:'#EDEDED', border:'1px solid rgba(255,255,255,0.12)', borderRadius:7, fontSize:13, fontFamily:'inherit', minWidth: isMobile ? 0 : 120, width: isMobile ? '100%' : 'auto' };
+  const profitColor = (v) => (v < 0 ? '#FF4D4D' : '#EDEDED');
+  const kariBadge = <span style={{ marginLeft:6, padding:'1px 5px', borderRadius:4, fontSize:10, fontWeight:700, color:'#F5A623', background:'rgba(245,166,35,0.12)', border:'1px solid rgba(245,166,35,0.35)', fontFamily:'inherit' }}>仮</span>;
+  const kariCell = (t) => (t.provisionalCount > 0 ? <span style={{ color:'#F5A623' }}>{t.provisionalCount}件・{salesYen(t.provisionalRevenue)}</span> : <span style={{ color:'#555' }}>—</span>);
+
+  // 月か発注者の中の現場一覧
+  const siteList = (list) => (
+    <div style={{ padding:'6px 0 10px 12px' }}>
+      <table style={{ borderCollapse:'collapse', width:'100%' }}>
+        <thead><tr>
+          <th style={{ ...th, ...left }}>現場名</th><th style={{ ...th, ...left }}>営業担当</th><th style={{ ...th, ...left }}>請求月</th><th style={th}>工事売上</th><th style={th}>粗利</th>
+        </tr></thead>
+        <tbody>
+          {list.map(s => (
+            <tr key={s.siteName}>
+              <td style={{ ...td, ...left, whiteSpace:'normal', minWidth:140 }}>{s.siteName}</td>
+              <td style={{ ...td, ...left }}>{s.salesPerson}</td>
+              <td style={{ ...td, ...left }}>{formatInvoiceMonth(s.invoiceMonth)}</td>
+              <td style={td}>{salesYen(s.revenue)}{s.isProvisional && kariBadge}</td>
+              <td style={{ ...td, color: profitColor(s.grossProfit) }}>{salesYen(s.grossProfit)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  if (data.loading) return <div style={{ textAlign:'center', padding:40, color:'#888' }}>売上を読み込み中...</div>;
+  if (data.error) return <div style={{ ...card, color:'#FF4D4D' }}>読み込めませんでした：{data.error}</div>;
+
+  return (
+    <div>
+      {/* 絞り込み */}
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(3, auto)', justifyContent: isMobile ? 'stretch' : 'start', gap: isMobile ? 8 : 12, marginBottom:14 }}>
+        {[
+          ['年', year, v => { setYear(Number(v)); setOpenMonth(null); setOpenClient(null); }, yearOptions.map(y => [y, `${y}年`])],
+          ['担当', person, v => { setPerson(v); setOpenMonth(null); setOpenClient(null); }, personOptions.map(p => [p, p])],
+          ['請負区分', contract, v => { setContract(v); setOpenMonth(null); setOpenClient(null); }, ['全部', 'フェイス', '入間緑化'].map(c => [c, c])],
+        ].map(([label, value, onChange, options]) => (
+          <label key={label} style={{ display:'flex', flexDirection:'column', gap:4, fontSize:11, color:'#888', minWidth:0 }}>
+            {label}
+            <select value={value} onChange={e => onChange(e.target.value)} style={selectStyle}>
+              {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </label>
+        ))}
+      </div>
+
+      {/* 完了なのに請求月が空の現場（集計に入らない） */}
+      <div style={{ marginBottom: isMobile ? 16 : 20 }}>
+        <button onClick={() => missing.length > 0 && setShowMissing(v => !v)}
+          style={{ width:'100%', textAlign:'left', padding:'10px 12px', borderRadius:8, cursor: missing.length > 0 ? 'pointer' : 'default', fontSize:13, fontFamily:'inherit',
+            background: missing.length > 0 ? 'rgba(245,166,35,0.08)' : '#0F0F0F', border: `1px solid ${missing.length > 0 ? 'rgba(245,166,35,0.4)' : 'rgba(255,255,255,0.08)'}`, color: missing.length > 0 ? '#F5A623' : '#888' }}>
+          {missing.length > 0 ? '⚠ ' : ''}完了なのに請求月が空の現場：<b>{missing.length}件</b>
+          {missing.length > 0 && <span style={{ float:'right' }}>{showMissing ? '閉じる ▲' : '一覧 ▼'}</span>}
+        </button>
+        {showMissing && missing.length > 0 && (
+          <div style={{ ...card, marginTop:8, marginBottom:0, overflowX:'auto' }}>
+            <div style={{ fontSize:11, color:'#888', marginBottom:6 }}>この現場は集計に入っていません。設定・編集で請求月を入れると、その月に入ります。</div>
+            <table style={{ borderCollapse:'collapse', width:'100%' }}>
+              <thead><tr><th style={{ ...th, ...left }}>現場名</th><th style={{ ...th, ...left }}>営業担当</th><th style={{ ...th, ...left }}>発注者</th></tr></thead>
+              <tbody>
+                {missing.map(s => (
+                  <tr key={s.siteName}>
+                    <td style={{ ...td, ...left, whiteSpace:'normal', minWidth:140 }}>{s.siteName}</td>
+                    <td style={{ ...td, ...left }}>{s.salesPerson}</td>
+                    <td style={{ ...td, ...left, whiteSpace:'normal' }}>{s.client}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 月別の表 */}
+      <div style={card}>
+        <div style={cardTitle}>月別（{year}年・請求月ごと）</div>
+        <div style={{ fontSize:11, color:'#888', marginBottom:8, lineHeight:1.6 }}>
+          請求月が入っている現場だけを数えます。請求金額がまだ無い現場は、見積＋追加で「仮」として数えます。金属売上は工事売上・粗利に入れません。行を押すと現場の一覧が出ます。
+        </div>
+        <div style={{ overflowX:'auto' }}>
+          <table style={{ borderCollapse:'collapse', width:'100%', minWidth:720 }}>
+            <thead><tr>
+              <th style={{ ...th, ...left }}>月</th><th style={th}>件数</th><th style={th}>工事売上</th><th style={th}>うち仮</th><th style={th}>原価</th><th style={th}>粗利</th><th style={th}>粗利率</th><th style={th}>金属売上</th>
+            </tr></thead>
+            <tbody>
+              {months.map(m => (
+                <Fragment key={m.key}>
+                  <tr className={m.count > 0 ? 'admin-row' : undefined} onClick={() => m.count > 0 && setOpenMonth(openMonth === m.key ? null : m.key)} style={{ cursor: m.count > 0 ? 'pointer' : 'default', color: m.count > 0 ? '#EDEDED' : '#555' }}>
+                    <td style={{ ...td, ...left }}>{m.count > 0 ? (openMonth === m.key ? '▼ ' : '▶ ') : ''}{m.label}</td>
+                    <td style={td}>{m.count}</td>
+                    <td style={td}>{m.count > 0 ? salesYen(m.revenue) : '—'}</td>
+                    <td style={td}>{kariCell(m)}</td>
+                    <td style={td}>{m.count > 0 ? salesYen(m.cost) : '—'}</td>
+                    <td style={{ ...td, color: m.count > 0 ? profitColor(m.grossProfit) : undefined }}>{m.count > 0 ? salesYen(m.grossProfit) : '—'}</td>
+                    <td style={td}>{m.count > 0 ? salesRate(m.grossProfit, m.revenue) : '—'}</td>
+                    <td style={td}>{m.count > 0 ? salesYen(m.metalRevenue) : '—'}</td>
+                  </tr>
+                  {openMonth === m.key && <tr><td colSpan={8} style={{ padding:0, background:'#0B0B0B' }}>{siteList(m.list)}</td></tr>}
+                </Fragment>
+              ))}
+              <tr style={{ fontWeight:700 }}>
+                <td style={{ ...td, ...left, borderTop:'2px solid rgba(255,255,255,0.15)' }}>{year}年 合計</td>
+                <td style={{ ...td, borderTop:'2px solid rgba(255,255,255,0.15)' }}>{total.count}</td>
+                <td style={{ ...td, borderTop:'2px solid rgba(255,255,255,0.15)' }}>{salesYen(total.revenue)}</td>
+                <td style={{ ...td, borderTop:'2px solid rgba(255,255,255,0.15)' }}>{kariCell(total)}</td>
+                <td style={{ ...td, borderTop:'2px solid rgba(255,255,255,0.15)' }}>{salesYen(total.cost)}</td>
+                <td style={{ ...td, borderTop:'2px solid rgba(255,255,255,0.15)', color: profitColor(total.grossProfit) }}>{salesYen(total.grossProfit)}</td>
+                <td style={{ ...td, borderTop:'2px solid rgba(255,255,255,0.15)' }}>{salesRate(total.grossProfit, total.revenue)}</td>
+                <td style={{ ...td, borderTop:'2px solid rgba(255,255,255,0.15)' }}>{salesYen(total.metalRevenue)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 月別の棒グラフ */}
+      <div style={card}>
+        <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:8, flexWrap:'wrap' }}>
+          <div style={{ ...cardTitle, marginBottom:0 }}>月別グラフ（{year}年）</div>
+          <span style={{ fontSize:11, color:'#888', display:'flex', alignItems:'center', gap:5 }}><span style={{ width:10, height:10, borderRadius:2, background:'#3B82F6', display:'inline-block' }}/>工事売上</span>
+          <span style={{ fontSize:11, color:'#888', display:'flex', alignItems:'center', gap:5 }}><span style={{ width:10, height:10, borderRadius:2, background:'#00D68F', display:'inline-block' }}/>粗利（赤はマイナス）</span>
+        </div>
+        <SalesBarChart months={months} isMobile={isMobile} />
+      </div>
+
+      {/* 発注者別の表 */}
+      <div style={card}>
+        <div style={cardTitle}>発注者別（{year}年・工事売上の多い順）</div>
+        {clients.length === 0 ? (
+          <div style={{ fontSize:12, color:'#888', padding:'8px 0' }}>この範囲に、請求月の入った現場はありません。</div>
+        ) : (
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ borderCollapse:'collapse', width:'100%', minWidth:520 }}>
+              <thead><tr>
+                <th style={{ ...th, ...left }}>発注者</th><th style={th}>件数</th><th style={th}>工事売上</th><th style={th}>粗利</th><th style={th}>粗利率</th>
+              </tr></thead>
+              <tbody>
+                {clients.map(c => (
+                  <Fragment key={c.client}>
+                    <tr className="admin-row" onClick={() => setOpenClient(openClient === c.client ? null : c.client)} style={{ cursor:'pointer' }}>
+                      <td style={{ ...td, ...left, whiteSpace:'normal' }}>{openClient === c.client ? '▼ ' : '▶ '}{c.client}</td>
+                      <td style={td}>{c.count}</td>
+                      <td style={td}>{salesYen(c.revenue)}{c.provisionalCount > 0 && kariBadge}</td>
+                      <td style={{ ...td, color: profitColor(c.grossProfit) }}>{salesYen(c.grossProfit)}</td>
+                      <td style={td}>{salesRate(c.grossProfit, c.revenue)}</td>
+                    </tr>
+                    {openClient === c.client && <tr><td colSpan={5} style={{ padding:0, background:'#0B0B0B' }}>{siteList(c.list)}</td></tr>}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ========== AdminPage (管理者ページ) ==========
 function AdminPage({ currentUser, onLogout }) {
   const [adminTab, setAdminTab] = useState('dashboard');
@@ -6286,6 +6625,7 @@ function AdminPage({ currentUser, onLogout }) {
           <div style={{ fontSize:10, color:'#555', textTransform:'uppercase', letterSpacing:'0.1em', padding:'0 10px', marginBottom:6, fontWeight:600 }}>Overview</div>
           {[
             ['dashboard', '📊', 'ダッシュボード'],
+            ['sales', '💴', '売上'],
             ['budget', '🎯', '予算・実績'],
             ['analysis', '📈', '分析'],
           ].map(([id, icon, label]) => (
@@ -6334,15 +6674,18 @@ function AdminPage({ currentUser, onLogout }) {
           )}
           <div style={{ flex:1, minWidth:0 }}>
             <h1 style={{ fontSize: isMobile ? 16 : 20, fontWeight:600, letterSpacing:'-0.01em', margin:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-              {adminTab==='dashboard' ? 'ダッシュボード' : adminTab==='budget' ? '予算・実績' : adminTab==='analysis' ? '分析' : adminTab==='sites' ? '現場管理' : adminTab==='master' ? 'マスタ' : adminTab==='users' ? 'ユーザー' : ''}
+              {adminTab==='dashboard' ? 'ダッシュボード' : adminTab==='sales' ? '売上' : adminTab==='budget' ? '予算・実績' : adminTab==='analysis' ? '分析' : adminTab==='sites' ? '現場管理' : adminTab==='master' ? 'マスタ' : adminTab==='users' ? 'ユーザー' : ''}
             </h1>
             {!isMobile && <div style={{ fontSize:12, color:'#888', marginTop:2 }}>リアルタイム経営状況 · {new Date().getFullYear()}年{new Date().getMonth()+1}月</div>}
           </div>
+          {/* 期間の切り替えはダッシュボード用。売上タブは自分の絞り込み（年・担当・請負区分）を使うので出さない */}
+          {adminTab !== 'sales' && (
           <div style={{ display:'flex', gap:2, padding:3, background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:7, flexShrink:0 }}>
             {[['24h','24h'],['7d','7d'],['30d','30d'],['1y','1y']].map(([v,l]) => (
               <button key={v} onClick={()=>setPeriod(v)} style={{ padding: isMobile ? '4px 8px' : '5px 12px', background: period===v?'#141414':'transparent', border:'none', color: period===v?'#EDEDED':'#888', fontSize: isMobile ? 11 : 12, cursor:'pointer', borderRadius:5, fontFamily:'inherit', fontWeight: period===v?600:500 }}>{l}</button>
             ))}
           </div>
+          )}
         </div>
 
         {/* コンテンツ */}
@@ -6485,6 +6828,8 @@ function AdminPage({ currentUser, onLogout }) {
             <div style={{ fontSize:13, color:'#888' }}>詳細なグラフ・分析 - 次回実装予定</div>
           </div>
         )}
+
+        {!loading && adminTab === 'sales' && <AdminSalesTab isMobile={isMobile} />}
 
         {!loading && adminTab === 'sites' && (
           <div style={{ background:'#0F0F0F', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9 }}>

@@ -1824,6 +1824,7 @@ const PROJECT_INFO_COLUMN_LABELS = {
   subcontract_terms: '下請の支払条件',
   subcontract_invoice_recipient: '下請の請求書送付先',
   documents_checklist: '書類確認',
+  forecast: '予想（原価メモ）',
   updated_at: '更新日時',
 };
 
@@ -1915,6 +1916,158 @@ const describeSaveError = (error, labels = {}) => {
   }
   return message || '原因不明のエラー';
 };
+
+// ========== 予想（原価メモ）の入力（project_info.forecast） ==========
+// 設定・編集の編集フォームで入れる。案件登録のときに、見積書の原価メモの数字を入れる
+// 画面では入力欄の文字（forecastForm）を持ち、保存のときに forecast（jsonb）に直す
+// 保存で送るのは、予想の欄の中身が開いたときと違うときだけ（触らなければ今の forecast を残す）
+const FORECAST_NUM_FIELDS = ['men', 'days', 'laborCost', 'vehicle', 'disposal', 'other', 'metal'];
+const FORECAST_COST_FIELDS = ['laborCost', 'vehicle', 'disposal', 'other']; // 原価合計＝この4つの合計
+const FORECAST_DECIMAL_FIELDS = ['men', 'days']; // 小数も入れられる（0.5人工など）。金額は円の整数
+
+// 入力の文字を数字だけにする（全角の数字は半角に。カンマ・円・空白・マイナスは取る）
+const cleanForecastNumber = (value, allowDecimal) => {
+  let s = String(value ?? '').replace(/[０-９．]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  s = s.replace(allowDecimal ? /[^\d.]/g : /[^\d]/g, '');
+  const dot = s.indexOf('.');
+  if (dot >= 0) s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, '');
+  return s;
+};
+
+// forecast（DBの値）→ 入力欄の文字（無い欄は空。金額は円の整数にそろえる）
+const forecastToForm = (raw) => {
+  let f = raw;
+  if (typeof f === 'string') { try { f = JSON.parse(f); } catch { f = null; } }
+  if (!f || typeof f !== 'object' || Array.isArray(f)) f = {};
+  const form = {};
+  FORECAST_NUM_FIELDS.forEach(k => {
+    const n = parseFloat(f[k]);
+    form[k] = Number.isFinite(n) ? String(FORECAST_DECIMAL_FIELDS.includes(k) ? n : Math.round(n)) : '';
+  });
+  form.note = f.note != null ? String(f.note) : '';
+  form.source = f.source != null ? String(f.source) : '';
+  return form;
+};
+
+// 入力欄の文字 → forecast（DBに書く値）
+//  ・空の数字欄は null（0 と入れた欄は 0）。原価合計 total は4つの合計で、入力しない
+//  ・数字が全部「空か0」で、メモと元も空なら null（予想の無い現場に空の予想を作らない）
+const formToForecast = (form, updatedAt = '') => {
+  const nums = {};
+  FORECAST_NUM_FIELDS.forEach(k => {
+    const s = cleanForecastNumber(form?.[k], true);
+    const n = s === '' || s === '.' ? NaN : Number(s);
+    nums[k] = Number.isFinite(n) ? n : null;
+  });
+  const note = String(form?.note ?? '').trim();
+  const source = String(form?.source ?? '').trim();
+  if (!FORECAST_NUM_FIELDS.some(k => nums[k]) && !note && !source) return null;
+  const total = FORECAST_COST_FIELDS.reduce((sum, k) => sum + (nums[k] || 0), 0);
+  return { ...nums, total, note, source, updatedAt };
+};
+
+// 予想の欄の中身が、開いたときと違うか（同じ値に戻したときは「違わない」）
+const isForecastFormChanged = (form, savedForm) =>
+  JSON.stringify(formToForecast(form)) !== JSON.stringify(formToForecast(savedForm));
+
+// 保存した日（端末の日付で 'YYYY-MM-DD'）
+const forecastSavedDate = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// 入力欄のまとまり。たたんでおき、押すと開く
+// ブラウザ操作で入れやすいように、各欄に id と name（forecast-○○）を付けてある。欄は開くボタン（forecast-toggle）を押すと出る
+function ForecastInputCard({ projectInfo, setProjectInfo }) {
+  const [open, setOpen] = useState(false);
+  const form = projectInfo.forecastForm || forecastToForm(null);
+  const draft = formToForecast(form);
+  const changed = isForecastFormChanged(form, projectInfo.forecastFormSaved || forecastToForm(null));
+  const setField = (key, value) => setProjectInfo(prev => ({ ...prev, forecastForm: { ...(prev.forecastForm || forecastToForm(null)), [key]: value } }));
+  const yen = (n) => '¥' + (Number(n) || 0).toLocaleString('ja-JP');
+  const man = (n) => (n >= 10000 ? `${Math.round(n / 10000).toLocaleString('ja-JP')}万` : yen(n));
+
+  // たたんだときの1行：今の入力の中身（保存した日は、保存してあって変えていないときだけ）
+  // 狭い画面で言葉の途中で折れないよう、区切りごとに折り返す
+  const summaryParts = (() => {
+    if (!draft) return ['未入力'];
+    const parts = [];
+    if (draft.total) parts.push(`原価合計 ${man(draft.total)}`);
+    if (draft.men) parts.push(`人工 ${draft.men}人`);
+    if (!parts.length) parts.push('メモのみ（数字は未入力）');
+    const saved = projectInfo.forecast && typeof projectInfo.forecast === 'object' ? projectInfo.forecast.updatedAt : '';
+    const m = String(saved || '').match(/^\d{4}-(\d{2})-(\d{2})/);
+    return parts.map((p, i) => (i < parts.length - 1 ? p + '・' : p))
+      .concat(!changed && saved ? [`（${m ? `${Number(m[1])}/${Number(m[2])}` : saved} 更新）`] : []);
+  })();
+
+  const labelStyle = { display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.55)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 };
+  const inputStyle = { width:'100%', padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:'monospace', minWidth:0 };
+  const numberField = (key, label, placeholder) => {
+    const decimal = FORECAST_DECIMAL_FIELDS.includes(key);
+    const raw = form[key] ?? '';
+    // 金額はカンマ付きで見せる。人工・日数は打ったとおりに見せる（「0.」の途中でも消えないように）
+    const shown = decimal || raw === '' ? raw : Number(raw).toLocaleString('ja-JP');
+    return (
+      <div style={{ minWidth:0 }}>
+        <label htmlFor={`forecast-${key}`} style={labelStyle}>{label}</label>
+        <input id={`forecast-${key}`} name={`forecast-${key}`} type="text" inputMode={decimal ? 'decimal' : 'numeric'} autoComplete="off"
+          value={shown} placeholder={placeholder}
+          onChange={e => setField(key, cleanForecastNumber(e.target.value, decimal))}
+          style={inputStyle} />
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
+      <button id="forecast-toggle" type="button" aria-expanded={open} aria-controls="forecast-fields" onClick={() => setOpen(o => !o)}
+        style={{ width:'100%', padding:0, background:'none', border:'none', cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', gap:8, fontFamily:'inherit' }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:'#60a5fa', textTransform:'uppercase', letterSpacing:'.08em' }}>予想（原価メモ） / Forecast</div>
+          <div style={{ marginTop:5, fontSize:12, fontWeight:600, color: draft ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)', lineHeight:1.4 }}>{summaryParts.map((p, i) => <span key={i} style={{ whiteSpace:'nowrap' }}>{p}</span>)}</div>
+        </div>
+        {changed && <span style={{ flexShrink:0, fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)' }}>未保存</span>}
+        <GradChevron open={open} size={16} />
+      </button>
+      {open && (
+        <div id="forecast-fields" style={{ marginTop:14 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:10, marginBottom:12 }}>
+            {numberField('men', '人工（人）', '例) 12')}
+            {numberField('days', '日数', '例) 3')}
+            {numberField('laborCost', '人工費（円）', '0')}
+            {numberField('vehicle', '車両・配車（円）', '0')}
+            {numberField('disposal', '処分（円）', '0')}
+            {numberField('other', 'その他経費（円）', '0')}
+          </div>
+          {/* 原価合計は自動（入力しない） */}
+          <div style={{ marginBottom:12, padding:'10px 12px', borderRadius:8, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8 }}>
+              <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.55)', whiteSpace:'nowrap' }}>原価合計（自動）</span>
+              <output id="forecast-total" name="forecast-total" style={{ fontSize:16, fontWeight:800, color:'#fff', fontFamily:'monospace', fontVariantNumeric:'tabular-nums' }}>{yen(draft ? draft.total : 0)}</output>
+            </div>
+            <div style={{ marginTop:3, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>人工費＋車両・配車＋処分＋その他経費</div>
+          </div>
+          <div style={{ marginBottom:12 }}>
+            {numberField('metal', '金属売上の見込み（円）', '0')}
+            <div style={{ marginTop:4, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>プラスで入れる。原価には入れず、別に出します</div>
+          </div>
+          <div style={{ marginBottom:12 }}>
+            <label htmlFor="forecast-note" style={labelStyle}>メモ</label>
+            <textarea id="forecast-note" name="forecast-note" value={form.note ?? ''} onChange={e => setField('note', e.target.value)} placeholder="例) 7/4版 夜間"
+              style={{ ...inputStyle, fontFamily:'inherit', minHeight:64, resize:'vertical', display:'block' }} />
+          </div>
+          <div style={{ marginBottom:10 }}>
+            <label htmlFor="forecast-source" style={labelStyle}>元</label>
+            <input id="forecast-source" name="forecast-source" type="text" autoComplete="off" value={form.source ?? ''} onChange={e => setField('source', e.target.value)} placeholder="例) 原価メモ"
+              style={{ ...inputStyle, fontFamily:'inherit' }} />
+          </div>
+          <div style={{ fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.6 }}>
+            下の「保存」で書き込みます。全部空にして保存すると、予想は消えます。
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo, onSave, onAddSite, onDeleteSite, onRenameSite, onNavigate, onSelectSite, onStatusChange }) {
   const [showAddSite, setShowAddSite] = useState(false);
@@ -2435,6 +2588,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                       </div>
                         </div>
                         {/* ★ 基本情報カード閉じ */}
+
+                        {/* ★ 予想（原価メモ）：project_info.forecast。たたんでおき、押すと開く */}
+                        <ForecastInputCard projectInfo={projectInfo} setProjectInfo={setProjectInfo} />
 
                         {/* ★ 現場詳細 */}
                         <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
@@ -5037,7 +5193,7 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
 }
 
 // ========== 予想と実績（原価分析の「予想と実績」タブ） ==========
-// 予想＝project_info.forecast（受注時に原価メモから入れる。Wac からは書き込まない）
+// 予想＝project_info.forecast（受注時に原価メモの数字を、設定・編集の「予想（原価メモ）」で入れる）
 // 実績＝calcSiteMoney の値をそのまま使う（ここで足し直さない）
 // 判定と項目分けの関数は画面とは別にしてある（管理画面の月の一覧でも使う）
 const fcNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
@@ -7634,7 +7790,9 @@ export default function LOGIOApp() {
     // DBから読んだときの値（保存のときに「完了以外→完了」「請求月を新しく入れた」を見分ける）
     savedStatus: '', savedInvoiceMonth: '',
     billingFilledFromEstimate: '', // 完了でDBの請求金額が空のとき、見せるために入れた見積＋追加（入れていなければ空）
-    forecast: null, // 予想（project_info.forecast）。読むだけで、保存では送らない
+    // 予想（project_info.forecast）。forecast＝DBから読んだ値（原価分析の「予想と実績」で使う）、
+    // forecastForm＝「予想（原価メモ）」の入力欄の文字、forecastFormSaved＝開いたとき（保存したとき）の入力欄の文字
+    forecast: null, forecastForm: forecastToForm(null), forecastFormSaved: forecastToForm(null),
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     siteTsubo: '', siteUseType: '', workCondition: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
@@ -7928,6 +8086,8 @@ export default function LOGIOApp() {
           subcontractInvoiceRecipient: d.subcontract_invoice_recipient || '',
           documentsChecklist: d.documents_checklist || {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false},
           forecast: d.forecast ?? null, // 予想（原価分析の「予想と実績」で使う。欄が無いDBでは null＝予想なし）
+          forecastForm: forecastToForm(d.forecast),
+          forecastFormSaved: forecastToForm(d.forecast),
         }, siteName);
         setProjectInfo(info);
         return info;
@@ -7975,10 +8135,15 @@ export default function LOGIOApp() {
     const billingEntered = projectInfo.billingAmount !== '' && projectInfo.billingAmount !== null && projectInfo.billingAmount !== undefined;
     const showingEstimateOnly = !!projectInfo.billingFilledFromEstimate && projectInfo.billingAmount === projectInfo.billingFilledFromEstimate;
     const writeBilling = becomingDone || invoiceMonthNewlySetOnDone || (billingEntered && !showingEstimateOnly);
+    // 予想（原価メモ）は、予想の欄の中身が開いたときと違うときだけ送る
+    // （触らずに保存したときは送らない＝今の forecast を残す。開いている間に別の所で入れた予想も上書きしない）
+    const forecastFormSent = projectInfo.forecastForm;
+    const writeForecast = isForecastFormChanged(forecastFormSent, projectInfo.forecastFormSaved);
+    const forecastValue = writeForecast ? formToForecast(forecastFormSent, forecastSavedDate()) : null;
     try {
       const contractTypeValue = projectInfo.contractType || resolveContractTypeByClient(projectInfo.client || '');
       // 送る欄はここに書いたものだけ（DBは送った欄だけを書き換える）。
-      // forecast（予想）は送らない：受注時に原価メモから入れた予想を、ここの保存で消さないため
+      // forecast（予想）は、予想の欄を変えたときだけ下で足す
       const projectPayload = {
         site_name: selectedSite,
         project_number: projectInfo.projectNumber || '',
@@ -8023,6 +8188,7 @@ export default function LOGIOApp() {
       };
       projectPayload.invoice_month = invoiceMonth; // 未入力は空文字
       if (writeBilling) projectPayload.billing_amount = billingValue > 0 ? billingValue : null;
+      if (writeForecast) projectPayload.forecast = forecastValue; // 全部空なら null（予想を消す）
 
       // DBに欄がない項目は外して保存し直し、外した項目は画面で警告する（site_name は外さない）
       const { droppedColumns } = await saveDroppingMissingColumns(
@@ -8037,6 +8203,8 @@ export default function LOGIOApp() {
         client: projectPayload.client,
         savedInvoiceMonth: droppedColumns.includes('invoice_month') ? prev.savedInvoiceMonth : invoiceMonth,
         billingFilledFromEstimate: writeBilling && !droppedColumns.includes('billing_amount') ? '' : prev.billingFilledFromEstimate,
+        // 予想を書いたら、原価分析のタブにすぐ出るように forecast を今の値にし、「開いたときの中身」も送った中身にそろえる
+        ...(writeForecast && !droppedColumns.includes('forecast') ? { forecast: forecastValue, forecastFormSaved: forecastFormSent } : {}),
       }));
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       // 保存した発注者名を現場一覧にも入れる（新しく足した発注者が、すぐ選択肢に出るように）

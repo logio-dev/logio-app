@@ -1674,6 +1674,115 @@ const resolveContractTypeByClient = (clientName) => {
   return names.some(name => value.includes(name)) ? '入間緑化' : 'フェイス';
 };
 
+// ========== 発注者名（選択式・ならし方） ==========
+// 紹介元の会社。請求はテナントに直接するので、発注者＝紹介元、請求書送付先＝テナントの会社にする。
+// 紹介元が増えたり変わったりしたときは、この表だけを直す
+const INTRODUCER_CLIENTS = ['JLA', 'リーシングイノベーション', 'スリーエーコーポレーション'];
+const CLIENT_CORP_WORDS = ['株式会社', '有限会社', '合同会社', '（株）', '(株)', '（有）', '(有)', '（同）', '(同)', '㈱', '㈲'];
+const removeClientCorpWords = (s) => CLIENT_CORP_WORDS.reduce((t, w) => t.split(w).join(''), String(s ?? ''));
+// 保存する形：半角カナを全角にし、「株式会社」「（株）」などを取り、前後の空白を取る
+const cleanClientName = (value) => removeClientCorpWords(
+  String(value ?? '').replace(/[｡-ﾟ]+/g, m => m.normalize('NFKC'))
+).trim();
+// 探す・比べるための形：半角・全角、ひらがな・カタカナ、大文字・小文字のちがいをなくし、
+// 「株式会社」「（株）」など・空白・「・」を取る
+const clientSearchKey = (value) => removeClientCorpWords(String(value ?? '').normalize('NFKC'))
+  .replace(/[\s・･]/g, '')
+  .toLowerCase()
+  .replace(/[ァ-ヶ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+// 新しく足す名前と同じか、どちらかがもう一方を含む、今ある発注者名
+const findSimilarClients = (name, names) => {
+  const key = clientSearchKey(name);
+  if (!key) return [];
+  return names.filter(n => { const k = clientSearchKey(n); return k && (k === key || k.includes(key) || key.includes(k)); });
+};
+
+// 発注者の選択欄。今まで入っている発注者名（件数の多い順）から選ぶ。文字を打つと絞り込む。
+// 一覧に無いときは「新しい発注者として追加」で直接入れる（似た名前があれば、そちらを使うか聞く）
+function ClientPicker({ value, options, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [similar, setSimilar] = useState(null); // { name, matches }
+  const boxRef = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeIfOutside = (e) => { if (boxRef.current && !boxRef.current.contains(e.target)) { setOpen(false); setSimilar(null); setQuery(''); } };
+    document.addEventListener('pointerdown', closeIfOutside);
+    return () => document.removeEventListener('pointerdown', closeIfOutside);
+  }, [open]);
+
+  const key = clientSearchKey(query);
+  const shown = key ? options.filter(o => clientSearchKey(o.name).includes(key)) : options;
+  const typed = cleanClientName(query);                          // 追加するときに保存する形
+  const typedExists = options.some(o => o.name === query.trim()); // 打った文字そのものが一覧にある
+  const choose = (name) => { onChange(name); setOpen(false); setQuery(''); setSimilar(null); };
+  const addNew = () => {
+    if (!typed) return;
+    const matches = findSimilarClients(query, options.map(o => o.name));
+    if (matches.length > 0) { setSimilar({ name: typed, matches }); return; }
+    choose(typed);
+  };
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') { setOpen(false); setQuery(''); setSimilar(null); e.currentTarget.blur(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (typedExists) choose(query.trim());
+      else if (shown.length === 1) choose(shown[0].name);
+      else if (typed && shown.length === 0) addNew();
+    }
+  };
+  const item = { display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, width:'100%', padding:'11px 12px', background:'none', border:'none', borderBottom:'1px solid rgba(255,255,255,0.06)', color:'#fff', fontSize:15, textAlign:'left', cursor:'pointer', fontFamily:'inherit' };
+  const smallBtn = { padding:'9px 12px', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' };
+
+  return (
+    <div className="mb-4" ref={boxRef} style={{ position:'relative' }}>
+      <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>発注者 / Client</label>
+      <input type="text" value={open ? query : (value || '')} aria-label="発注者"
+        placeholder={open ? (value ? `${value}（打つと絞り込み）` : '名前を打つと絞り込み') : '一覧から選ぶ'}
+        onFocus={() => { setOpen(true); setQuery(''); setSimilar(null); }}
+        onChange={e => { setQuery(e.target.value); setSimilar(null); if (!open) setOpen(true); }}
+        onKeyDown={onKeyDown}
+        style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,0.25)', border: open ? '1px solid rgba(96,165,250,0.6)' : '1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit' }} />
+      {open && (
+        <div role="listbox" aria-label="発注者の一覧" style={{ position:'absolute', left:0, right:0, top:'100%', marginTop:4, zIndex:40, maxHeight:300, overflowY:'auto', background:'#1F2937', border:'1px solid rgba(255,255,255,0.15)', borderRadius:10, boxShadow:'0 10px 30px rgba(0,0,0,0.5)' }}>
+          {similar ? (
+            <div style={{ padding:12 }}>
+              <div style={{ fontSize:14, color:'#fde68a', lineHeight:1.6, marginBottom:10 }}>
+                {similar.matches.length === 1 ? `${similar.matches[0]} がすでにあります。こちらを使いますか？` : `似た発注者がすでにあります（${similar.matches.length}件）。どれかを使いますか？`}
+              </div>
+              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                {similar.matches.map(m => (
+                  <button key={m} type="button" onClick={() => choose(m)} style={{ ...smallBtn, background:'#2563EB', border:'none', color:'#fff' }}>{m} を使う</button>
+                ))}
+                <button type="button" onClick={() => choose(similar.name)} style={{ ...smallBtn, background:'transparent', border:'1px solid rgba(255,255,255,0.3)', color:'#fff' }}>「{similar.name}」をそのまま追加</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {shown.map(o => (
+                <button key={o.name} type="button" role="option" aria-selected={o.name === value} onClick={() => choose(o.name)}
+                  style={{ ...item, background: o.name === value ? 'rgba(37,99,235,0.25)' : 'none' }}>
+                  <span>{o.name === value ? '✓ ' : ''}{o.name}</span>
+                  <span style={{ fontSize:11, color:'rgba(255,255,255,0.4)', flexShrink:0 }}>{o.count}件</span>
+                </button>
+              ))}
+              {key && shown.length === 0 && <div style={{ padding:'10px 12px', fontSize:13, color:'rgba(255,255,255,0.5)' }}>「{query}」を含む発注者はありません</div>}
+              {typed && !typedExists ? (
+                <button type="button" onClick={addNew} style={{ ...item, color:'#93C5FD', fontWeight:700, borderBottom:'none', flexDirection:'column', alignItems:'flex-start', gap:2 }}>
+                  <span>＋「{typed}」を新しい発注者として追加</span>
+                  {typed !== query.trim() && <span style={{ fontSize:11, fontWeight:400, color:'rgba(255,255,255,0.5)' }}>「株式会社」などを取り、全角にそろえて保存します</span>}
+                </button>
+              ) : !key && (
+                <div style={{ padding:'10px 12px', fontSize:12, color:'rgba(255,255,255,0.45)' }}>一覧に無いときは、名前を打つと「新しい発注者として追加」が出ます</div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // project_info の欄名 → 画面の項目名（DBに欄がなく保存できなかったときの警告に使う）
 const PROJECT_INFO_COLUMN_LABELS = {
   project_number: 'PROJECT NO.',
@@ -1821,6 +1930,12 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
   // ★ アコーディオングループ展開state(デフォルト全グループ折りたたみ)
   const [groupExpanded, setGroupExpanded] = useState({ '着工前・進行中': false, '完了': false });
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
+  // 発注者の選択肢：今まで入っている発注者名（重複なし・空は除く）を、使われている件数の多い順に
+  const clientOptions = React.useMemo(() => {
+    const counts = new Map();
+    sites.forEach(s => { const c = String(s.projectInfo?.client ?? '').trim(); if (c) counts.set(c, (counts.get(c) || 0) + 1); });
+    return [...counts.entries()].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ja'));
+  }, [sites]);
 
   const handleAddSite = async () => {
     if (!newSiteName.trim()) return alert('現場名を入力してください');
@@ -2231,7 +2346,16 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 <div style={{ fontSize:9, color:'#fbbf24', fontWeight:700, letterSpacing:'.08em', marginBottom:8, paddingBottom:4, borderBottom:'1px solid rgba(251,191,36,0.3)' }}>契約情報</div>
 <Select label="請負区分" labelEn="Contract Type" options={['フェイス','入間緑化']} value={projectInfo.contractType||''} onChange={v=>setProjectInfo({...projectInfo,contractType:v})} />
 <Select label="工事種別" labelEn="Work Type" options={MASTER_DATA.projectNames} value={projectInfo.workType||''} onChange={v=>setProjectInfo({...projectInfo,workType:v})} />
-                        <TextInput label="発注者" labelEn="Client" value={projectInfo.client||''} onChange={v=>setProjectInfo({...projectInfo, client: v, contractType: resolveContractTypeByClient(v)})} placeholder="○○建設株式会社" />
+                        <ClientPicker value={projectInfo.client||''} options={clientOptions} onChange={v=>setProjectInfo({...projectInfo, client: v, contractType: resolveContractTypeByClient(v)})} />
+                        {/* 請求書送付先（紹介元の案件は、請求先のテナントの会社をここに入れる） */}
+                        <div className="mb-4">
+                          <label style={{display:"block",fontSize:9,fontWeight:700,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}}>請求書送付先 / Invoice To</label>
+                          <input type="text" value={projectInfo.invoiceRecipient||''} onChange={e=>setProjectInfo({...projectInfo,invoiceRecipient:e.target.value})} placeholder="例) 経理部 田中様"
+                            style={{ width:'100%', padding:'10px 12px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:9, fontSize:15, outline:'none', boxSizing:'border-box', maxWidth:'100%', fontFamily:'inherit' }} />
+                          {INTRODUCER_CLIENTS.includes(cleanClientName(projectInfo.client)) && (
+                            <div style={{marginTop:6,fontSize:10,lineHeight:1.5,color:'#fbbf24'}}>※ 紹介案件は、請求先の会社（テナント）を請求書送付先に入れてください</div>
+                          )}
+                        </div>
                         <TextInput label="現場住所" labelEn="Site Location" value={projectInfo.workLocation||''} onChange={v=>setProjectInfo({...projectInfo,workLocation:v})} placeholder="東京都渋谷区..." />
 
                         {/* セクション2: 担当者 */}
@@ -7620,7 +7744,7 @@ export default function LOGIOApp() {
         site_name: selectedSite,
         project_number: projectInfo.projectNumber || '',
         work_type: projectInfo.workType || '',
-        client: projectInfo.client || '',
+        client: cleanClientName(projectInfo.client), // 半角カナを全角に、「株式会社」などを取り、前後の空白を取って保存
         work_location: projectInfo.workLocation || '',
         sales_person: projectInfo.salesPerson || '',
         site_manager: projectInfo.siteManager || '',
@@ -7671,11 +7795,13 @@ export default function LOGIOApp() {
       setProjectInfo(prev => ({
         ...prev,
         savedStatus: projectPayload.status,
+        client: projectPayload.client,
         savedInvoiceMonth: droppedColumns.includes('invoice_month') ? prev.savedInvoiceMonth : invoiceMonth,
         billingFilledFromEstimate: writeBilling && !droppedColumns.includes('billing_amount') ? '' : prev.billingFilledFromEstimate,
       }));
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
-      setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' } : s));
+      // 保存した発注者名を現場一覧にも入れる（新しく足した発注者が、すぐ選択肢に出るように）
+      setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中', projectInfo: s.projectInfo ? { ...s.projectInfo, client: projectPayload.client } : s.projectInfo } : s));
       if (droppedColumns.length > 0) {
         // 保存されなかった項目があるときは silent 指定でも必ず知らせる
         console.warn('project_info: DBに欄がないため保存されなかった項目:', droppedColumns);

@@ -1635,6 +1635,37 @@ const formatNumericInput = (value) => {
   return Number.isFinite(numeric) ? numeric.toLocaleString() : '';
 };
 
+// ========== 請求月（project_info.invoice_month） ==========
+// 請求書の発行月か締めの月。'YYYY-MM' で保存し、未入力は空文字（DBの null も未入力として扱う）
+const normalizeInvoiceMonth = (value) => String(value ?? '').trim();
+const formatInvoiceMonth = (value) => {
+  const m = /^(\d{4})-(\d{2})$/.exec(normalizeInvoiceMonth(value));
+  return m ? `${m[1]}年${Number(m[2])}月` : normalizeInvoiceMonth(value);
+};
+// 選択欄に並べる月：今月の3か月後から2025年1月まで（新しい順）。今の値が範囲外でも選択肢に残す
+const buildInvoiceMonthOptions = (currentValue, today = new Date()) => {
+  const options = [];
+  let y = today.getFullYear(), m = today.getMonth() + 1 + 3;
+  while (m > 12) { m -= 12; y += 1; }
+  while (y > 2025 || (y === 2025 && m >= 1)) {
+    options.push(`${y}-${String(m).padStart(2, '0')}`);
+    m -= 1; if (m === 0) { m = 12; y -= 1; }
+  }
+  const current = normalizeInvoiceMonth(currentValue);
+  if (current && !options.includes(current)) options.unshift(current);
+  return options;
+};
+
+// ステータスを「完了」にするときに必要な項目のうち、入っていないもの
+const missingForCompletion = (info) => {
+  const missing = [];
+  if (!(parseNumericValue(info.billingAmount) > 0)) missing.push('請求金額');
+  if (!normalizeInvoiceMonth(info.invoiceMonth)) missing.push('請求月');
+  return missing;
+};
+const completionBlockedMessage = (missing) =>
+  `請求金額と請求月を入力してから、ステータスを「完了」にしてください。\n\n未入力：${missing.join('・')}`;
+
 // 発注者名から請負区分を決める（ProjectSettingsPage と LOGIOApp の両方で使う）
 const resolveContractTypeByClient = (clientName) => {
   const value = String(clientName || '').trim();
@@ -1657,6 +1688,7 @@ const PROJECT_INFO_COLUMN_LABELS = {
   contract_amount: '見積金額',
   additional_amount: '追加金額',
   billing_amount: '請求金額',
+  invoice_month: '請求月',
   status: 'ステータス',
   discharger: '排出事業者',
   transport_company: '運搬会社',
@@ -2250,8 +2282,20 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           onChange={e=>setProjectInfo({...projectInfo, billingAmount: e.target.value.replace(/[^\d.]/g, '')})}
                           placeholder="0"
                           style={{width:'100%',padding:'10px',background:'rgba(17,24,39,0.42)',border: parseNumericValue(projectInfo.billingAmount) <= 0 ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)',color:'#fbbf24',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace',fontWeight:700,boxShadow: parseNumericValue(projectInfo.billingAmount) <= 0 ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none'}}/>
-                          <div style={{marginTop:8,fontSize:10, lineHeight:1.5, color:'#fca5a5'}}>※ 請求金額を入力しないとステータスを「完了」に移行できません。</div>
+                          <div style={{marginTop:8,fontSize:10, lineHeight:1.5, color:'#fca5a5'}}>※ 請求金額と請求月を入力しないとステータスを「完了」に移行できません。</div>
                       </div>
+                        {/* 請求月（'YYYY-MM'。未入力は空文字） */}
+                        <div style={{marginBottom:12}}>
+                          <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:5}}>
+                            <label style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em'}}>請求月 / INVOICE MONTH</label>
+                            <span style={{fontSize:9,color:'rgba(255,255,255,0.4)'}}>請求書の発行月か締めの月</span>
+                          </div>
+                          <select value={normalizeInvoiceMonth(projectInfo.invoiceMonth)} onChange={e=>setProjectInfo({...projectInfo, invoiceMonth: e.target.value})}
+                            style={{width:'100%',padding:'10px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',maxWidth:'100%',fontFamily:'inherit',WebkitAppearance:'none'}}>
+                            <option value="" style={{background:'#fff',color:'#111'}}>未入力</option>
+                            {buildInvoiceMonthOptions(projectInfo.invoiceMonth).map(v => <option key={v} value={v} style={{background:'#fff',color:'#111'}}>{formatInvoiceMonth(v)}</option>)}
+                          </select>
+                        </div>
                         <div>
                         <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>追加金額（税抜） / ADDITIONAL</label>
                         <input type="text" inputMode="numeric"
@@ -6877,6 +6921,10 @@ export default function LOGIOApp() {
     projectId: '', projectNumber: '', projectName: '', client: '', workLocation: '',
     salesPerson: '', siteManager: '', startDate: '', endDate: '',
     contractType: 'フェイス', contractAmount: '', additionalAmount: '', billingAmount: '', status: '着工前・進行中',
+    invoiceMonth: '', // 請求月 'YYYY-MM'
+    // DBから読んだときの値（保存のときに「完了以外→完了」「請求月を新しく入れた」を見分ける）
+    savedStatus: '', savedInvoiceMonth: '',
+    billingFilledFromEstimate: '', // 完了でDBの請求金額が空のとき、見せるために入れた見積＋追加（入れていなければ空）
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     siteTsubo: '', siteUseType: '', workCondition: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
@@ -7061,7 +7109,7 @@ export default function LOGIOApp() {
       await sb('project_info').insert({ site_name: normalizedName, project_number: projectNumber, work_type: '', client: '', work_location: '', sales_person: '', site_manager: '', start_date: '', end_date: '', contract_amount: 0, additional_amount: 0, status: '着工前・進行中', discharger: '', transport_company: '', contracted_disposal_sites: [], transfer_cost: 0, lease_cost: 0, materials_cost: 0, expenses: [] });
       setSites(prev => [...prev, { name: normalizedName, projectNumber, status: '着工前・進行中' }]);
       setSelectedSite(normalizedName);
-      setProjectInfo({ projectId: '', projectNumber, projectName: normalizedName, contractType: 'フェイス', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', billingAmount: '', status: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
+      setProjectInfo({ projectId: '', projectNumber, projectName: normalizedName, contractType: 'フェイス', workType: '', client: '', workLocation: '', salesPerson: '', siteManager: '', startDate: '', endDate: '', contractAmount: '', additionalAmount: '', billingAmount: '', invoiceMonth: '', status: '着工前・進行中', savedStatus: '着工前・進行中', discharger: '', transportCompany: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '', expenses: [], outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', manifestType: '', manifestIssuer: '', manifestRemarks: '', miscItems: [], paymentDueDate: '', paymentTerms: '', invoiceRecipient: '', subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '', documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false} });
       alert(`✅ 現場「${normalizedName}」を追加しました\nPROJECT NO.: ${projectNumber}`);
       return true;
     } catch (error) { console.error(error); alert('❌ 現場の追加に失敗しました'); return false; }
@@ -7120,6 +7168,8 @@ export default function LOGIOApp() {
           : [...(d.site_expense_items||[]), ...(d.sga_items||[])];
         const normalizedStatus = (d.status === '着工前' || d.status === '進行中') ? '着工前・進行中' : (d.status || '着工前・進行中');
         const estimateBase = (parseFloat(d.contract_amount) || 0) + (parseFloat(d.additional_amount) || 0);
+        // 完了でDBの請求金額が空なら、見積＋追加を請求金額として見せる（画面だけ。開いて保存しただけではDBに書かない）
+        const billingFilledFromEstimate = d.billing_amount == null && normalizedStatus === '完了' ? String(estimateBase) : '';
         const contractType = d.contract_type || resolveContractTypeByClient(d.client || '');
         const info = normalizeProjectInfo({
           projectId: d.id || '',
@@ -7135,8 +7185,12 @@ export default function LOGIOApp() {
           contractType,
           contractAmount: d.contract_amount || '',
           additionalAmount: d.additional_amount || '',
-          billingAmount: d.billing_amount != null ? String(d.billing_amount) : (normalizedStatus === '完了' ? String(estimateBase) : ''),
+          billingAmount: d.billing_amount != null ? String(d.billing_amount) : billingFilledFromEstimate,
+          billingFilledFromEstimate,
+          invoiceMonth: normalizeInvoiceMonth(d.invoice_month),
+          savedInvoiceMonth: normalizeInvoiceMonth(d.invoice_month),
           status: normalizedStatus,
+          savedStatus: normalizedStatus,
           discharger: d.discharger || '',
           transportCompany: d.transport_company || '',
           contractedDisposalSites: Array.isArray(d.contracted_disposal_sites) ? d.contracted_disposal_sites : [],
@@ -7180,27 +7234,36 @@ export default function LOGIOApp() {
     } catch (error) { setReports([]); }
   };
 
-  const estimateRevenue = (parseFloat(projectInfo.contractAmount) || 0) + (parseFloat(projectInfo.additionalAmount) || 0);
-  const billingRevenue = parseNumericValue(projectInfo.billingAmount);
-  const hasFormalBilling = billingRevenue > 0;
-  const displayRevenue = hasFormalBilling ? billingRevenue : estimateRevenue;
+  // 「完了以外 → 完了」にするときだけ、請求金額と請求月を確かめる
+  // （すでに完了の現場は止めない。過去の完了現場には請求月が無いため）
+  const isBecomingDone = (info, nextStatus) => nextStatus === '完了' && info.savedStatus !== '完了';
 
   const handleStatusChange = (nextStatus) => {
-    if (nextStatus === '完了' && parseNumericValue(projectInfo.billingAmount) <= 0) {
-      alert('請求金額を入力してからステータスを「完了」に移行してください。');
-      return;
+    if (isBecomingDone(projectInfo, nextStatus)) {
+      const missing = missingForCompletion(projectInfo);
+      if (missing.length > 0) { alert(completionBlockedMessage(missing)); return; }
     }
     setProjectInfo({ ...projectInfo, status: nextStatus });
   };
 
   const handleSaveProject = async (silent = false) => {
     if (!selectedSite) return alert('現場を選択してください');
-    const normalizedBilling = parseNumericValue(projectInfo.billingAmount) > 0 ? parseNumericValue(projectInfo.billingAmount) : (projectInfo.status === '完了' ? estimateRevenue : 0);
-    if (projectInfo.status === '完了' && normalizedBilling <= 0) {
-      alert('請求金額を入力してからステータスを「完了」に移行してください。');
-      return;
+    const becomingDone = isBecomingDone(projectInfo, projectInfo.status);
+    if (becomingDone) {
+      const missing = missingForCompletion(projectInfo);
+      if (missing.length > 0) { alert(completionBlockedMessage(missing)); return; }
     }
-    const finalProjectInfo = { ...projectInfo, billingAmount: normalizedBilling > 0 ? String(normalizedBilling) : (projectInfo.billingAmount || '') };
+    const billingValue = parseNumericValue(projectInfo.billingAmount);
+    const invoiceMonth = normalizeInvoiceMonth(projectInfo.invoiceMonth);
+    // 請求金額をDBに書くかどうか
+    //  ・完了にするとき：画面に出ている請求金額を必ず書く
+    //  ・すでに完了の現場で請求月を新しく入れたとき：画面に出ている請求金額も書く（請求月を入れる＝請求金額も確定）
+    //  ・見積＋追加を見せているだけの完了現場：請求金額の欄を変えたときだけ書く（開いて保存しただけでは書かない）
+    //  ・それ以外：今までどおり、欄に何か入っていれば書く
+    const invoiceMonthNewlySetOnDone = projectInfo.savedStatus === '完了' && !!invoiceMonth && !normalizeInvoiceMonth(projectInfo.savedInvoiceMonth);
+    const billingEntered = projectInfo.billingAmount !== '' && projectInfo.billingAmount !== null && projectInfo.billingAmount !== undefined;
+    const showingEstimateOnly = !!projectInfo.billingFilledFromEstimate && projectInfo.billingAmount === projectInfo.billingFilledFromEstimate;
+    const writeBilling = becomingDone || invoiceMonthNewlySetOnDone || (billingEntered && !showingEstimateOnly);
     try {
       const contractTypeValue = projectInfo.contractType || resolveContractTypeByClient(projectInfo.client || '');
       const projectPayload = {
@@ -7245,9 +7308,8 @@ export default function LOGIOApp() {
         work_condition: projectInfo.workCondition || null,
         updated_at: new Date().toISOString(),
       };
-      if (projectInfo.billingAmount !== '' && projectInfo.billingAmount !== null && projectInfo.billingAmount !== undefined) {
-        projectPayload.billing_amount = normalizedBilling > 0 ? normalizedBilling : null;
-      }
+      projectPayload.invoice_month = invoiceMonth; // 未入力は空文字
+      if (writeBilling) projectPayload.billing_amount = billingValue > 0 ? billingValue : null;
 
       // DBに欄がない項目は外して保存し直し、外した項目は画面で警告する（site_name は外さない）
       const { droppedColumns } = await saveDroppingMissingColumns(
@@ -7255,6 +7317,13 @@ export default function LOGIOApp() {
         payload => sb('project_info').upsert(payload, 'site_name'),
         column => column !== 'site_name'
       );
+      // 保存できたので、「DBから読んだときの値」を今の値にそろえる（続けて保存したときの判定のため）
+      setProjectInfo(prev => ({
+        ...prev,
+        savedStatus: projectPayload.status,
+        savedInvoiceMonth: droppedColumns.includes('invoice_month') ? prev.savedInvoiceMonth : invoiceMonth,
+        billingFilledFromEstimate: writeBilling && !droppedColumns.includes('billing_amount') ? '' : prev.billingFilledFromEstimate,
+      }));
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       setSites(prev => prev.map(s => s.name === selectedSite ? { ...s, projectNumber: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' } : s));
       if (droppedColumns.length > 0) {

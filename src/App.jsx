@@ -1636,7 +1636,7 @@ const formatNumericInput = (value) => {
 };
 
 // ========== 請求月（project_info.invoice_month） ==========
-// 請求書の発行月か締めの月。'YYYY-MM' で保存し、未入力は空文字（DBの null も未入力として扱う）
+// 請求書の発行月か締めの月。'YYYY-MM' で保存し、未入力は null で保存する（画面では空文字。DBの空文字も未入力として扱う）
 const normalizeInvoiceMonth = (value) => String(value ?? '').trim();
 const formatInvoiceMonth = (value) => {
   const m = /^(\d{4})-(\d{2})$/.exec(normalizeInvoiceMonth(value));
@@ -7789,6 +7789,7 @@ export default function LOGIOApp() {
     invoiceMonth: '', // 請求月 'YYYY-MM'
     // DBから読んだときの値（保存のときに「完了以外→完了」「請求月を新しく入れた」を見分ける）
     savedStatus: '', savedInvoiceMonth: '',
+    savedContractType: null, // DBの請負区分（null のままなら、発注者から決めた値を見せている）
     billingFilledFromEstimate: '', // 完了でDBの請求金額が空のとき、見せるために入れた見積＋追加（入れていなければ空）
     // 予想（project_info.forecast）。forecast＝DBから読んだ値（原価分析の「予想と実績」で使う）、
     // forecastForm＝「予想（原価メモ）」の入力欄の文字、forecastFormSaved＝開いたとき（保存したとき）の入力欄の文字
@@ -8051,6 +8052,7 @@ export default function LOGIOApp() {
           startDate: d.start_date || '',
           endDate: d.end_date || '',
           contractType,
+          savedContractType: d.contract_type ?? null,
           contractAmount: d.contract_amount || '',
           additionalAmount: d.additional_amount || '',
           billingAmount: d.billing_amount != null ? String(d.billing_amount) : billingFilledFromEstimate,
@@ -8142,6 +8144,10 @@ export default function LOGIOApp() {
     const forecastValue = writeForecast ? formToForecast(forecastFormSent, forecastSavedDate()) : null;
     try {
       const contractTypeValue = projectInfo.contractType || resolveContractTypeByClient(projectInfo.client || '');
+      // 請負区分は、DBに値があるときか、発注者から決めた値と違う値を選んだときだけ送る
+      // （DBが null で選び直していなければ null のまま。読むときは null なら発注者から決めるので、見え方は同じ）
+      const writeContractType = projectInfo.savedContractType != null
+        || contractTypeValue !== resolveContractTypeByClient(cleanClientName(projectInfo.client));
       // 送る欄はここに書いたものだけ（DBは送った欄だけを書き換える）。
       // forecast（予想）は、予想の欄を変えたときだけ下で足す
       const projectPayload = {
@@ -8186,7 +8192,8 @@ export default function LOGIOApp() {
         work_condition: projectInfo.workCondition || null,
         updated_at: new Date().toISOString(),
       };
-      projectPayload.invoice_month = invoiceMonth; // 未入力は空文字
+      projectPayload.invoice_month = invoiceMonth || null; // 未入力は null（空の文字にしない）
+      if (!writeContractType) delete projectPayload.contract_type;
       if (writeBilling) projectPayload.billing_amount = billingValue > 0 ? billingValue : null;
       if (writeForecast) projectPayload.forecast = forecastValue; // 全部空なら null（予想を消す）
 
@@ -8202,6 +8209,7 @@ export default function LOGIOApp() {
         savedStatus: projectPayload.status,
         client: projectPayload.client,
         savedInvoiceMonth: droppedColumns.includes('invoice_month') ? prev.savedInvoiceMonth : invoiceMonth,
+        savedContractType: writeContractType && !droppedColumns.includes('contract_type') ? contractTypeValue : prev.savedContractType,
         billingFilledFromEstimate: writeBilling && !droppedColumns.includes('billing_amount') ? '' : prev.billingFilledFromEstimate,
         // 予想を書いたら、原価分析のタブにすぐ出るように forecast を今の値にし、「開いたときの中身」も送った中身にそろえる
         ...(writeForecast && !droppedColumns.includes('forecast') ? { forecast: forecastValue, forecastFormSaved: forecastFormSent } : {}),

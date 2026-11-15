@@ -5036,6 +5036,235 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
   );
 }
 
+// ========== 予想と実績（原価分析の「予想と実績」タブ） ==========
+// 予想＝project_info.forecast（受注時に原価メモから入れる。Wac からは書き込まない）
+// 実績＝calcSiteMoney の値をそのまま使う（ここで足し直さない）
+// 判定と項目分けの関数は画面とは別にしてある（管理画面の月の一覧でも使う）
+const fcNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+const toMan = (yen) => Math.round(fcNum(yen) / 10000); // 円 → 万円（四捨五入）
+
+// forecast（jsonb）を読む。空、または原価合計も人工も0なら null（＝予想なし）
+// 形：{ men, days, laborCost, vehicle, disposal, other, metal（金属売上の見込み・プラス・原価に入れない）, total, note, source, updatedAt }
+function readForecast(raw) {
+  let f = raw;
+  if (typeof f === 'string') { try { f = JSON.parse(f); } catch { return null; } }
+  if (!f || typeof f !== 'object' || Array.isArray(f)) return null;
+  const laborCost = fcNum(f.laborCost), vehicle = fcNum(f.vehicle), disposal = fcNum(f.disposal), other = fcNum(f.other);
+  const total = f.total != null && f.total !== '' ? fcNum(f.total) : laborCost + vehicle + disposal + other;
+  const men = fcNum(f.men);
+  if (total === 0 && men === 0) return null;
+  return {
+    men, days: fcNum(f.days), laborCost, vehicle, disposal, other, metal: fcNum(f.metal), total,
+    note: f.note ? String(f.note) : '', source: f.source ? String(f.source) : '', updatedAt: f.updatedAt ? String(f.updatedAt) : '',
+  };
+}
+
+// 実績の原価を4項目に分ける（calcSiteMoney の内訳をまとめ直すだけなので、4つの合計＝calcSiteMoney の原価）
+// ここに無い日報の内訳と、案件の分（回送費・リース費・資材費・直接原価・案件の経費）は「その他経費」
+const ACTUAL_COST_GROUP = {
+  inHouse: 'laborCost', outsourcing: 'laborCost',                                                       // 自社人工・外注人工
+  vehicle: 'vehicle', haishi: 'vehicle', envItems: 'vehicle', extItems: 'vehicle', transport: 'vehicle', // 車両費・配車費・旧形式
+  disposal: 'disposal',                                                                                  // 処分費（プラスの行）
+};
+function splitActualCost(money, reports) {
+  const out = { men: 0, laborCost: 0, vehicle: 0, disposal: 0, other: 0, total: money?.cost || 0 };
+  Object.entries(money?.reportParts || {}).forEach(([k, v]) => { out[ACTUAL_COST_GROUP[k] || 'other'] += v || 0; });
+  Object.values(money?.projectParts || {}).forEach(v => { out.other += v || 0; });
+  // 人工（人）は日報から数える（ホーム画面の人工数と同じ数え方）
+  (reports || []).forEach(r => {
+    (r.workDetails?.inHouseWorkers || []).forEach(w => { out.men += getInHouseWorkerCount(w); });
+    (r.workDetails?.outsourcingLabor || []).forEach(o => { out.men += getOutsourcingCount(o); });
+  });
+  return out;
+}
+
+// 判定：'ok'＝◎・'mid'＝○・'ng'＝×（多くても少なくても、ずれの大きさだけで決める）
+// 金額は万円に丸めて比べる。万円で同じなら◎、予想0万で実績ありは×。
+// ずれ ±5%以内◎・±15%以内○。割り算をせず整数で比べる（±5%ちょうど・±15%ちょうどで判定がぶれないように）
+function gradeForecastYen(forecastYen, actualYen) {
+  const f = toMan(forecastYen), a = toMan(actualYen);
+  if (f === a) return 'ok';
+  if (f === 0) return 'ng';
+  const gap = Math.abs(a - f) * 100, base = Math.abs(f);
+  return gap <= 5 * base ? 'ok' : gap <= 15 * base ? 'mid' : 'ng';
+}
+// 人工は ±1人◎・±3人○
+function gradeForecastMen(forecastMen, actualMen) {
+  const gap = Math.round(Math.abs(fcNum(actualMen) - fcNum(forecastMen)) * 100) / 100;
+  return gap <= 1 ? 'ok' : gap <= 3 ? 'mid' : 'ng';
+}
+// 原価合計のずれ（％、万円に丸めた値で、小数1桁に四捨五入）。予想が0万なら null
+// 境目だけは、見せる数字と判定が食い違わないようにする（5.04% は「5.0%」でなく「5.1%」と出す。判定は○のため）
+function forecastGapPercent(forecastYen, actualYen) {
+  const f = toMan(forecastYen), a = toMan(actualYen);
+  if (f === 0) return null;
+  const pct = (a - f) / Math.abs(f) * 100;
+  const grade = gradeForecastYen(forecastYen, actualYen);
+  let shown = Math.round(Math.abs(pct) * 10) / 10;
+  if (grade !== 'ok' && shown <= 5) shown = 5.1;
+  if (grade === 'ng' && shown <= 15) shown = 15.1;
+  return Math.sign(pct) * shown;
+}
+const FORECAST_MARK = { ok: '◎', mid: '○', ng: '×' };
+
+// 1現場の予想と実績を並べる。予想なしなら null
+// money＝calcSiteMoney の戻り値、reports＝その現場の日報、contractAmount＝見積金額（予想の工事売上）
+function buildForecastComparison(forecastRaw, money, reports, contractAmount) {
+  const forecast = readForecast(forecastRaw);
+  if (!forecast) return null;
+  const actual = splitActualCost(money, reports);
+  const yenRow = (key, label) => ({ key, label, forecast: toMan(forecast[key]), actual: toMan(actual[key]), grade: gradeForecastYen(forecast[key], actual[key]) });
+  const costRows = [
+    { key: 'men', label: '人工（人）', forecast: forecast.men, actual: actual.men, grade: gradeForecastMen(forecast.men, actual.men) },
+    yenRow('laborCost', '人工費（万）'),
+    yenRow('vehicle', '車両・配車（万）'),
+    yenRow('disposal', '処分（万）'),
+    yenRow('other', 'その他経費（万）'),
+  ];
+  const total = { ...yenRow('total', '原価合計（万）'), forecastYen: forecast.total, actualYen: actual.total, pct: forecastGapPercent(forecast.total, actual.total) };
+  const isProvisional = !!money?.isProvisional;
+  const forecastRevenue = fcNum(contractAmount);            // 予想の工事売上＝見積金額
+  const forecastProfit = forecastRevenue - forecast.total;  // 予想の粗利＝見積金額 − 予想の原価合計
+  const revenue = money?.revenue || 0;
+  const salesRows = [
+    { key: 'revenue', label: '工事売上（万）', forecast: toMan(forecastRevenue), actual: toMan(revenue), provisional: isProvisional },
+    { key: 'grossProfit', label: '粗利（万）', forecast: toMan(forecastProfit), actual: toMan(money?.grossProfit), provisional: isProvisional },
+    // 粗利率は財務タブと同じく小数1桁で見せる。工事売上が0なら出さない
+    { key: 'grossMargin', label: '粗利率（％）', percent: true, provisional: isProvisional,
+      forecast: forecastRevenue > 0 ? forecastProfit / forecastRevenue * 100 : null,
+      actual: revenue > 0 ? (money?.grossMargin || 0) : null },
+    { key: 'metal', label: '金属売上（万）', forecast: toMan(forecast.metal), actual: toMan(money?.metalRevenue), provisional: false },
+  ];
+  return { forecast, actual, costRows, total, salesRows, isProvisional };
+}
+
+// 色は管理画面の試作（120fde5）と同じ。色だけでなく ◎○× も必ず出す
+const FORECAST_COLORS = {
+  ok: { badge: '#16a34a', badgeText: '#fff', soft: 'rgba(22,163,74,.18)', text: '#4ade80' },
+  mid: { badge: '#f59e0b', badgeText: '#111', soft: 'rgba(245,158,11,.18)', text: '#fbbf24' },
+  ng: { badge: '#e11d48', badgeText: '#fff', soft: 'rgba(225,29,72,.2)', text: '#fb7185' },
+};
+const signedNum = (n, decimals = 0) => {
+  const r = decimals ? Number(n.toFixed(decimals)) : Math.round(n);
+  return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toLocaleString('ja-JP', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+};
+
+function ForecastActualTab({ comparison: c }) {
+  const card = { background: '#121212', border: '1px solid #262626', borderRadius: 12, padding: '12px 12px', marginBottom: 12, color: '#EDEDED' };
+  const title = { fontSize: 12, color: '#999', marginBottom: 8 };
+  if (!c) {
+    return <div style={{ ...card, color: '#bbb', fontSize: 13, padding: '16px 14px' }}>この現場はまだ予想が入っていません（1日仕事など）</div>;
+  }
+  const head = { fontWeight: 400, color: '#777', fontSize: 11, textAlign: 'right', padding: '2px 2px 4px' };
+  const cell = { padding: '5px 2px', textAlign: 'right', fontSize: 14, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' };
+  const labelCell = { ...cell, textAlign: 'left', fontSize: 12, color: '#bbb', whiteSpace: 'normal' };
+  const line = { borderTop: '1px solid #2c2c2c', paddingTop: 8 };
+  const num = (v, decimals = 0) => v == null ? '—' : Number(v).toLocaleString('ja-JP', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const Diff = ({ grade, children }) => (
+    <span style={{ fontWeight: 800, borderRadius: 6, padding: '1px 6px', fontSize: 13, background: FORECAST_COLORS[grade].soft, color: FORECAST_COLORS[grade].text, whiteSpace: 'nowrap' }}>
+      {FORECAST_MARK[grade]} {children}
+    </span>
+  );
+  const Head = () => (
+    <thead><tr><th style={{ ...head, textAlign: 'left' }}>項目</th><th style={head}>予想</th><th style={head}>実績</th><th style={head}>差</th></tr></thead>
+  );
+  const t = c.total;
+  const g = FORECAST_COLORS[t.grade];
+  const word = t.forecast === t.actual ? 'ぴったり' : t.actual > t.forecast ? '実績が多かった' : '実績が少なかった';
+  const legend = { padding: '2px 9px', borderRadius: 999, fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' };
+
+  return (
+    <>
+      {/* 原価の当たり具合 */}
+      <div style={card}>
+        <div style={title}>原価の当たり具合</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 30, fontWeight: 700, color: g.text, fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>
+            {t.pct == null ? '—' : `${signedNum(t.pct, Number.isInteger(t.pct) ? 0 : 1)}%`}
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 800, padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap', background: g.badge, color: g.badgeText }}>
+            {FORECAST_MARK[t.grade]} {word}
+          </span>
+        </div>
+        <div style={{ fontSize: 14, marginTop: 8, fontVariantNumeric: 'tabular-nums' }}>
+          予想 {num(t.forecast)}万 → 実績 {num(t.actual)}万（{signedNum(t.actual - t.forecast)}万）
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}>
+          <span style={{ ...legend, background: FORECAST_COLORS.ok.badge, color: FORECAST_COLORS.ok.badgeText }}>◎ ずれ ±5%以内</span>
+          <span style={{ ...legend, background: FORECAST_COLORS.mid.badge, color: FORECAST_COLORS.mid.badgeText }}>○ ±15%以内</span>
+          <span style={{ ...legend, background: FORECAST_COLORS.ng.badge, color: FORECAST_COLORS.ng.badgeText }}>× ±15%超</span>
+          <span style={{ color: '#888', fontSize: 11 }}>（人工は ±1人◎・±3人○）</span>
+        </div>
+      </div>
+
+      {/* 原価 */}
+      <div style={card}>
+        <div style={title}>原価</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <Head />
+          <tbody>
+            {c.costRows.map(r => {
+              const decimals = r.key === 'men' && !(Number.isInteger(r.forecast) && Number.isInteger(r.actual)) ? 1 : 0;
+              return (
+                <tr key={r.key}>
+                  <td style={labelCell}>{r.label}</td>
+                  <td style={cell}>{num(r.forecast, decimals)}</td>
+                  <td style={{ ...cell, fontWeight: 800 }}>{num(r.actual, decimals)}</td>
+                  <td style={cell}><Diff grade={r.grade}>{signedNum(r.actual - r.forecast, decimals)}</Diff></td>
+                </tr>
+              );
+            })}
+            <tr>
+              <td style={{ ...labelCell, ...line, color: '#EDEDED', fontWeight: 700 }}>{t.label}</td>
+              <td style={{ ...cell, ...line }}>{num(t.forecast)}</td>
+              <td style={{ ...cell, ...line, fontWeight: 800 }}>{num(t.actual)}</td>
+              <td style={{ ...cell, ...line }}><Diff grade={t.grade}>{signedNum(t.actual - t.forecast)}</Diff></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* 売上と粗利（差に色は付けない） */}
+      <div style={card}>
+        <div style={title}>売上と粗利</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <Head />
+          <tbody>
+            {c.salesRows.map(r => {
+              const decimals = r.percent ? 1 : 0;
+              // 差は見せている数字どうしの差にする（粗利率は小数1桁にそろえてから引く）
+              const f = r.forecast == null ? null : Number(r.forecast.toFixed(decimals));
+              const a = r.actual == null ? null : Number(r.actual.toFixed(decimals));
+              return (
+                <tr key={r.key}>
+                  <td style={labelCell}>{r.label}</td>
+                  <td style={cell}>{num(f, decimals)}</td>
+                  <td style={{ ...cell, fontWeight: 800 }}>
+                    {num(a, decimals)}{r.provisional && <span style={{ fontSize: 10, fontWeight: 400, color: '#fbbf24' }}>（仮）</span>}
+                  </td>
+                  <td style={{ ...cell, color: '#bbb' }}>{f == null || a == null ? '—' : signedNum(a - f, decimals)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div style={{ fontSize: 11, color: '#888', marginTop: 8, lineHeight: 1.6 }}>予想の工事売上は見積金額。粗利 ＝ 工事売上 − 原価。金属売上は粗利に入れず、別に出します。</div>
+      </div>
+
+      {c.isProvisional && (
+        <div style={{ marginBottom: 12, padding: '6px 10px', borderRadius: 8, fontSize: 12, lineHeight: 1.6, background: 'rgba(245,158,11,.15)', color: '#B45309', border: '1px solid rgba(245,158,11,.4)' }}>
+          仮：請求金額が入ると、実績の工事売上と粗利が変わることがあります
+        </div>
+      )}
+
+      <div style={{ fontSize: 12, color: '#666', lineHeight: 1.7 }}>
+        {c.forecast.note && <div>予想の元：{c.forecast.source || '原価メモ'}（{c.forecast.note}）</div>}
+        <div>実績は日報と案件の経費から、財務タブの原価と同じ数え方で集計しています。</div>
+      </div>
+    </>
+  );
+}
+
 // ========== AnalysisPage ==========
 function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
@@ -5158,9 +5387,10 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       </button>
       {/* タブ */}
       <div style={{display:'flex',gap:4,background:'#E8ECF0',borderRadius:10,padding:4,marginBottom:16}}>
-        {['財務','原価内訳','月別推移'].map((t,i) => (
+        {/* 4つでも1行に収まるよう、左右の余白を詰め、狭い画面（360px未満）だけ字を12pxにする */}
+        {['財務','原価内訳','月別推移','予想と実績'].map((t,i) => (
           <button key={i} onClick={()=>setActiveTab(i)}
-            style={{flex:1,padding:'8px',border: i===activeTab?'0.5px solid #E8E8E8':'none',borderRadius:7,fontSize:13,fontWeight:500,cursor:'pointer',background:i===activeTab?'#fff':'transparent',color:i===activeTab?'#111':'#888',transition:'all 0.15s'}}>
+            style={{flex:1,padding:'8px 2px',whiteSpace:'nowrap',border: i===activeTab?'0.5px solid #E8E8E8':'none',borderRadius:7,fontSize:'clamp(12px, 3.6vw, 13px)',fontWeight:500,cursor:'pointer',background:i===activeTab?'#fff':'transparent',color:i===activeTab?'#111':'#888',transition:'all 0.15s'}}>
             {t}
           </button>
         ))}
@@ -5260,6 +5490,11 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
             }
           </div>
         </>
+      )}
+
+      {/* 予想と実績タブ（予想＝project_info.forecast、実績＝calcSiteMoney） */}
+      {activeTab === 3 && (
+        <ForecastActualTab comparison={buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo?.contractAmount)} />
       )}
 
     </div>
@@ -7399,6 +7634,7 @@ export default function LOGIOApp() {
     // DBから読んだときの値（保存のときに「完了以外→完了」「請求月を新しく入れた」を見分ける）
     savedStatus: '', savedInvoiceMonth: '',
     billingFilledFromEstimate: '', // 完了でDBの請求金額が空のとき、見せるために入れた見積＋追加（入れていなければ空）
+    forecast: null, // 予想（project_info.forecast）。読むだけで、保存では送らない
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     siteTsubo: '', siteUseType: '', workCondition: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
@@ -7691,6 +7927,7 @@ export default function LOGIOApp() {
           subcontractTerms: d.subcontract_terms || '',
           subcontractInvoiceRecipient: d.subcontract_invoice_recipient || '',
           documentsChecklist: d.documents_checklist || {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false},
+          forecast: d.forecast ?? null, // 予想（原価分析の「予想と実績」で使う。欄が無いDBでは null＝予想なし）
         }, siteName);
         setProjectInfo(info);
         return info;
@@ -7740,6 +7977,8 @@ export default function LOGIOApp() {
     const writeBilling = becomingDone || invoiceMonthNewlySetOnDone || (billingEntered && !showingEstimateOnly);
     try {
       const contractTypeValue = projectInfo.contractType || resolveContractTypeByClient(projectInfo.client || '');
+      // 送る欄はここに書いたものだけ（DBは送った欄だけを書き換える）。
+      // forecast（予想）は送らない：受注時に原価メモから入れた予想を、ここの保存で消さないため
       const projectPayload = {
         site_name: selectedSite,
         project_number: projectInfo.projectNumber || '',

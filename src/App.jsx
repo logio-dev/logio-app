@@ -2284,18 +2284,23 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           style={{width:'100%',padding:'10px',background:'rgba(17,24,39,0.42)',border: parseNumericValue(projectInfo.billingAmount) <= 0 ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)',color:'#fbbf24',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',fontFamily:'monospace',fontWeight:700,boxShadow: parseNumericValue(projectInfo.billingAmount) <= 0 ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none'}}/>
                           <div style={{marginTop:8,fontSize:10, lineHeight:1.5, color:'#fca5a5'}}>※ 請求金額と請求月を入力しないとステータスを「完了」に移行できません。</div>
                       </div>
-                        {/* 請求月（'YYYY-MM'。未入力は空文字） */}
-                        <div style={{marginBottom:12}}>
-                          <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:5}}>
-                            <label style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em'}}>請求月 / INVOICE MONTH</label>
-                            <span style={{fontSize:9,color:'rgba(255,255,255,0.4)'}}>請求書の発行月か締めの月</span>
-                          </div>
-                          <select value={normalizeInvoiceMonth(projectInfo.invoiceMonth)} onChange={e=>setProjectInfo({...projectInfo, invoiceMonth: e.target.value})}
-                            style={{width:'100%',padding:'10px',background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.05)',color:'#fff',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',maxWidth:'100%',fontFamily:'inherit',WebkitAppearance:'none'}}>
-                            <option value="" style={{background:'#fff',color:'#111'}}>未入力</option>
-                            {buildInvoiceMonthOptions(projectInfo.invoiceMonth).map(v => <option key={v} value={v} style={{background:'#fff',color:'#111'}}>{formatInvoiceMonth(v)}</option>)}
-                          </select>
-                        </div>
+                        {/* 請求月（'YYYY-MM'。未入力は空文字）。未入力の間は、請求金額の欄と同じ赤い枠を付ける */}
+                        {(() => {
+                          const missing = !normalizeInvoiceMonth(projectInfo.invoiceMonth);
+                          return (
+                            <div style={{marginBottom:12, padding:'10px 10px 12px', borderRadius:10, background: missing ? 'rgba(239, 68, 68, 0.06)' : 'rgba(255,255,255,0.04)', border: missing ? '1px solid rgba(239,68,68,0.75)' : '1px solid rgba(255,255,255,0.08)', boxShadow: missing ? '0 0 0 1px rgba(239,68,68,0.25)' : 'none' }}>
+                              <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:5}}>
+                                <label style={{fontSize:9,fontWeight:700,color: missing ? '#fca5a5' : 'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em'}}>請求月 / INVOICE MONTH</label>
+                                <span style={{fontSize:9,color:'rgba(255,255,255,0.4)'}}>請求書の発行月か締めの月</span>
+                              </div>
+                              <select value={normalizeInvoiceMonth(projectInfo.invoiceMonth)} onChange={e=>setProjectInfo({...projectInfo, invoiceMonth: e.target.value})}
+                                style={{width:'100%',padding:'10px',background:'rgba(17,24,39,0.42)',border: missing ? '1px solid rgba(239,68,68,0.9)' : '1px solid rgba(255,255,255,0.12)',color:'#fff',borderRadius:8,fontSize:14,outline:'none',boxSizing:'border-box',maxWidth:'100%',fontFamily:'inherit',WebkitAppearance:'none',boxShadow: missing ? 'inset 0 0 0 1px rgba(239,68,68,0.2)' : 'none'}}>
+                                <option value="" style={{background:'#fff',color:'#111'}}>未入力</option>
+                                {buildInvoiceMonthOptions(projectInfo.invoiceMonth).map(v => <option key={v} value={v} style={{background:'#fff',color:'#111'}}>{formatInvoiceMonth(v)}</option>)}
+                              </select>
+                            </div>
+                          );
+                        })()}
                         <div>
                         <label style={{display:'block',fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:5}}>追加金額（税抜） / ADDITIONAL</label>
                         <input type="text" inputMode="numeric"

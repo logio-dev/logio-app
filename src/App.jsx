@@ -1690,6 +1690,22 @@ const clientSearchKey = (value) => removeClientCorpWords(String(value ?? '').nor
   .replace(/[\s・･]/g, '')
   .toLowerCase()
   .replace(/[ァ-ヶ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+// 紹介元の別名（直接原価の行などで、別の書き方をされるもの）。増えたらこの表に足す
+const INTRODUCER_ALIASES = {
+  'リーシングイノベーション': ['Leasing Innovation'],
+};
+// 発注者が紹介元か
+const isIntroducerClient = (client) => INTRODUCER_CLIENTS.includes(cleanClientName(client));
+// 紹介元の現場で、直接原価の行が紹介料かどうか（画面には「紹介料」と出さない。行の名前は発注者名を使う）
+// 名前に「紹介元の名前・別名」「紹介」「管理費」（現場管理費なども）のどれかを含む行を紹介料にする
+// （紹介料は、請求のときに「現場管理費」などの名目にしてもらうことがあるため）
+const isIntroFeeItem = (itemName, client) => {
+  if (!isIntroducerClient(client)) return false;
+  const name = cleanClientName(client);
+  const key = clientSearchKey(itemName);
+  return [name, ...(INTRODUCER_ALIASES[name] || []), '紹介', '管理費'].some(w => { const k = clientSearchKey(w); return k && key.includes(k); });
+};
+
 // 新しく足す名前と同じか、どちらかがもう一方を含む、今ある発注者名
 const findSimilarClients = (name, names) => {
   const key = clientSearchKey(name);
@@ -1921,8 +1937,9 @@ const describeSaveError = (error, labels = {}) => {
 // 設定・編集の編集フォームで入れる。案件登録のときに、見積書の原価メモの数字を入れる
 // 画面では入力欄の文字（forecastForm）を持ち、保存のときに forecast（jsonb）に直す
 // 保存で送るのは、予想の欄の中身が開いたときと違うときだけ（触らなければ今の forecast を残す）
-const FORECAST_NUM_FIELDS = ['men', 'days', 'laborCost', 'vehicle', 'disposal', 'other', 'metal'];
-const FORECAST_COST_FIELDS = ['laborCost', 'vehicle', 'disposal', 'other']; // 原価合計＝この4つの合計
+// introFee＝紹介料（紹介元の現場だけ欄を出す。欄の名前は発注者名）
+const FORECAST_NUM_FIELDS = ['men', 'days', 'laborCost', 'vehicle', 'disposal', 'other', 'introFee', 'metal'];
+const FORECAST_COST_FIELDS = ['laborCost', 'vehicle', 'disposal', 'other', 'introFee']; // 原価合計＝この5つの合計
 const FORECAST_DECIMAL_FIELDS = ['men', 'days']; // 小数も入れられる（0.5人工など）。金額は円の整数
 
 // 入力の文字を数字だけにする（全角の数字は半角に。カンマ・円・空白・マイナスは取る）
@@ -1950,7 +1967,7 @@ const forecastToForm = (raw) => {
 };
 
 // 入力欄の文字 → forecast（DBに書く値）
-//  ・空の数字欄は null（0 と入れた欄は 0）。原価合計 total は4つの合計で、入力しない
+//  ・空の数字欄は null（0 と入れた欄は 0）。原価合計 total は人工費・車両配車・処分・その他経費・紹介料の合計で、入力しない
 //  ・数字が全部「空か0」で、メモと元も空なら null（予想の無い現場に空の予想を作らない）
 const formToForecast = (form, updatedAt = '') => {
   const nums = {};
@@ -1984,6 +2001,10 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
   const setField = (key, value) => setProjectInfo(prev => ({ ...prev, forecastForm: { ...(prev.forecastForm || forecastToForm(null)), [key]: value } }));
   const yen = (n) => '¥' + (Number(n) || 0).toLocaleString('ja-JP');
   const man = (n) => (n >= 10000 ? `${Math.round(n / 10000).toLocaleString('ja-JP')}万` : yen(n));
+  // 紹介料の欄：発注者が紹介元の現場だけ出す（発注者を変えても値が残っていれば、原価合計に入っているので出したままにする）
+  // 欄の名前は発注者名（「紹介料」とは出さない）
+  const introName = cleanClientName(projectInfo.client) || '発注者';
+  const showIntroFee = isIntroducerClient(projectInfo.client) || (form.introFee ?? '') !== '';
 
   // たたんだときの1行：今の入力の中身（保存した日は、保存してあって変えていないときだけ）
   // 狭い画面で言葉の途中で折れないよう、区切りごとに折り返す
@@ -2037,6 +2058,7 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
             {numberField('vehicle', '車両・配車（円）', '0')}
             {numberField('disposal', '処分（円）', '0')}
             {numberField('other', 'その他経費（円）', '0')}
+            {showIntroFee && numberField('introFee', `${introName}（円）`, '0')}
           </div>
           {/* 原価合計は自動（入力しない） */}
           <div style={{ marginBottom:12, padding:'10px 12px', borderRadius:8, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)' }}>
@@ -2044,7 +2066,7 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
               <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.55)', whiteSpace:'nowrap' }}>原価合計（自動）</span>
               <output id="forecast-total" name="forecast-total" style={{ fontSize:16, fontWeight:800, color:'#fff', fontFamily:'monospace', fontVariantNumeric:'tabular-nums' }}>{yen(draft ? draft.total : 0)}</output>
             </div>
-            <div style={{ marginTop:3, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>人工費＋車両・配車＋処分＋その他経費</div>
+            <div style={{ marginTop:3, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>人工費＋車両・配車＋処分＋その他経費{showIntroFee ? `＋${introName}` : ''}</div>
           </div>
           <div style={{ marginBottom:12 }}>
             {numberField('metal', '金属売上の見込み（円）', '0')}
@@ -5200,17 +5222,17 @@ const fcNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 
 const toMan = (yen) => Math.round(fcNum(yen) / 10000); // 円 → 万円（四捨五入）
 
 // forecast（jsonb）を読む。空、または原価合計も人工も0なら null（＝予想なし）
-// 形：{ men, days, laborCost, vehicle, disposal, other, metal（金属売上の見込み・プラス・原価に入れない）, total, note, source, updatedAt }
+// 形：{ men, days, laborCost, vehicle, disposal, other, introFee（紹介料）, metal（金属売上の見込み・プラス・原価に入れない）, total, note, source, updatedAt }
 function readForecast(raw) {
   let f = raw;
   if (typeof f === 'string') { try { f = JSON.parse(f); } catch { return null; } }
   if (!f || typeof f !== 'object' || Array.isArray(f)) return null;
-  const laborCost = fcNum(f.laborCost), vehicle = fcNum(f.vehicle), disposal = fcNum(f.disposal), other = fcNum(f.other);
-  const total = f.total != null && f.total !== '' ? fcNum(f.total) : laborCost + vehicle + disposal + other;
+  const laborCost = fcNum(f.laborCost), vehicle = fcNum(f.vehicle), disposal = fcNum(f.disposal), other = fcNum(f.other), introFee = fcNum(f.introFee);
+  const total = f.total != null && f.total !== '' ? fcNum(f.total) : laborCost + vehicle + disposal + other + introFee;
   const men = fcNum(f.men);
   if (total === 0 && men === 0) return null;
   return {
-    men, days: fcNum(f.days), laborCost, vehicle, disposal, other, metal: fcNum(f.metal), total,
+    men, days: fcNum(f.days), laborCost, vehicle, disposal, other, introFee, metal: fcNum(f.metal), total,
     note: f.note ? String(f.note) : '', source: f.source ? String(f.source) : '', updatedAt: f.updatedAt ? String(f.updatedAt) : '',
   };
 }
@@ -5222,10 +5244,19 @@ const ACTUAL_COST_GROUP = {
   vehicle: 'vehicle', haishi: 'vehicle', envItems: 'vehicle', extItems: 'vehicle', transport: 'vehicle', // 車両費・配車費・旧形式
   disposal: 'disposal',                                                                                  // 処分費（プラスの行）
 };
-function splitActualCost(money, reports) {
-  const out = { men: 0, laborCost: 0, vehicle: 0, disposal: 0, other: 0, total: money?.cost || 0 };
+// 紹介元の現場では、案件の直接原価のうち紹介料の行（isIntroFeeItem）を introFee に分け、その他経費から引く
+// （直接原価の一覧は calcSiteMoney と同じものを使うので、5つの合計＝calcSiteMoney の原価のまま）
+function sumIntroFee(projectInfo) {
+  const pi = projectInfo || {};
+  const items = pi.miscItems || [...(pi.outsourcingItems || []), ...(pi.siteExpenseItems || []), ...(pi.sgaItems || [])];
+  return items.filter(it => isIntroFeeItem(it?.name, pi.client)).reduce((s, it) => s + toYen(it?.amount), 0);
+}
+function splitActualCost(money, reports, projectInfo) {
+  const out = { men: 0, laborCost: 0, vehicle: 0, disposal: 0, other: 0, introFee: 0, total: money?.cost || 0 };
   Object.entries(money?.reportParts || {}).forEach(([k, v]) => { out[ACTUAL_COST_GROUP[k] || 'other'] += v || 0; });
   Object.values(money?.projectParts || {}).forEach(v => { out.other += v || 0; });
+  out.introFee = sumIntroFee(projectInfo);
+  out.other -= out.introFee;
   // 人工（人）は日報から数える（ホーム画面の人工数と同じ数え方）
   (reports || []).forEach(r => {
     (r.workDetails?.inHouseWorkers || []).forEach(w => { out.men += getInHouseWorkerCount(w); });
@@ -5264,11 +5295,12 @@ function forecastGapPercent(forecastYen, actualYen) {
 const FORECAST_MARK = { ok: '◎', mid: '○', ng: '×' };
 
 // 1現場の予想と実績を並べる。予想なしなら null
-// money＝calcSiteMoney の戻り値、reports＝その現場の日報、contractAmount＝見積金額（予想の工事売上）
-function buildForecastComparison(forecastRaw, money, reports, contractAmount) {
+// money＝calcSiteMoney の戻り値（projectInfo で数えたもの）、reports＝その現場の日報、projectInfo＝案件情報（見積金額＝予想の工事売上）
+function buildForecastComparison(forecastRaw, money, reports, projectInfo) {
   const forecast = readForecast(forecastRaw);
   if (!forecast) return null;
-  const actual = splitActualCost(money, reports);
+  const actual = splitActualCost(money, reports, projectInfo);
+  const contractAmount = projectInfo?.contractAmount;
   const yenRow = (key, label) => ({ key, label, forecast: toMan(forecast[key]), actual: toMan(actual[key]), grade: gradeForecastYen(forecast[key], actual[key]) });
   const costRows = [
     { key: 'men', label: '人工（人）', forecast: forecast.men, actual: actual.men, grade: gradeForecastMen(forecast.men, actual.men) },
@@ -5277,6 +5309,8 @@ function buildForecastComparison(forecastRaw, money, reports, contractAmount) {
     yenRow('disposal', '処分（万）'),
     yenRow('other', 'その他経費（万）'),
   ];
+  // 紹介料の行：名前は発注者名（「紹介料」とは出さない）。予想も実績も0なら出さない
+  if (forecast.introFee || actual.introFee) costRows.push(yenRow('introFee', `${cleanClientName(projectInfo?.client) || '発注者'}（万）`));
   const total = { ...yenRow('total', '原価合計（万）'), forecastYen: forecast.total, actualYen: actual.total, pct: forecastGapPercent(forecast.total, actual.total) };
   const isProvisional = !!money?.isProvisional;
   const forecastRevenue = fcNum(contractAmount);            // 予想の工事売上＝見積金額
@@ -5311,7 +5345,8 @@ function ForecastActualTab({ comparison: c }) {
   if (!c) {
     return <div style={{ ...card, color: '#bbb', fontSize: 13, padding: '16px 14px' }}>この現場はまだ予想が入っていません（1日仕事など）</div>;
   }
-  const head = { fontWeight: 400, color: '#777', fontSize: 11, textAlign: 'right', padding: '2px 2px 4px' };
+  // 見出しは折り返さない（発注者名の長い行があっても「予想」「実績」が1字ずつに折れないように）
+  const head = { fontWeight: 400, color: '#777', fontSize: 11, textAlign: 'right', padding: '2px 2px 4px', whiteSpace: 'nowrap' };
   const cell = { padding: '5px 2px', textAlign: 'right', fontSize: 14, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' };
   const labelCell = { ...cell, textAlign: 'left', fontSize: 12, color: '#bbb', whiteSpace: 'normal' };
   const line = { borderTop: '1px solid #2c2c2c', paddingTop: 8 };
@@ -5650,7 +5685,7 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
 
       {/* 予想と実績タブ（予想＝project_info.forecast、実績＝calcSiteMoney） */}
       {activeTab === 3 && (
-        <ForecastActualTab comparison={buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo?.contractAmount)} />
+        <ForecastActualTab comparison={buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo)} />
       )}
 
     </div>

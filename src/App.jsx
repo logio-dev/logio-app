@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Fragment } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { ChevronLeft, ChevronDown, Plus, Save, Trash2, BarChart3, FileText, Settings, Menu, X, Home, Check, LogOut, Calendar, Activity, TrendingUp, TrendingDown, MessageCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import SplashScreen from './components/SplashScreen/SplashScreen';
@@ -1081,6 +1081,15 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
   const [homeMemo, setHomeMemo] = useState('');
   const [homePhotoUploading, setHomePhotoUploading] = useState(false);
   const [homeSaving, setHomeSaving] = useState(false);
+  // ★ 原価メモの全画面（開いたときの画面の位置を覚えておき、戻るでそこに戻す）
+  const [costMemoOpen, setCostMemoOpen] = useState(false);
+  const costMemoScrollY = useRef(0);
+  const openCostMemo = () => { costMemoScrollY.current = window.scrollY; setCostMemoOpen(true); };
+  const closeCostMemo = useCallback(() => {
+    setCostMemoOpen(false);
+    requestAnimationFrame(() => window.scrollTo({ top: costMemoScrollY.current, behavior: 'instant' }));
+  }, []);
+  useEffect(() => { setCostMemoOpen(false); }, [selectedSite]);
 
   const handleHomeSavePhoto = async () => {
     const latest = [...(reports||[])].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
@@ -1403,6 +1412,73 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
 
 
 
+            {/* 解体作業日報カード */}
+            {reports && reports.length > 0 && (() => {
+              const latest = [...reports].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+              const latestDate = latest?.date || '';
+              const mo = latestDate ? parseInt(latestDate.split('-')[1]) : '';
+              const da = latestDate ? parseInt(latestDate.split('-')[2]) : '';
+              const dayNames = ['日','月','火','水','木','金','土'];
+              const dayName = latestDate ? dayNames[new Date(latestDate).getDay()] : '';
+              return (
+                <div className="mb-4" style={{background:'#fff',borderRadius:18,padding:'14px 16px',border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                    <div>
+                      <p style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:5}}>REPORT</p>
+                      <p style={{fontSize:15,fontWeight:800,color:'#111',marginBottom:5}}>解体作業日報</p>
+                      <div style={{display:'flex',gap:6}}>
+                        <span style={{fontSize:10,fontWeight:700,color:'#555',background:'#F0F0F0',padding:'2px 8px',borderRadius:20}}>{reports.length}件</span>
+                        {latestDate && <span style={{fontSize:10,fontWeight:700,color:'#4ade80',background:'rgba(34,197,94,0.15)',padding:'2px 8px',borderRadius:20}}>最新 {mo}/{da}（{dayName}）</span>}
+                      </div>
+                    </div>
+                    <style>{`@keyframes pdf-pulse{0%,100%{box-shadow:0 0 0 0 rgba(153,27,27,0.7)}50%{box-shadow:0 0 0 10px rgba(153,27,27,0)}}`}</style>
+                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      <button onClick={()=>setHomePhotoOpen&&setHomePhotoOpen(!homePhotoOpen)}
+                        style={{width:40,height:40,borderRadius:10,background:'#1E293B',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      </button>
+                      <button onClick={()=>onViewPdf&&onViewPdf(latest)}
+                        style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',height:40,background:'#991B1B',border:'1px solid rgba(248,113,113,0.3)',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-pulse 1.8s ease-out infinite'}}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span style={{fontSize:12,fontWeight:700,color:'#fff'}}>PDF</span>
+                      </button>
+                    </div>
+                  </div>
+                  {/* フルスクリーンモーダルはHomePage末尾に配置 */}
+                </div>
+              );
+            })()}
+
+            {/* 原価メモカード（cost_memo が入っている現場だけ。押すと原価メモを全画面で出す） */}
+            {projectInfo?.costMemo != null && (() => {
+              const r = parseCostMemo(projectInfo.costMemo);
+              const days = r.ok ? costMemoCounts(r.memo).schedule : 0;
+              const hl = r.ok ? memoList(r.memo.summary).find(s => s.highlight === true && memoText(s.value)) : null;
+              return (
+                <button id="cost-memo-open" type="button" onClick={openCostMemo} className="mb-4"
+                  style={{width:'100%',display:'block',textAlign:'left',background:'#fff',borderRadius:18,padding:'14px 16px',border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',cursor:'pointer',fontFamily:'inherit'}}>
+                  <span style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+                    <span style={{display:'block',minWidth:0}}>
+                      <span style={{display:'block',fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:5}}>COST MEMO</span>
+                      <span style={{display:'block',fontSize:15,fontWeight:800,color:'#111',marginBottom:5}}>原価メモ</span>
+                      <span style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                        {!r.ok && <span style={{fontSize:10,fontWeight:700,color:'#B91C1C',background:'#FEE2E2',padding:'2px 8px',borderRadius:20}}>読めません</span>}
+                        {days > 0 && <span style={{fontSize:10,fontWeight:700,color:'#555',background:'#F0F0F0',padding:'2px 8px',borderRadius:20}}>段取り {days}日</span>}
+                        {hl && <span style={{fontSize:10,fontWeight:800,color:COST_MEMO_BLUE,background:COST_MEMO_BLUE_SOFT,padding:'2px 8px',borderRadius:20}}>{memoText(hl.label) ? `${memoText(hl.label)} ` : ''}{memoText(hl.value)}</span>}
+                      </span>
+                    </span>
+                    <span style={{display:'flex',alignItems:'center',gap:4,height:40,padding:'0 12px 0 16px',borderRadius:10,background:'#1E293B',color:'#fff',fontSize:12,fontWeight:700,flexShrink:0}}>
+                      開く
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </span>
+                  </span>
+                </button>
+              );
+            })()}
+
             {/* 産廃処分費カード */}
             {(() => {
               const WASTE_COLORS = ['#d97706','#65a30d','#7c3aed','#0891b2','#dc2626','#f472b6'];
@@ -1486,46 +1562,6 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
                 </div>
               );
             })()}
-
-            {/* 解体作業日報カード */}
-            {reports && reports.length > 0 && (() => {
-              const latest = [...reports].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-              const latestDate = latest?.date || '';
-              const mo = latestDate ? parseInt(latestDate.split('-')[1]) : '';
-              const da = latestDate ? parseInt(latestDate.split('-')[2]) : '';
-              const dayNames = ['日','月','火','水','木','金','土'];
-              const dayName = latestDate ? dayNames[new Date(latestDate).getDay()] : '';
-              return (
-                <div className="mb-4" style={{background:'#fff',borderRadius:18,padding:'14px 16px',border:'0.5px solid #E8E8E8',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                    <div>
-                      <p style={{fontSize:9,fontWeight:700,color:'#1E3A5F',letterSpacing:'.1em',marginBottom:5}}>REPORT</p>
-                      <p style={{fontSize:15,fontWeight:800,color:'#111',marginBottom:5}}>解体作業日報</p>
-                      <div style={{display:'flex',gap:6}}>
-                        <span style={{fontSize:10,fontWeight:700,color:'#555',background:'#F0F0F0',padding:'2px 8px',borderRadius:20}}>{reports.length}件</span>
-                        {latestDate && <span style={{fontSize:10,fontWeight:700,color:'#4ade80',background:'rgba(34,197,94,0.15)',padding:'2px 8px',borderRadius:20}}>最新 {mo}/{da}（{dayName}）</span>}
-                      </div>
-                    </div>
-                    <style>{`@keyframes pdf-pulse{0%,100%{box-shadow:0 0 0 0 rgba(153,27,27,0.7)}50%{box-shadow:0 0 0 10px rgba(153,27,27,0)}}`}</style>
-                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
-                      <button onClick={()=>setHomePhotoOpen&&setHomePhotoOpen(!homePhotoOpen)}
-                        style={{width:40,height:40,borderRadius:10,background:'#1E293B',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                      </button>
-                      <button onClick={()=>onViewPdf&&onViewPdf(latest)}
-                        style={{display:'flex',alignItems:'center',gap:7,padding:'11px 18px',height:40,background:'#991B1B',border:'1px solid rgba(248,113,113,0.3)',borderRadius:10,cursor:'pointer',flexShrink:0,animation:'pdf-pulse 1.8s ease-out infinite'}}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                          <polyline points="14 2 14 8 20 8"/>
-                        </svg>
-                        <span style={{fontSize:12,fontWeight:700,color:'#fff'}}>PDF</span>
-                      </button>
-                    </div>
-                  </div>
-                  {/* フルスクリーンモーダルはHomePage末尾に配置 */}
-                </div>
-              );
-            })()}
           </>
         )}
 
@@ -1558,6 +1594,11 @@ function HomePage({ sites, selectedSite, onSelectSite, onNavigate, totals, proje
         <img src="/face-chan.svg" alt="ちゃん" style={{width:32,height:32,display:'block',filter:'drop-shadow(0 2px 6px rgba(0,0,0,0.15))',pointerEvents:'none'}} />
         {chanPopup && <div style={{position:'absolute',top:'calc(100% + 2px)',left:'50%',transform:'translateX(-50%)',background:'#1C1917',color:'#fff',borderRadius:8,padding:'4px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,0.3)',pointerEvents:'none',zIndex:100}}>{chanPopup}</div>}
       </div>}
+
+      {/* ★ 原価メモ（全画面で重ねる。原価メモが消えたら閉じる） */}
+      {costMemoOpen && selectedSite && projectInfo?.costMemo != null && (
+        <CostMemoOverlay raw={projectInfo.costMemo} siteName={selectedSite} onBack={closeCostMemo} />
+      )}
 
       {/* ★ 写真・メモ フルスクリーンモーダル */}
       {homePhotoOpen && (
@@ -1899,6 +1940,7 @@ const PROJECT_INFO_COLUMN_LABELS = {
   subcontract_invoice_recipient: '下請の請求書送付先',
   documents_checklist: '書類確認',
   forecast: '予想（原価メモ）',
+  cost_memo: '原価メモ（貼り付け）',
   updated_at: '更新日時',
 };
 
@@ -2148,6 +2190,359 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ========== 原価メモ（project_info.cost_memo） ==========
+// 見積書の「原価メモ」の中身。案件登録のときに Claude（ブラウザ操作）が、設定・編集の「原価メモ（貼り付け）」に JSON を貼って保存する
+// Wac は計算しない。書いてある文字をそのまま出す（ホームの現場カード → 原価メモの画面）
+// 形（どの項目も無くてよい。知らない項目は無視する）：
+//   { version, source, updatedAt, header,
+//     summary: [{ label, value, strong, sub, highlight }],
+//     waste:   { rows: [{ name, m3, dest, packing, cost, note }], total: { m3, cost } },
+//     tasks:   { rows: [{ name, qty, unit, men }], total: { men } },
+//     costs:   [{ name, day, night, total, men, detail }],   … 行は書いてあるとおりの順・名前で出す
+//     schedule:[{ day, work, shift, people, days, men, m3, trucks, items, note }] }
+const isPlainObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
+// 出す文字（文字と数字だけ。ほかの形は空）
+const memoText = v => (typeof v === 'string' ? v.trim() : (typeof v === 'number' && Number.isFinite(v)) ? String(v) : '');
+// 数字だけなら単位を付ける（「9」→「9人」。「9人」はそのまま）
+const withUnit = (v, unit) => (v && /^\d+(\.\d+)?$/.test(v) ? v + unit : v);
+const memoList = v => (Array.isArray(v) ? v.filter(isPlainObject) : []);
+
+// 項目ごとの数（設定・編集の「読み込めました（段取り5日・廃棄物7品目…）」とホームのカードで使う）
+const costMemoCounts = (m) => ({
+  summary: memoList(m?.summary).length,
+  waste: memoList(m?.waste?.rows).length,
+  tasks: memoList(m?.tasks?.rows).length,
+  costs: memoList(m?.costs).length,
+  schedule: memoList(m?.schedule).length,
+});
+const costMemoCountParts = (m) => {
+  const c = costMemoCounts(m);
+  const parts = [c.schedule && `段取り${c.schedule}日`, c.waste && `廃棄物${c.waste}品目`, c.tasks && `工種${c.tasks}`, c.costs && `費目${c.costs}`].filter(Boolean);
+  return parts.length ? parts : [c.summary ? `概要${c.summary}マス` : '見出しだけ'];
+};
+// 狭い画面で言葉の途中で折れないよう、区切りごとに折り返す
+const NoWrapParts = ({ parts }) => parts.map((p, i) => <span key={i} style={{ whiteSpace:'nowrap' }}>{i < parts.length - 1 ? p + '・' : p}</span>);
+
+// 貼った文字（JSON）か DB の値 → { ok: true, memo } か { ok: false, reason }
+function parseCostMemo(raw) {
+  let m = raw;
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    if (!s) return { ok: false, reason: '空です' };
+    try { m = JSON.parse(s); } catch (e) {
+      const msg = String(e?.message || '');
+      const pos = msg.match(/position (\d+)/)?.[1];
+      const line = msg.match(/line (\d+)/)?.[1] || (pos != null ? String(s.slice(0, Number(pos)).split('\n').length) : '');
+      return { ok: false, reason: `JSON として読めません${line ? `（${line}行目あたり）` : ''}。{ } [ ] " の閉じ忘れやカンマを見てください` };
+    }
+  }
+  if (!isPlainObject(m)) return { ok: false, reason: 'いちばん外側が { } ではありません' };
+  const checkList = (list, name) => {
+    if (list == null) return '';
+    if (!Array.isArray(list)) return `${name} が [ ] ではありません`;
+    const bad = list.findIndex(x => !isPlainObject(x));
+    return bad >= 0 ? `${name} の${bad + 1}つ目が { } ではありません` : '';
+  };
+  const checkTable = (t, name) => {
+    if (t == null) return '';
+    if (!isPlainObject(t)) return `${name} が { } ではありません`;
+    if (t.total != null && !isPlainObject(t.total)) return `${name}.total が { } ではありません`;
+    return checkList(t.rows, `${name}.rows`);
+  };
+  const reason = checkList(m.summary, 'summary') || checkTable(m.waste, 'waste') || checkTable(m.tasks, 'tasks')
+    || checkList(m.costs, 'costs') || checkList(m.schedule, 'schedule');
+  if (reason) return { ok: false, reason };
+  const c = costMemoCounts(m);
+  if (!memoText(m.header) && !c.summary && !c.waste && !c.tasks && !c.costs && !c.schedule) {
+    return { ok: false, reason: '中身がありません（header・summary・waste・tasks・costs・schedule のどれも無い）' };
+  }
+  return { ok: true, memo: m };
+}
+
+// 保存で送るのは、中身が開いたときと違うときだけ（文字ではなく中身で比べる。空白・改行・項目の並びの違いは「同じ」）
+const canonJson = v => (Array.isArray(v) ? v.map(canonJson) : isPlainObject(v) ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canonJson(v[k])])) : v);
+const costMemoKey = (text) => {
+  const s = String(text ?? '').trim();
+  if (!s) return 'null';
+  try { return JSON.stringify(canonJson(JSON.parse(s))); } catch { return 'text:' + s; }
+};
+const isCostMemoChanged = (text, savedText) => costMemoKey(text) !== costMemoKey(savedText);
+// DB の値 → 入力欄の文字
+const costMemoToText = (raw) => (raw == null ? '' : typeof raw === 'string' ? raw : JSON.stringify(raw, null, 1));
+
+// 設定・編集の「原価メモ（貼り付け）」。たたんでおき、押すと開く
+// ブラウザ操作で入れやすいように、開くボタン（cost-memo-toggle）・入力欄（cost-memo-json）・読んだ結果（cost-memo-status）に id を付けてある
+function CostMemoInputCard({ projectInfo, setProjectInfo }) {
+  const [open, setOpen] = useState(false);
+  const text = projectInfo.costMemoText ?? '';
+  const savedText = projectInfo.costMemoTextSaved ?? '';
+  const changed = isCostMemoChanged(text, savedText);
+  const empty = !text.trim();
+  const parsed = empty ? null : parseCostMemo(text);
+  const updatedAt = parsed?.ok ? memoText(parsed.memo.updatedAt) : '';
+  const summaryParts = empty
+    ? [changed ? '空（保存すると原価メモを消します）' : '未入力']
+    : parsed.ok ? [...costMemoCountParts(parsed.memo).map((p, i, a) => (i < a.length - 1 ? p + '・' : p)), ...(updatedAt ? [`（${updatedAt}）`] : [])] : ['読めません（このままでは保存できません）'];
+  const status = empty
+    ? (changed ? { color: '#fbbf24', text: '空のまま保存すると、原価メモを消します（ホームの「原価メモ」も出なくなります）' } : { color: 'rgba(255,255,255,0.45)', text: '見積書の原価メモ（JSON）を貼ってください' })
+    : parsed.ok ? { color: '#4ade80', text: <>読み込めました（<NoWrapParts parts={costMemoCountParts(parsed.memo)} />）</> }
+    : { color: '#f87171', text: `読めません：${parsed.reason}。このままでは保存できません` };
+  return (
+    <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
+      <button id="cost-memo-toggle" type="button" aria-expanded={open} aria-controls="cost-memo-fields" onClick={() => setOpen(o => !o)}
+        style={{ width:'100%', padding:0, background:'none', border:'none', cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', gap:8, fontFamily:'inherit' }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:'#60a5fa', textTransform:'uppercase', letterSpacing:'.08em' }}>原価メモ（貼り付け） / Cost Memo</div>
+          <div style={{ marginTop:5, fontSize:12, fontWeight:600, color: !empty && parsed?.ok ? 'rgba(255,255,255,0.85)' : !empty ? '#f87171' : 'rgba(255,255,255,0.45)', lineHeight:1.4, overflowWrap:'anywhere' }}>{summaryParts.map((p, i) => <span key={i} style={{ whiteSpace:'nowrap' }}>{p}</span>)}</div>
+        </div>
+        {changed && <span style={{ flexShrink:0, fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)' }}>未保存</span>}
+        <GradChevron open={open} size={16} />
+      </button>
+      {open && (
+        <div id="cost-memo-fields" style={{ marginTop:14 }}>
+          <label htmlFor="cost-memo-json" style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.55)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>原価メモ（JSON）</label>
+          <textarea id="cost-memo-json" name="cost-memo-json" value={text} spellCheck={false} autoCapitalize="off" autoCorrect="off" autoComplete="off"
+            onChange={e => { const v = e.target.value; setProjectInfo(prev => ({ ...prev, costMemoText: v })); }}
+            placeholder={'{ "version": 1, "summary": [ … ], "schedule": [ … ] }'}
+            style={{ width:'100%', minHeight:220, padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:13, lineHeight:1.45, outline:'none', boxSizing:'border-box', fontFamily:'monospace', resize:'vertical', display:'block', minWidth:0 }} />
+          <div id="cost-memo-status" role="status" aria-live="polite" style={{ marginTop:8, fontSize:12, fontWeight:700, color: status.color, lineHeight:1.5, overflowWrap:'anywhere' }}>{status.text}</div>
+          <div style={{ marginTop:6, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.6 }}>
+            下の「保存」で書き込みます。触らなければ今の原価メモのまま。空にして保存すると消えます。
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 原価メモの画面（ホームの上に全画面で重ねる。上のヘッダーは残す）
+// 上から 概要 → 廃棄物 → 工種と人工 → 費目 → 段取りと搬出計画 → 元。無い項目は見出しごと出さない
+const COST_MEMO_BLUE = '#1D4ED8';
+const COST_MEMO_BLUE_SOFT = '#DBEAFE';
+const COST_MEMO_TH = { padding:'7px 8px', fontSize:10.5, fontWeight:700, color:'#6B7280', background:'#F9FAFB', borderBottom:'1px solid #E5E7EB', textAlign:'left', whiteSpace:'nowrap' };
+const COST_MEMO_TD = { padding:'7px 8px', fontSize:12.5, color:'#111', borderBottom:'1px solid #F0F0F0', whiteSpace:'nowrap', verticalAlign:'top' };
+const COST_MEMO_NUM = { textAlign:'right', fontVariantNumeric:'tabular-nums' };
+const COST_MEMO_TOTAL = { fontWeight:800, borderTop:'1.5px solid #D1D5DB', background:'#FAFAFA' };
+
+// 人工の札（青い丸い札）
+const MenTag = ({ children }) => (
+  <span data-men-tag style={{ display:'inline-block', fontSize:11.5, fontWeight:800, color:COST_MEMO_BLUE, background:COST_MEMO_BLUE_SOFT, borderRadius:999, padding:'1px 9px', whiteSpace:'nowrap', lineHeight:1.6, fontVariantNumeric:'tabular-nums' }}>{children}</span>
+);
+
+function CostMemoSection({ id, title, children }) {
+  return (
+    <section id={id} style={{ marginTop:20 }}>
+      <h3 style={{ margin:'0 0 8px', paddingLeft:8, borderLeft:'3px solid #2563EB', fontSize:14, fontWeight:800, color:'#111', lineHeight:1.35 }}>{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+// 表は横にはみ出すときだけ、表の中で横にスクロールする（右に続きがある間は、表の下に一言出す）
+function CostMemoTable({ children }) {
+  const ref = useRef(null);
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const check = () => setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(check) : null;
+    if (ro) ro.observe(el);
+    return () => { el.removeEventListener('scroll', check); if (ro) ro.disconnect(); };
+  }, []);
+  return (
+    <>
+      <div ref={ref} className="cost-memo-table" style={{ background:'#fff', border:'0.5px solid #E8E8E8', borderRadius:12, overflowX:'auto', maxWidth:'100%', WebkitOverflowScrolling:'touch' }}>
+        <table style={{ borderCollapse:'collapse', width:'100%' }}>{children}</table>
+      </div>
+      {more && <div className="cost-memo-more" style={{ marginTop:4, fontSize:10.5, color:'#9CA3AF', textAlign:'right' }}>右に続きがあります（表を横にずらす）→</div>}
+    </>
+  );
+}
+
+function CostMemoView({ raw, siteName }) {
+  const parsed = parseCostMemo(raw);
+  const t = memoText;
+  const m = parsed.ok ? parsed.memo : {};
+  // 行の文字だけを取り出す（全部空の行は出さない）
+  const rowsOf = (list, keys) => memoList(list).map(r => Object.fromEntries(keys.map(k => [k, t(r[k])]))).filter(r => keys.some(k => r[k]));
+  const totalOf = (tb, keys) => { if (!isPlainObject(tb?.total)) return null; const o = Object.fromEntries(keys.map(k => [k, t(tb.total[k])])); return keys.some(k => o[k]) ? o : null; };
+  const summary = memoList(m.summary).map(s => ({ label: t(s.label), value: t(s.value), strong: t(s.strong), sub: t(s.sub), highlight: s.highlight === true }))
+    .filter(s => s.label || s.value || s.strong || s.sub);
+  const waste = rowsOf(m.waste?.rows, ['name', 'm3', 'dest', 'packing', 'cost', 'note']);
+  const wasteTotal = totalOf(m.waste, ['m3', 'cost']);
+  const tasks = rowsOf(m.tasks?.rows, ['name', 'qty', 'unit', 'men']);
+  const tasksTotal = totalOf(m.tasks, ['men']);
+  const costs = rowsOf(m.costs, ['name', 'day', 'night', 'total', 'men', 'detail']);
+  const schedule = rowsOf(m.schedule, ['day', 'work', 'shift', 'people', 'days', 'men', 'm3', 'trucks', 'items', 'note']);
+  // 費目の人工の札：行に men があればその数。無ければ、名前が「人工」の行だけ概要の「合計人工」の数
+  const summaryMen = summary.find(s => s.label === '合計人工')?.value || '';
+  const costMen = (r) => withUnit(r.men || (r.name === '人工' ? summaryMen : ''), '人工');
+  // 列は、どこかの行に中身があるものだけ出す
+  const has = (rows, total, k) => rows.some(r => r[k]) || !!total?.[k];
+  const wasteCols = [['name', '品目'], ['m3', '㎥', true], ['dest', '処分先'], ['packing', '荷姿'], ['cost', '処分費', true], ['note', '備考']].filter(([k]) => k === 'name' || has(waste, wasteTotal, k));
+  const costCols = [['day', '昼（万）'], ['night', '夜（万）'], ['total', '計（万）']].filter(([k]) => has(costs, null, k));
+  const isTotalRow = (name) => /合計\s*$/.test(name);
+
+  return (
+    <div style={{ maxWidth:672, margin:'0 auto', padding:'14px 16px calc(48px + env(safe-area-inset-bottom, 0px))' }}>
+      <div style={{ fontSize:17, fontWeight:800, color:'#111', lineHeight:1.35, overflowWrap:'anywhere' }}>{siteName}</div>
+      {t(m.header) && <div id="cost-memo-header" style={{ marginTop:3, fontSize:12, color:'#666', lineHeight:1.5, overflowWrap:'anywhere' }}>{t(m.header)}</div>}
+
+      {!parsed.ok && (
+        <div id="cost-memo-error" style={{ marginTop:16, padding:'14px 16px', background:'#fff', border:'1px solid #FCA5A5', borderRadius:14 }}>
+          <div style={{ fontSize:15, fontWeight:800, color:'#B91C1C' }}>原価メモを読めません</div>
+          <div style={{ marginTop:4, fontSize:12, color:'#666', lineHeight:1.6, overflowWrap:'anywhere' }}>{parsed.reason}。設定・編集の「原価メモ（貼り付け）」を直してください。</div>
+        </div>
+      )}
+
+      {summary.length > 0 && (
+        <CostMemoSection id="cost-memo-summary" title="概要">
+          <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:8 }}>
+            {summary.map((s, i) => (
+              <div key={i} data-highlight={s.highlight ? 'true' : undefined}
+                style={{ minWidth:0, padding:'9px 11px', borderRadius:12, background: s.highlight ? '#EFF6FF' : '#fff', border: s.highlight ? '1px solid #3B82F6' : '0.5px solid #E8E8E8' }}>
+                {s.label && <div style={{ fontSize:10.5, fontWeight:700, color: s.highlight ? COST_MEMO_BLUE : '#6B7280', lineHeight:1.4 }}>{s.label}</div>}
+                {s.value && <div style={{ marginTop:2, fontSize: s.highlight ? 18 : 15, fontWeight:800, color: s.highlight ? COST_MEMO_BLUE : '#111', lineHeight:1.35, overflowWrap:'anywhere', fontVariantNumeric:'tabular-nums' }}>{s.value}</div>}
+                {s.strong && <div style={{ marginTop:2, fontSize:13, fontWeight:800, color:'#111', lineHeight:1.4, overflowWrap:'anywhere' }}>{s.strong}</div>}
+                {s.sub && <div style={{ marginTop:2, fontSize:11, color:'#9CA3AF', lineHeight:1.45, overflowWrap:'anywhere' }}>{s.sub}</div>}
+              </div>
+            ))}
+          </div>
+        </CostMemoSection>
+      )}
+
+      {(waste.length > 0 || wasteTotal) && (
+        <CostMemoSection id="cost-memo-waste" title="廃棄物">
+          <CostMemoTable>
+            <thead><tr>{wasteCols.map(([k, label, num]) => <th key={k} style={{ ...COST_MEMO_TH, ...(num ? { textAlign:'right' } : {}) }}>{label}</th>)}</tr></thead>
+            <tbody>
+              {waste.map((r, i) => (
+                <tr key={i}>{wasteCols.map(([k, , num]) => <td key={k} style={{ ...COST_MEMO_TD, ...(num ? COST_MEMO_NUM : {}), ...(k === 'name' ? { fontWeight:700 } : {}), ...(k === 'note' ? { whiteSpace:'normal', minWidth:'8em', color:'#666', fontSize:11.5 } : {}) }}>{r[k]}</td>)}</tr>
+              ))}
+              {wasteTotal && <tr>{wasteCols.map(([k, , num]) => <td key={k} style={{ ...COST_MEMO_TD, ...COST_MEMO_TOTAL, ...(num ? COST_MEMO_NUM : {}) }}>{k === 'name' ? '合計' : (wasteTotal[k] || '')}</td>)}</tr>}
+            </tbody>
+          </CostMemoTable>
+        </CostMemoSection>
+      )}
+
+      {(tasks.length > 0 || tasksTotal) && (
+        <CostMemoSection id="cost-memo-tasks" title="工種と人工">
+          <CostMemoTable>
+            <thead><tr><th style={COST_MEMO_TH}>工種</th><th style={{ ...COST_MEMO_TH, textAlign:'right' }}>数量</th><th style={{ ...COST_MEMO_TH, textAlign:'right', color:COST_MEMO_BLUE }}>人工</th></tr></thead>
+            <tbody>
+              {tasks.map((r, i) => (
+                <tr key={i}>
+                  <td style={{ ...COST_MEMO_TD, whiteSpace:'normal', minWidth:'9em', lineHeight:1.45 }}>{r.name}</td>
+                  <td style={{ ...COST_MEMO_TD, ...COST_MEMO_NUM }}>{r.qty}{r.unit}</td>
+                  <td data-men-cell style={{ ...COST_MEMO_TD, ...COST_MEMO_NUM, fontWeight:800, fontSize:14, color:COST_MEMO_BLUE }}>{r.men}</td>
+                </tr>
+              ))}
+              {tasksTotal && (
+                <tr>
+                  <td style={{ ...COST_MEMO_TD, ...COST_MEMO_TOTAL }}>合計</td>
+                  <td style={{ ...COST_MEMO_TD, ...COST_MEMO_TOTAL }}></td>
+                  <td data-men-cell style={{ ...COST_MEMO_TD, ...COST_MEMO_TOTAL, ...COST_MEMO_NUM, fontSize:14, color:COST_MEMO_BLUE }}>{tasksTotal.men}</td>
+                </tr>
+              )}
+            </tbody>
+          </CostMemoTable>
+        </CostMemoSection>
+      )}
+
+      {costs.length > 0 && (
+        <CostMemoSection id="cost-memo-costs" title="費目">
+          <CostMemoTable>
+            <thead><tr><th style={COST_MEMO_TH}>費目</th>{costCols.map(([k, label]) => <th key={k} style={{ ...COST_MEMO_TH, textAlign:'right' }}>{label}</th>)}</tr></thead>
+            <tbody>
+              {costs.map((r, i) => {
+                const total = isTotalRow(r.name);
+                // 説明（detail）は、行の下に表の幅いっぱいで出す（狭い列で言葉が割れないように）
+                const cell = { ...COST_MEMO_TD, ...(total ? COST_MEMO_TOTAL : {}), ...(r.detail ? { borderBottom:'none', paddingBottom:2 } : {}) };
+                const men = costMen(r);
+                return (
+                  <Fragment key={i}>
+                    <tr>
+                      <td style={{ ...cell, whiteSpace:'normal', minWidth:'8.5em', lineHeight:1.45 }}>
+                        <span style={{ fontWeight: total ? 800 : 700 }}>{r.name}</span>
+                        {men && <span style={{ marginLeft:6 }}><MenTag>{men}</MenTag></span>}
+                      </td>
+                      {costCols.map(([k]) => <td key={k} style={{ ...cell, ...COST_MEMO_NUM }}>{r[k]}</td>)}
+                    </tr>
+                    {r.detail && (
+                      <tr className="cost-memo-detail">
+                        <td colSpan={1 + costCols.length} style={{ ...COST_MEMO_TD, ...(total ? { background:'#FAFAFA' } : {}), paddingTop:0, whiteSpace:'normal', fontSize:10.5, color:'#9CA3AF', lineHeight:1.45 }}>{r.detail}</td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </CostMemoTable>
+        </CostMemoSection>
+      )}
+
+      {schedule.length > 0 && (
+        <CostMemoSection id="cost-memo-schedule" title="段取りと搬出計画">
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {schedule.map((r, i) => {
+              const title = [r.day ? (/^\d+$/.test(r.day) ? `${r.day}日目` : r.day) : '', r.days && r.days !== '1' ? `（${withUnit(r.days, '日')}）` : ''].join('');
+              const meta = [[r.shift, withUnit(r.people, '人')].filter(Boolean).join(' '), withUnit(r.trucks, '台'), withUnit(r.m3, '㎥')].filter(Boolean).join('・');
+              return (
+                <div key={i} className="cost-memo-day" style={{ padding:'10px 12px', background:'#fff', border:'0.5px solid #E8E8E8', borderRadius:12, boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display:'flex', alignItems:'flex-start', gap:8 }}>
+                    <div style={{ flex:1, minWidth:0, lineHeight:1.45 }}>
+                      {title && <span style={{ fontSize:14, fontWeight:800, color:'#111', marginRight:8 }}>{title}</span>}
+                      {meta && <span style={{ fontSize:12, color:'#6B7280', fontVariantNumeric:'tabular-nums' }}>{meta}</span>}
+                    </div>
+                    {r.men && <span style={{ flexShrink:0 }}><MenTag>{withUnit(r.men, '人工')}</MenTag></span>}
+                  </div>
+                  {r.work && <div style={{ marginTop:4, fontSize:13, color:'#111', lineHeight:1.55, overflowWrap:'anywhere' }}>{r.work}</div>}
+                  {r.items && <div style={{ marginTop:3, fontSize:12, color:'#6B7280', lineHeight:1.5, overflowWrap:'anywhere' }}>出す物：{r.items}</div>}
+                  {r.note && <div style={{ marginTop:3, fontSize:12, color:'#6B7280', lineHeight:1.5, overflowWrap:'anywhere' }}>メモ：{r.note}</div>}
+                </div>
+              );
+            })}
+          </div>
+        </CostMemoSection>
+      )}
+
+      {(t(m.source) || t(m.updatedAt)) && (
+        <div id="cost-memo-source" style={{ marginTop:22, paddingTop:10, borderTop:'1px solid #E5E7EB', fontSize:11, color:'#9CA3AF', lineHeight:1.6, overflowWrap:'anywhere' }}>
+          {t(m.source) && <div>元：{t(m.source)}</div>}
+          {t(m.updatedAt) && <div>更新：{t(m.updatedAt)}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 全画面の重ね（ホームの上。上のヘッダーは見えたまま、下のナビは隠れる）。戻るでホームの同じ位置に戻る
+function CostMemoOverlay({ raw, siteName, onBack }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onBack(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onBack]);
+  return (
+    <div id="cost-memo-view" role="dialog" aria-modal="true" aria-label="原価メモ"
+      style={{ position:'fixed', top:'calc(52px + env(safe-area-inset-top, 0px))', left:0, right:0, bottom:0, zIndex:35, background:'#F5F7FA', overflowY:'auto', overflowX:'hidden', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch' }}>
+      <div style={{ position:'sticky', top:0, zIndex:1, background:'#fff', borderBottom:'1px solid #E5E7EB' }}>
+        <div style={{ maxWidth:672, margin:'0 auto', display:'flex', alignItems:'center', gap:10, padding:'9px 16px' }}>
+          <button id="cost-memo-back" type="button" onClick={onBack}
+            style={{ display:'flex', alignItems:'center', gap:4, padding:'8px 12px', background:'#F3F4F6', border:'1px solid #E5E7EB', borderRadius:8, fontSize:12, fontWeight:700, color:'#374151', cursor:'pointer', flexShrink:0, fontFamily:'inherit' }}>
+            <ChevronLeft className="w-4 h-4" />戻る
+          </button>
+          <span style={{ fontSize:15, fontWeight:800, color:'#111' }}>原価メモ</span>
+        </div>
+      </div>
+      <CostMemoView raw={raw} siteName={siteName} />
     </div>
   );
 }
@@ -2674,6 +3069,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
                         {/* ★ 予想（原価メモ）：project_info.forecast。たたんでおき、押すと開く */}
                         <ForecastInputCard projectInfo={projectInfo} setProjectInfo={setProjectInfo} />
+
+                        {/* ★ 原価メモ（貼り付け）：project_info.cost_memo。たたんでおき、押すと開く */}
+                        <CostMemoInputCard projectInfo={projectInfo} setProjectInfo={setProjectInfo} />
 
                         {/* ★ 現場詳細 */}
                         <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
@@ -7881,6 +8279,9 @@ export default function LOGIOApp() {
     // 予想（project_info.forecast）。forecast＝DBから読んだ値（原価分析の「予想と実績」で使う）、
     // forecastForm＝「予想（原価メモ）」の入力欄の文字、forecastFormSaved＝開いたとき（保存したとき）の入力欄の文字
     forecast: null, forecastForm: forecastToForm(null), forecastFormSaved: forecastToForm(null),
+    // 原価メモ（project_info.cost_memo）。costMemo＝DBから読んだ値（ホームの原価メモで使う）、
+    // costMemoText＝「原価メモ（貼り付け）」の入力欄の文字、costMemoTextSaved＝開いたとき（保存したとき）の入力欄の文字
+    costMemo: null, costMemoText: '', costMemoTextSaved: '',
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     siteTsubo: '', siteUseType: '', workCondition: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
@@ -8177,6 +8578,9 @@ export default function LOGIOApp() {
           forecast: d.forecast ?? null, // 予想（原価分析の「予想と実績」で使う。欄が無いDBでは null＝予想なし）
           forecastForm: forecastToForm(d.forecast),
           forecastFormSaved: forecastToForm(d.forecast),
+          costMemo: d.cost_memo ?? null, // 原価メモ（欄が無いDBでは null＝原価メモなし）
+          costMemoText: costMemoToText(d.cost_memo),
+          costMemoTextSaved: costMemoToText(d.cost_memo),
         }, siteName);
         setProjectInfo(info);
         return info;
@@ -8229,6 +8633,19 @@ export default function LOGIOApp() {
     const forecastFormSent = projectInfo.forecastForm;
     const writeForecast = isForecastFormChanged(forecastFormSent, projectInfo.forecastFormSaved);
     const forecastValue = writeForecast ? formToForecast(forecastFormSent, forecastSavedDate()) : null;
+    // 原価メモも、中身が開いたときと違うときだけ送る（触らずに保存したときは送らない＝今の cost_memo を残す）
+    // 空にしたら null。形が違うときは、ほかの欄も含めて保存しない（貼った文字は残る）
+    const costMemoTextSent = projectInfo.costMemoText ?? '';
+    const writeCostMemo = isCostMemoChanged(costMemoTextSent, projectInfo.costMemoTextSaved ?? '');
+    let costMemoValue = null;
+    if (writeCostMemo && costMemoTextSent.trim()) {
+      const parsedMemo = parseCostMemo(costMemoTextSent);
+      if (!parsedMemo.ok) {
+        alert(`❌ 保存していません\n\n原価メモ（貼り付け）を読めません：${parsedMemo.reason}\n\n直すか、空にしてから保存してください。`);
+        return;
+      }
+      costMemoValue = parsedMemo.memo;
+    }
     try {
       const contractTypeValue = projectInfo.contractType || resolveContractTypeByClient(projectInfo.client || '');
       // 請負区分は、DBに値があるときか、発注者から決めた値と違う値を選んだときだけ送る
@@ -8236,7 +8653,7 @@ export default function LOGIOApp() {
       const writeContractType = projectInfo.savedContractType != null
         || contractTypeValue !== resolveContractTypeByClient(cleanClientName(projectInfo.client));
       // 送る欄はここに書いたものだけ（DBは送った欄だけを書き換える）。
-      // forecast（予想）は、予想の欄を変えたときだけ下で足す
+      // forecast（予想）と cost_memo（原価メモ）は、その欄を変えたときだけ下で足す
       const projectPayload = {
         site_name: selectedSite,
         project_number: projectInfo.projectNumber || '',
@@ -8283,6 +8700,7 @@ export default function LOGIOApp() {
       if (!writeContractType) delete projectPayload.contract_type;
       if (writeBilling) projectPayload.billing_amount = billingValue > 0 ? billingValue : null;
       if (writeForecast) projectPayload.forecast = forecastValue; // 全部空なら null（予想を消す）
+      if (writeCostMemo) projectPayload.cost_memo = costMemoValue; // 空なら null（原価メモを消す）
 
       // DBに欄がない項目は外して保存し直し、外した項目は画面で警告する（site_name は外さない）
       const { droppedColumns } = await saveDroppingMissingColumns(
@@ -8300,6 +8718,8 @@ export default function LOGIOApp() {
         billingFilledFromEstimate: writeBilling && !droppedColumns.includes('billing_amount') ? '' : prev.billingFilledFromEstimate,
         // 予想を書いたら、原価分析のタブにすぐ出るように forecast を今の値にし、「開いたときの中身」も送った中身にそろえる
         ...(writeForecast && !droppedColumns.includes('forecast') ? { forecast: forecastValue, forecastFormSaved: forecastFormSent } : {}),
+        // 原価メモを書いたら、ホームのカードにすぐ出るように costMemo を今の値にし、「開いたときの中身」も送った中身にそろえる
+        ...(writeCostMemo && !droppedColumns.includes('cost_memo') ? { costMemo: costMemoValue, costMemoTextSaved: costMemoTextSent } : {}),
       }));
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       // 保存した発注者名を現場一覧にも入れる（新しく足した発注者が、すぐ選択肢に出るように）

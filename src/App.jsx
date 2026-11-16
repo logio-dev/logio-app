@@ -5457,13 +5457,31 @@ function ForecastActualTab({ comparison: c }) {
 }
 
 // ========== AnalysisPage ==========
+// 原価内訳の色（項目ごとに固定。どの現場でも同じ項目は同じ色）
+// 本番で出る5項目（人工費・産廃費・車両費・直接原価・経費）には、色の見え方が違う人にも見分けやすい5色を当てている
+const COST_CATEGORY_COLORS = {
+  '人工費': '#3366CC',     // 青
+  '産廃費': '#D55E00',     // 朱（赤みのオレンジ）
+  '車両費': '#22A06B',     // 緑
+  '直接原価': '#CC79A7',   // 赤紫
+  '経費': '#E8CF2E',       // 黄
+  '重機費': '#93C5FD',     // 水色
+  '回送費': '#0B7A75',     // 青緑
+  'リース費': '#F4A6C0',   // 桃
+  '資材費': '#A0522D',     // 茶
+  '案件の経費': '#7F7F7F', // 灰
+  '環境課配車': '#BDBDBD', // 旧形式
+  '外部運搬': '#4D4D4D',   // 旧形式
+  '配送費': '#A3A3A3',     // 旧形式
+};
+const COST_BREAKDOWN_BG = '#F4F4F4'; // 原価内訳のカードの背景（グラフの切れ目の線もこの色）
+const ANALYSIS_TABS = [['forecast', '予想と実績'], ['finance', '財務'], ['breakdown', '原価内訳']];
+
+// 現場が変わると作り直す（App 側で key に現場名を入れている）ので、いつも「予想と実績」から始まる
 function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState('forecast');
   const chartRef1 = React.useRef(null);
-  const chartRef2 = React.useRef(null);
-  const chartRef3 = React.useRef(null);
-  const chartInst = React.useRef({});
 
   // データ計算（項目の合計が財務タブの「原価」と一致する。数え方は calcSiteMoney と同じ）
   const rp = totals.reportParts || {};
@@ -5484,26 +5502,10 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     '案件の経費': pp.expenses || 0,
   };
 
-  const pieData = Object.keys(costByCategory).map(key => ({ name: key, value: costByCategory[key] })).filter(d => d.value > 0);
-  const COLORS = ['#1E3A8A','#378ADD','#60A5FA','#6366F1','#A78BFA','#8B5CF6','#93C5FD'];
+  // 金額の大きい順。凡例・ドーナツ・棒はこの順で、色は項目ごとに固定
+  const pieData = Object.keys(costByCategory).map(key => ({ name: key, value: costByCategory[key], color: COST_CATEGORY_COLORS[key] || '#7F7F7F' })).filter(d => d.value > 0).sort((a,b) => b.value - a.value);
+  const pieKey = pieData.map(d => `${d.name}:${d.value}`).join('|'); // 数字が変わったらドーナツを描き直す
   const totalCost = pieData.reduce((s,d) => s+d.value, 0);
-
-  const monthlyData = {};
-  const monthlyWorkers = {};
-  reports.forEach(r => {
-    const month = r.date.substring(0, 7);
-    if (!monthlyData[month]) { monthlyData[month] = 0; monthlyWorkers[month] = 0; }
-    // 月ごとの原価 ＝ 1日ぶんの原価の合計（金属売上は引かない・その日の経費は入れる・案件の原価は入れない）
-    monthlyData[month] += calcReportDayMoney(r).cost;
-    if (r.workDetails) {
-      r.workDetails.inHouseWorkers?.forEach(w => { monthlyWorkers[month] += w.count || 1; });
-      r.workDetails.outsourcingLabor?.forEach(o => { monthlyWorkers[month] += o.count || 1; });
-    }
-  });
-  const sortedMonths = Object.keys(monthlyData).sort();
-  const barLabels = sortedMonths.map(m => m.substring(5)+'月');
-  const barValues = sortedMonths.map(m => Math.round(monthlyData[m] / 10000));
-  const workerValues = sortedMonths.map(m => monthlyWorkers[m]);
 
   const grossMargin = totals.grossMargin.toFixed(1);
   const kari = totals.isProvisional ? '（仮）' : ''; // 請求金額が無い間は「仮」
@@ -5528,43 +5530,17 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
     return () => script.removeEventListener('load', onLoad);
   }, []);
 
-  // Chart描画
+  // 原価内訳のドーナツを描く。タブを開いたときと、開いたまま数字が変わったとき（読み込みが後から終わったときなど）に描き直す
   React.useEffect(() => {
-    if (!chartReady) return;
-    if (activeTab !== 1 || !chartRef1.current) return;
-    if (chartInst.current.pie) chartInst.current.pie.destroy();
-    if (pieData.length === 0) return;
-    chartInst.current.pie = new window.Chart(chartRef1.current, {
+    if (!chartReady || activeTab !== 'breakdown' || !chartRef1.current || pieData.length === 0) return;
+    const chart = new window.Chart(chartRef1.current, {
       type: 'doughnut',
-      data: { labels: pieData.map(d=>d.name), datasets: [{ data: pieData.map(d=>d.value), backgroundColor: COLORS, borderWidth: 0 }] },
+      // 切れ目に背景と同じ色の細い線を入れて、隣どうしの色を分ける
+      data: { labels: pieData.map(d=>d.name), datasets: [{ data: pieData.map(d=>d.value), backgroundColor: pieData.map(d=>d.color), borderWidth: 2, borderColor: COST_BREAKDOWN_BG }] },
       options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, cutout:'65%' }
     });
-  }, [activeTab, chartReady]);
-
-  React.useEffect(() => {
-    if (!chartReady) return;
-    if (activeTab !== 2) return;
-    if (barLabels.length === 0) return;
-    setTimeout(() => {
-      if (!window.Chart) return;
-      if (chartRef2.current) {
-        if (chartInst.current.bar) chartInst.current.bar.destroy();
-        chartInst.current.bar = new window.Chart(chartRef2.current, {
-          type: 'bar',
-          data: { labels: barLabels, datasets: [{ label:'原価(万円)', data: barValues, backgroundColor:'#378ADD', borderRadius:4, borderWidth:0 }] },
-          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:'#888'}}, y:{grid:{color:'rgba(0,0,0,0.06)'},ticks:{color:'#888',callback:v=>v+'万'}} } }
-        });
-      }
-      if (chartRef3.current) {
-        if (chartInst.current.line) chartInst.current.line.destroy();
-        chartInst.current.line = new window.Chart(chartRef3.current, {
-          type: 'line',
-          data: { labels: barLabels, datasets: [{ label:'人工', data: workerValues, borderColor:'#639922', backgroundColor:'rgba(99,153,34,0.1)', tension:0.4, fill:true, pointRadius:4, pointBackgroundColor:'#639922' }] },
-          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{color:'#888'}}, y:{grid:{color:'rgba(0,0,0,0.06)'},ticks:{color:'#888',callback:v=>v+'人'}} } }
-        });
-      }
-    }, 50);
-  }, [activeTab, chartReady]);
+    return () => chart.destroy();
+  }, [activeTab, chartReady, pieKey]);
 
   const maxBar = Math.max(...pieData.map(d=>d.value), 1);
 
@@ -5578,27 +5554,33 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       </button>
       {/* タブ */}
       <div style={{display:'flex',gap:4,background:'#E8ECF0',borderRadius:10,padding:4,marginBottom:16}}>
-        {/* 4つでも1行に収まるよう、左右の余白を詰め、狭い画面（360px未満）だけ字を12pxにする */}
-        {['財務','原価内訳','月別推移','予想と実績'].map((t,i) => (
-          <button key={i} onClick={()=>setActiveTab(i)}
-            style={{flex:1,padding:'8px 2px',whiteSpace:'nowrap',border: i===activeTab?'0.5px solid #E8E8E8':'none',borderRadius:7,fontSize:'clamp(12px, 3.6vw, 13px)',fontWeight:500,cursor:'pointer',background:i===activeTab?'#fff':'transparent',color:i===activeTab?'#111':'#888',transition:'all 0.15s'}}>
+        {/* 予想と実績・財務・原価内訳の3つ。狭い画面（360px未満）だけ字を12pxにする */}
+        {ANALYSIS_TABS.map(([id, t]) => (
+          <button key={id} onClick={()=>setActiveTab(id)}
+            style={{flex:1,padding:'8px 2px',whiteSpace:'nowrap',border: id===activeTab?'0.5px solid #E8E8E8':'none',borderRadius:7,fontSize:'clamp(12px, 3.6vw, 13px)',fontWeight:500,cursor:'pointer',background:id===activeTab?'#fff':'transparent',color:id===activeTab?'#111':'#888',transition:'all 0.15s'}}>
             {t}
           </button>
         ))}
       </div>
 
+      {/* 予想と実績タブ（予想＝project_info.forecast、実績＝calcSiteMoney） */}
+      {activeTab === 'forecast' && (
+        <ForecastActualTab comparison={buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo)} />
+      )}
+
       {/* 財務タブ */}
-      {activeTab === 0 && (
+      {activeTab === 'finance' && (
         <>
+          {/* 3つの箱が狭い画面（320px）でもはみ出さないよう、金額の字と箱の左右の余白を画面の幅に合わせて小さくする（390px以上は今までどおり 15px・10px） */}
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
             {[
               {label:`工事売上${kari}`,value:`¥${formatCurrency(totals.revenue)}`,color:'#111'},
               {label:'原価',value:`¥${formatCurrency(totals.cost)}`,color:'#D85A30'},
               {label:`粗利${kari}`,value:`¥${formatCurrency(totals.grossProfit)}`,color:'#639922'},
             ].map((k,i) => (
-              <div key={i} style={{background:'#fff',borderRadius:14,padding:'12px 10px',border:'0.5px solid #E8E8E8'}}>
+              <div key={i} style={{background:'#fff',borderRadius:14,padding:'12px clamp(6px, calc(5.72vw - 12.3px), 10px)',border:'0.5px solid #E8E8E8'}}>
                 <div style={{fontSize:11,color:'#1E3A5F',marginBottom:4}}>{k.label}</div>
-                <div style={{fontSize:15,fontWeight:500,color:k.color,fontVariantNumeric:'tabular-nums'}}>{k.value}</div>
+                <div style={{fontSize:'clamp(12px, 3.85vw, 15px)',fontWeight:500,color:k.color,fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>{k.value}</div>
               </div>
             ))}
           </div>
@@ -5629,63 +5611,38 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         </>
       )}
 
-      {/* 原価内訳タブ */}
-      {activeTab === 1 && (
+      {/* 原価内訳タブ（凡例・ドーナツ・棒は金額の大きい順で、色は項目ごとに固定） */}
+      {activeTab === 'breakdown' && (
         <>
-          <div style={{background:'#F4F4F4',borderRadius:12,padding:14,marginBottom:12}}>
+          <div style={{background:COST_BREAKDOWN_BG,borderRadius:12,padding:14,marginBottom:12}}>
             <div style={{fontSize:12,color:'#888',marginBottom:10}}>原価構成比</div>
             <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:10}}>
               {pieData.map((d,i) => (
                 <span key={i} style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'#888'}}>
-                  <span style={{width:8,height:8,borderRadius:2,background:COLORS[i%COLORS.length],flexShrink:0}}></span>
+                  <span style={{width:8,height:8,borderRadius:2,background:d.color,flexShrink:0}}></span>
                   {d.name} {totalCost>0?Math.round((d.value/totalCost)*100):0}%
                 </span>
               ))}
             </div>
+            {/* グラフの canvas は最初 300px の幅をとるので、狭い画面（320px）で画面を広げないよう max-width を付ける */}
             {pieData.length > 0
-              ? <div style={{position:'relative',width:'100%',height:200}}><canvas ref={chartRef1} role="img" aria-label="原価構成比ドーナツグラフ"></canvas></div>
+              ? <div style={{position:'relative',width:'100%',height:200}}><canvas ref={chartRef1} role="img" aria-label="原価構成比ドーナツグラフ" style={{maxWidth:'100%'}}></canvas></div>
               : <div style={{textAlign:'center',padding:32,color:'#888',fontSize:13}}>データがありません</div>
             }
           </div>
-          <div style={{background:'#F4F4F4',borderRadius:12,padding:14}}>
+          <div style={{background:COST_BREAKDOWN_BG,borderRadius:12,padding:14}}>
             <div style={{fontSize:12,color:'#888',marginBottom:10}}>カテゴリ別金額</div>
-            {pieData.sort((a,b)=>b.value-a.value).map((d,i) => (
+            {pieData.map((d,i) => (
               <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
                 <div style={{fontSize:11,color:'#888',width:60,textAlign:'right',flexShrink:0}}>{d.name}</div>
                 <div style={{flex:1,height:10,background:'#E8E8E8',borderRadius:5,overflow:'hidden'}}>
-                  <div style={{width:`${Math.round((d.value/maxBar)*100)}%`,height:'100%',background:COLORS[i%COLORS.length],borderRadius:5}}></div>
+                  <div style={{width:`${Math.round((d.value/maxBar)*100)}%`,height:'100%',background:d.color,borderRadius:5}}></div>
                 </div>
                 <div style={{fontSize:11,color:'#888',width:60,flexShrink:0,fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(d.value)}</div>
               </div>
             ))}
           </div>
         </>
-      )}
-
-      {/* 月別推移タブ */}
-      {activeTab === 2 && (
-        <>
-          <div style={{background:'#F4F4F4',borderRadius:12,padding:14,marginBottom:12}}>
-            <div style={{fontSize:12,color:'#888',marginBottom:10}}>月別原価推移（万円）</div>
-            {barLabels.length > 0
-              ? <div style={{position:'relative',width:'100%',height:200}}><canvas ref={chartRef2} role="img" aria-label="月別原価推移グラフ"></canvas></div>
-              : <div style={{textAlign:'center',padding:32,color:'#888',fontSize:13}}>データがありません</div>
-            }
-            {barLabels.length > 0 && <div style={{fontSize:10,color:'#888',marginTop:6}}>回送費など案件全体の原価は含みません</div>}
-          </div>
-          <div style={{background:'#F4F4F4',borderRadius:12,padding:14}}>
-            <div style={{fontSize:12,color:'#888',marginBottom:10}}>月別人工推移（人）</div>
-            {barLabels.length > 0
-              ? <div style={{position:'relative',width:'100%',height:160}}><canvas ref={chartRef3} role="img" aria-label="月別稼働人工グラフ"></canvas></div>
-              : <div style={{textAlign:'center',padding:32,color:'#888',fontSize:13}}>データがありません</div>
-            }
-          </div>
-        </>
-      )}
-
-      {/* 予想と実績タブ（予想＝project_info.forecast、実績＝calcSiteMoney） */}
-      {activeTab === 3 && (
-        <ForecastActualTab comparison={buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo)} />
       )}
 
     </div>
@@ -8559,7 +8516,8 @@ export default function LOGIOApp() {
             />
           )}
           {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={handleNavigate} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}
-          {currentPage === 'analysis' && <AnalysisPage reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={handleNavigate} />}
+          {/* key＝現場名：現場を選び直したら原価分析を作り直し、「予想と実績」から出す */}
+          {currentPage === 'analysis' && <AnalysisPage key={selectedSite} reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={handleNavigate} />}
           {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'pdf' && selectedReport && <ReportPDFPage report={selectedReport} projectInfo={projectInfo} onNavigate={handleNavigate} />}

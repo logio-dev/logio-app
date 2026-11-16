@@ -1706,6 +1706,64 @@ const isIntroFeeItem = (itemName, client) => {
   return [name, ...(INTRODUCER_ALIASES[name] || []), '紹介', '管理費'].some(w => { const k = clientSearchKey(w); return k && key.includes(k); });
 };
 
+// ========== 経費の区分（自社／外注／その他外注） ==========
+// 日報の「その日の経費」と案件の「直接原価」の行に kubun として入れる（DBの欄は増やさない。行の中に足すだけ）
+// 予想と実績タブで「外注経費」「その他外注費」を分けるのに使う。原価の合計は変わらない
+const COST_KUBUN = ['自社', '外注', 'その他外注'];
+// 名前にこれがあれば「外注」（外注会社の車代・P代・交通費・消耗品など）。
+// 「ケー」（ケーブルと間違える）と短い「MC」「smb」は入れない。増えたらこの表に足す
+const SUBCON_NAME_WORDS = ['TCY', 'ALTEQ', 'ALTEC', 'アルテック', 'マルカイ', 'BMY', 'MC興業', '奈良商事', '川田工業'];
+// 名前にこれがあれば「その他外注」（電気業者・フロン回収・アスベスト分析など）
+const OTHER_SUBCON_WORDS = ['電気', '電工', '坪井', 'フロン', 'サンキョー', '石綿', 'アスベスト', '分析', '検体', 'アイエス'];
+// 名前から区分を決める（入力のときの自動選択と、区分の無い今までの行の数え方に使う）。どれにも当たらなければ「自社」
+const guessCostKubun = (itemName) => {
+  const key = clientSearchKey(itemName);
+  const has = words => words.some(w => key.includes(clientSearchKey(w)));
+  if (has(OTHER_SUBCON_WORDS)) return 'その他外注';
+  if (has(SUBCON_NAME_WORDS)) return '外注';
+  return '自社';
+};
+// 行の区分：選んであればそれ、無ければ名前から（データは書き換えない）
+const costKubunOf = (item) => (COST_KUBUN.includes(item?.kubun) ? item.kubun : guessCostKubun(item?.name));
+
+// 区分の札・ボタンの色（dark＝暗い入力欄・一覧用、light＝日報の明るい行用）
+const COST_KUBUN_STYLE = {
+  '自社': { dark: { bg: 'rgba(255,255,255,0.10)', fg: 'rgba(255,255,255,0.85)', bd: 'rgba(255,255,255,0.28)' }, light: { bg: '#F1F5F9', fg: '#475569', bd: '#CBD5E1' } },
+  '外注': { dark: { bg: 'rgba(245,158,11,0.18)', fg: '#fbbf24', bd: 'rgba(245,158,11,0.5)' }, light: { bg: '#FEF3C7', fg: '#B45309', bd: '#FCD34D' } },
+  'その他外注': { dark: { bg: 'rgba(168,85,247,0.2)', fg: '#d8b4fe', bd: 'rgba(168,85,247,0.5)' }, light: { bg: '#F3E8FF', fg: '#7E22CE', bd: '#D8B4FE' } },
+};
+// 一覧の行に付ける小さな札。onClick があればボタン（押すと区分を切り替える）
+function CostKubunTag({ kubun, light = false, onClick, label }) {
+  const c = (COST_KUBUN_STYLE[kubun] || COST_KUBUN_STYLE['自社'])[light ? 'light' : 'dark'];
+  const style = { display: 'inline-block', fontSize: 10, fontWeight: 700, lineHeight: 1.3, padding: '2px 7px', borderRadius: 99, background: c.bg, color: c.fg, border: `1px solid ${c.bd}`, whiteSpace: 'nowrap', fontFamily: 'inherit' };
+  if (!onClick) return <span style={style}>{label || kubun}</span>;
+  return <button type="button" data-kubun-tag={kubun} aria-label={`区分：${kubun}（押すと切り替え）`} onClick={onClick} style={{ ...style, cursor: 'pointer', padding: '4px 9px' }}>{label || kubun}</button>;
+}
+// 区分を選ぶ3つのボタン。value が空なら名前から自動で選んだものを見せる（手で選んだら、そのあと名前を変えても変えない）
+function CostKubunPicker({ id, name, value, onChange }) {
+  const shown = COST_KUBUN.includes(value) ? value : guessCostKubun(name);
+  return (
+    <div id={id} style={{ marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.04em' }}>区分</span>
+        {!COST_KUBUN.includes(value) && String(name || '').trim() && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>名前から自動</span>}
+      </div>
+      <div role="radiogroup" aria-label="区分" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 6 }}>
+        {COST_KUBUN.map(k => {
+          const on = k === shown;
+          const c = COST_KUBUN_STYLE[k].dark;
+          return (
+            <button key={k} type="button" role="radio" aria-checked={on} data-kubun={k} onClick={() => onChange(k)}
+              style={{ padding: '8px 2px', borderRadius: 8, border: `1px solid ${on ? c.bd : 'rgba(255,255,255,0.08)'}`, background: on ? c.bg : 'rgba(255,255,255,0.04)', color: on ? c.fg : 'rgba(255,255,255,0.45)', fontSize: 12, fontWeight: on ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+              {k}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // 新しく足す名前と同じか、どちらかがもう一方を含む、今ある発注者名
 const findSimilarClients = (name, names) => {
   const key = clientSearchKey(name);
@@ -1938,8 +1996,9 @@ const describeSaveError = (error, labels = {}) => {
 // 画面では入力欄の文字（forecastForm）を持ち、保存のときに forecast（jsonb）に直す
 // 保存で送るのは、予想の欄の中身が開いたときと違うときだけ（触らなければ今の forecast を残す）
 // introFee＝紹介料（紹介元の現場だけ欄を出す。欄の名前は発注者名）
-const FORECAST_NUM_FIELDS = ['men', 'days', 'laborCost', 'vehicle', 'disposal', 'other', 'introFee', 'metal'];
-const FORECAST_COST_FIELDS = ['laborCost', 'vehicle', 'disposal', 'other', 'introFee']; // 原価合計＝この5つの合計
+// subconExpense＝外注経費（外注の車代・P代・交通費・消耗品など）、otherSubcon＝その他外注費（電気業者・フロン・アスベスト分析など）
+const FORECAST_NUM_FIELDS = ['men', 'days', 'laborCost', 'subconExpense', 'vehicle', 'disposal', 'other', 'otherSubcon', 'introFee', 'metal'];
+const FORECAST_COST_FIELDS = ['laborCost', 'subconExpense', 'vehicle', 'disposal', 'other', 'otherSubcon', 'introFee']; // 原価合計＝この7つの合計
 const FORECAST_DECIMAL_FIELDS = ['men', 'days']; // 小数も入れられる（0.5人工など）。金額は円の整数
 
 // 入力の文字を数字だけにする（全角の数字は半角に。カンマ・円・空白・マイナスは取る）
@@ -1967,7 +2026,7 @@ const forecastToForm = (raw) => {
 };
 
 // 入力欄の文字 → forecast（DBに書く値）
-//  ・空の数字欄は null（0 と入れた欄は 0）。原価合計 total は人工費・車両配車・処分・その他経費・紹介料の合計で、入力しない
+//  ・空の数字欄は null（0 と入れた欄は 0）。原価合計 total は人工費・外注経費・車両配車・処分・その他経費・その他外注費・紹介料の合計で、入力しない
 //  ・数字が全部「空か0」で、メモと元も空なら null（予想の無い現場に空の予想を作らない）
 const formToForecast = (form, updatedAt = '') => {
   const nums = {};
@@ -2055,9 +2114,11 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
             {numberField('men', '人工（人）', '例) 12')}
             {numberField('days', '日数', '例) 3')}
             {numberField('laborCost', '人工費（円）', '0')}
+            {numberField('subconExpense', '外注経費（円）', '0')}
             {numberField('vehicle', '車両・配車（円）', '0')}
             {numberField('disposal', '処分（円）', '0')}
             {numberField('other', 'その他経費（円）', '0')}
+            {numberField('otherSubcon', 'その他外注費（円）', '0')}
             {showIntroFee && numberField('introFee', `${introName}（円）`, '0')}
           </div>
           {/* 原価合計は自動（入力しない） */}
@@ -2066,7 +2127,7 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
               <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.55)', whiteSpace:'nowrap' }}>原価合計（自動）</span>
               <output id="forecast-total" name="forecast-total" style={{ fontSize:16, fontWeight:800, color:'#fff', fontFamily:'monospace', fontVariantNumeric:'tabular-nums' }}>{yen(draft ? draft.total : 0)}</output>
             </div>
-            <div style={{ marginTop:3, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>人工費＋車両・配車＋処分＋その他経費{showIntroFee ? `＋${introName}` : ''}</div>
+            <div style={{ marginTop:3, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>人工費＋外注経費＋車両・配車＋処分＋その他経費＋その他外注費{showIntroFee ? `＋${introName}` : ''}</div>
           </div>
           <div style={{ marginBottom:12 }}>
             {numberField('metal', '金属売上の見込み（円）', '0')}
@@ -2650,12 +2711,19 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           // 自動移行：既存の現場経費・販管費をmiscItemsに統合（初回のみ）
                           const miscItems = projectInfo.miscItems !== undefined ? projectInfo.miscItems :
                             [...(projectInfo.siteExpenseItems||[]), ...(projectInfo.sgaItems||[])];
-                          const renderItems=(items,delFn,color,border)=>items.map((item,i)=>(
+                          // onKubun があれば、行に区分の札を付ける（押すと 自社→外注→その他外注 と切り替わる）。
+                          // 紹介元の現場の紹介元の行は、区分より先に紹介元として数えるので、発注者名の札（押せない）にする
+                          const renderItems=(items,delFn,color,border,onKubun)=>items.map((item,i)=>(
                             <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 10px',borderRadius:9,marginBottom:5,background:'#3F3F3F',border:'1px solid rgba(255,255,255,0.08)'}}>
                               <div style={{width:34,height:34,borderRadius:8,background:'rgba(255,255,255,0.1)',color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,flexShrink:0,border:`1px solid ${border}`}}>{item.name.slice(0,3)}</div>
                               <div style={{flex:1,minWidth:0}}>
                                 <div style={{fontSize:13,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
-                                <div style={{fontSize:10,color:'rgba(255,255,255,0.55)',fontFamily:'monospace'}}>{item.days?`${item.days}日`:'日数未設定'}</div>
+                                <div style={{fontSize:10,color:'rgba(255,255,255,0.55)',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',marginTop:2}}>
+                                  <span style={{fontFamily:'monospace'}}>{item.days?`${item.days}日`:'日数未設定'}</span>
+                                  {onKubun && (isIntroFeeItem(item.name, projectInfo.client)
+                                    ? <CostKubunTag kubun="自社" label={cleanClientName(projectInfo.client)} />
+                                    : <CostKubunTag kubun={costKubunOf(item)} onClick={()=>onKubun(i, COST_KUBUN[(COST_KUBUN.indexOf(costKubunOf(item))+1)%COST_KUBUN.length])} />)}
+                                </div>
                               </div>
                               <div style={{fontSize:12,fontWeight:700,color:'#fbbf24',fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap'}}>¥{formatCurrency(item.amount)}</div>
                               <button onClick={()=>delFn(i)} style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.1)',color:'#f87171',fontSize:13,fontWeight:700}}>✕</button>
@@ -2683,7 +2751,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                                     <input type="number" value={amt} onChange={e=>setProjectInfo({...projectInfo,[`_${key}Amt`]:e.target.value})} placeholder="¥0" min="0" style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',border:'none',color:'#fff',borderRadius:8,fontSize:16,outline:'none',boxSizing:'border-box',fontFamily:'monospace',colorScheme:'dark'}}/>
                                   </div>
                                 </div>
-                                <button disabled={!name} onClick={()=>addFn(name,days,amt)}
+                                {/* 区分（自社／外注／その他外注）。既定は名前から自動 */}
+                                <CostKubunPicker id={`${key}-kubun`} name={name} value={projectInfo[`_${key}Kubun`]||''} onChange={k=>setProjectInfo({...projectInfo,[`_${key}Kubun`]:k})} />
+                                <button disabled={!name} onClick={()=>addFn(name,days,amt,projectInfo[`_${key}Kubun`]||guessCostKubun(name))}
                                   style={{width:'100%',padding:'11px',borderRadius:9,border:'none',background:!name?'rgba(255,255,255,0.04)':grad,color:!name?'#374151':'white',fontSize:13,fontWeight:700,cursor:!name?'not-allowed':'pointer',fontFamily:'inherit',opacity:!name?0.4:1}}>
                                   ＋ 追加
                                 </button>
@@ -2693,9 +2763,10 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
                           return (
                             <div style={{marginBottom:16}}>
                               {/* リース・機材・資材・経費等のみ */}
-                              {renderItems(miscItems,(i)=>setProjectInfo({...projectInfo,miscItems:miscItems.filter((_,j)=>j!==i)}),'#a855f7','rgba(168,85,247,0.12)')}
+                              {renderItems(miscItems,(i)=>setProjectInfo({...projectInfo,miscItems:miscItems.filter((_,j)=>j!==i)}),'#a855f7','rgba(168,85,247,0.12)',
+                                (i,kubun)=>setProjectInfo({...projectInfo,miscItems:miscItems.map((it,j)=>j===i?{...it,kubun}:it)}))}
                               {miscItems.length>0&&<div style={{display:'flex',justifyContent:'flex-end',gap:8,padding:'4px 4px',borderTop:'1px solid rgba(168,85,247,0.1)',marginBottom:2}}><span style={{fontSize:10,color:'rgba(255,255,255,0.45)',fontFamily:'monospace'}}>小計</span><span style={{fontSize:14,fontWeight:800,color:'#a855f7',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(miscItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0))}</span></div>}
-                              {renderForm('misc',MISC_QUICK,'#a855f7','linear-gradient(135deg,#7c3aed,#a855f7)',(name,days,amt)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0};setProjectInfo({...projectInfo,miscItems:[...miscItems,ni],_miscName:'',_miscDays:'',_miscAmt:''});})}
+                              {renderForm('misc',MISC_QUICK,'#a855f7','linear-gradient(135deg,#7c3aed,#a855f7)',(name,days,amt,kubun)=>{const ni={name,days:days?parseInt(days):null,amount:parseFloat(amt)||0,kubun};setProjectInfo({...projectInfo,miscItems:[...miscItems,ni],_miscName:'',_miscDays:'',_miscAmt:'',_miscKubun:''});})}
                               <div style={{marginTop:12,padding:'12px 14px',borderRadius:10,background:'#3F3F3F',border:'1px solid rgba(255,255,255,0.08)'}}>
                                 <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.45)',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8,fontFamily:'monospace'}}>コストサマリー</div>
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
@@ -3194,6 +3265,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [editingVIdx, setEditingVIdx] = useState(null);
   const [editingMIdx, setEditingMIdx] = useState(null);
   const [editingExpIdx, setEditingExpIdx] = useState(null);
+  const [expKubun, setExpKubun] = useState(''); // 経費の区分（空＝名前から自動）。workDetails には入れない（日報に保存しない）
   const [photoUrls, setPhotoUrls] = useState(isEditMode ? (editReport.photoUrls || []) : []);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [memoText, setMemoText] = useState(isEditMode ? (editReport.memo || '') : '');
@@ -3296,7 +3368,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
     const expName = (newWorkDetails._expName||'').trim();
     const expAmt = parseFloat(newWorkDetails._expAmt) || 0;
     if (expName) {
-      newWorkDetails = {...newWorkDetails, dailyExpenses:[...(newWorkDetails.dailyExpenses||[]), {name: expName, amount: expAmt}], _expName:'', _expAmt:''};
+      newWorkDetails = {...newWorkDetails, dailyExpenses:[...(newWorkDetails.dailyExpenses||[]), {name: expName, amount: expAmt, kubun: expKubun || guessCostKubun(expName)}], _expName:'', _expAmt:''};
+      setExpKubun('');
     }
     setWorkDetails(newWorkDetails);
     setCurrentStep(3);
@@ -4283,16 +4356,21 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               cursor: 'pointer'
             }} onClick={()=>{
               setWorkDetails({...workDetails, _expName: e.name, _expAmt: String(e.amount||'')});
+              setExpKubun(COST_KUBUN.includes(e.kubun) ? e.kubun : ''); // 区分の無い今までの行は、名前から自動で見せる
               setEditingExpIdx(i);
             }}>
               <div style={{width:34,height:34,borderRadius:9,background:'#2563EB',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900,flexShrink:0}}>{(e.name||'').charAt(0)}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:'#1E40AF'}}>{e.name}</div>
-                <div style={{fontSize:10,color:'#64748B'}}>¥{formatCurrency(e.amount)}</div>
+                <div style={{fontSize:10,color:'#64748B',display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                  <span>¥{formatCurrency(e.amount)}</span>
+                  {/* 札は外注・その他外注のときだけ */}
+                  {costKubunOf(e) !== '自社' && <CostKubunTag kubun={costKubunOf(e)} light />}
+                </div>
               </div>
               {isEditing && <span style={{ fontSize:9, background:'rgba(245,158,11,0.2)', color:'#B45309', border:'1px solid rgba(245,158,11,0.4)', borderRadius:4, padding:'2px 7px', fontWeight:700 }}>編集中</span>}
               {!isEditing && <span style={{ fontSize:11, color:'#94A3B8' }}>✏️</span>}
-              <button onClick={(ev)=>{ev.stopPropagation(); if(isEditing){setEditingExpIdx(null); setWorkDetails({...workDetails, _expName:'', _expAmt:'', dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});} else { setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});}}}
+              <button onClick={(ev)=>{ev.stopPropagation(); if(isEditing){setEditingExpIdx(null); setExpKubun(''); setWorkDetails({...workDetails, _expName:'', _expAmt:'', dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});} else { setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});}}}
                 style={{width:28,height:28,borderRadius:7,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.08)',color:'#f87171',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontWeight:700}}>✕</button>
             </div>
             );
@@ -4314,18 +4392,22 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                 <input type="number" value={workDetails._expAmt||''} onChange={e=>setWorkDetails({...workDetails,_expAmt:e.target.value})} placeholder="0" style={inpTxt} />
               </div>
             </div>
+            {/* 区分（自社／外注／その他外注）。既定は名前から自動 */}
+            <CostKubunPicker id="exp-kubun" name={workDetails._expName} value={expKubun} onChange={setExpKubun} />
             <AddBtn onClick={()=>{
               const name=(workDetails._expName||'').trim();
               const amt=parseFloat(workDetails._expAmt)||0;
               if(!name) return;
+              const kubun = expKubun || guessCostKubun(name);
               if (editingExpIdx !== null) {
                 const list = [...(workDetails.dailyExpenses||[])];
-                list[editingExpIdx] = {name, amount: amt};
+                list[editingExpIdx] = {...list[editingExpIdx], name, amount: amt, kubun};
                 setWorkDetails({...workDetails, dailyExpenses: list, _expName:'', _expAmt:''});
                 setEditingExpIdx(null);
               } else {
-                setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt}],_expName:'',_expAmt:''});
+                setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt,kubun}],_expName:'',_expAmt:''});
               }
+              setExpKubun('');
             }} disabled={!(workDetails._expName||'').trim()} pulse={!!(workDetails._expName||'').trim()} />
           </div>
           {(workDetails.dailyExpenses||[]).length>0 && <SubTotal label="経費" value={(workDetails.dailyExpenses||[]).reduce((s,e)=>s+(e.amount||0),0)} />}
@@ -5222,41 +5304,52 @@ const fcNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 
 const toMan = (yen) => Math.round(fcNum(yen) / 10000); // 円 → 万円（四捨五入）
 
 // forecast（jsonb）を読む。空、または原価合計も人工も0なら null（＝予想なし）
-// 形：{ men, days, laborCost, vehicle, disposal, other, introFee（紹介料）, metal（金属売上の見込み・プラス・原価に入れない）, total, note, source, updatedAt }
+// 形：{ men, days, laborCost, subconExpense（外注経費）, vehicle, disposal, other, otherSubcon（その他外注費）, introFee（紹介料）,
+//        metal（金属売上の見込み・プラス・原価に入れない）, total, note, source, updatedAt }
+// subconExpense・otherSubcon の無い前の予想は 0 として読む
 function readForecast(raw) {
   let f = raw;
   if (typeof f === 'string') { try { f = JSON.parse(f); } catch { return null; } }
   if (!f || typeof f !== 'object' || Array.isArray(f)) return null;
-  const laborCost = fcNum(f.laborCost), vehicle = fcNum(f.vehicle), disposal = fcNum(f.disposal), other = fcNum(f.other), introFee = fcNum(f.introFee);
-  const total = f.total != null && f.total !== '' ? fcNum(f.total) : laborCost + vehicle + disposal + other + introFee;
+  const laborCost = fcNum(f.laborCost), subconExpense = fcNum(f.subconExpense), vehicle = fcNum(f.vehicle), disposal = fcNum(f.disposal);
+  const other = fcNum(f.other), otherSubcon = fcNum(f.otherSubcon), introFee = fcNum(f.introFee);
+  const total = f.total != null && f.total !== '' ? fcNum(f.total) : laborCost + subconExpense + vehicle + disposal + other + otherSubcon + introFee;
   const men = fcNum(f.men);
   if (total === 0 && men === 0) return null;
   return {
-    men, days: fcNum(f.days), laborCost, vehicle, disposal, other, introFee, metal: fcNum(f.metal), total,
+    men, days: fcNum(f.days), laborCost, subconExpense, vehicle, disposal, other, otherSubcon, introFee, metal: fcNum(f.metal), total,
     note: f.note ? String(f.note) : '', source: f.source ? String(f.source) : '', updatedAt: f.updatedAt ? String(f.updatedAt) : '',
   };
 }
 
-// 実績の原価を4項目に分ける（calcSiteMoney の内訳をまとめ直すだけなので、4つの合計＝calcSiteMoney の原価）
-// ここに無い日報の内訳と、案件の分（回送費・リース費・資材費・直接原価・案件の経費）は「その他経費」
+// 実績の原価を項目に分ける（calcSiteMoney の内訳をまとめ直すだけなので、項目の合計＝calcSiteMoney の原価）
+// ここに無い日報の内訳（重機・その日の経費）と、案件の分（回送費・リース費・資材費・直接原価・案件の経費）は、まず「その他経費」に入れ、
+// その日の経費と直接原価のうち、区分が「外注」の行は外注経費、「その他外注」の行はその他外注費へ移す（区分の無い行は名前で決める）
 const ACTUAL_COST_GROUP = {
   inHouse: 'laborCost', outsourcing: 'laborCost',                                                       // 自社人工・外注人工
   vehicle: 'vehicle', haishi: 'vehicle', envItems: 'vehicle', extItems: 'vehicle', transport: 'vehicle', // 車両費・配車費・旧形式
   disposal: 'disposal',                                                                                  // 処分費（プラスの行）
 };
-// 紹介元の現場では、案件の直接原価のうち紹介料の行（isIntroFeeItem）を introFee に分け、その他経費から引く
-// （直接原価の一覧は calcSiteMoney と同じものを使うので、5つの合計＝calcSiteMoney の原価のまま）
-function sumIntroFee(projectInfo) {
-  const pi = projectInfo || {};
-  const items = pi.miscItems || [...(pi.outsourcingItems || []), ...(pi.siteExpenseItems || []), ...(pi.sgaItems || [])];
-  return items.filter(it => isIntroFeeItem(it?.name, pi.client)).reduce((s, it) => s + toYen(it?.amount), 0);
-}
+// 区分 → 移す先（「自社」はその他経費のまま）
+const COST_KUBUN_GROUP = { '外注': 'subconExpense', 'その他外注': 'otherSubcon' };
+// 紹介元の現場では、案件の直接原価のうち紹介料の行（isIntroFeeItem）を、区分より先に introFee に分ける
+// （日報の経費と直接原価の一覧は calcSiteMoney と同じものを同じ数え方（toYen）で使うので、項目の合計＝calcSiteMoney の原価のまま）
 function splitActualCost(money, reports, projectInfo) {
-  const out = { men: 0, laborCost: 0, vehicle: 0, disposal: 0, other: 0, introFee: 0, total: money?.cost || 0 };
+  const out = { men: 0, laborCost: 0, subconExpense: 0, vehicle: 0, disposal: 0, other: 0, otherSubcon: 0, introFee: 0, total: money?.cost || 0 };
   Object.entries(money?.reportParts || {}).forEach(([k, v]) => { out[ACTUAL_COST_GROUP[k] || 'other'] += v || 0; });
   Object.values(money?.projectParts || {}).forEach(v => { out.other += v || 0; });
-  out.introFee = sumIntroFee(projectInfo);
-  out.other -= out.introFee;
+  // その他経費から、ほかの項目へ移す
+  const moveFromOther = (to, amount) => { if (!to || !amount) return; out[to] += amount; out.other -= amount; };
+  (reports || []).forEach(r => {
+    const list = r?.workDetails?.dailyExpenses;
+    (Array.isArray(list) ? list : []).forEach(e => moveFromOther(COST_KUBUN_GROUP[costKubunOf(e)], toYen(e?.amount)));
+  });
+  const pi = projectInfo || {};
+  const items = pi.miscItems || [...(pi.outsourcingItems || []), ...(pi.siteExpenseItems || []), ...(pi.sgaItems || [])];
+  (Array.isArray(items) ? items : []).forEach(it => {
+    if (isIntroFeeItem(it?.name, pi.client)) moveFromOther('introFee', toYen(it?.amount));
+    else moveFromOther(COST_KUBUN_GROUP[costKubunOf(it)], toYen(it?.amount));
+  });
   // 人工（人）は日報から数える（ホーム画面の人工数と同じ数え方）
   (reports || []).forEach(r => {
     (r.workDetails?.inHouseWorkers || []).forEach(w => { out.men += getInHouseWorkerCount(w); });
@@ -5305,9 +5398,11 @@ function buildForecastComparison(forecastRaw, money, reports, projectInfo) {
   const costRows = [
     { key: 'men', label: '人工（人）', forecast: forecast.men, actual: actual.men, grade: gradeForecastMen(forecast.men, actual.men) },
     yenRow('laborCost', '人工費（万）'),
+    yenRow('subconExpense', '外注経費（万）'),
     yenRow('vehicle', '車両・配車（万）'),
     yenRow('disposal', '処分（万）'),
     yenRow('other', 'その他経費（万）'),
+    yenRow('otherSubcon', 'その他外注費（万）'),
   ];
   // 紹介料の行：名前は発注者名（「紹介料」とは出さない）。予想も実績も0なら出さない
   if (forecast.introFee || actual.introFee) costRows.push(yenRow('introFee', `${cleanClientName(projectInfo?.client) || '発注者'}（万）`));

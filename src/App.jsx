@@ -5949,6 +5949,627 @@ function ForecastActualTab({ comparison: c }) {
   );
 }
 
+// ========== 答え合わせ（予想と実績タブ。原価メモのある現場だけ） ==========
+// 予想＝原価メモ（project_info.cost_memo）と予想（forecast）、答え＝日報。
+// 答えは開くたびに日報から数える。何も保存しない（DB も変えない）。
+// 費目は今の ForecastActualTab をそのまま出す（calcSiteMoney・buildForecastComparison の数え方は変えない）。
+// 判定は今の予想と実績タブと同じ関数（金額＝gradeForecastYen、人工・日数・台数＝gradeForecastMen）。㎥ だけ gradeAnswerAmount。
+
+// ■ 品目の対応表（日報の品目名 → 原価メモの廃棄物の行）
+//   ・名前に下の言葉が入っていれば、そのグループ。全角・半角、大文字・小文字、空白の違いは見ない
+//   ・長い言葉を先に見る（「ガラスパーティション」は「ガラス」より長い「パーティション」で PT。「ガラ陶」「ガラス」は「ガラ」より先）
+//   ・同じ長さの言葉が2つ当たるときは、この表で上にあるグループを先にする
+//     （例：「廃プラ(断熱材)」は「廃プラ」「断熱材」がどちらも3文字なので、上にある GW）
+//   ・「(石綿)」は、石綿入りと書いた行（例：ガレキ(石綿)）を、ガレキより先に石綿にするための言葉
+//   ・どこにも入らない名前は、その名前のまま1つのグループ（＝予想外の行）。ただしスクラップの行は「金属」に入れる
+//   ・原価メモの行に match（言葉の配列）があれば、この表より先にそれを使う
+//   ・言葉を足すときは、この表に足すだけでよい
+const WASTE_GROUPS = [
+  { group: 'PB', words: ['PB', '石膏ボード', '廃石膏ボード', '解体ボード', 'ボード'] },
+  { group: 'GW', words: ['GW', 'グラスウール', '断熱材', 'ロックウール'] },
+  { group: 'PT', words: ['PT', 'パーティション', 'パーテーション', 'パーテーシヨン'] },
+  { group: 'ガラス', words: ['ガラス', 'ガラス陶磁器くず', 'ガラ陶'] },
+  { group: '木くず', words: ['木くず', '木屑', 'きくず'] },
+  { group: '混合', words: ['混合', '管理型混合', '安定型混合', '混合ボード入り', '混合ボード', 'ボード混合'] },
+  { group: '廃プラ', words: ['廃プラ', '廃プラスチック', 'プラ'] },
+  { group: '金属', words: ['金属', '金属くず', '鉄くず', '鉄', '雑線', 'LGS', 'スクラップ'] },
+  { group: 'がれき', words: ['がれき', 'コンクリート', 'ガレキ', 'ガラ'] },
+  { group: '繊維くず', words: ['繊維くず', '畳'] },
+  { group: '石綿', words: ['石綿', 'アスベスト', '含有建材', '(石綿)'] },
+  { group: 'OAフロア', words: ['OAフロア'] },
+];
+// スクラップの行で、表のどこにも入らない名前（エアコン・配線・名前なしなど）を入れるグループ
+const WASTE_SCRAP_GROUP = '金属';
+
+// 名前を比べる形にそろえる（全角・半角、大文字・小文字、空白の違いを見ない）
+const wasteNameKey = (s) => String(s ?? '').normalize('NFKC').toUpperCase().replace(/\s+/g, '');
+// 長い言葉が先。同じ長さなら表で上にあるグループが先
+const WASTE_GROUP_WORDS = WASTE_GROUPS
+  .flatMap((g, gi) => g.words.map(w => ({ key: wasteNameKey(w), group: g.group, gi })))
+  .filter(w => w.key)
+  .sort((a, b) => b.key.length - a.key.length || a.gi - b.gi);
+// 品目名 → グループ名（どこにも入らなければ null）
+const wasteGroupOf = (name) => {
+  const k = wasteNameKey(name);
+  return k ? (WASTE_GROUP_WORDS.find(w => k.includes(w.key))?.group || null) : null;
+};
+
+// 原価メモの文字から数を読む（"19"・"13.5"・"19.0万"・"3台" → 19・13.5・19・3）。読めなければ null
+const answerMemoNum = (v) => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  const m = String(v ?? '').normalize('NFKC').replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+};
+// 原価メモの処分費（"19.0万"）→ 円。「円」とだけ書いてあれば円のまま、それ以外は万円として読む
+const answerMemoYen = (v) => {
+  const n = answerMemoNum(v);
+  if (n == null) return null;
+  const s = String(v);
+  return /円/.test(s) && !/万/.test(s) ? n : n * 10000;
+};
+const isM3Unit = (u) => ['M3', '立米'].includes(wasteNameKey(u)); // ㎥ は NFKC で m3 になる
+const answerRound = (n) => Math.round((Number(n) || 0) * 100) / 100;
+// 数の見せ方：16・4.5・2,260（小数は1桁まで）／55.0（いつも小数1桁）／38.5万
+const ansNum = (n, d = 1) => (Math.round((Number(n) || 0) * 10 ** d) / 10 ** d).toLocaleString('ja-JP', { maximumFractionDigits: d });
+const ansFixed1 = (n) => (Math.round((Number(n) || 0) * 10) / 10).toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const ansMan1 = (yen) => ansFixed1(Math.round(toYen(yen) / 1000) / 10);
+const ansSigned = (n) => { const r = Math.round(n * 10) / 10; return signedNum(r, Number.isInteger(r) ? 0 : 1); };
+const answerMonthDay = (date) => {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(date || ''));
+  return m ? `${Number(m[2])}/${Number(m[3])}` : String(date || '');
+};
+const answerDayLabel = (date) => {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(date || ''));
+  if (!m) return String(date || '');
+  const wd = '日月火水木金土'[new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getDay()];
+  return `${Number(m[2])}/${Number(m[3])}（${wd}）`;
+};
+// 処分先が同じか（「入間緑化」と「入間緑化開発」、「石坂」と「石坂(積保)」は同じとみなす）
+const answerSameVendor = (a, b) => {
+  const x = wasteNameKey(a), y = wasteNameKey(b);
+  return !!x && !!y && (x.includes(y) || y.includes(x));
+};
+const SCRAP_DEST = 'スクラップ売却';
+const isSaleDest = (dest) => /売却|スクラップ/.test(String(dest || ''));
+
+// ㎥ の判定。金額と同じ決まり（±5%以内◎・±15%以内○・それより大きい×）を 0.1㎥ 単位で比べる
+// 予想0で実績あり＝予想外、予想が書いていない・予想も実績も0＝「−」
+function gradeAnswerAmount(p, a) {
+  if (p == null) return 'none';
+  const f = Math.round(p * 10), x = Math.round((a || 0) * 10);
+  if (f === 0) return x === 0 ? 'none' : 'extra';
+  if (f === x) return 'ok';
+  const gap = Math.abs(x - f) * 100, base = Math.abs(f);
+  return gap <= 5 * base ? 'ok' : gap <= 15 * base ? 'mid' : 'ng';
+}
+const ANSWER_MARK = { ...FORECAST_MARK, extra: '予想外', none: '−' };
+const ANSWER_NONE_COLORS = { badge: '#3F3F46', badgeText: '#E5E7EB', soft: 'rgba(255,255,255,.08)', text: '#A1A1AA' };
+const answerColors = (grade) => (grade === 'extra' ? FORECAST_COLORS.ng : FORECAST_COLORS[grade] || ANSWER_NONE_COLORS);
+
+// 日報1件の廃棄物・スクラップの行を、答え合わせで使う形にそろえる
+// （道具車だけの行と、車だけ入れた行（名前・数量・金額なし）は入れない）
+// 産廃：㎥は unit が ㎥ なら quantity、それ以外は volumeM3（無ければ null＝㎥なし）。処分費＝プラスの金額
+// スクラップ（isScrap・マイナスの金額・古い scrap_items）：㎥は volumeM3。売却額＝マイナスを外した額
+function answerWasteRowsOf(report) {
+  const rows = [];
+  const m3Of = (item, scrap, qty) => {
+    if (!scrap && isM3Unit(item.unit)) return qty;
+    const v = parseFloat(item.volumeM3);
+    if (Number.isFinite(v) && v > 0) return v;
+    return scrap && isM3Unit(item.unit) ? qty : null;
+  };
+  (report?.wasteItems || []).forEach(w => {
+    if (!w) return;
+    const name = String(w.material ?? '').trim();
+    const amount = toYen(w.amount), qty = parseFloat(w.quantity) || 0;
+    if (w.isToolVehicle === true || w.kind === 'tool' || (name === '道具車' && !amount && !qty)) return;
+    if (!name && !qty && !amount) return;
+    const scrap = w.isScrap === true || amount < 0 || w.kind === 'scrap';
+    rows.push({ name, scrap, qty, unit: String(w.unit || ''), m3: m3Of(w, scrap, qty), cost: Math.max(amount, 0), sale: Math.max(-amount, 0), site: String(w.disposalSite || '').trim(), date: report.date });
+  });
+  (report?.scrapItems || []).forEach(s => {
+    if (!s) return;
+    const qty = parseFloat(s.quantity) || 0;
+    rows.push({ name: String(s.type ?? '').trim(), scrap: true, qty, unit: String(s.unit || ''), m3: m3Of(s, true, qty), cost: 0, sale: Math.abs(toYen(s.amount)), site: String(s.buyer || '').trim(), date: report.date });
+  });
+  return rows;
+}
+
+// 1行の数量の見せ方（産廃の㎥は数だけ。それ以外は「580kg・3.5㎥」「180kg・㎥なし」）
+const answerQtyText = (e) => {
+  if (isM3Unit(e.unit)) return e.scrap ? `${ansNum(e.qty)}㎥` : ansNum(e.qty);
+  const base = `${ansNum(e.qty, 2)}${e.unit || ''}`;
+  return e.m3 != null ? `${base}・${ansNum(e.m3)}㎥` : `${base}・㎥なし`;
+};
+// 実績の中身：「品目名 数量（月/日）」。同じ日の行は「＋」、日ちがいは「・」、品目名ちがいは「／」でつなぐ
+// スクラップは買取先、産廃は処分先が原価メモと違うときだけ、日付の横に出す
+function answerEntriesText(entries, dest) {
+  const byName = new Map();
+  entries.forEach(e => {
+    const name = e.name || '（名前なし）';
+    const note = e.scrap ? e.site : (dest && e.site && !answerSameVendor(e.site, dest) ? e.site : '');
+    if (!byName.has(name)) byName.set(name, new Map());
+    const days = byName.get(name);
+    const k = `${e.date}|${note}`;
+    if (!days.has(k)) days.set(k, { date: e.date, note, qtys: [] });
+    days.get(k).qtys.push(answerQtyText(e));
+  });
+  return [...byName].map(([name, days]) => `${name} ${[...days.values()]
+    .map(d => `${d.qtys.join('＋')}（${[answerMonthDay(d.date), d.note].filter(Boolean).join(' ')}）`).join('・')}`).join('／');
+}
+
+// 廃棄物の表：行は原価メモ waste.rows の順。日報の行は品目の対応表でグループにして、同じグループの行に入れる
+// 原価メモに無いグループは、下に「（予想外）」の行として足す
+function buildAnswerWaste(memo, reports) {
+  const memoRows = memoList(memo?.waste?.rows).map((r, i) => {
+    const name = memoText(r.name);
+    return {
+      i, name, extra: false, dest: memoText(r.dest),
+      group: wasteGroupOf(name) || wasteNameKey(name),
+      match: (Array.isArray(r.match) ? r.match : []).map(memoText).filter(Boolean),
+      p: answerMemoNum(r.m3), pCost: answerMemoYen(r.cost), entries: [],
+    };
+  }).filter(r => r.name);
+  const matchWords = memoRows
+    .flatMap(r => r.match.map(w => ({ key: wasteNameKey(w), row: r })))
+    .filter(x => x.key)
+    .sort((a, b) => b.key.length - a.key.length || a.row.i - b.row.i);
+  const rowByGroup = new Map();
+  memoRows.forEach(r => { if (!rowByGroup.has(r.group)) rowByGroup.set(r.group, r); });
+  const extras = new Map();
+  const sorted = [...(reports || [])].filter(Boolean).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  sorted.forEach(rep => answerWasteRowsOf(rep).forEach(e => {
+    const key = wasteNameKey(e.name);
+    let target = key ? matchWords.find(x => key.includes(x.key))?.row : null;
+    if (!target) {
+      const tableGroup = wasteGroupOf(e.name);
+      const group = tableGroup || (e.scrap ? WASTE_SCRAP_GROUP : (key || '（名前なし）'));
+      target = rowByGroup.get(group);
+      if (!target) {
+        if (!extras.has(group)) {
+          const shown = tableGroup || (e.scrap ? WASTE_SCRAP_GROUP : (e.name || '（名前なし）'));
+          extras.set(group, { name: shown, extra: true, dest: '', group, p: null, pCost: null, entries: [] });
+        }
+        target = extras.get(group);
+      }
+    }
+    target.entries.push(e);
+  }));
+
+  const rows = [...memoRows, ...extras.values()].map((r, idx) => {
+    const ent = r.entries;
+    const a = answerRound(ent.reduce((s, e) => s + (e.m3 || 0), 0));
+    const cost = ent.reduce((s, e) => s + e.cost, 0);
+    const sale = ent.reduce((s, e) => s + e.sale, 0);
+    const hasScrap = ent.some(e => e.scrap);
+    const sites = [...new Set(ent.map(e => (e.scrap ? SCRAP_DEST : (e.site || '（処分先なし）'))))];
+    let destText;
+    if (r.extra || !r.dest) destText = sites.join('・') || r.dest || '−';
+    else if (!ent.length || sites.every(s => answerSameVendor(s, r.dest) || (s === SCRAP_DEST && isSaleDest(r.dest)))) destText = r.dest;
+    else destText = `予想 ${r.dest}／実績 ${sites.join('・')}`;
+    const merged = !r.extra && rowByGroup.get(r.group) !== r ? rowByGroup.get(r.group) : null;
+    let src = ent.length ? answerEntriesText(ent, r.dest) : (merged ? `「${merged.name}」の行に入れた` : '日報に行なし');
+    if (sale > 0) src += `　売上 ${ansMan1(sale)}万`;
+    const grade = r.extra ? 'extra' : gradeAnswerAmount(r.p, a);
+    return {
+      key: `${r.extra ? 'x' : 'm'}${idx}`, name: r.extra ? `${r.name}（予想外）` : r.name, group: r.group, extra: r.extra,
+      dest: destText, p: r.p, a, grade, diff: r.p == null && !r.extra ? '' : ansSigned(a - (r.p || 0)),
+      pCost: r.pCost, pCostText: r.pCost != null ? `${ansMan1(r.pCost)}万` : (isSaleDest(r.dest) ? '売却' : '−'),
+      cost, aCostText: cost === 0 && hasScrap ? '売却' : `${ansMan1(cost)}万`,
+      src, noM3: ent.filter(e => e.m3 == null).map(e => `${e.name || '（名前なし）'}${ansNum(e.qty, 2)}${e.unit || ''}`),
+    };
+  });
+  const pList = memoRows.filter(r => r.p != null);
+  const totalP = pList.length ? answerRound(pList.reduce((s, r) => s + r.p, 0)) : null;
+  const totalA = answerRound(rows.reduce((s, r) => s + r.a, 0));
+  const pCosts = memoRows.filter(r => r.pCost != null);
+  const total = {
+    p: totalP, a: totalA, grade: gradeAnswerAmount(totalP, totalA), diff: totalP == null ? '' : ansSigned(totalA - totalP),
+    pCost: pCosts.length ? pCosts.reduce((s, r) => s + r.pCost, 0) : null,
+    cost: rows.reduce((s, r) => s + r.cost, 0),
+  };
+  const metalA = answerRound(rows.filter(r => r.group === '金属').reduce((s, r) => s + r.a, 0));
+  return { rows, total, metalA, noM3: rows.flatMap(r => r.noM3) };
+}
+
+// 道具車：その日報で車両費を数える車（getReportVehicleCost と同じ決め方）
+// 同じ車（車種＋車番）は1台。同じ担当者の2台目以降と、乗換の行は数えない。返り値は 車種＋車番 → 車種
+function toolCarsOfReport(report) {
+  const cars = new Map();
+  (report?.workDetails?.vehicles || []).forEach(v => {
+    if (!v || !v.type || v.isSwap === true) return;
+    cars.set(`${v.type}|${v.number || ''}`, v.type);
+  });
+  const seenWorkers = new Set();
+  [...(report?.wasteItems || []), ...(report?.scrapItems || [])].forEach(item => {
+    if (!item || !item.workerVType) return;
+    const worker = item.workerName || '';
+    if (worker) {
+      if (seenWorkers.has(worker)) return;
+      seenWorkers.add(worker);
+      if (item.isSwap === true) return;
+    } else if (item.isSwap === true) return;
+    cars.set(`${item.workerVType}|${item.workerVNumber || ''}`, item.workerVType);
+  });
+  return cars;
+}
+// 配車：その日に来た配車の台数（配車費を付けるときと同じ決め方。normalizeHaishiAmounts）
+// 環境課配車は 運転者・車種・車番・昼夜 が同じ行を1台。ワイエム配車は同じマニフェストNo.を1台（無ければ車両と昼夜）、例外金額の行は1行1台
+function haishaTripCount(items) {
+  const slots = new Set(), manifests = new Set();
+  let n = 0;
+  (items || []).forEach(it => {
+    if (!it) return;
+    const kind = it.haisha || it.kind || '';
+    if (kind !== 'env' && kind !== 'ext') return;
+    const slot = `${kind}|${it.driver || ''}|${it.vType || ''}|${it.vNumber || ''}|${it.haishiShift || ''}`;
+    const manifest = kind === 'ext' ? extManifestKey(it) : '';
+    if (isHaishiOverrideItem(it)) {
+      if (manifest) { if (manifests.has(manifest)) return; manifests.add(manifest); }
+      n += 1;
+      return;
+    }
+    if (manifest) {
+      if (manifests.has(manifest)) return;
+      manifests.add(manifest); slots.add(slot); n += 1;
+      return;
+    }
+    if (slots.has(slot)) return;
+    slots.add(slot); n += 1;
+  });
+  return n;
+}
+
+const isNightShift = (s) => s === 'nighttime' || s === 'nightLoading';
+const answerTimeMin = (s) => { const m = /^(\d{1,2}):(\d{2})/.exec(String(s || '').trim()); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+const answerTimeText = (min) => (min === 1440 ? '24:00' : `${Math.floor((min % 1440) / 60)}:${String(min % 60).padStart(2, '0')}`);
+
+// 日報を日ごとにまとめる（同じ日に日報が2件あれば1日にまとめる）
+function buildAnswerDays(reports) {
+  const byDate = new Map();
+  [...(reports || [])].filter(r => r && r.date)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+    .forEach(r => { if (!byDate.has(r.date)) byDate.set(r.date, []); byDate.get(r.date).push(r); });
+  return [...byDate].map(([date, reps]) => {
+    const inHouse = reps.flatMap(r => r.workDetails?.inHouseWorkers || []).filter(Boolean);
+    const outs = reps.flatMap(r => r.workDetails?.outsourcingLabor || []).filter(Boolean);
+    const companies = new Map();
+    outs.forEach(o => { const c = String(o.company || '外注').trim() || '外注'; companies.set(c, (companies.get(c) || 0) + getOutsourcingCount(o)); });
+    const loading = inHouse.filter(w => w.shift === 'nightLoading').reduce((s, w) => s + getInHouseWorkerCount(w), 0);
+    const self = inHouse.filter(w => w.shift !== 'nightLoading').reduce((s, w) => s + getInHouseWorkerCount(w), 0);
+    const outMen = [...companies.values()].reduce((s, n) => s + n, 0);
+    const shifts = [...inHouse, ...outs].map(w => w.shift).filter(Boolean);
+    const night = shifts.some(isNightShift), day = shifts.some(s => !isNightShift(s));
+    // 開始〜終了：自社と外注のいちばん早い開始〜いちばん遅い終了（終了が開始より前なら次の日）
+    const spans = [...inHouse, ...outs].map(w => {
+      const s = answerTimeMin(w.start), e = answerTimeMin(w.end);
+      return s == null || e == null ? null : { s, e: e <= s ? e + 1440 : e };
+    }).filter(Boolean);
+    const time = spans.length ? `${answerTimeText(Math.min(...spans.map(x => x.s)))}〜${answerTimeText(Math.max(...spans.map(x => x.e)))}` : '';
+    const cars = new Map();
+    reps.forEach(r => toolCarsOfReport(r).forEach((type, k) => cars.set(k, type)));
+    const waste = reps.flatMap(answerWasteRowsOf);
+    return {
+      date, label: answerDayLabel(date),
+      shift: night && day ? '昼夜' : night ? '夜' : day ? '昼' : '',
+      men: self + loading + outMen,
+      menParts: [...[...companies].map(([c, n]) => `${c} ${ansNum(n)}`), self ? `自社 ${ansNum(self)}` : '', loading ? `自社積込 ${ansNum(loading)}` : ''].filter(Boolean),
+      time,
+      work: reps.map(r => String(r.workDetails?.workContent || '').trim()).filter(Boolean).join('／'),
+      waste, toolCars: cars.size, toolTypes: [...new Set(cars.values())],
+      haisha: haishaTripCount(reps.flatMap(r => r.wasteItems || [])),
+    };
+  });
+}
+
+// 原価メモ・予想・日報から、答え合わせの画面に出すものを作る（数えるだけ。何も保存しない）
+// comparison＝buildForecastComparison の結果（予想なしなら null）、money＝calcSiteMoney の結果
+function buildAnswerCheck(memo, comparison, reports, money, projectInfo) {
+  const list = Array.isArray(reports) ? reports : [];
+  const forecast = comparison?.forecast || null;
+  const actual = comparison?.actual || splitActualCost(money, list, projectInfo);
+  const days = buildAnswerDays(list);
+  const waste = buildAnswerWaste(memo, list);
+  const plan = memoList(memo?.schedule).map(r => ({
+    day: memoText(r.day), shift: memoText(r.shift), people: memoText(r.people), work: memoText(r.work),
+    days: answerMemoNum(r.days), men: answerMemoNum(r.men), m3: answerMemoNum(r.m3), m3Text: memoText(r.m3),
+    trucks: memoText(r.trucks), items: memoText(r.items),
+  })).filter(r => r.day || r.work || r.people || r.m3Text || r.items);
+  // 予定の日数：schedule の行の数（days が書いてあれば、その合計）
+  const planDays = plan.length ? plan.reduce((s, r) => s + (r.days > 0 ? r.days : 1), 0) : null;
+  const summaryList = memoList(memo?.summary);
+  const daySummary = summaryList.find(s => memoText(s.label) === '人数・想定日数') || summaryList.find(s => /日数/.test(memoText(s.label)));
+  const fmtMen = (n) => `${ansNum(n)}人工`;
+
+  // ① 人数・日数
+  const daysPred = daySummary ? [memoText(daySummary.value), memoText(daySummary.strong)].filter(Boolean).join('　') : '';
+  const card1 = {
+    key: 'days', label: '人数・日数',
+    pred: daysPred || (planDays != null ? `${ansNum(planDays)}日` : null),
+    act: `${days.length}日`,
+    grade: planDays != null ? gradeForecastMen(planDays, days.length) : 'none',
+    sub: days.length ? `${days.map(d => ansNum(d.men)).join('・')}人` : '日報なし',
+  };
+  // ② 合計人工（実績＝今の予想と実績タブと同じ数）
+  const companies = new Map();
+  let selfMen = 0;
+  list.forEach(r => {
+    (r.workDetails?.outsourcingLabor || []).forEach(o => { if (!o) return; const c = String(o.company || '外注').trim() || '外注'; companies.set(c, (companies.get(c) || 0) + getOutsourcingCount(o)); });
+    (r.workDetails?.inHouseWorkers || []).forEach(w => { if (w) selfMen += getInHouseWorkerCount(w); });
+  });
+  const outMen = [...companies.values()].reduce((s, n) => s + n, 0);
+  const card2 = {
+    key: 'men', label: '合計人工',
+    pred: forecast ? fmtMen(forecast.men) : null,
+    act: fmtMen(actual.men),
+    grade: forecast ? gradeForecastMen(forecast.men, actual.men) : 'none',
+    sub: [outMen ? `外注${ansNum(outMen)}（${[...companies.keys()].join('・')}）` : '', selfMen ? `自社${ansNum(selfMen)}` : ''].filter(Boolean).join('＋'),
+  };
+  // ③ 廃棄物㎥
+  const wasteSub = [
+    waste.metalA ? `処分${ansFixed1(waste.total.a - waste.metalA)}㎥＋金属${ansFixed1(waste.metalA)}㎥` : '',
+    waste.noM3.length ? `（${waste.noM3.join('・')}は㎥なし）` : '',
+  ].join('');
+  const card3 = {
+    key: 'waste', label: '廃棄物',
+    pred: waste.total.p != null ? `${ansFixed1(waste.total.p)}㎥` : null,
+    act: `${ansFixed1(waste.total.a)}㎥`,
+    grade: waste.total.grade,
+    sub: wasteSub,
+  };
+  // ④ 処分費（実績＝今の予想と実績タブの「処分」と同じ数）
+  const card4 = {
+    key: 'disposal', label: '処分費',
+    pred: forecast ? `${ansMan1(forecast.disposal)}万` : null,
+    act: `${ansMan1(actual.disposal)}万`,
+    grade: forecast ? gradeForecastYen(forecast.disposal, actual.disposal) : 'none',
+    sub: '',
+  };
+  // ⑤ 搬出車（道具車は台×日。予想は原価メモの check）
+  const check = isPlainObject(memo?.check) ? memo.check : null;
+  const pTool = answerMemoNum(check?.toolCarDays), pHaisha = answerMemoNum(check?.haisha);
+  const hasCheck = pTool != null || pHaisha != null;
+  const aTool = days.reduce((s, d) => s + d.toolCars, 0), aHaisha = days.reduce((s, d) => s + d.haisha, 0);
+  const card5 = {
+    key: 'trucks', label: '搬出車',
+    pred: hasCheck ? `道具車${pTool != null ? ansNum(pTool) : '−'}日・配車${pHaisha != null ? ansNum(pHaisha) : '−'}台` : null,
+    act: `道具車${aTool}日・配車${aHaisha}台`,
+    grade: hasCheck ? gradeForecastMen((pTool || 0) + (pHaisha || 0), aTool + aHaisha) : 'none',
+    sub: '',
+  };
+  // ⑥ 原価・粗利（今の予想と実績タブと同じ数）
+  const margin = comparison?.salesRows?.find(r => r.key === 'grossMargin');
+  const revenue = money?.revenue || 0;
+  const pct = (v) => (v == null ? '−' : `${(Math.round(v * 10) / 10).toFixed(1)}%`);
+  const card6 = {
+    key: 'cost', label: '原価・粗利',
+    pred: forecast ? `${ansNum(toMan(forecast.total), 0)}万・粗利${pct(margin?.forecast)}` : null,
+    act: `${ansNum(toMan(actual.total), 0)}万・粗利${pct(revenue > 0 ? money?.grossMargin || 0 : null)}${money?.isProvisional ? '（仮）' : ''}`,
+    grade: forecast ? gradeForecastYen(forecast.total, actual.total) : 'none',
+    sub: (money?.metalRevenue || 0) > 0 ? `金属売上${ansMan1(money.metalRevenue)}万は別` : '',
+  };
+
+  // 段取り：予定（schedule の1行）と日報（1日）を、早い順に横に並べる
+  const pairs = Array.from({ length: Math.max(plan.length, days.length) }, (_, i) => ({ plan: plan[i] || null, day: days[i] || null }));
+  const planMen = plan.some(r => r.men != null || (answerMemoNum(r.people) != null))
+    ? plan.reduce((s, r) => s + (r.men != null ? r.men : (answerMemoNum(r.people) || 0) * (r.days > 0 ? r.days : 1)), 0) : null;
+  const planM3 = plan.some(r => r.m3 != null) ? plan.reduce((s, r) => s + (r.m3 || 0), 0) : null;
+  const planNight = plan.length > 0 && plan.every(r => /夜/.test(r.shift));
+  const actualNight = days.length > 0 && days.every(d => d.shift === '夜');
+  const planTotal = plan.length
+    ? ['予定 ' + `${ansNum(planDays)}${planNight ? '夜' : '日'}`, planMen != null ? fmtMen(planMen) : '', planM3 != null ? `${ansFixed1(planM3)}㎥` : ''].filter(Boolean).join('・')
+    : '予定 −';
+  const actualTotal = ['実績 ' + `${days.length}${actualNight ? '夜' : '日'}`, fmtMen(actual.men), `${ansFixed1(waste.total.a)}㎥`].join('・');
+
+  return {
+    done: projectInfo?.status === '完了',
+    cards: [card1, card2, card3, card4, card5, card6],
+    waste, pairs, planTotal, actualTotal,
+  };
+}
+
+// 表（狭い画面では表の中で横にずらす。右に続きがあるあいだは下に案内を出す）
+function AnswerTable({ id, cols, children }) {
+  const ref = useRef(null);
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const check = () => setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(check) : null;
+    if (ro) ro.observe(el);
+    return () => { el.removeEventListener('scroll', check); if (ro) ro.disconnect(); };
+  }, []);
+  return (
+    <>
+      {/* 幅0＋最小幅100%：表の幅（minWidth）で、外の原価分析のページが広がらないようにする */}
+      <div ref={ref} id={id} className="answer-table" style={{ overflowX: 'auto', width: 0, minWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+        {/* 列の幅は cols で決め打ち（中身の長い列につられて、左の列が広がらないように） */}
+        <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: cols.reduce((s, x) => s + x, 0), minWidth: '100%' }}>
+          <colgroup>{cols.map((x, i) => <col key={i} style={{ width: x }} />)}</colgroup>
+          {children}
+        </table>
+      </div>
+      {more && <div className="answer-more" style={{ marginTop: 6, fontSize: 10.5, color: '#888', textAlign: 'right' }}>右に続きがあります（表を横にずらす）→</div>}
+    </>
+  );
+}
+
+const ANSWER_CARD = { background: '#121212', border: '1px solid #262626', borderRadius: 12, padding: '12px 12px', marginBottom: 12, color: '#EDEDED' };
+const ANSWER_TITLE = { fontSize: 12, color: '#999', marginBottom: 8 };
+
+// ◎○×・予想外・− の札（色は今の予想と実績タブのもの）
+function AnswerMark({ grade, solid = false, children }) {
+  const c = answerColors(grade);
+  return (
+    <span data-grade={grade} style={{ fontWeight: 800, borderRadius: solid ? 999 : 6, padding: solid ? '2px 9px' : '1px 6px', fontSize: 12, whiteSpace: 'nowrap',
+      background: solid ? c.badge : c.soft, color: solid ? c.badgeText : c.text }}>
+      {ANSWER_MARK[grade]}{children != null && children !== '' ? ` ${children}` : ''}
+    </span>
+  );
+}
+
+function AnswerCheckTab({ memo, reports, totals, projectInfo }) {
+  const comparison = React.useMemo(() => buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo), [projectInfo, totals, reports]);
+  const a = React.useMemo(() => buildAnswerCheck(memo, comparison, reports, totals, projectInfo), [memo, comparison, reports, totals, projectInfo]);
+  const head = { fontWeight: 400, color: '#777', fontSize: 11, textAlign: 'right', padding: '2px 4px 6px', whiteSpace: 'nowrap', borderBottom: '1px solid #2c2c2c', verticalAlign: 'bottom' };
+  const textHead = { ...head, textAlign: 'left', whiteSpace: 'normal' };
+  const cell = { padding: '7px 4px', textAlign: 'right', fontSize: 13, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', borderBottom: '1px solid #222', verticalAlign: 'top' };
+  const textCell = { ...cell, textAlign: 'left', whiteSpace: 'normal', fontSize: 12, color: '#bbb', overflowWrap: 'anywhere' };
+  const box = { background: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 10, padding: '9px 10px', minWidth: 0 };
+  const w = a.waste;
+  return (
+    <div id="answer-check">
+      {/* 答えの状態の札 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+        <span id="answer-state" data-state={a.done ? 'done' : 'wip'} style={{ padding: '4px 12px', borderRadius: 999, fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap', color: '#111',
+          background: a.done ? '#FFC400' : '#fff', border: a.done ? '1px solid #FFC400' : '1px solid #D1D5DB' }}>
+          {a.done ? '答え 確定' : '答え 途中'}
+        </span>
+        {!a.done && <span id="answer-state-note" style={{ flex: '1 1 200px', fontSize: 11, color: '#6B7280', lineHeight: 1.5 }}>ステータスが完了（請求チェック済み）になると確定します。外注経費などは請求チェックまで入りません</span>}
+      </div>
+
+      {/* 1. 概要（6枠） */}
+      <div id="answer-summary" style={ANSWER_CARD}>
+        <div style={ANSWER_TITLE}>概要</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+          {a.cards.map(c => (
+            <div key={c.key} data-key={c.key} className="answer-card" style={box}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
+                <span style={{ fontSize: 12, color: '#bbb', fontWeight: 700 }}>{c.label}</span>
+                <AnswerMark grade={c.grade} solid />
+              </div>
+              <div className="answer-pred" style={{ fontSize: 11.5, color: '#999', lineHeight: 1.5, overflowWrap: 'anywhere' }}>予想　{c.pred ?? '−'}</div>
+              <div className="answer-act" style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.4, marginTop: 2, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>{c.act}</div>
+              {c.sub && <div className="answer-sub" style={{ fontSize: 11, color: '#888', lineHeight: 1.5, marginTop: 3, overflowWrap: 'anywhere' }}>{c.sub}</div>}
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 11, color: '#888', marginTop: 10, lineHeight: 1.6 }}>◎ ずれ ±5%以内　○ ±15%以内　× ±15%超（人工・日数・台数は ±1◎・±3○）</div>
+      </div>
+
+      {/* 2. 廃棄物 */}
+      <div id="answer-waste" style={ANSWER_CARD}>
+        <div style={ANSWER_TITLE}>廃棄物</div>
+        {w.rows.length === 0 ? (
+          <div style={{ fontSize: 13, color: '#bbb' }}>原価メモにも日報にも、廃棄物の行がありません</div>
+        ) : (
+          // 390px の画面なら、品目〜差（判定）までが最初から見える幅
+          <AnswerTable id="answer-waste-table" cols={[74, 80, 44, 44, 88, 66, 66, 250]}>
+            <thead>
+              <tr>
+                <th style={textHead}>品目（原価メモ）</th>
+                <th style={textHead}>処分先</th>
+                <th style={head}>予想㎥</th>
+                <th style={head}>実績㎥</th>
+                <th style={head}>差</th>
+                <th style={head}>予想処分費</th>
+                <th style={head}>実績処分費</th>
+                <th style={textHead}>実績の中身（日報）</th>
+              </tr>
+            </thead>
+            <tbody>
+              {w.rows.map(r => (
+                <tr key={r.key} data-group={r.group} data-grade={r.grade} data-extra={r.extra ? '1' : undefined}>
+                  <td style={{ ...textCell, color: '#EDEDED', fontWeight: 700 }}>{r.name}</td>
+                  <td style={textCell}>{r.dest}</td>
+                  <td style={cell}>{r.p == null ? '−' : ansNum(r.p)}</td>
+                  <td style={{ ...cell, fontWeight: 800 }}>{ansNum(r.a)}</td>
+                  <td style={cell}><AnswerMark grade={r.grade}>{r.diff}</AnswerMark></td>
+                  <td style={cell}>{r.pCostText}</td>
+                  <td style={{ ...cell, fontWeight: 800 }}>{r.aCostText}</td>
+                  <td style={textCell}>{r.src}</td>
+                </tr>
+              ))}
+              <tr data-total="1">
+                <td style={{ ...textCell, color: '#EDEDED', fontWeight: 700, borderBottom: 'none' }}>合計</td>
+                <td style={{ ...textCell, borderBottom: 'none' }}></td>
+                <td style={{ ...cell, borderBottom: 'none' }}>{w.total.p == null ? '−' : ansFixed1(w.total.p)}</td>
+                <td style={{ ...cell, fontWeight: 800, borderBottom: 'none' }}>{ansFixed1(w.total.a)}</td>
+                <td style={{ ...cell, borderBottom: 'none' }}><AnswerMark grade={w.total.grade}>{w.total.diff}</AnswerMark></td>
+                <td style={{ ...cell, borderBottom: 'none' }}>{w.total.pCost == null ? '−' : `${ansMan1(w.total.pCost)}万`}</td>
+                <td style={{ ...cell, fontWeight: 800, borderBottom: 'none' }}>{`${ansMan1(w.total.cost)}万`}</td>
+                <td style={{ ...textCell, borderBottom: 'none' }}></td>
+              </tr>
+            </tbody>
+          </AnswerTable>
+        )}
+      </div>
+
+      {/* 3. 費目（今の予想と実績タブをそのまま。「原価の当たり具合」もここ） */}
+      <div id="answer-costs" style={{ marginBottom: 12 }}>
+        <ForecastActualTab comparison={comparison} />
+      </div>
+
+      {/* 4. 段取り（予定 ⇄ 日報） */}
+      <div id="answer-schedule" style={ANSWER_CARD}>
+        <div style={ANSWER_TITLE}>段取り（予定 ⇄ 日報）</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginBottom: 6 }}>
+          <div style={{ fontSize: 11, color: '#777' }}>予定（原価メモ）</div>
+          <div style={{ fontSize: 11, color: '#777' }}>日報</div>
+        </div>
+        {a.pairs.length === 0 && <div style={{ fontSize: 13, color: '#bbb' }}>予定も日報もありません</div>}
+        {a.pairs.map((pr, i) => {
+          const p = pr.plan, d = pr.day;
+          const extraDay = !p && !!d;
+          const planOut = p ? [`搬出${p.m3Text ? ` ${withUnit(p.m3Text, '㎥')}` : ''}${p.items ? `（${p.items}）` : ''}`, p.trucks ? withUnit(p.trucks, '台') : ''].join('') : '';
+          let dayOut = '', dayCars = '';
+          if (d) {
+            const byName = new Map();
+            d.waste.forEach(e => {
+              const n = e.name || '（名前なし）';
+              if (!byName.has(n)) byName.set(n, { m3: 0, all: true, qty: 0, unit: e.unit });
+              const o = byName.get(n);
+              if (e.m3 != null) o.m3 += e.m3; else o.all = false;
+              o.qty += e.qty;
+            });
+            const m3 = d.waste.reduce((s, e) => s + (e.m3 || 0), 0);
+            dayOut = d.waste.length
+              ? `搬出 ${ansFixed1(m3)}㎥（${[...byName].map(([n, o]) => `${n} ${o.all ? ansNum(o.m3) : `${ansNum(o.qty, 2)}${o.unit || ''}`}`).join('・')}）`
+              : '搬出なし';
+            dayCars = [d.toolCars ? `道具車 ${d.toolTypes.join('・')}` : '', d.haisha ? `配車${d.haisha}` : ''].filter(Boolean).join('＋');
+          }
+          return (
+            <div key={i} className="answer-day" data-extra={extraDay ? '1' : undefined} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginBottom: 8 }}>
+              <div className="answer-plan" style={{ ...box, ...(p ? {} : { borderStyle: 'dashed', color: '#777' }) }}>
+                {p ? (
+                  <>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#fff' }}>{/^\d+$/.test(p.day) ? `${p.day}日目` : (p.day || `${i + 1}日目`)}</div>
+                    <div style={{ fontSize: 12, color: '#ddd', marginTop: 2 }}>{[p.shift, p.people ? withUnit(p.people, '人') : ''].filter(Boolean).join(' ') || '−'}</div>
+                    {p.work && <div style={{ fontSize: 11.5, color: '#bbb', marginTop: 3, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{p.work}</div>}
+                    {planOut && <div style={{ fontSize: 11, color: '#999', marginTop: 3, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{planOut}</div>}
+                  </>
+                ) : <div style={{ fontSize: 12 }}>（予定なし）</div>}
+              </div>
+              <div className="answer-actual" style={{ ...box, ...(extraDay ? { background: 'rgba(245,158,11,.14)', border: '1px solid #f59e0b' } : {}), ...(d ? {} : { borderStyle: 'dashed', color: '#777' }) }}>
+                {d ? (
+                  <>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: extraDay ? '#fbbf24' : '#fff' }}>{d.label}</div>
+                    <div style={{ fontSize: 12, color: '#ddd', marginTop: 2, overflowWrap: 'anywhere' }}>{[d.shift, `${ansNum(d.men)}人`].filter(Boolean).join(' ')}{d.menParts.length ? `（${d.menParts.join('＋')}）` : ''}</div>
+                    {d.time && <div style={{ fontSize: 11, color: '#999', marginTop: 1, fontVariantNumeric: 'tabular-nums' }}>{d.time}</div>}
+                    {d.work && <div style={{ fontSize: 11.5, color: '#bbb', marginTop: 3, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{d.work}</div>}
+                    <div style={{ fontSize: 11, color: '#999', marginTop: 3, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{dayOut}</div>
+                    {dayCars && <div style={{ fontSize: 11, color: '#999', marginTop: 1, overflowWrap: 'anywhere' }}>{dayCars}</div>}
+                  </>
+                ) : <div style={{ fontSize: 12 }}>日報なし</div>}
+              </div>
+            </div>
+          );
+        })}
+        <div id="answer-schedule-total" style={{ fontSize: 13, color: '#EDEDED', marginTop: 4, lineHeight: 1.6, fontVariantNumeric: 'tabular-nums' }}>
+          {/* 「予定 …」「→ 実績 …」をそれぞれひとかたまりで折り返す */}
+          <span style={{ display: 'inline-block' }}>{a.planTotal}</span>
+          <span style={{ display: 'inline-block' }}><span style={{ color: '#777', margin: '0 6px' }}>→</span>{a.actualTotal}</span>
+        </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: '#666', lineHeight: 1.7 }}>答え（実績）は、開くたびに日報から数えています。何も保存しません。</div>
+    </div>
+  );
+}
+
 // ========== AnalysisPage ==========
 // 原価内訳の色（項目ごとに固定。どの現場でも同じ項目は同じ色）
 // 本番で出る5項目（人工費・産廃費・車両費・直接原価・経費）には、色の見え方が違う人にも見分けやすい5色を当てている
@@ -5975,6 +6596,12 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
   const [activeTab, setActiveTab] = useState('forecast');
   const chartRef1 = React.useRef(null);
+  // 原価メモ（読めないとき・無いときは null。そのときの予想と実績タブは今のまま）
+  const answerMemo = React.useMemo(() => {
+    if (projectInfo?.costMemo == null) return null;
+    const parsed = parseCostMemo(projectInfo.costMemo);
+    return parsed.ok ? parsed.memo : null;
+  }, [projectInfo?.costMemo]);
 
   // データ計算（項目の合計が財務タブの「原価」と一致する。数え方は calcSiteMoney と同じ）
   const rp = totals.reportParts || {};
@@ -6056,9 +6683,11 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
         ))}
       </div>
 
-      {/* 予想と実績タブ（予想＝project_info.forecast、実績＝calcSiteMoney） */}
-      {activeTab === 'forecast' && (
-        <ForecastActualTab comparison={buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo)} />
+      {/* 予想と実績タブ（予想＝project_info.forecast、実績＝calcSiteMoney）
+          原価メモが読める現場は、答え合わせ（札・概要・廃棄物・費目・段取り）。費目は今の表をそのまま出す */}
+      {activeTab === 'forecast' && (answerMemo
+        ? <AnswerCheckTab memo={answerMemo} reports={reports} totals={totals} projectInfo={projectInfo} />
+        : <ForecastActualTab comparison={buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo)} />
       )}
 
       {/* 財務タブ */}

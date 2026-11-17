@@ -2040,9 +2040,10 @@ const describeSaveError = (error, labels = {}) => {
 // 保存で送るのは、予想の欄の中身が開いたときと違うときだけ（触らなければ今の forecast を残す）
 // introFee＝紹介料（紹介元の現場だけ欄を出す。欄の名前は発注者名）
 // subconExpense＝外注経費（外注の車代・P代・交通費・消耗品など）、otherSubcon＝その他外注費（電気業者・フロン・アスベスト分析など）
-const FORECAST_NUM_FIELDS = ['men', 'days', 'laborCost', 'subconExpense', 'vehicle', 'disposal', 'other', 'otherSubcon', 'introFee', 'metal'];
-const FORECAST_COST_FIELDS = ['laborCost', 'subconExpense', 'vehicle', 'disposal', 'other', 'otherSubcon', 'introFee']; // 原価合計＝この7つの合計
-const FORECAST_DECIMAL_FIELDS = ['men', 'days']; // 小数も入れられる（0.5人工など）。金額は円の整数
+// 11/17 原価メモの費目に合わせた：vehicle＝車両（道具車）だけ、haisha＝配車（別の欄）、menDay・menNight＝昼・夜の人工、extra＝別途（参考・合計外）
+const FORECAST_NUM_FIELDS = ['men', 'menDay', 'menNight', 'days', 'laborCost', 'subconExpense', 'vehicle', 'haisha', 'disposal', 'other', 'otherSubcon', 'introFee', 'extra', 'metal'];
+const FORECAST_COST_FIELDS = ['laborCost', 'subconExpense', 'vehicle', 'haisha', 'disposal', 'other', 'otherSubcon', 'introFee']; // 原価合計＝この8つの合計（別途・金属売上は入れない）
+const FORECAST_DECIMAL_FIELDS = ['men', 'menDay', 'menNight', 'days']; // 小数も入れられる（0.5人工など）。金額は円の整数
 
 // 入力の文字を数字だけにする（全角の数字は半角に。カンマ・円・空白・マイナスは取る）
 const cleanForecastNumber = (value, allowDecimal) => {
@@ -2081,6 +2082,8 @@ const formToForecast = (form, updatedAt = '') => {
   const note = String(form?.note ?? '').trim();
   const source = String(form?.source ?? '').trim();
   if (!FORECAST_NUM_FIELDS.some(k => nums[k]) && !note && !source) return null;
+  // 人工の計が空で、昼・夜が入っていれば、計＝昼＋夜
+  if (nums.men == null && (nums.menDay != null || nums.menNight != null)) nums.men = (nums.menDay || 0) + (nums.menNight || 0);
   const total = FORECAST_COST_FIELDS.reduce((sum, k) => sum + (nums[k] || 0), 0);
   return { ...nums, total, note, source, updatedAt };
 };
@@ -2154,11 +2157,14 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
       {open && (
         <div id="forecast-fields" style={{ marginTop:14 }}>
           <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)', gap:10, marginBottom:12 }}>
-            {numberField('men', '人工（人）', '例) 12')}
+            {numberField('menDay', '人工 昼（人）', '例) 0')}
+            {numberField('menNight', '人工 夜（人）', '例) 11')}
+            {numberField('men', '人工 計（人）', '空なら昼＋夜')}
             {numberField('days', '日数', '例) 3')}
-            {numberField('laborCost', '人工費（円）', '0')}
+            {numberField('laborCost', '人工（金額・円）', '0')}
             {numberField('subconExpense', '外注経費（円）', '0')}
-            {numberField('vehicle', '車両・配車（円）', '0')}
+            {numberField('vehicle', '車両（道具車）（円）', '0')}
+            {numberField('haisha', '配車（円）', '0')}
             {numberField('disposal', '処分（円）', '0')}
             {numberField('other', 'その他経費（円）', '0')}
             {numberField('otherSubcon', 'その他外注費（円）', '0')}
@@ -2170,7 +2176,11 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
               <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.55)', whiteSpace:'nowrap' }}>原価合計（自動）</span>
               <output id="forecast-total" name="forecast-total" style={{ fontSize:16, fontWeight:800, color:'#fff', fontFamily:'monospace', fontVariantNumeric:'tabular-nums' }}>{yen(draft ? draft.total : 0)}</output>
             </div>
-            <div style={{ marginTop:3, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>人工費＋外注経費＋車両・配車＋処分＋その他経費＋その他外注費{showIntroFee ? `＋${introName}` : ''}</div>
+            <div style={{ marginTop:3, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>人工＋外注経費＋車両（道具車）＋配車＋処分＋その他経費＋その他外注費{showIntroFee ? `＋${introName}` : ''}</div>
+          </div>
+          <div style={{ marginBottom:12 }}>
+            {numberField('extra', '別途（参考・合計外）（円）', '0')}
+            <div style={{ marginTop:4, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.5 }}>原価メモの「別途」。原価合計には入れません</div>
           </div>
           <div style={{ marginBottom:12 }}>
             {numberField('metal', '金属売上の見込み（円）', '0')}
@@ -5896,6 +5906,8 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
 // 判定と項目分けの関数は画面とは別にしてある（管理画面の月の一覧でも使う）
 const fcNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
 const toMan = (yen) => Math.round(fcNum(yen) / 10000); // 円 → 万円（四捨五入）
+const toSen = (yen) => Math.round(fcNum(yen) / 1000);   // 円 → 千円（四捨五入）。予想と実績の原価は千円単位で比べる
+const toMan1 = (yen) => toSen(yen) / 10;                 // 円 → 万円の小数1桁（千円単位）
 
 // forecast（jsonb）を読む。空、または原価合計も人工も0なら null（＝予想なし）
 // 形：{ men, days, laborCost, subconExpense（外注経費）, vehicle, disposal, other, otherSubcon（その他外注費）, introFee（紹介料）,
@@ -5905,13 +5917,15 @@ function readForecast(raw) {
   let f = raw;
   if (typeof f === 'string') { try { f = JSON.parse(f); } catch { return null; } }
   if (!f || typeof f !== 'object' || Array.isArray(f)) return null;
-  const laborCost = fcNum(f.laborCost), subconExpense = fcNum(f.subconExpense), vehicle = fcNum(f.vehicle), disposal = fcNum(f.disposal);
+  const laborCost = fcNum(f.laborCost), subconExpense = fcNum(f.subconExpense), vehicle = fcNum(f.vehicle), haisha = fcNum(f.haisha), disposal = fcNum(f.disposal);
   const other = fcNum(f.other), otherSubcon = fcNum(f.otherSubcon), introFee = fcNum(f.introFee);
-  const total = f.total != null && f.total !== '' ? fcNum(f.total) : laborCost + subconExpense + vehicle + disposal + other + otherSubcon + introFee;
-  const men = fcNum(f.men);
+  const total = f.total != null && f.total !== '' ? fcNum(f.total) : laborCost + subconExpense + vehicle + haisha + disposal + other + otherSubcon + introFee;
+  const menDay = fcNum(f.menDay), menNight = fcNum(f.menNight);
+  const men = f.men != null && f.men !== '' ? fcNum(f.men) : menDay + menNight;
   if (total === 0 && men === 0) return null;
   return {
-    men, days: fcNum(f.days), laborCost, subconExpense, vehicle, disposal, other, otherSubcon, introFee, metal: fcNum(f.metal), total,
+    men, menDay, menNight, hasShift: menDay + menNight > 0, days: fcNum(f.days), laborCost, subconExpense, vehicle, haisha, disposal, other, otherSubcon, introFee,
+    extra: fcNum(f.extra), metal: fcNum(f.metal), total,
     note: f.note ? String(f.note) : '', source: f.source ? String(f.source) : '', updatedAt: f.updatedAt ? String(f.updatedAt) : '',
   };
 }
@@ -5921,7 +5935,8 @@ function readForecast(raw) {
 // その日の経費と直接原価のうち、区分が「外注」の行は外注経費、「その他外注」の行はその他外注費へ移す（区分の無い行は名前で決める）
 const ACTUAL_COST_GROUP = {
   inHouse: 'laborCost', outsourcing: 'laborCost',                                                       // 自社人工・外注人工
-  vehicle: 'vehicle', haishi: 'vehicle', envItems: 'vehicle', extItems: 'vehicle', transport: 'vehicle', // 車両費・配車費・旧形式
+  vehicle: 'vehicle',                                                                                    // 車両（道具車・自社運搬の車両費）
+  haishi: 'haisha', envItems: 'haisha', extItems: 'haisha', transport: 'haisha',                       // 配車（産廃の配車費・環境課配車・外部運搬・旧形式）
   disposal: 'disposal',                                                                                  // 処分費（プラスの行）
 };
 // 区分 → 移す先（「自社」はその他経費のまま）
@@ -5929,7 +5944,7 @@ const COST_KUBUN_GROUP = { '外注': 'subconExpense', 'その他外注': 'otherS
 // 紹介元の現場では、案件の直接原価のうち紹介料の行（isIntroFeeItem）を、区分より先に introFee に分ける
 // （日報の経費と直接原価の一覧は calcSiteMoney と同じものを同じ数え方（toYen）で使うので、項目の合計＝calcSiteMoney の原価のまま）
 function splitActualCost(money, reports, projectInfo) {
-  const out = { men: 0, laborCost: 0, subconExpense: 0, vehicle: 0, disposal: 0, other: 0, otherSubcon: 0, introFee: 0, total: money?.cost || 0 };
+  const out = { men: 0, menDay: 0, menNight: 0, laborCost: 0, subconExpense: 0, vehicle: 0, haisha: 0, disposal: 0, other: 0, otherSubcon: 0, introFee: 0, total: money?.cost || 0 };
   Object.entries(money?.reportParts || {}).forEach(([k, v]) => { out[ACTUAL_COST_GROUP[k] || 'other'] += v || 0; });
   Object.values(money?.projectParts || {}).forEach(v => { out.other += v || 0; });
   // その他経費から、ほかの項目へ移す
@@ -5945,9 +5960,11 @@ function splitActualCost(money, reports, projectInfo) {
     else moveFromOther(COST_KUBUN_GROUP[costKubunOf(it)], toYen(it?.amount));
   });
   // 人工（人）は日報から数える（ホーム画面の人工数と同じ数え方）
+  // 昼・夜は日報の shift で分ける（nighttime・nightLoading など night で始まるものが夜）
+  const isNight = (x) => String(x?.shift || '').startsWith('night');
   (reports || []).forEach(r => {
-    (r.workDetails?.inHouseWorkers || []).forEach(w => { out.men += getInHouseWorkerCount(w); });
-    (r.workDetails?.outsourcingLabor || []).forEach(o => { out.men += getOutsourcingCount(o); });
+    (r.workDetails?.inHouseWorkers || []).forEach(w => { const n = getInHouseWorkerCount(w); out.men += n; out[isNight(w) ? 'menNight' : 'menDay'] += n; });
+    (r.workDetails?.outsourcingLabor || []).forEach(o => { const n = getOutsourcingCount(o); out.men += n; out[isNight(o) ? 'menNight' : 'menDay'] += n; });
   });
   return out;
 }
@@ -5956,7 +5973,7 @@ function splitActualCost(money, reports, projectInfo) {
 // 金額は万円に丸めて比べる。万円で同じなら◎、予想0万で実績ありは×。
 // ずれ ±5%以内◎・±15%以内○。割り算をせず整数で比べる（±5%ちょうど・±15%ちょうどで判定がぶれないように）
 function gradeForecastYen(forecastYen, actualYen) {
-  const f = toMan(forecastYen), a = toMan(actualYen);
+  const f = toSen(forecastYen), a = toSen(actualYen);
   if (f === a) return 'ok';
   if (f === 0) return 'ng';
   const gap = Math.abs(a - f) * 100, base = Math.abs(f);
@@ -5970,7 +5987,7 @@ function gradeForecastMen(forecastMen, actualMen) {
 // 原価合計のずれ（％、万円に丸めた値で、小数1桁に四捨五入）。予想が0万なら null
 // 境目だけは、見せる数字と判定が食い違わないようにする（5.04% は「5.0%」でなく「5.1%」と出す。判定は○のため）
 function forecastGapPercent(forecastYen, actualYen) {
-  const f = toMan(forecastYen), a = toMan(actualYen);
+  const f = toSen(forecastYen), a = toSen(actualYen);
   if (f === 0) return null;
   const pct = (a - f) / Math.abs(f) * 100;
   const grade = gradeForecastYen(forecastYen, actualYen);
@@ -5988,18 +6005,24 @@ function buildForecastComparison(forecastRaw, money, reports, projectInfo) {
   if (!forecast) return null;
   const actual = splitActualCost(money, reports, projectInfo);
   const contractAmount = projectInfo?.contractAmount;
-  const yenRow = (key, label) => ({ key, label, forecast: toMan(forecast[key]), actual: toMan(actual[key]), grade: gradeForecastYen(forecast[key], actual[key]) });
+  // 金額は万円の小数1桁（千円単位）。並びは原価メモの費目と同じ
+  const yenRow = (key, label) => ({ key, label, decimals: 1, forecast: toMan1(forecast[key]), actual: toMan1(actual[key]), grade: gradeForecastYen(forecast[key], actual[key]) });
+  const menRow = (key, label, sub) => ({ key, label, sub, forecast: forecast[key], actual: actual[key], grade: gradeForecastMen(forecast[key], actual[key]) });
   const costRows = [
-    { key: 'men', label: '人工（人）', forecast: forecast.men, actual: actual.men, grade: gradeForecastMen(forecast.men, actual.men) },
-    yenRow('laborCost', '人工費（万）'),
+    // 人工の人数：予想に昼・夜があれば 昼・夜・計 の3行、なければ計だけ
+    ...(forecast.hasShift ? [menRow('menDay', '人工 昼（人）', true), menRow('menNight', '人工 夜（人）', true), menRow('men', '人工 計（人）', true)]
+                          : [menRow('men', '人工（人）')]),
+    yenRow('laborCost', '人工（万）'),
     yenRow('subconExpense', '外注経費（万）'),
-    yenRow('vehicle', '車両・配車（万）'),
+    yenRow('vehicle', '車両（道具車）（万）'),
+    yenRow('haisha', '配車（万）'),
     yenRow('disposal', '処分（万）'),
     yenRow('other', 'その他経費（万）'),
     yenRow('otherSubcon', 'その他外注費（万）'),
   ];
   // 紹介料の行：名前は発注者名（「紹介料」とは出さない）。予想も実績も0なら出さない
   if (forecast.introFee || actual.introFee) costRows.push(yenRow('introFee', `${cleanClientName(projectInfo?.client) || '発注者'}（万）`));
+  const extra = forecast.extra ? toMan1(forecast.extra) : null; // 別途（参考・合計外）。予想だけ
   const total = { ...yenRow('total', '原価合計（万）'), forecastYen: forecast.total, actualYen: actual.total, pct: forecastGapPercent(forecast.total, actual.total) };
   const isProvisional = !!money?.isProvisional;
   const forecastRevenue = fcNum(contractAmount);            // 予想の工事売上＝見積金額
@@ -6014,7 +6037,7 @@ function buildForecastComparison(forecastRaw, money, reports, projectInfo) {
       actual: revenue > 0 ? (money?.grossMargin || 0) : null },
     { key: 'metal', label: '金属売上（万）', forecast: toMan(forecast.metal), actual: toMan(money?.metalRevenue), provisional: false },
   ];
-  return { forecast, actual, costRows, total, salesRows, isProvisional };
+  return { forecast, actual, costRows, total, extra, salesRows, isProvisional };
 }
 
 // 色は管理画面の試作（120fde5）と同じ。色だけでなく ◎○× も必ず出す
@@ -6067,7 +6090,7 @@ function ForecastActualTab({ comparison: c }) {
           </span>
         </div>
         <div style={{ fontSize: 14, marginTop: 8, fontVariantNumeric: 'tabular-nums' }}>
-          予想 {num(t.forecast)}万 → 実績 {num(t.actual)}万（{signedNum(t.actual - t.forecast)}万）
+          予想 {num(t.forecast, 1)}万 → 実績 {num(t.actual, 1)}万（{signedNum(t.actual - t.forecast, 1)}万）
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}>
           <span style={{ ...legend, background: FORECAST_COLORS.ok.badge, color: FORECAST_COLORS.ok.badgeText }}>◎ ずれ ±5%以内</span>
@@ -6084,10 +6107,10 @@ function ForecastActualTab({ comparison: c }) {
           <Head />
           <tbody>
             {c.costRows.map(r => {
-              const decimals = r.key === 'men' && !(Number.isInteger(r.forecast) && Number.isInteger(r.actual)) ? 1 : 0;
+              const decimals = r.decimals ?? (!(Number.isInteger(r.forecast) && Number.isInteger(r.actual)) ? 1 : 0);
               return (
                 <tr key={r.key}>
-                  <td style={labelCell}>{r.label}</td>
+                  <td style={r.sub ? { ...labelCell, paddingLeft: 10 } : labelCell}>{r.label}</td>
                   <td style={cell}>{num(r.forecast, decimals)}</td>
                   <td style={{ ...cell, fontWeight: 800 }}>{num(r.actual, decimals)}</td>
                   <td style={cell}><Diff grade={r.grade}>{signedNum(r.actual - r.forecast, decimals)}</Diff></td>
@@ -6096,10 +6119,18 @@ function ForecastActualTab({ comparison: c }) {
             })}
             <tr>
               <td style={{ ...labelCell, ...line, color: '#EDEDED', fontWeight: 700 }}>{t.label}</td>
-              <td style={{ ...cell, ...line }}>{num(t.forecast)}</td>
-              <td style={{ ...cell, ...line, fontWeight: 800 }}>{num(t.actual)}</td>
-              <td style={{ ...cell, ...line }}><Diff grade={t.grade}>{signedNum(t.actual - t.forecast)}</Diff></td>
+              <td style={{ ...cell, ...line }}>{num(t.forecast, 1)}</td>
+              <td style={{ ...cell, ...line, fontWeight: 800 }}>{num(t.actual, 1)}</td>
+              <td style={{ ...cell, ...line }}><Diff grade={t.grade}>{signedNum(t.actual - t.forecast, 1)}</Diff></td>
             </tr>
+            {c.extra != null && (
+              <tr>
+                <td style={{ ...labelCell, color: '#888' }}>別途（参考・合計外）</td>
+                <td style={{ ...cell, color: '#888' }}>{num(c.extra, 1)}</td>
+                <td style={{ ...cell, color: '#666' }}>—</td>
+                <td style={cell}></td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

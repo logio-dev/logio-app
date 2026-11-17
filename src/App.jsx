@@ -1941,6 +1941,7 @@ const PROJECT_INFO_COLUMN_LABELS = {
   documents_checklist: '書類確認',
   forecast: '予想（原価メモ）',
   cost_memo: '原価メモ（貼り付け）',
+  answer_check: '答え合わせの下書き（貼り付け）',
   updated_at: '更新日時',
 };
 
@@ -2312,6 +2313,198 @@ function CostMemoInputCard({ projectInfo, setProjectInfo }) {
           <div id="cost-memo-status" role="status" aria-live="polite" style={{ marginTop:8, fontSize:12, fontWeight:700, color: status.color, lineHeight:1.5, overflowWrap:'anywhere' }}>{status.text}</div>
           <div style={{ marginTop:6, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.6 }}>
             下の「保存」で書き込みます。触らなければ今の原価メモのまま。空にして保存すると消えます。
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== 答え合わせの保存（project_info.answer_check） ==========
+// 保存するのは人の判断（割り振り・チェック・確認済み）と Claude の下書き。答え（実績）は保存しない
+// 形：{ version, alloc: { rows: [{ task, men }], extra: [{ name, men }], savedBy, savedAt },
+//       draft: { alloc: [{ task, men, hint }], extra: [{ name, men, hint }], notes: [{ id, title, body, to }], updatedAt },
+//       checked: { id: true }, confirmed: { by, at } | null, confirmedBefore: { by, at }, reflected: { at, note } }
+//   confirmedBefore＝確認済みのあとで割り振り・チェックを変えて保存したときに外した確認（「確認後に変更があります」）
+// どの項目も無いことがある。知らない項目は消さずにそのまま残す
+const readAnswerCheck = (raw) => {
+  let v = raw;
+  if (typeof v === 'string') { try { v = JSON.parse(v); } catch { return {}; } }
+  return isPlainObject(v) ? v : {};
+};
+// ログインID → 画面に出す呼び名（チャットと同じ）。DB にはログインIDのまま入れる
+const LOGIN_DISPLAY_NAMES = { face1991: '会社代表', ryokuka2005: '緑化担当', admin2026: '管理者' };
+const loginDisplayName = (id) => LOGIN_DISPLAY_NAMES[id] || id || '−';
+// 今の日時（日本時間。例 2026-11-17T15:30:00+09:00）
+const jstIsoNow = (now = Date.now()) => new Date(now + 9 * 3600e3).toISOString().slice(0, 19) + '+09:00';
+// 日時 → 「11/17 15:30」（日本時間）。日付だけ・読めないときは書いてあるまま
+const answerSavedLabel = (iso) => {
+  const s = String(iso || '');
+  const t = Date.parse(s);
+  if (!/T\d/.test(s) || !Number.isFinite(t)) return s;
+  const d = new Date(t + 9 * 3600e3);
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${d.getUTCHours()}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+};
+const isAnswerMenValue = (x) => x == null || x === '' || Number.isFinite(Number(x));
+
+// 設定・編集の「答え合わせの下書き（貼り付け）」を読む
+// 貼るのは draft の中身（alloc・extra・notes・updatedAt）。{"reflected": {...}} を貼ったら reflected だけ。
+// {"draft": {...}} の形でも読む。返り値 { ok, draft（無ければ undefined）, reflected（無ければ undefined） } か { ok:false, reason }
+const ANSWER_DRAFT_KEYS = ['alloc', 'extra', 'notes', 'updatedAt'];
+function parseAnswerDraft(text) {
+  const s = String(text ?? '').trim();
+  if (!s) return { ok: false, reason: '空です' };
+  let v;
+  try { v = JSON.parse(s); } catch (e) {
+    const msg = String(e?.message || '');
+    const pos = msg.match(/position (\d+)/)?.[1];
+    const line = msg.match(/line (\d+)/)?.[1] || (pos != null ? String(s.slice(0, Number(pos)).split('\n').length) : '');
+    return { ok: false, reason: `JSON として読めません${line ? `（${line}行目あたり）` : ''}。{ } [ ] " の閉じ忘れやカンマを見てください` };
+  }
+  if (!isPlainObject(v)) return { ok: false, reason: 'いちばん外側が { } ではありません' };
+  if (v.draft != null && !isPlainObject(v.draft)) return { ok: false, reason: 'draft が { } ではありません' };
+  const src = isPlainObject(v.draft) ? v.draft : v;
+  const hasDraft = ANSWER_DRAFT_KEYS.some(k => src[k] !== undefined);
+  const hasReflected = v.reflected !== undefined;
+  if (!hasDraft && !hasReflected) return { ok: false, reason: '中身がありません（alloc・extra・notes・updatedAt・reflected のどれも無い）' };
+  if (hasReflected && !isPlainObject(v.reflected)) return { ok: false, reason: 'reflected が { } ではありません' };
+  let draft;
+  if (hasDraft) {
+    draft = Object.fromEntries(Object.entries(src).filter(([k]) => k !== 'reflected' && k !== 'draft'));
+    for (const k of ['alloc', 'extra', 'notes']) {
+      if (draft[k] == null) continue;
+      if (!Array.isArray(draft[k])) return { ok: false, reason: `${k} が [ ] ではありません` };
+      const bad = draft[k].findIndex(x => !isPlainObject(x));
+      if (bad >= 0) return { ok: false, reason: `${k} の${bad + 1}つ目が { } ではありません` };
+    }
+    const at = (k, i) => `${k} の${i + 1}つ目`;
+    for (const [i, r] of (draft.alloc || []).entries()) {
+      if (!memoText(r.task)) return { ok: false, reason: `${at('alloc', i)}に task（工種の名前）がありません` };
+      if (!isAnswerMenValue(r.men)) return { ok: false, reason: `${at('alloc', i)}の men が数ではありません` };
+    }
+    for (const [i, r] of (draft.extra || []).entries()) {
+      if (!memoText(r.name)) return { ok: false, reason: `${at('extra', i)}に name（作業の名前）がありません` };
+      if (!isAnswerMenValue(r.men)) return { ok: false, reason: `${at('extra', i)}の men が数ではありません` };
+    }
+    const ids = new Set();
+    for (const [i, n] of (draft.notes || []).entries()) {
+      const id = memoText(n.id);
+      if (!id) return { ok: false, reason: `${at('notes', i)}に id がありません` };
+      if (ids.has(id)) return { ok: false, reason: `notes の id「${id}」が2つあります` };
+      ids.add(id);
+    }
+    if (draft.updatedAt != null && typeof draft.updatedAt !== 'string') return { ok: false, reason: 'updatedAt が文字ではありません' };
+  }
+  return { ok: true, draft, reflected: hasReflected ? v.reflected : undefined };
+}
+const answerDraftCountParts = (p) => [
+  ...(p.draft ? [`割り振り${(p.draft.alloc || []).length}`, `予想に無い作業${(p.draft.extra || []).length}`, `気づき${(p.draft.notes || []).length}`] : []),
+  ...(p.reflected ? ['原価マスタに反映済みの印'] : []),
+];
+// DB の値 → 下書きの入力欄の文字（draft だけ）
+const answerDraftToText = (raw) => { const d = readAnswerCheck(raw).draft; return isPlainObject(d) ? JSON.stringify(d, null, 1) : ''; };
+// 保存の直前に読み直した answer_check に、貼った下書きを入れる（draft・reflected だけ差し替える）
+// parsed が null＝欄を空にして保存 → draft を消す（割り振り・チェック・確認済みは残す）
+// 新しい draft.notes に無い id のチェックは消す
+function applyAnswerDraft(latestRaw, parsed) {
+  const cur = readAnswerCheck(latestRaw);
+  const next = { ...cur, version: cur.version ?? 1 };
+  if (!parsed) { delete next.draft; return next; }
+  if (parsed.draft) {
+    next.draft = parsed.draft;
+    const ids = new Set(memoList(parsed.draft.notes).map(n => memoText(n.id)).filter(Boolean));
+    if (isPlainObject(cur.checked)) next.checked = Object.fromEntries(Object.entries(cur.checked).filter(([id]) => ids.has(id)));
+  }
+  if (parsed.reflected !== undefined) next.reflected = parsed.reflected;
+  return next;
+}
+// 保存の直前に読み直した answer_check（latestRaw）に、この画面で触ったところだけを差し替える
+// edits: rows＝Map(工種 → 人工の数 / null＝空にした)、extra＝予想に無い作業の一覧（触ったときだけ）、
+//        checked＝Map(id → true/false)、confirm＝true（確認済みにする）/ false（確認を外す）
+// 割り振り・チェックが変わったら、savedBy・savedAt を書き、確認済みなら外して confirmedBefore に残す
+function mergeAnswerCheck(latestRaw, edits, userId, nowIso) {
+  const cur = readAnswerCheck(latestRaw);
+  const next = { ...cur, version: cur.version ?? 1 };
+  const curAlloc = isPlainObject(cur.alloc) ? cur.alloc : {};
+  const alloc = { ...curAlloc };
+  let allocChanged = false, checkedChanged = false;
+  if (edits.rows && edits.rows.size) {
+    const rows = Array.isArray(curAlloc.rows) ? curAlloc.rows.map(r => (isPlainObject(r) ? { ...r } : r)) : [];
+    edits.rows.forEach((men, task) => {
+      const i = rows.findIndex(r => isPlainObject(r) && memoText(r.task) === task);
+      if (men == null) { if (i >= 0) { rows.splice(i, 1); allocChanged = true; } return; }
+      if (i >= 0) { if (Number(rows[i].men) !== men) { rows[i] = { ...rows[i], men }; allocChanged = true; } }
+      else { rows.push({ task, men }); allocChanged = true; }
+    });
+    alloc.rows = rows;
+  }
+  if (edits.extra) {
+    if (JSON.stringify(canonJson(curAlloc.extra ?? [])) !== JSON.stringify(canonJson(edits.extra))) allocChanged = true;
+    alloc.extra = edits.extra;
+  }
+  const checked = { ...(isPlainObject(cur.checked) ? cur.checked : {}) };
+  if (edits.checked && edits.checked.size) {
+    edits.checked.forEach((on, id) => {
+      if (!!checked[id] === on) return;
+      checkedChanged = true;
+      if (on) checked[id] = true; else delete checked[id];
+    });
+  }
+  const changed = allocChanged || checkedChanged;
+  if (changed) {
+    next.alloc = { ...alloc, savedBy: userId || '', savedAt: nowIso };
+    if (checkedChanged) next.checked = checked;
+    if (isPlainObject(cur.confirmed)) { next.confirmedBefore = cur.confirmed; next.confirmed = null; }
+  }
+  if (edits.confirm === true) { next.confirmed = { by: userId || '', at: nowIso }; delete next.confirmedBefore; }
+  if (edits.confirm === false) next.confirmed = null;
+  return { next, changed };
+}
+// DB の今の answer_check を読み直す（保存の直前に使う）
+async function fetchAnswerCheck(siteName) {
+  const rows = await sb('project_info').select(`select=answer_check&site_name=eq.${encodeURIComponent(siteName)}`);
+  if (!Array.isArray(rows)) throw new Error('案件情報を読み直せませんでした（DB に answer_check の欄が無いかもしれません）');
+  if (rows.length === 0) throw new Error('この現場の案件情報（project_info）がありません');
+  return rows[0].answer_check ?? null;
+}
+
+// 設定・編集の「答え合わせの下書き（貼り付け）」。たたんでおき、押すと開く
+// ブラウザ操作で入れやすいように、開くボタン（answer-draft-toggle）・入力欄（answer-draft-json）・読んだ結果（answer-draft-status）に id を付けてある
+function AnswerDraftInputCard({ projectInfo, setProjectInfo }) {
+  const [open, setOpen] = useState(false);
+  const text = projectInfo.answerDraftText ?? '';
+  const savedText = projectInfo.answerDraftTextSaved ?? '';
+  const changed = isCostMemoChanged(text, savedText);
+  const empty = !text.trim();
+  const parsed = empty ? null : parseAnswerDraft(text);
+  const summary = empty
+    ? (changed ? '空（保存すると下書きを消します）' : '未入力')
+    : parsed.ok ? answerDraftCountParts(parsed).join('・') : '読めません（このままでは保存できません）';
+  const status = empty
+    ? (changed ? { color: '#fbbf24', text: '空のまま保存すると、答え合わせの下書きを消します（割り振り・チェック・確認済みは残ります）' } : { color: 'rgba(255,255,255,0.45)', text: '答え合わせの下書き（JSON）を貼ってください' })
+    : parsed.ok ? { color: '#4ade80', text: `読み込めました（${answerDraftCountParts(parsed).join('・')}）` }
+    : { color: '#f87171', text: `読めません：${parsed.reason}。このままでは保存できません` };
+  return (
+    <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
+      <button id="answer-draft-toggle" type="button" aria-expanded={open} aria-controls="answer-draft-fields" onClick={() => setOpen(o => !o)}
+        style={{ width:'100%', padding:0, background:'none', border:'none', cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', gap:8, fontFamily:'inherit' }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:'#60a5fa', textTransform:'uppercase', letterSpacing:'.08em' }}>答え合わせの下書き（貼り付け） / Answer Draft</div>
+          <div style={{ marginTop:5, fontSize:12, fontWeight:600, color: !empty && parsed?.ok ? 'rgba(255,255,255,0.85)' : !empty ? '#f87171' : 'rgba(255,255,255,0.45)', lineHeight:1.4, overflowWrap:'anywhere' }}>{summary}</div>
+        </div>
+        {changed && <span style={{ flexShrink:0, fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'rgba(251,191,36,0.15)', color:'#fbbf24', border:'1px solid rgba(251,191,36,0.3)' }}>未保存</span>}
+        <GradChevron open={open} size={16} />
+      </button>
+      {open && (
+        <div id="answer-draft-fields" style={{ marginTop:14 }}>
+          <label htmlFor="answer-draft-json" style={{ display:'block', fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.55)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:5 }}>下書き（JSON）</label>
+          <textarea id="answer-draft-json" name="answer-draft-json" value={text} spellCheck={false} autoCapitalize="off" autoCorrect="off" autoComplete="off"
+            onChange={e => { const v = e.target.value; setProjectInfo(prev => ({ ...prev, answerDraftText: v })); }}
+            placeholder={'{ "alloc": [ … ], "extra": [ … ], "notes": [ … ], "updatedAt": "2026-11-17" }'}
+            style={{ width:'100%', minHeight:200, padding:'10px', background:'rgba(0,0,0,0.25)', border:'1px solid rgba(255,255,255,0.05)', color:'#fff', borderRadius:8, fontSize:13, lineHeight:1.45, outline:'none', boxSizing:'border-box', fontFamily:'monospace', resize:'vertical', display:'block', minWidth:0 }} />
+          <div id="answer-draft-status" role="status" aria-live="polite" style={{ marginTop:8, fontSize:12, fontWeight:700, color: status.color, lineHeight:1.5, overflowWrap:'anywhere' }}>{status.text}</div>
+          <div style={{ marginTop:6, fontSize:9, color:'rgba(255,255,255,0.4)', lineHeight:1.6 }}>
+            下の「保存」で、答え合わせの下書きだけを差し替えます（割り振り・チェック・確認済みは変えません）。{'{"reflected": {...}}'} を貼ると、原価マスタに反映済みの印だけを差し替えます。触らなければ送りません。
           </div>
         </div>
       )}
@@ -3072,6 +3265,9 @@ function ProjectSettingsPage({ sites, selectedSite, projectInfo, setProjectInfo,
 
                         {/* ★ 原価メモ（貼り付け）：project_info.cost_memo。たたんでおき、押すと開く */}
                         <CostMemoInputCard projectInfo={projectInfo} setProjectInfo={setProjectInfo} />
+
+                        {/* ★ 答え合わせの下書き（貼り付け）：project_info.answer_check の draft・reflected。たたんでおき、押すと開く */}
+                        <AnswerDraftInputCard projectInfo={projectInfo} setProjectInfo={setProjectInfo} />
 
                         {/* ★ 現場詳細 */}
                         <div style={{ marginBottom:20, padding:'14px 16px', borderRadius:12, background:'#3F3F3F', border:'1px solid rgba(255,255,255,0.08)' }}>
@@ -6365,6 +6561,7 @@ function buildAnswerCheck(memo, comparison, reports, money, projectInfo) {
     done: projectInfo?.status === '完了',
     cards: [card1, card2, card3, card4, card5, card6],
     waste, pairs, planTotal, actualTotal,
+    menActual: actual.men, days, // 工種と人工（割り振り）で使う：日報の合計人工（概要②と同じ数）と、日ごとの施工内容
   };
 }
 
@@ -6411,7 +6608,299 @@ function AnswerMark({ grade, solid = false, children }) {
   );
 }
 
-function AnswerCheckTab({ memo, reports, totals, projectInfo }) {
+// 実績人工の入力：空＝未入力（null）。0 以上で 0.5 刻みの数だけ受け付ける（それ以外は NaN）
+const parseAllocMen = (text) => {
+  const s = String(text ?? '').normalize('NFKC').trim();
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n >= 0 && Math.round(n * 2) === n * 2 ? n : NaN;
+};
+const allocMenText = (v) => (v == null || v === '' ? '' : String(v));
+
+// 5. 工種と人工（実績人工の割り振り）と 6. 気づき・反映候補。保存するのは割り振り・チェック・確認済みだけ
+// ac＝DB の answer_check（projectInfo.answerCheck）、menActual＝日報の合計人工（概要②と同じ数）、days＝日報を日ごとにまとめたもの
+// 保存は、直前に DB の answer_check を読み直し、この画面で触ったところだけを差し替えて書く（mergeAnswerCheck）
+function AnswerWorkPanel({ memo, ac, menActual, days, siteName, userId, onSaved, leaveGuardRef }) {
+  const base = readAnswerCheck(ac);
+  const baseAlloc = isPlainObject(base.alloc) ? base.alloc : {};
+  const draft = isPlainObject(base.draft) ? base.draft : {};
+  const [rowEdits, setRowEdits] = useState({});       // 工種 → 入力欄の文字（触った行だけ）
+  const [extraEdit, setExtraEdit] = useState(null);   // 予想に無い作業の一覧（触ったときだけ）
+  const [checkedEdits, setCheckedEdits] = useState({}); // 気づきの id → true/false（触ったものだけ）
+  const [showWork, setShowWork] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null);       // { kind: 'ok' | 'warn' | 'error', text }
+
+  const tasks = memoList(memo?.tasks?.rows)
+    .map(r => ({ name: memoText(r.name), qty: memoText(r.qty), unit: memoText(r.unit), men: answerMemoNum(r.men) }))
+    .filter(t => t.name);
+  const baseRows = memoList(baseAlloc.rows);
+  const baseMenOf = (task) => baseRows.find(r => memoText(r.task) === task)?.men;
+  // 今の原価メモに無い工種の割り振り（原価メモを直したときなど）。消さずに出す
+  const orphans = baseRows.map(r => memoText(r.task)).filter(t => t && !tasks.some(x => x.name === t));
+  const draftAlloc = new Map(memoList(draft.alloc).map(r => [memoText(r.task), r]));
+  const draftExtra = memoList(draft.extra);
+  const notes = memoList(draft.notes);
+
+  const rowText = (task) => (rowEdits[task] !== undefined ? rowEdits[task] : allocMenText(baseMenOf(task)));
+  const baseExtra = memoList(baseAlloc.extra).map(e => ({ ...e, menText: allocMenText(e.men) }));
+  const extraList = extraEdit ?? baseExtra;
+  const isChecked = (id) => (checkedEdits[id] !== undefined ? checkedEdits[id] : !!(isPlainObject(base.checked) && base.checked[id]));
+  const cleanExtra = (list) => list.map(({ menText, ...e }) => {
+    const out = { ...e, name: String(e.name ?? '').trim() };
+    const men = parseAllocMen(menText);
+    if (men == null) delete out.men; else out.men = men;
+    return out;
+  }).filter(e => e.name || e.men != null);
+
+  // 触ったところ（保存していない変更）
+  const baseMenNum = (t) => { const v = baseMenOf(t); return v == null || v === '' ? null : Number(v); };
+  const rowDirty = Object.keys(rowEdits).filter(t => parseAllocMen(rowEdits[t]) !== baseMenNum(t)); // 読めない数（NaN）も「変更あり」
+  const extraDirty = !!extraEdit && JSON.stringify(canonJson(cleanExtra(extraEdit))) !== JSON.stringify(canonJson(cleanExtra(baseExtra)));
+  const checkedDirty = Object.keys(checkedEdits).filter(id => checkedEdits[id] !== !!(isPlainObject(base.checked) && base.checked[id]));
+  const dirty = rowDirty.length > 0 || extraDirty || checkedDirty.length > 0;
+
+  // 画面を離れるとき（ページ・現場・タブの切り替え、ブラウザを閉じる）に「保存していません」
+  const dirtyRef = useRef(false);
+  dirtyRef.current = dirty;
+  useEffect(() => {
+    if (!leaveGuardRef) return undefined;
+    leaveGuardRef.current = () => (dirtyRef.current ? '保存していません。\n工種と人工・気づきのチェックの変更が消えます。このまま移りますか？' : null);
+    return () => { leaveGuardRef.current = null; };
+  }, [leaveGuardRef]);
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [dirty]);
+
+  // 合計
+  const allTaskNames = [...tasks.map(t => t.name), ...orphans];
+  const invalid = [
+    ...allTaskNames.filter(t => Number.isNaN(parseAllocMen(rowText(t)))),
+    ...extraList.filter(e => Number.isNaN(parseAllocMen(e.menText))).map(e => String(e.name || '予想に無い作業')),
+  ];
+  const noName = extraList.some(e => !String(e.name ?? '').trim() && parseAllocMen(e.menText) != null);
+  const sumOf = (arr) => answerRound(arr.reduce((s, v) => s + (Number.isFinite(v) ? v : 0), 0));
+  const predSum = sumOf(tasks.map(t => t.men));
+  const allocSum = sumOf([...allTaskNames.map(t => parseAllocMen(rowText(t))), ...extraList.map(e => parseAllocMen(e.menText))]);
+  const actualMen = answerRound(menActual || 0);
+  const rest = answerRound(actualMen - allocSum);
+  const restLine = Math.abs(rest) < 0.01
+    ? { kind: 'ok', text: '割り振り完了（日報の合計と一致）' }
+    : rest > 0 ? { kind: 'warn', text: `日報の合計 ${ansNum(actualMen)}人工のうち、あと ${ansNum(rest)}人工` }
+    : { kind: 'over', text: `日報の合計より ${ansNum(-rest)}人工多い` };
+  const restColor = { ok: '#4ade80', warn: '#fbbf24', over: '#fb7185' }[restLine.kind];
+
+  // 下書きをそのまま使う：空の欄だけに下書きの数を入れる（入っている欄は変えない）。予想に無い作業の下書きは、まだ無い名前だけ足す
+  const fillTasks = tasks.filter(t => !String(rowText(t.name)).trim() && draftAlloc.get(t.name)?.men != null && draftAlloc.get(t.name).men !== '');
+  const fillExtra = draftExtra.filter(d => memoText(d.name) && !extraList.some(e => String(e.name ?? '').trim() === memoText(d.name)));
+  const useDraft = () => {
+    if (fillTasks.length) setRowEdits(prev => ({ ...prev, ...Object.fromEntries(fillTasks.map(t => [t.name, allocMenText(draftAlloc.get(t.name).men)])) }));
+    if (fillExtra.length) setExtraEdit([...extraList, ...fillExtra.map(d => ({ name: memoText(d.name), menText: allocMenText(d.men) }))]);
+    setMessage(null);
+  };
+  const setExtraAt = (i, patch) => setExtraEdit(extraList.map((e, j) => (j === i ? { ...e, ...patch } : e)));
+
+  // 保存（confirm：undefined＝保存、true＝確認済みにする、false＝確認を外す）
+  const run = async (confirm) => {
+    if (confirm !== false) {
+      if (invalid.length) { setMessage({ kind: 'error', text: `実績人工は 0 以上・0.5 刻みの数で入れてください（${invalid.join('・')}）` }); return; }
+      if (noName) { setMessage({ kind: 'error', text: '予想に無い作業の名前を入れてください' }); return; }
+    }
+    setSaving(true); setMessage(null);
+    try {
+      const latest = await fetchAnswerCheck(siteName);
+      const edits = confirm === false ? { confirm } : {
+        rows: new Map(rowDirty.map(t => [t, parseAllocMen(rowEdits[t])])),
+        extra: extraDirty ? cleanExtra(extraEdit) : null,
+        checked: new Map(checkedDirty.map(id => [id, checkedEdits[id]])),
+        confirm,
+      };
+      const { next, changed } = mergeAnswerCheck(latest, edits, userId, jstIsoNow());
+      const wasConfirmed = isPlainObject(readAnswerCheck(latest).confirmed);
+      if (!changed && confirm === undefined) {
+        onSaved(latest);
+        setRowEdits({}); setExtraEdit(null); setCheckedEdits({});
+        setMessage({ kind: 'ok', text: '変更はありませんでした（今の保存の中身を読み込みました）' });
+        return;
+      }
+      const rows = await sb('project_info').updateOrThrow({ answer_check: next }, `site_name=eq.${encodeURIComponent(siteName)}`);
+      if (!Array.isArray(rows) || rows.length === 0) throw new Error('この現場の案件情報（project_info）が見つかりません');
+      onSaved(rows[0].answer_check ?? next);
+      if (confirm !== false) { setRowEdits({}); setExtraEdit(null); setCheckedEdits({}); }
+      setMessage({ kind: 'ok', text: confirm === true ? '確認済みにしました' : confirm === false ? '確認を外しました'
+        : wasConfirmed ? '保存しました。確認済みを外しました（確認後に変更があります）' : '保存しました' });
+    } catch (e) {
+      setMessage({ kind: 'error', text: `保存できませんでした：${e?.message || e}` });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmed = isPlainObject(base.confirmed) ? base.confirmed : null;
+  const confirmedBefore = !confirmed && isPlainObject(base.confirmedBefore) ? base.confirmedBefore : null;
+  const reflected = isPlainObject(base.reflected) ? base.reflected : null;
+  const who = (o) => [loginDisplayName(o?.by), answerSavedLabel(o?.at)].filter(Boolean).join('・');
+
+  const input = (invalidNow) => ({ width: '100%', boxSizing: 'border-box', padding: '5px 6px', borderRadius: 6, fontSize: 14, fontWeight: 700, textAlign: 'right', color: '#111', fontFamily: 'inherit',
+    background: invalidNow ? '#FEE2E2' : '#FEF9C3', border: `1px solid ${invalidNow ? '#ef4444' : '#EAB308'}`, outline: 'none', fontVariantNumeric: 'tabular-nums' });
+  const head = { fontWeight: 400, color: '#777', fontSize: 11, textAlign: 'right', padding: '2px 4px 6px', borderBottom: '1px solid #2c2c2c', verticalAlign: 'bottom' };
+  const textHead = { ...head, textAlign: 'left' };
+  const cell = { padding: '6px 4px', textAlign: 'right', fontSize: 13, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', borderBottom: '1px solid #222', verticalAlign: 'middle' };
+  const textCell = { ...cell, textAlign: 'left', whiteSpace: 'normal', fontSize: 12, color: '#bbb', overflowWrap: 'anywhere' };
+  const smallBtn = { padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', minHeight: 36 };
+  const msgColor = { ok: '#4ade80', warn: '#fbbf24', error: '#fb7185' };
+
+  return (
+    <>
+      {/* 5. 工種と人工（実績人工の割り振り。黄色の欄） */}
+      <div id="answer-alloc" style={ANSWER_CARD}>
+        <div style={{ ...ANSWER_TITLE, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+          <span>工種と人工</span>
+          {(draftAlloc.size > 0 || draftExtra.length > 0) && (
+            <button id="answer-draft-use" type="button" onClick={useDraft} disabled={!fillTasks.length && !fillExtra.length}
+              style={{ ...smallBtn, minHeight: 32, padding: '5px 10px', background: 'transparent', color: fillTasks.length || fillExtra.length ? '#fbbf24' : '#666', border: `1px solid ${fillTasks.length || fillExtra.length ? 'rgba(251,191,36,.5)' : '#333'}`, cursor: fillTasks.length || fillExtra.length ? 'pointer' : 'default' }}>
+              下書きをそのまま使う
+            </button>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: '#888', marginBottom: 8, lineHeight: 1.6 }}>黄色の欄に、日報の人工を工種ごとに割り振ります（0.5 刻み）。薄い字は Claude の下書きです。</div>
+        {/* 日報の施工内容（たたんでおき、押すと開く） */}
+        <button id="answer-work-toggle" type="button" aria-expanded={showWork} onClick={() => setShowWork(v => !v)}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', marginBottom: 8, background: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8, color: '#ddd', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+          <span>日報の施工内容（{days.length}日）</span><GradChevron open={showWork} size={14} />
+        </button>
+        {showWork && (
+          <div id="answer-work-list" style={{ marginBottom: 10, padding: '6px 10px', background: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 8 }}>
+            {days.length === 0 && <div style={{ fontSize: 12, color: '#888' }}>日報がありません</div>}
+            {days.map(d => (
+              <div key={d.date} style={{ fontSize: 12, color: '#ccc', lineHeight: 1.6, padding: '3px 0', overflowWrap: 'anywhere' }}>
+                <span style={{ color: '#fff', fontWeight: 700, marginRight: 6, fontVariantNumeric: 'tabular-nums' }}>{answerMonthDay(d.date)}</span>{d.work || '（施工内容なし）'}
+              </div>
+            ))}
+          </div>
+        )}
+        {tasks.length === 0 && orphans.length === 0 && extraList.length === 0 ? (
+          <div style={{ fontSize: 13, color: '#bbb', marginBottom: 8 }}>原価メモに工種がありません。「予想に無い作業を足す」で行を足せます</div>
+        ) : (
+          // 320px の画面でも、工種〜実績人工（黄色の欄）までが最初から見える幅
+          <AnswerTable id="answer-alloc-table" cols={[96, 50, 44, 72, 210]}>
+            <thead>
+              <tr>
+                <th style={textHead}>工種</th>
+                <th style={head}>数量</th>
+                <th style={head}>予想人工</th>
+                <th style={head}>実績人工</th>
+                <th style={textHead}>手がかり</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...tasks, ...orphans.map(name => ({ name, orphan: true }))].map(t => {
+                const v = rowText(t.name);
+                const bad = Number.isNaN(parseAllocMen(v));
+                const d = draftAlloc.get(t.name);
+                return (
+                  <tr key={`t:${t.name}`} data-task={t.name}>
+                    <td style={{ ...textCell, color: '#EDEDED', fontWeight: 700 }}>{t.name}</td>
+                    <td style={cell}>{t.orphan ? '−' : [t.qty, t.unit].filter(Boolean).join('') || '−'}</td>
+                    <td style={cell}>{t.men == null ? '−' : ansNum(t.men)}</td>
+                    <td style={cell}>
+                      <input type="text" inputMode="decimal" className="answer-alloc-input" aria-label={`${t.name} の実績人工`} value={v}
+                        placeholder={d?.men != null && d.men !== '' ? allocMenText(d.men) : ''}
+                        onChange={e => { const val = e.target.value; setRowEdits(prev => ({ ...prev, [t.name]: val })); setMessage(null); }}
+                        style={input(bad)} />
+                    </td>
+                    <td style={textCell}>{t.orphan ? '今の原価メモに無い工種' : (memoText(d?.hint) || '−')}</td>
+                  </tr>
+                );
+              })}
+              {extraList.map((e, i) => {
+                const bad = Number.isNaN(parseAllocMen(e.menText));
+                const d = draftExtra.find(x => memoText(x.name) === String(e.name ?? '').trim());
+                return (
+                  <tr key={`x:${i}`} className="answer-extra-row">
+                    {/* 名前の欄は 工種〜予想人工 の3列ぶん */}
+                    <td style={textCell} colSpan={3}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <input type="text" className="answer-extra-name" aria-label="予想に無い作業の名前" value={e.name ?? ''} placeholder="作業の名前"
+                          onChange={ev => { setExtraAt(i, { name: ev.target.value }); setMessage(null); }}
+                          style={{ ...input(false), textAlign: 'left', fontSize: 12, fontWeight: 600, minWidth: 0, flex: 1, padding: '5px 4px' }} />
+                        <button type="button" className="answer-extra-delete" aria-label={`「${e.name || '予想に無い作業'}」を消す`}
+                          onClick={() => { setExtraEdit(extraList.filter((_, j) => j !== i)); setMessage(null); }}
+                          style={{ flexShrink: 0, width: 28, height: 28, borderRadius: 6, border: '1px solid #444', background: '#222', color: '#fb7185', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}>×</button>
+                      </div>
+                    </td>
+                    <td style={cell}>
+                      <input type="text" inputMode="decimal" className="answer-extra-men" aria-label={`${e.name || '予想に無い作業'} の実績人工`} value={e.menText ?? ''}
+                        onChange={ev => { setExtraAt(i, { menText: ev.target.value }); setMessage(null); }}
+                        style={input(bad)} />
+                    </td>
+                    <td style={textCell}>{memoText(d?.hint) || '予想に無い作業'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </AnswerTable>
+        )}
+        <button id="answer-extra-add" type="button" onClick={() => { setExtraEdit([...extraList, { name: '', menText: '' }]); setMessage(null); }}
+          style={{ ...smallBtn, marginTop: 8, background: '#1A1A1A', color: '#ddd', border: '1px dashed #555' }}>＋ 予想に無い作業を足す</button>
+        <div id="answer-alloc-total" style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #2c2c2c', fontSize: 12.5, color: '#ddd', lineHeight: 1.7, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ display: 'inline-block', marginRight: 10 }}>予想人工 {ansNum(predSum)}</span>
+          <span style={{ display: 'inline-block', marginRight: 10 }}>実績人工 {ansNum(allocSum)}</span>
+          <span style={{ display: 'inline-block' }}>日報の合計 {ansNum(actualMen)}人工</span>
+          <div id="answer-alloc-rest" data-kind={restLine.kind} style={{ fontSize: 13, fontWeight: 800, color: restColor, marginTop: 2 }}>{restLine.text}</div>
+        </div>
+      </div>
+
+      {/* 6. 気づき・反映候補（Claude の下書きにチェック） */}
+      <div id="answer-notes" style={ANSWER_CARD}>
+        <div style={ANSWER_TITLE}>気づき・反映候補</div>
+        {notes.length === 0 ? (
+          <div style={{ fontSize: 13, color: '#bbb' }}>気づきはまだありません（Claudeが下書きを入れます）</div>
+        ) : notes.map((n, i) => {
+          const id = memoText(n.id);
+          return (
+            <label key={id || `n${i}`} className="answer-note" data-id={id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px', marginBottom: 8, background: '#1A1A1A', border: '1px solid #2C2C2C', borderRadius: 10, cursor: id ? 'pointer' : 'default' }}>
+              <input type="checkbox" checked={!!id && isChecked(id)} disabled={!id}
+                onChange={e => { const on = e.target.checked; setCheckedEdits(prev => ({ ...prev, [id]: on })); setMessage(null); }}
+                style={{ width: 20, height: 20, marginTop: 1, flexShrink: 0, accentColor: '#f59e0b' }} />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1.5, overflowWrap: 'anywhere' }}>{memoText(n.title) || '（題なし）'}</span>
+                {memoText(n.body) && <span style={{ display: 'block', fontSize: 12, color: '#bbb', lineHeight: 1.6, marginTop: 2, overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>{memoText(n.body)}</span>}
+                {memoText(n.to) && <span style={{ display: 'block', fontSize: 11, color: '#999', lineHeight: 1.5, marginTop: 4, overflowWrap: 'anywhere' }}>反映先の候補：{memoText(n.to)}</span>}
+              </span>
+            </label>
+          );
+        })}
+        <div id="answer-notes-count" style={{ fontSize: 12, color: '#ddd', marginTop: 2 }}>チェックした候補：{notes.filter(n => memoText(n.id) && isChecked(memoText(n.id))).length}件</div>
+      </div>
+
+      {/* 保存と確認済み */}
+      <div id="answer-check-actions" style={ANSWER_CARD}>
+        {confirmed && <div id="answer-confirmed" style={{ fontSize: 13, fontWeight: 800, color: '#4ade80', marginBottom: 6 }}>確認済み（{who(confirmed)}）</div>}
+        {confirmedBefore && <div id="answer-changed-after-confirm" style={{ fontSize: 13, fontWeight: 800, color: '#fbbf24', marginBottom: 6, overflowWrap: 'anywhere' }}>確認後に変更があります（前の確認：{who(confirmedBefore)}）</div>}
+        {reflected && <div id="answer-reflected" style={{ fontSize: 12, color: '#93C5FD', marginBottom: 6, overflowWrap: 'anywhere' }}>原価マスタに反映済み（{[memoText(reflected.at), memoText(reflected.note)].filter(Boolean).join('・')}）</div>}
+        {dirty && <div id="answer-unsaved" style={{ fontSize: 12, fontWeight: 700, color: '#fbbf24', marginBottom: 6 }}>保存していない変更があります</div>}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button id="answer-check-save" type="button" onClick={() => run(undefined)} disabled={saving || !dirty}
+            style={{ ...smallBtn, flex: '1 1 120px', minHeight: 44, fontSize: 14, border: 'none', background: dirty && !saving ? '#FFC400' : '#333', color: dirty && !saving ? '#111' : '#777', cursor: dirty && !saving ? 'pointer' : 'default' }}>
+            {saving ? '保存中…' : '保存'}
+          </button>
+          <button id="answer-check-confirm" type="button" onClick={() => run(!confirmed)} disabled={saving}
+            style={{ ...smallBtn, flex: '1 1 120px', minHeight: 44, fontSize: 14, background: 'transparent', color: confirmed ? '#ddd' : '#4ade80', border: `1px solid ${confirmed ? '#555' : 'rgba(74,222,128,.5)'}` }}>
+            {confirmed ? '確認を外す' : '確認済みにする'}
+          </button>
+        </div>
+        {message && <div id="answer-check-message" role="status" style={{ fontSize: 12, fontWeight: 700, color: msgColor[message.kind], marginTop: 8, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{message.text}</div>}
+        {baseAlloc.savedAt && <div id="answer-last-saved" style={{ fontSize: 11, color: '#888', marginTop: 8 }}>最後の保存：{[loginDisplayName(baseAlloc.savedBy), answerSavedLabel(baseAlloc.savedAt)].filter(Boolean).join('・')}</div>}
+      </div>
+    </>
+  );
+}
+
+function AnswerCheckTab({ memo, reports, totals, projectInfo, siteName, userId, onAnswerCheckSaved, leaveGuardRef }) {
   const comparison = React.useMemo(() => buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo), [projectInfo, totals, reports]);
   const a = React.useMemo(() => buildAnswerCheck(memo, comparison, reports, totals, projectInfo), [memo, comparison, reports, totals, projectInfo]);
   const head = { fontWeight: 400, color: '#777', fontSize: 11, textAlign: 'right', padding: '2px 4px 6px', whiteSpace: 'nowrap', borderBottom: '1px solid #2c2c2c', verticalAlign: 'bottom' };
@@ -6565,7 +7054,11 @@ function AnswerCheckTab({ memo, reports, totals, projectInfo }) {
         </div>
       </div>
 
-      <div style={{ fontSize: 12, color: '#666', lineHeight: 1.7 }}>答え（実績）は、開くたびに日報から数えています。何も保存しません。</div>
+      {/* 5. 工種と人工・6. 気づき・反映候補・保存と確認済み */}
+      <AnswerWorkPanel memo={memo} ac={projectInfo?.answerCheck} menActual={a.menActual} days={a.days}
+        siteName={siteName} userId={userId} onSaved={onAnswerCheckSaved} leaveGuardRef={leaveGuardRef} />
+
+      <div style={{ fontSize: 12, color: '#666', lineHeight: 1.7 }}>答え（実績）は、開くたびに日報から数えています（保存しません）。保存するのは、工種と人工の割り振り・気づきのチェック・確認済みだけです。</div>
     </div>
   );
 }
@@ -6592,7 +7085,7 @@ const COST_BREAKDOWN_BG = '#F4F4F4'; // 原価内訳のカードの背景（グ�
 const ANALYSIS_TABS = [['forecast', '予想と実績'], ['finance', '財務'], ['breakdown', '原価内訳']];
 
 // 現場が変わると作り直す（App 側で key に現場名を入れている）ので、いつも「予想と実績」から始まる
-function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
+function AnalysisPage({ reports, totals, projectInfo, onNavigate, siteName, currentUserId, onAnswerCheckSaved, leaveGuardRef }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); document.body.scrollTop=0; document.documentElement.scrollTop=0; }, []);
   const [activeTab, setActiveTab] = useState('forecast');
   const chartRef1 = React.useRef(null);
@@ -6676,7 +7169,11 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       <div style={{display:'flex',gap:4,background:'#E8ECF0',borderRadius:10,padding:4,marginBottom:16}}>
         {/* 予想と実績・財務・原価内訳の3つ。狭い画面（360px未満）だけ字を12pxにする */}
         {ANALYSIS_TABS.map(([id, t]) => (
-          <button key={id} onClick={()=>setActiveTab(id)}
+          <button key={id} onClick={()=>{
+            // 予想と実績タブで保存していない割り振り・チェックがあれば、ほかのタブに移る前に確かめる
+            if (id !== activeTab) { const msg = leaveGuardRef?.current?.(); if (msg && !window.confirm(msg)) return; }
+            setActiveTab(id);
+          }}
             style={{flex:1,padding:'8px 2px',whiteSpace:'nowrap',border: id===activeTab?'0.5px solid #E8E8E8':'none',borderRadius:7,fontSize:'clamp(12px, 3.6vw, 13px)',fontWeight:500,cursor:'pointer',background:id===activeTab?'#fff':'transparent',color:id===activeTab?'#111':'#888',transition:'all 0.15s'}}>
             {t}
           </button>
@@ -6686,7 +7183,8 @@ function AnalysisPage({ reports, totals, projectInfo, onNavigate }) {
       {/* 予想と実績タブ（予想＝project_info.forecast、実績＝calcSiteMoney）
           原価メモが読める現場は、答え合わせ（札・概要・廃棄物・費目・段取り）。費目は今の表をそのまま出す */}
       {activeTab === 'forecast' && (answerMemo
-        ? <AnswerCheckTab memo={answerMemo} reports={reports} totals={totals} projectInfo={projectInfo} />
+        ? <AnswerCheckTab memo={answerMemo} reports={reports} totals={totals} projectInfo={projectInfo}
+            siteName={siteName} userId={currentUserId} onAnswerCheckSaved={onAnswerCheckSaved} leaveGuardRef={leaveGuardRef} />
         : <ForecastActualTab comparison={buildForecastComparison(projectInfo?.forecast, totals, reports, projectInfo)} />
       )}
 
@@ -8875,6 +9373,10 @@ export default function LOGIOApp() {
   const [splashReady, setSplashReady] = useState(false);
   // 前回のログイン（会社用・管理者のIDのときだけ使う。restoreSavedLogin を参照）
   const [currentUser, setCurrentUser] = useState(restoreSavedLogin);
+  // 画面を離れる前の確認。予想と実績タブの割り振り・チェックに保存していない変更があるあいだだけ、
+  // その画面が「保存していません…」の文を返す関数をここに入れる（無ければ null）
+  const leaveGuardRef = useRef(null);
+  const confirmLeave = () => { const msg = leaveGuardRef.current?.(); return !msg || window.confirm(msg); };
   const [isLoggedIn, setIsLoggedIn] = useState(() => currentUser !== null);
   const [currentPage, setCurrentPage] = useState('home');
 
@@ -8911,6 +9413,9 @@ export default function LOGIOApp() {
     // 原価メモ（project_info.cost_memo）。costMemo＝DBから読んだ値（ホームの原価メモで使う）、
     // costMemoText＝「原価メモ（貼り付け）」の入力欄の文字、costMemoTextSaved＝開いたとき（保存したとき）の入力欄の文字
     costMemo: null, costMemoText: '', costMemoTextSaved: '',
+    // 答え合わせ（project_info.answer_check）。answerCheck＝DBから読んだ値（原価分析の「予想と実績」で使う）、
+    // answerDraftText＝「答え合わせの下書き（貼り付け）」の入力欄の文字、answerDraftTextSaved＝開いたとき（保存したとき）の入力欄の文字
+    answerCheck: null, answerDraftText: '', answerDraftTextSaved: '',
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     siteTsubo: '', siteUseType: '', workCondition: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
@@ -9134,6 +9639,7 @@ export default function LOGIOApp() {
 
   // ★ 現場選択時にロック状態確認
   const handleSelectSite = async (siteName) => {
+    if (siteName !== selectedSite && !confirmLeave()) return; // 保存していない割り振り・チェックがあれば確かめる
     setSelectedSite(siteName);
     setProjectInfo(normalizeProjectInfo({ projectName: siteName }, siteName));
     setReports([]);
@@ -9210,6 +9716,9 @@ export default function LOGIOApp() {
           costMemo: d.cost_memo ?? null, // 原価メモ（欄が無いDBでは null＝原価メモなし）
           costMemoText: costMemoToText(d.cost_memo),
           costMemoTextSaved: costMemoToText(d.cost_memo),
+          answerCheck: d.answer_check ?? null, // 答え合わせ（割り振り・チェック・確認済み・下書き。欄が無いDBでは null）
+          answerDraftText: answerDraftToText(d.answer_check),
+          answerDraftTextSaved: answerDraftToText(d.answer_check),
         }, siteName);
         setProjectInfo(info);
         return info;
@@ -9275,6 +9784,18 @@ export default function LOGIOApp() {
       }
       costMemoValue = parsedMemo.memo;
     }
+    // 答え合わせの下書きも、中身が開いたときと違うときだけ送る（触らずに保存したときは answer_check を送らない）
+    // 送るときは、保存の直前に DB の answer_check を読み直し、draft（と reflected）だけを差し替える（割り振り・チェック・確認済みは変えない）
+    const answerDraftTextSent = projectInfo.answerDraftText ?? '';
+    const writeAnswerDraft = isCostMemoChanged(answerDraftTextSent, projectInfo.answerDraftTextSaved ?? '');
+    let answerDraftParsed = null;
+    if (writeAnswerDraft && answerDraftTextSent.trim()) {
+      answerDraftParsed = parseAnswerDraft(answerDraftTextSent);
+      if (!answerDraftParsed.ok) {
+        alert(`❌ 保存していません\n\n答え合わせの下書き（貼り付け）を読めません：${answerDraftParsed.reason}\n\n直すか、空にしてから保存してください。`);
+        return;
+      }
+    }
     try {
       const contractTypeValue = projectInfo.contractType || resolveContractTypeByClient(projectInfo.client || '');
       // 請負区分は、DBに値があるときか、発注者から決めた値と違う値を選んだときだけ送る
@@ -9330,6 +9851,7 @@ export default function LOGIOApp() {
       if (writeBilling) projectPayload.billing_amount = billingValue > 0 ? billingValue : null;
       if (writeForecast) projectPayload.forecast = forecastValue; // 全部空なら null（予想を消す）
       if (writeCostMemo) projectPayload.cost_memo = costMemoValue; // 空なら null（原価メモを消す）
+      if (writeAnswerDraft) projectPayload.answer_check = applyAnswerDraft(await fetchAnswerCheck(selectedSite), answerDraftParsed);
 
       // DBに欄がない項目は外して保存し直し、外した項目は画面で警告する（site_name は外さない）
       const { droppedColumns } = await saveDroppingMissingColumns(
@@ -9349,6 +9871,8 @@ export default function LOGIOApp() {
         ...(writeForecast && !droppedColumns.includes('forecast') ? { forecast: forecastValue, forecastFormSaved: forecastFormSent } : {}),
         // 原価メモを書いたら、ホームのカードにすぐ出るように costMemo を今の値にし、「開いたときの中身」も送った中身にそろえる
         ...(writeCostMemo && !droppedColumns.includes('cost_memo') ? { costMemo: costMemoValue, costMemoTextSaved: costMemoTextSent } : {}),
+        // 答え合わせの下書きを書いたら、原価分析にすぐ出るように answerCheck を今の値にし、「開いたときの中身」も送った中身にそろえる
+        ...(writeAnswerDraft && !droppedColumns.includes('answer_check') ? { answerCheck: projectPayload.answer_check, answerDraftTextSaved: answerDraftTextSent } : {}),
       }));
       await sb('sites').update({ project_number: projectInfo.projectNumber || '', status: projectInfo.status || '着工前・進行中' }, `name=eq.${encodeURIComponent(selectedSite)}`);
       // 保存した発注者名を現場一覧にも入れる（新しく足した発注者が、すぐ選択肢に出るように）
@@ -9460,6 +9984,8 @@ export default function LOGIOApp() {
 
   // ★ handleNavigate: 日報入力時にロック取得
   const handleNavigate = (page) => {
+    // 予想と実績タブで保存していない割り振り・チェックがあれば、移る前に確かめる
+    if (page !== currentPage && !confirmLeave()) return;
     window.scrollTo({ top: 0, behavior: 'instant' });
     if (page === 'input') {
       (async () => {
@@ -9661,7 +10187,9 @@ export default function LOGIOApp() {
           )}
           {currentPage === 'list' && <ReportListPage reports={reports} onDelete={handleDeleteReport} onNavigate={handleNavigate} onEdit={(report) => { setEditingReport(report); setCurrentPage('input'); }} />}
           {/* key＝現場名：現場を選び直したら原価分析を作り直し、「予想と実績」から出す */}
-          {currentPage === 'analysis' && <AnalysisPage key={selectedSite} reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={handleNavigate} />}
+          {currentPage === 'analysis' && <AnalysisPage key={selectedSite} reports={reports} totals={totals} projectInfo={projectInfo} onNavigate={handleNavigate}
+            siteName={selectedSite} currentUserId={currentUser?.userId} leaveGuardRef={leaveGuardRef}
+            onAnswerCheckSaved={value => setProjectInfo(prev => (prev.projectName === selectedSite ? { ...prev, answerCheck: value } : prev))} />}
           {currentPage === 'project' && <ProjectPage projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'export' && <ExportPage sites={sites} reports={reports} projectInfo={projectInfo} selectedSite={selectedSite} onNavigate={handleNavigate} />}
           {currentPage === 'pdf' && selectedReport && <ReportPDFPage report={selectedReport} projectInfo={projectInfo} onNavigate={handleNavigate} />}

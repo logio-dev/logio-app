@@ -3865,6 +3865,8 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   // ★ 編集中インデックス (自社/外注/車両/機械/経費)
   const [editingWIdx, setEditingWIdx] = useState(null);
   const [editingOIdx, setEditingOIdx] = useState(null);
+  // 外注人工：行をタップして入力欄に読み込んだときの中身（入力欄を変えたかどうかを見るため）
+  const oFormLoadedRef = useRef(null);
   const [editingVIdx, setEditingVIdx] = useState(null);
   const [editingMIdx, setEditingMIdx] = useState(null);
   const [editingExpIdx, setEditingExpIdx] = useState(null);
@@ -3949,13 +3951,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       newWorkDetails = {...newWorkDetails, inHouseWorkers:[...(newWorkDetails.inHouseWorkers||[]), {...wForm, count, amount}]};
       setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
     }
-    // 外注人工
-    if (oForm && oForm.company && oForm.company.trim() && parseFloat(oForm.count) > 0) {
-      const count = parseFloat(oForm.count) || 0;
-      const basePrice = oForm.shift === 'nighttime' ? unitPrices.outsourcingNighttime : unitPrices.outsourcingDaytime;
-      const amount = count * basePrice;
-      newWorkDetails = {...newWorkDetails, outsourcingLabor:[...(newWorkDetails.outsourcingLabor||[]), {...oForm, count, amount}]};
+    // 外注人工（行をタップ中なら、新しい行は足さずにその行を上書きする）
+    const outsource = applyOFormToOutsourcing(newWorkDetails.outsourcingLabor || []);
+    if (outsource.used) {
+      newWorkDetails = {...newWorkDetails, outsourcingLabor: outsource.list};
       setOForm({company:'',count:'',shift:'daytime',start:'',end:''});
+      setEditingOIdx(null);
     }
     // 車両
     if (vForm && vForm.type) {
@@ -4003,15 +4004,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           inHouseWorkers: [...(finalWorkDetails.inHouseWorkers||[]), {...wForm, count, amount}]
         };
       }
-      // 外注人工フォーム自動追加 (会社名+人数があれば)
-      if (oForm && oForm.company && oForm.company.trim() && parseFloat(oForm.count) > 0) {
-        const count = parseFloat(oForm.count) || 0;
-        const basePrice = oForm.shift === 'nighttime' ? unitPrices.outsourcingNighttime : unitPrices.outsourcingDaytime;
-        const amount = count * basePrice;
-        finalWorkDetails = {
-          ...finalWorkDetails,
-          outsourcingLabor: [...(finalWorkDetails.outsourcingLabor||[]), {...oForm, count, amount}]
-        };
+      // 外注人工フォーム自動追加 (会社名+人数があれば)。行をタップ中なら、足さずにその行を上書きする
+      //（編集の「✓ 人数を変更したらここで更新」は Step2 から直接ここに来る）
+      const outsource = applyOFormToOutsourcing(finalWorkDetails.outsourcingLabor || []);
+      if (outsource.used) {
+        finalWorkDetails = { ...finalWorkDetails, outsourcingLabor: outsource.list };
       }
       // 車両フォーム自動追加 (車種があれば)
       if (vForm && vForm.type) {
@@ -4112,8 +4109,32 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const loadOutsourceForEdit = (i) => {
     const o = workDetails.outsourcingLabor[i];
     if (!o) return;
-    setOForm({company:o.company||'', count:String(o.count||''), shift:o.shift||'daytime', start:o.start||'', end:o.end||''});
+    const form = {company:o.company||'', count:String(o.count||''), shift:o.shift||'daytime', start:o.start||'', end:o.end||''};
+    setOForm(form);
+    oFormLoadedRef.current = form;
     setEditingOIdx(i);
+  };
+  // 外注人工：入力欄に残っている中身を一覧に入れる（「次へ」と、保存・「✓ 人数を変更したらここで更新」で使う）
+  //  ・行をタップ中: 新しい行は足さず、タップした行を入力欄の中身で上書きする（「＋ 追加する」を押したときと同じ）。
+  //    入力欄を変えていなければ、行はそのまま。会社名か人数が空なら何もしない
+  //  ・タップしていないとき: 会社名と人数があれば、新しい行として足す（今までどおり）
+  //  戻り値: { list: 入れたあとの一覧, used: 入力欄の中身を使ったか（使ったら入力欄を空にしてよい） }
+  const applyOFormToOutsourcing = (list) => {
+    const company = (oForm.company || '').trim();
+    const count = parseFloat(oForm.count) || 0;
+    const basePrice = oForm.shift === 'nighttime' ? unitPrices.outsourcingNighttime : unitPrices.outsourcingDaytime;
+    const amount = count * basePrice;
+    if (editingOIdx !== null && list[editingOIdx]) {
+      const loaded = oFormLoadedRef.current;
+      const unchanged = !!loaded && ['company','count','shift','start','end'].every(k => String(oForm[k] ?? '') === String(loaded[k] ?? ''));
+      if (unchanged) return { list, used: true };
+      if (!company || count <= 0) return { list, used: false };
+      const next = [...list];
+      next[editingOIdx] = {...oForm, count, amount};
+      return { list: next, used: true };
+    }
+    if (!company || count <= 0) return { list, used: false };
+    return { list: [...list, {...oForm, count, amount}], used: true };
   };
   const addVehicle = () => {
     if (!vForm.type) return;
@@ -4854,7 +4875,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
                   <div style={{fontSize:13,fontWeight:700,color:'#1E40AF',fontVariantNumeric:'tabular-nums'}}>¥{formatCurrency(o.amount)}</div>
                 </div>
                 {!isEditing && <span style={{ fontSize:11, color:'#94A3B8' }}>✏️</span>}
-                <button onClick={(e)=>{e.stopPropagation(); if(isEditing){setEditingOIdx(null); setOForm({company:'',count:'',shift:'daytime',start:'',end:''});} setWorkDetails({...workDetails,outsourcingLabor:workDetails.outsourcingLabor.filter((_,j)=>j!==i)})}}
+                <button onClick={(e)=>{e.stopPropagation(); if(isEditing){setEditingOIdx(null); setOForm({company:'',count:'',shift:'daytime',start:'',end:''});} else if(editingOIdx!==null && i<editingOIdx){setEditingOIdx(editingOIdx-1);} /* 上の行を消したら、タップ中の行の番号を1つ詰める（ほかの行を上書きしないように） */ setWorkDetails({...workDetails,outsourcingLabor:workDetails.outsourcingLabor.filter((_,j)=>j!==i)})}}
                   style={{width:28,height:28,borderRadius:7,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.08)',color:'#f87171',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700}}>✕</button>
               </div>
             </div>

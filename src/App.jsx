@@ -5908,6 +5908,7 @@ const fcNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 
 const toMan = (yen) => Math.round(fcNum(yen) / 10000); // 円 → 万円（四捨五入）
 const toSen = (yen) => Math.round(fcNum(yen) / 1000);   // 円 → 千円（四捨五入）。予想と実績の原価は千円単位で比べる
 const toMan1 = (yen) => toSen(yen) / 10;                 // 円 → 万円の小数1桁（千円単位）
+const toYenInt = (yen) => Math.round(fcNum(yen));        // 円の整数（11/18 予想と実績は原価メモに合わせて円で見せる）
 
 // forecast（jsonb）を読む。空、または原価合計も人工も0なら null（＝予想なし）
 // 形：{ men, days, laborCost, subconExpense（外注経費）, vehicle, disposal, other, otherSubcon（その他外注費）, introFee（紹介料）,
@@ -6005,37 +6006,37 @@ function buildForecastComparison(forecastRaw, money, reports, projectInfo) {
   if (!forecast) return null;
   const actual = splitActualCost(money, reports, projectInfo);
   const contractAmount = projectInfo?.contractAmount;
-  // 金額は万円の小数1桁（千円単位）。並びは原価メモの費目と同じ
-  const yenRow = (key, label) => ({ key, label, decimals: 1, forecast: toMan1(forecast[key]), actual: toMan1(actual[key]), grade: gradeForecastYen(forecast[key], actual[key]) });
+  // 金額は円（#,##0）。原価メモと同じ。◎○×は千円単位で比べる。並びは原価メモの費目と同じ
+  const yenRow = (key, label) => ({ key, label, decimals: 0, forecast: toYenInt(forecast[key]), actual: toYenInt(actual[key]), grade: gradeForecastYen(forecast[key], actual[key]) });
   const menRow = (key, label, sub) => ({ key, label, sub, forecast: forecast[key], actual: actual[key], grade: gradeForecastMen(forecast[key], actual[key]) });
   const costRows = [
     // 人工の人数：予想に昼・夜があれば 昼・夜・計 の3行、なければ計だけ
     ...(forecast.hasShift ? [menRow('menDay', '人工 昼（人）', true), menRow('menNight', '人工 夜（人）', true), menRow('men', '人工 計（人）', true)]
                           : [menRow('men', '人工（人）')]),
-    yenRow('laborCost', '人工（万）'),
-    yenRow('subconExpense', '外注経費（万）'),
-    yenRow('vehicle', '車両（道具車）（万）'),
-    yenRow('haisha', '配車（万）'),
-    yenRow('disposal', '処分（万）'),
-    yenRow('other', 'その他経費（万）'),
-    yenRow('otherSubcon', 'その他外注費（万）'),
+    yenRow('laborCost', '人工（円）'),
+    yenRow('subconExpense', '外注経費（円）'),
+    yenRow('vehicle', '車両（道具車）（円）'),
+    yenRow('haisha', '配車（円）'),
+    yenRow('disposal', '処分（円）'),
+    yenRow('other', 'その他経費（円）'),
+    yenRow('otherSubcon', 'その他外注費（円）'),
   ];
   // 紹介料の行：名前は発注者名（「紹介料」とは出さない）。予想も実績も0なら出さない
-  if (forecast.introFee || actual.introFee) costRows.push(yenRow('introFee', `${cleanClientName(projectInfo?.client) || '発注者'}（万）`));
-  const extra = forecast.extra ? toMan1(forecast.extra) : null; // 別途（参考・合計外）。予想だけ
-  const total = { ...yenRow('total', '原価合計（万）'), forecastYen: forecast.total, actualYen: actual.total, pct: forecastGapPercent(forecast.total, actual.total) };
+  if (forecast.introFee || actual.introFee) costRows.push(yenRow('introFee', `${cleanClientName(projectInfo?.client) || '発注者'}（円）`));
+  const extra = forecast.extra ? toYenInt(forecast.extra) : null; // 別途（参考・合計外）。予想だけ
+  const total = { ...yenRow('total', '原価合計（円）'), forecastYen: forecast.total, actualYen: actual.total, pct: forecastGapPercent(forecast.total, actual.total) };
   const isProvisional = !!money?.isProvisional;
   const forecastRevenue = fcNum(contractAmount);            // 予想の工事売上＝見積金額
   const forecastProfit = forecastRevenue - forecast.total;  // 予想の粗利＝見積金額 − 予想の原価合計
   const revenue = money?.revenue || 0;
   const salesRows = [
-    { key: 'revenue', label: '工事売上（万）', forecast: toMan(forecastRevenue), actual: toMan(revenue), provisional: isProvisional },
-    { key: 'grossProfit', label: '粗利（万）', forecast: toMan(forecastProfit), actual: toMan(money?.grossProfit), provisional: isProvisional },
+    { key: 'revenue', label: '工事売上（円）', forecast: toYenInt(forecastRevenue), actual: toYenInt(revenue), provisional: isProvisional },
+    { key: 'grossProfit', label: '粗利（円）', forecast: toYenInt(forecastProfit), actual: toYenInt(money?.grossProfit), provisional: isProvisional },
     // 粗利率は財務タブと同じく小数1桁で見せる。工事売上が0なら出さない
     { key: 'grossMargin', label: '粗利率（％）', percent: true, provisional: isProvisional,
       forecast: forecastRevenue > 0 ? forecastProfit / forecastRevenue * 100 : null,
       actual: revenue > 0 ? (money?.grossMargin || 0) : null },
-    { key: 'metal', label: '金属売上（万）', forecast: toMan(forecast.metal), actual: toMan(money?.metalRevenue), provisional: false },
+    { key: 'metal', label: '金属売上（円）', forecast: toYenInt(forecast.metal), actual: toYenInt(money?.metalRevenue), provisional: false },
   ];
   return { forecast, actual, costRows, total, extra, salesRows, isProvisional };
 }
@@ -6090,7 +6091,7 @@ function ForecastActualTab({ comparison: c }) {
           </span>
         </div>
         <div style={{ fontSize: 14, marginTop: 8, fontVariantNumeric: 'tabular-nums' }}>
-          予想 {num(t.forecast, 1)}万 → 実績 {num(t.actual, 1)}万（{signedNum(t.actual - t.forecast, 1)}万）
+          予想 {num(t.forecast)}円 → 実績 {num(t.actual)}円（{signedNum(t.actual - t.forecast)}円）
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}>
           <span style={{ ...legend, background: FORECAST_COLORS.ok.badge, color: FORECAST_COLORS.ok.badgeText }}>◎ ずれ ±5%以内</span>
@@ -6119,14 +6120,14 @@ function ForecastActualTab({ comparison: c }) {
             })}
             <tr>
               <td style={{ ...labelCell, ...line, color: '#EDEDED', fontWeight: 700 }}>{t.label}</td>
-              <td style={{ ...cell, ...line }}>{num(t.forecast, 1)}</td>
-              <td style={{ ...cell, ...line, fontWeight: 800 }}>{num(t.actual, 1)}</td>
-              <td style={{ ...cell, ...line }}><Diff grade={t.grade}>{signedNum(t.actual - t.forecast, 1)}</Diff></td>
+              <td style={{ ...cell, ...line }}>{num(t.forecast)}</td>
+              <td style={{ ...cell, ...line, fontWeight: 800 }}>{num(t.actual)}</td>
+              <td style={{ ...cell, ...line }}><Diff grade={t.grade}>{signedNum(t.actual - t.forecast)}</Diff></td>
             </tr>
             {c.extra != null && (
               <tr>
                 <td style={{ ...labelCell, color: '#888' }}>別途（参考・合計外）</td>
-                <td style={{ ...cell, color: '#888' }}>{num(c.extra, 1)}</td>
+                <td style={{ ...cell, color: '#888' }}>{num(c.extra)}</td>
                 <td style={{ ...cell, color: '#666' }}>—</td>
                 <td style={cell}></td>
               </tr>
@@ -6227,12 +6228,14 @@ const answerMemoNum = (v) => {
   const m = String(v ?? '').normalize('NFKC').replace(/,/g, '').match(/-?\d+(?:\.\d+)?/);
   return m ? parseFloat(m[0]) : null;
 };
-// 原価メモの処分費（"19.0万"）→ 円。「円」とだけ書いてあれば円のまま、それ以外は万円として読む
+// 原価メモの処分費 → 円。"19.0万" は万円、"83,900円" は円として読む
 const answerMemoYen = (v) => {
   const n = answerMemoNum(v);
   if (n == null) return null;
   const s = String(v);
-  return /円/.test(s) && !/万/.test(s) ? n : n * 10000;
+  if (/万/.test(s)) return n * 10000;           // 前の原価メモ（"19.0万"）
+  if (/円/.test(s)) return n;                   // 11/18 からの原価メモ（"83,900円"）
+  return Math.abs(n) >= 1000 ? n : n * 10000;   // 単位なし：1000以上は円、それより小さい数は前の万円として読む
 };
 const isM3Unit = (u) => ['M3', '立米'].includes(wasteNameKey(u)); // ㎥ は NFKC で m3 になる
 const answerRound = (n) => Math.round((Number(n) || 0) * 100) / 100;
@@ -6240,6 +6243,7 @@ const answerRound = (n) => Math.round((Number(n) || 0) * 100) / 100;
 const ansNum = (n, d = 1) => (Math.round((Number(n) || 0) * 10 ** d) / 10 ** d).toLocaleString('ja-JP', { maximumFractionDigits: d });
 const ansFixed1 = (n) => (Math.round((Number(n) || 0) * 10) / 10).toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const ansMan1 = (yen) => ansFixed1(Math.round(toYen(yen) / 1000) / 10);
+const ansYen = (yen) => `${Math.round(toYen(yen)).toLocaleString('ja-JP')}円`; // 11/18 答え合わせの金額も円（#,##0円）
 const ansSigned = (n) => { const r = Math.round(n * 10) / 10; return signedNum(r, Number.isInteger(r) ? 0 : 1); };
 const answerMonthDay = (date) => {
   const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(date || ''));
@@ -6376,13 +6380,13 @@ function buildAnswerWaste(memo, reports) {
     else destText = `予想 ${r.dest}／実績 ${sites.join('・')}`;
     const merged = !r.extra && rowByGroup.get(r.group) !== r ? rowByGroup.get(r.group) : null;
     let src = ent.length ? answerEntriesText(ent, r.dest) : (merged ? `「${merged.name}」の行に入れた` : '日報に行なし');
-    if (sale > 0) src += `　売上 ${ansMan1(sale)}万`;
+    if (sale > 0) src += `　売上 ${ansYen(sale)}`;
     const grade = r.extra ? 'extra' : gradeAnswerAmount(r.p, a);
     return {
       key: `${r.extra ? 'x' : 'm'}${idx}`, name: r.extra ? `${r.name}（予想外）` : r.name, group: r.group, extra: r.extra,
       dest: destText, p: r.p, a, grade, diff: r.p == null && !r.extra ? '' : ansSigned(a - (r.p || 0)),
-      pCost: r.pCost, pCostText: r.pCost != null ? `${ansMan1(r.pCost)}万` : (isSaleDest(r.dest) ? '売却' : '−'),
-      cost, aCostText: cost === 0 && hasScrap ? '売却' : `${ansMan1(cost)}万`,
+      pCost: r.pCost, pCostText: r.pCost != null ? `${ansYen(r.pCost)}` : (isSaleDest(r.dest) ? '売却' : '−'),
+      cost, aCostText: cost === 0 && hasScrap ? '売却' : `${ansYen(cost)}`,
       src, noM3: ent.filter(e => e.m3 == null).map(e => `${e.name || '（名前なし）'}${ansNum(e.qty, 2)}${e.unit || ''}`),
     };
   });
@@ -6547,8 +6551,8 @@ function buildAnswerCheck(memo, comparison, reports, money, projectInfo) {
   // ④ 処分費（実績＝今の予想と実績タブの「処分」と同じ数）
   const card4 = {
     key: 'disposal', label: '処分費',
-    pred: forecast ? `${ansMan1(forecast.disposal)}万` : null,
-    act: `${ansMan1(actual.disposal)}万`,
+    pred: forecast ? `${ansYen(forecast.disposal)}` : null,
+    act: `${ansYen(actual.disposal)}`,
     grade: forecast ? gradeForecastYen(forecast.disposal, actual.disposal) : 'none',
     sub: '',
   };
@@ -6570,10 +6574,10 @@ function buildAnswerCheck(memo, comparison, reports, money, projectInfo) {
   const pct = (v) => (v == null ? '−' : `${(Math.round(v * 10) / 10).toFixed(1)}%`);
   const card6 = {
     key: 'cost', label: '原価・粗利',
-    pred: forecast ? `${ansNum(toMan(forecast.total), 0)}万・粗利${pct(margin?.forecast)}` : null,
-    act: `${ansNum(toMan(actual.total), 0)}万・粗利${pct(revenue > 0 ? money?.grossMargin || 0 : null)}${money?.isProvisional ? '（仮）' : ''}`,
+    pred: forecast ? `${ansYen(forecast.total)}・粗利${pct(margin?.forecast)}` : null,
+    act: `${ansYen(actual.total)}・粗利${pct(revenue > 0 ? money?.grossMargin || 0 : null)}${money?.isProvisional ? '（仮）' : ''}`,
     grade: forecast ? gradeForecastYen(forecast.total, actual.total) : 'none',
-    sub: (money?.metalRevenue || 0) > 0 ? `金属売上${ansMan1(money.metalRevenue)}万は別` : '',
+    sub: (money?.metalRevenue || 0) > 0 ? `金属売上${ansYen(money.metalRevenue)}は別` : '',
   };
 
   // 段取り：予定（schedule の1行）と日報（1日）を、早い順に横に並べる
@@ -7009,8 +7013,8 @@ function AnswerCheckTab({ memo, reports, totals, projectInfo, siteName, userId, 
                 <td style={{ ...cell, borderBottom: 'none' }}>{w.total.p == null ? '−' : ansFixed1(w.total.p)}</td>
                 <td style={{ ...cell, fontWeight: 800, borderBottom: 'none' }}>{ansFixed1(w.total.a)}</td>
                 <td style={{ ...cell, borderBottom: 'none' }}><AnswerMark grade={w.total.grade}>{w.total.diff}</AnswerMark></td>
-                <td style={{ ...cell, borderBottom: 'none' }}>{w.total.pCost == null ? '−' : `${ansMan1(w.total.pCost)}万`}</td>
-                <td style={{ ...cell, fontWeight: 800, borderBottom: 'none' }}>{`${ansMan1(w.total.cost)}万`}</td>
+                <td style={{ ...cell, borderBottom: 'none' }}>{w.total.pCost == null ? '−' : `${ansYen(w.total.pCost)}`}</td>
+                <td style={{ ...cell, fontWeight: 800, borderBottom: 'none' }}>{`${ansYen(w.total.cost)}`}</td>
                 <td style={{ ...textCell, borderBottom: 'none' }}></td>
               </tr>
             </tbody>

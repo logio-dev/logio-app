@@ -2105,7 +2105,6 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
   const changed = isForecastFormChanged(form, projectInfo.forecastFormSaved || forecastToForm(null));
   const setField = (key, value) => setProjectInfo(prev => ({ ...prev, forecastForm: { ...(prev.forecastForm || forecastToForm(null)), [key]: value } }));
   const yen = (n) => '¥' + (Number(n) || 0).toLocaleString('ja-JP');
-  const man = (n) => (n >= 10000 ? `${Math.round(n / 10000).toLocaleString('ja-JP')}万` : yen(n));
   // 紹介料の欄：発注者が紹介元の現場だけ出す（発注者を変えても値が残っていれば、原価合計に入っているので出したままにする）
   // 欄の名前は発注者名（「紹介料」とは出さない）
   const introName = cleanClientName(projectInfo.client) || '発注者';
@@ -2116,7 +2115,7 @@ function ForecastInputCard({ projectInfo, setProjectInfo }) {
   const summaryParts = (() => {
     if (!draft) return ['未入力'];
     const parts = [];
-    if (draft.total) parts.push(`原価合計 ${man(draft.total)}`);
+    if (draft.total) parts.push(`原価合計 ${yen(draft.total)}`);
     if (draft.men) parts.push(`人工 ${draft.men}人`);
     if (!parts.length) parts.push('メモのみ（数字は未入力）');
     const saved = projectInfo.forecast && typeof projectInfo.forecast === 'object' ? projectInfo.forecast.updatedAt : '';
@@ -5907,7 +5906,6 @@ function ProjectPage({ projectInfo, selectedSite, onNavigate }) {
 const fcNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
 const toMan = (yen) => Math.round(fcNum(yen) / 10000); // 円 → 万円（四捨五入）
 const toSen = (yen) => Math.round(fcNum(yen) / 1000);   // 円 → 千円（四捨五入）。予想と実績の原価は千円単位で比べる
-const toMan1 = (yen) => toSen(yen) / 10;                 // 円 → 万円の小数1桁（千円単位）
 const toYenInt = (yen) => Math.round(fcNum(yen));        // 円の整数（11/18 予想と実績は原価メモに合わせて円で見せる）
 
 // forecast（jsonb）を読む。空、または原価合計も人工も0なら null（＝予想なし）
@@ -6242,7 +6240,6 @@ const answerRound = (n) => Math.round((Number(n) || 0) * 100) / 100;
 // 数の見せ方：16・4.5・2,260（小数は1桁まで）／55.0（いつも小数1桁）／38.5万
 const ansNum = (n, d = 1) => (Math.round((Number(n) || 0) * 10 ** d) / 10 ** d).toLocaleString('ja-JP', { maximumFractionDigits: d });
 const ansFixed1 = (n) => (Math.round((Number(n) || 0) * 10) / 10).toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const ansMan1 = (yen) => ansFixed1(Math.round(toYen(yen) / 1000) / 10);
 const ansYen = (yen) => `${Math.round(toYen(yen)).toLocaleString('ja-JP')}円`; // 11/18 答え合わせの金額も円（#,##0円）
 const ansSigned = (n) => { const r = Math.round(n * 10) / 10; return signedNum(r, Number.isInteger(r) ? 0 : 1); };
 const answerMonthDay = (date) => {

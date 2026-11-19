@@ -7674,6 +7674,24 @@ function OrderPDFPage({ projectInfo, onNavigate }) {
   );
 }
 
+// ========== 日報PDFの「原価小計」の数え方 ==========
+// 表の右下の「原価小計」と同じ数え方。リース・経費・日々経費は入れない。
+// ページごとの小計（そのページの日報）と、解体原価㎡単価（全部の日報）の両方でこれを使う。
+function calcPdfCostSubtotal(rows) {
+  const sum = (f) => (rows || []).reduce((s, r) => s + f(r), 0);
+  const inHouse     = sum(r => (r.workDetails?.inHouseWorkers || []).reduce((a, w) => a + (w.amount || 0), 0));   // 自社人工
+  const outsourcing = sum(r => (r.workDetails?.outsourcingLabor || []).reduce((a, o) => a + (o.amount || 0), 0)); // 外注人工
+  const vehicle     = getReportsVehicleCost(rows);                                                                 // 車両（同じ車両は1回）
+  const haishi      = sum(r => (r.wasteItems || []).reduce((a, w) => a + (w.haishiAmount || 0), 0));               // 配車
+  const machinery   = sum(r => (r.workDetails?.machinery || []).reduce((a, m) => a + (m.unitPrice || 0), 0));      // 重機
+  const disposal    = sum(r => (r.wasteItems || []).reduce((a, w) => a + ((w.amount || 0) > 0 ? w.amount : 0), 0)); // 処分費（金額がプラスの行だけ）
+  const env         = sum(r => (r.workDetails?.envItems || []).reduce((a, t) => a + (t.amount || 0), 0));          // 環境課
+  const ext         = sum(r => (r.workDetails?.extItems || []).reduce((a, t) => a + (t.amount || 0), 0));          // 外注
+  const transport   = sum(r => (r.workDetails?.transportEntries || []).reduce((a, t) => a + (parseFloat(t.amount) || 0), 0)); // 配送費
+  const total = inHouse + outsourcing + vehicle + haishi + machinery + disposal + env + ext + transport;
+  return { inHouse, outsourcing, vehicle, haishi, machinery, disposal, env, ext, transport, total };
+}
+
 // ========== ReportPDFPage ==========
 function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
   const projectInfo = report._projectInfo || propProjectInfo;
@@ -7751,6 +7769,8 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
     + (projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])]).reduce((s, i) => s + (parseFloat(i.amount) || 0), 0)
     + (projectInfo.expenses || []).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const grossProfit = totalRevenue - totalCost;
+  // ★ 全部の日報の原価小計（各ページの原価小計の合計と同じ数。解体原価㎡単価に使う）
+  const allCostSubtotal = calcPdfCostSubtotal(allReports).total;
   const fmtDate = (dateStr) => { if (!dateStr) return ''; const p = dateStr.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
   const fmtDay = (dateStr) => { if (!dateStr) return ''; return ['日','月','火','水','木','金','土'][new Date(dateStr).getDay()]; };
   const ROWS_PER_PAGE = 20;
@@ -7817,31 +7837,28 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           const isLastPage = pageIdx === pages.length - 1;
           const pageOffset = pageIdx * ROWS_PER_PAGE;
           const pageEmptyRows = ROWS_PER_PAGE - pageRows.length;
+          // ★ 原価小計とその内訳（数え方は calcPdfCostSubtotal。リース費・経費・日々経費は含めない）
+          const pageCost = calcPdfCostSubtotal(pageRows);
           const pageInHouseWorkers = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+getInHouseWorkerCount(w),0),0);
-          const pageInHouseCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0),0);
+          const pageInHouseCost    = pageCost.inHouse;
           const pageOutWorkers     = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+getOutsourcingCount(o),0),0);
-          const pageOutCost        = pageRows.reduce((s,r)=>s+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
+          const pageOutCost        = pageCost.outsourcing;
           const pageVehicleCost    = pageRows.reduce((s,r)=>s+(r.workDetails?.vehicles||[]).reduce((a,v)=>a+(v.amount||0),0),0);
-          const pageHaishiCost     = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.haishiAmount||0),0),0);
+          const pageHaishiCost     = pageCost.haishi;
           const pageWasteVehicleCost = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+(w.vehicleAmount||0),0)+(r.scrapItems||[]).reduce((a,sc)=>a+(sc.vehicleAmount||0),0),0);
           // ★ 重複除去後のページ車両費合計
-          const pageAllVehicleCost = getReportsVehicleCost(pageRows);
-          const pageMachineryCost  = pageRows.reduce((s,r)=>s+(r.workDetails?.machinery||[]).reduce((a,m)=>a+(m.unitPrice||0),0),0);
+          const pageAllVehicleCost = pageCost.vehicle;
+          const pageMachineryCost  = pageCost.machinery;
           // ★ 産廃処分費 (処分のみ、金額プラスのもの)
-          const pageWasteDisposal  = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+((w.amount||0) > 0 ? w.amount : 0),0),0);
+          const pageWasteDisposal  = pageCost.disposal;
           // ★ 金属売上 (マイナス金額の絶対値、売上として別表示)
           const pageMetalRevenue   = pageRows.reduce((s,r)=>s+(r.wasteItems||[]).reduce((a,w)=>a+((w.amount||0) < 0 ? Math.abs(w.amount) : 0),0),0);
           // ★ 純額(参考表示用): 処分費 - 売上
           const pageWasteCost      = pageWasteDisposal - pageMetalRevenue;
-          // ★ 環境課・外注の人工費
-          const pageEnvCost     = pageRows.reduce((s,r)=>s+(r.workDetails?.envItems||[]).reduce((a,t)=>a+(t.amount||0),0),0);
-          const pageExtCost     = pageRows.reduce((s,r)=>s+(r.workDetails?.extItems||[]).reduce((a,t)=>a+(t.amount||0),0),0);
-          // ★ 配送費(transportEntries)
-          const pageTransportCost = pageRows.reduce((s,r)=>s+(r.workDetails?.transportEntries||[]).reduce((a,t)=>a+(parseFloat(t.amount)||0),0),0);
           // ★ 日々経費(参考表示用)- 原価小計には含めない
           const pageDailyExpCost = pageRows.reduce((s,r)=>s+(r.workDetails?.dailyExpenses||[]).reduce((a,e)=>a+(parseFloat(e.amount)||0),0),0);
           // ★ 原価小計 = 日報の純粋な原価のみ(リース費・経費・日々経費は含めない)
-          const pageTotal          = pageInHouseCost+pageOutCost+pageAllVehicleCost+pageHaishiCost+pageMachineryCost+pageWasteDisposal+pageEnvCost+pageExtCost+pageTransportCost;
+          const pageTotal          = pageCost.total;
 
           // リース等アイテム集計
           const miscItems = projectInfo.miscItems || [...(projectInfo.outsourcingItems||[]),...(projectInfo.siteExpenseItems||[]),...(projectInfo.sgaItems||[])];
@@ -7857,13 +7874,12 @@ function ReportPDFPage({ report, projectInfo: propProjectInfo, onNavigate }) {
           // ★ 総㎥: 処分+金属どちらも含む (金属は volumeM3 があれば加算)
           const wQty   = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+(w.unit==='㎥'?(parseFloat(w.quantity)||0):(w.volumeM3?parseFloat(w.volumeM3)||0:0)),s),0)
                        + allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+(sc.volumeM3?parseFloat(sc.volumeM3)||0:0),s),0);
-          // ★ 総金額: 処分費 + 金属売上額(絶対値) → 金額の絶対合計
-          const wCost  = allReports.reduce((s,r)=>(r.wasteItems||[]).reduce((a,w)=>a+Math.abs(w.amount||0),s),0)
-                       + allReports.reduce((s,r)=>(r.scrapItems||[]).reduce((a,sc)=>a+Math.abs(sc.amount||0),s),0);
           const laborC = allReports.reduce((s,r)=>s+(r.workDetails?.inHouseWorkers||[]).reduce((a,w)=>a+(w.amount||0),0)+(r.workDetails?.outsourcingLabor||[]).reduce((a,o)=>a+(o.amount||0),0),0);
-          const unitWaste   = wQty   > 0 ? Math.round(wCost/wQty)       : 0;
+          // ★ 処分費㎥単価 = 処分費（処分の行の金額がプラスのものだけ。金属売上は足さない）÷ 総㎥
+          const unitWaste   = wQty   > 0 ? Math.round(totalWasteDisposal/wQty) : 0;
           const unitLaborM2 = areaM2 > 0 ? Math.round(laborC/areaM2)    : 0;
-          const unitCostM2  = areaM2 > 0 ? Math.round(totalCost/areaM2) : 0;
+          // ★ 解体原価㎡単価 = 全部の日報の原価小計（表の右下と同じ数え方）÷ 面積
+          const unitCostM2  = areaM2 > 0 ? Math.round(allCostSubtotal/areaM2) : 0;
 
           // ヘッダー列幅: リースあり=5列、なし=4列
           const headerCols = '290px 185px 185px 155px 1fr';

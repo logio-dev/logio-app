@@ -3805,6 +3805,28 @@ const normalizeSwapFlags = (items) => {
   });
 };
 
+// 日報入力の自社人工・重機・経費：入力欄に残っている中身を一覧に入れる（「次へ」と保存で使う）。
+// 外注人工（applyOFormToOutsourcing）と同じ決まり:
+//  ・行をタップ中: 新しい行は足さず、タップした行を入力欄の中身で上書きする（その欄の「＋ 追加する」と同じ）。
+//    入力欄を変えていなければ、行はそのまま。入力が足りなければ何もしない
+//  ・タップしていないとき: 入力が足りていれば、新しい行として足す（今までどおり）
+//  form / loaded: いまの入力欄と、行をタップして読み込んだときの入力欄（同じ名前の欄どうしで比べる）
+//  makeRow(元の行): 入力欄から作る行（上書きのときは元の行、足すときは null が渡る）
+//  戻り値: { list: 入れたあとの一覧, used: 入力欄の中身を使ったか（使ったら入力欄を空にしてよい） }
+const applyFormToRows = (list, { editingIdx, form, loaded, isValid, makeRow }) => {
+  if (editingIdx !== null && list[editingIdx]) {
+    const keys = new Set([...Object.keys(form), ...Object.keys(loaded || {})]);
+    const unchanged = !!loaded && [...keys].every(k => String(form[k] ?? '') === String(loaded[k] ?? ''));
+    if (unchanged) return { list, used: true };
+    if (!isValid) return { list, used: false };
+    const next = [...list];
+    next[editingIdx] = makeRow(list[editingIdx]);
+    return { list: next, used: true };
+  }
+  if (!isValid) return { list, used: false };
+  return { list: [...list, makeRow(null)], used: true };
+};
+
 function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editReport, onUpdate, unitPricesByVendor = {} }) {
   const isEditMode = !!editReport;
   // 業者ごとの単価表（ワイエム・入間緑化開発）。読めない・行がない業者は空 → 種類は自由入力・処分費は手入力のまま
@@ -3818,7 +3840,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   );
   const [workDetails, setWorkDetails] = useState(
     isEditMode ? (() => {
-      const wd = editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], envItems:[], extItems:[], costItems:[], dailyExpenses:[] };
+      const wd = { ...(editReport.workDetails || { workCategory:'', workContent:'', inHouseWorkers:[], outsourcingLabor:[], vehicles:[], machinery:[], envItems:[], extItems:[], costItems:[], dailyExpenses:[] }) };
+      // 経費の入力途中の値（前は日報の中に _expName / _expAmt として保存していた）は読み込まない。
+      // 入力欄は空から始め、保存し直すとこの2つは日報から消える
+      delete wd._expName;
+      delete wd._expAmt;
       return {
         ...wd,
         outsourcingLabor: (wd.outsourcingLabor || []).map(o => ({
@@ -3871,6 +3897,11 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const [editingMIdx, setEditingMIdx] = useState(null);
   const [editingExpIdx, setEditingExpIdx] = useState(null);
   const [expKubun, setExpKubun] = useState(''); // 経費の区分（空＝名前から自動）。workDetails には入れない（日報に保存しない）
+  const [expForm, setExpForm] = useState({ name:'', amt:'' }); // 経費の入力欄（項目名・金額）。workDetails には入れない（日報に保存しない）
+  // 自社人工・重機・経費：行をタップして入力欄に読み込んだときの中身（入力欄を変えたかどうかを見るため。外注人工の oFormLoadedRef と同じ）
+  const wFormLoadedRef = useRef(null);
+  const mFormLoadedRef = useRef(null);
+  const expFormLoadedRef = useRef(null);
   const [photoUrls, setPhotoUrls] = useState(isEditMode ? (editReport.photoUrls || []) : []);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [memoText, setMemoText] = useState(isEditMode ? (editReport.memo || '') : '');
@@ -3944,12 +3975,12 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   // ★ Step2の「次へ」: 自社/外注/車両/機械/経費の自動追加
   const handleStep2Next = () => {
     let newWorkDetails = workDetails;
-    // 自社人工
-    if (wForm && wForm.name && wForm.name.trim()) {
-      const count = getShiftCount(wForm.shift);
-      const amount = getShiftAmount(wForm.shift);
-      newWorkDetails = {...newWorkDetails, inHouseWorkers:[...(newWorkDetails.inHouseWorkers||[]), {...wForm, count, amount}]};
+    // 自社人工（行をタップ中なら、新しい行は足さずにその行を上書きする）
+    const worker = applyWFormToWorkers(newWorkDetails.inHouseWorkers || []);
+    if (worker.used) {
+      newWorkDetails = {...newWorkDetails, inHouseWorkers: worker.list};
       setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});
+      setEditingWIdx(null);
     }
     // 外注人工（行をタップ中なら、新しい行は足さずにその行を上書きする）
     const outsource = applyOFormToOutsourcing(newWorkDetails.outsourcingLabor || []);
@@ -3963,17 +3994,20 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       newWorkDetails = {...newWorkDetails, vehicles:[...(newWorkDetails.vehicles||[]), {...vForm, amount: VEHICLE_UNIT_PRICES[vForm.type]||0}]};
       setVForm({type:'',number:'',driver:''});
     }
-    // 機械
-    if (mForm && mForm.type) {
-      newWorkDetails = {...newWorkDetails, machinery:[...(newWorkDetails.machinery||[]), {type: mForm.type, unitPrice: parseFloat(mForm.price)||0}]};
+    // 重機（行をタップ中なら、新しい行は足さずにその行を上書きする）
+    const machine = applyMFormToMachinery(newWorkDetails.machinery || []);
+    if (machine.used) {
+      newWorkDetails = {...newWorkDetails, machinery: machine.list};
       setMForm({type:'',price:''});
+      setEditingMIdx(null);
     }
-    // 経費
-    const expName = (newWorkDetails._expName||'').trim();
-    const expAmt = parseFloat(newWorkDetails._expAmt) || 0;
-    if (expName) {
-      newWorkDetails = {...newWorkDetails, dailyExpenses:[...(newWorkDetails.dailyExpenses||[]), {name: expName, amount: expAmt, kubun: expKubun || guessCostKubun(expName)}], _expName:'', _expAmt:''};
+    // 経費（行をタップ中なら、新しい行は足さずにその行を上書きする）
+    const expense = applyExpFormToExpenses(newWorkDetails.dailyExpenses || []);
+    if (expense.used) {
+      newWorkDetails = {...newWorkDetails, dailyExpenses: expense.list};
+      setExpForm({name:'', amt:''});
       setExpKubun('');
+      setEditingExpIdx(null);
     }
     setWorkDetails(newWorkDetails);
     setCurrentStep(3);
@@ -3995,14 +4029,10 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
       let finalWasteItems = wasteItems;
       let finalScrapItems = scrapItems;
 
-      // 自社人工フォーム自動追加 (氏名があれば)
-      if (wForm && wForm.name && wForm.name.trim()) {
-        const count = getShiftCount(wForm.shift);
-        const amount = getShiftAmount(wForm.shift);
-        finalWorkDetails = {
-          ...finalWorkDetails,
-          inHouseWorkers: [...(finalWorkDetails.inHouseWorkers||[]), {...wForm, count, amount}]
-        };
+      // 自社人工フォーム自動追加 (氏名があれば)。行をタップ中なら、足さずにその行を上書きする
+      const worker = applyWFormToWorkers(finalWorkDetails.inHouseWorkers || []);
+      if (worker.used) {
+        finalWorkDetails = { ...finalWorkDetails, inHouseWorkers: worker.list };
       }
       // 外注人工フォーム自動追加 (会社名+人数があれば)。行をタップ中なら、足さずにその行を上書きする
       //（編集の「✓ 人数を変更したらここで更新」は Step2 から直接ここに来る）
@@ -4017,12 +4047,17 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           vehicles: [...(finalWorkDetails.vehicles||[]), {...vForm, amount: VEHICLE_UNIT_PRICES[vForm.type]||0}]
         };
       }
-      // 機械フォーム自動追加 (種類があれば)
-      if (mForm && mForm.type) {
-        finalWorkDetails = {
-          ...finalWorkDetails,
-          machinery: [...(finalWorkDetails.machinery||[]), {type: mForm.type, unitPrice: parseFloat(mForm.price)||0}]
-        };
+      // 機械フォーム自動追加 (種類があれば)。行をタップ中なら、足さずにその行を上書きする
+      const machine = applyMFormToMachinery(finalWorkDetails.machinery || []);
+      if (machine.used) {
+        finalWorkDetails = { ...finalWorkDetails, machinery: machine.list };
+      }
+      // 経費は、行をタップ中のときだけ、その行を上書きする（タップしていない入力は今までどおり足さない）
+      if (editingExpIdx !== null) {
+        const expense = applyExpFormToExpenses(finalWorkDetails.dailyExpenses || []);
+        if (expense.used) {
+          finalWorkDetails = { ...finalWorkDetails, dailyExpenses: expense.list };
+        }
       }
 
       // 産廃フォームの入力中の行は自動で追加しない（保存の前に止めている）
@@ -4085,10 +4120,18 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const loadWorkerForEdit = (i) => {
     const w = workDetails.inHouseWorkers[i];
     if (!w) return;
-    setWForm({name:w.name||'', start:w.start||'', end:w.end||'', shift:w.shift||'daytime', dept:w.dept||'k1'});
+    const form = {name:w.name||'', start:w.start||'', end:w.end||'', shift:w.shift||'daytime', dept:w.dept||'k1'};
+    setWForm(form);
+    wFormLoadedRef.current = form;
     if (w.dept) setCurrentDept(w.dept);
     setEditingWIdx(i);
   };
+  // 自社人工：入力欄に残っている中身を一覧に入れる（「次へ」と、保存・「✓ 人数を変更したらここで更新」で使う。決まりは applyFormToRows）
+  const applyWFormToWorkers = (list) => applyFormToRows(list, {
+    editingIdx: editingWIdx, form: wForm, loaded: wFormLoadedRef.current,
+    isValid: !!(wForm.name || '').trim(),
+    makeRow: () => ({...wForm, count: getShiftCount(wForm.shift), amount: getShiftAmount(wForm.shift)}),
+  });
   const addOutsource = () => {
     const actualCompany = oForm.company.trim();
     if (!actualCompany) return;
@@ -4169,8 +4212,37 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const loadMachineryForEdit = (i) => {
     const m = workDetails.machinery[i];
     if (!m) return;
-    setMForm({type:m.type||'', price:String(m.unitPrice||'')});
+    const form = {type:m.type||'', price:String(m.unitPrice||'')};
+    setMForm(form);
+    mFormLoadedRef.current = form;
     setEditingMIdx(i);
+  };
+  // 重機：入力欄に残っている中身を一覧に入れる（「次へ」と、保存・「✓ 人数を変更したらここで更新」で使う。決まりは applyFormToRows）
+  const applyMFormToMachinery = (list) => applyFormToRows(list, {
+    editingIdx: editingMIdx, form: mForm, loaded: mFormLoadedRef.current,
+    isValid: !!mForm.type,
+    makeRow: () => ({type: mForm.type, unitPrice: parseFloat(mForm.price)||0}),
+  });
+  const loadExpenseForEdit = (i) => {
+    const e = (workDetails.dailyExpenses || [])[i];
+    if (!e) return;
+    const kubun = COST_KUBUN.includes(e.kubun) ? e.kubun : ''; // 区分の無い今までの行は、名前から自動で見せる
+    setExpForm({name: e.name || '', amt: String(e.amount || '')});
+    setExpKubun(kubun);
+    expFormLoadedRef.current = {name: e.name || '', amt: String(e.amount || ''), kubun};
+    setEditingExpIdx(i);
+  };
+  // 経費：入力欄に残っている中身を一覧に入れる（「次へ」と、行をタップ中の保存・「✓ 人数を変更したらここで更新」で使う。決まりは applyFormToRows）
+  //  上書きのときは、その行のほかの項目は残す（「＋ 追加する」と同じ）
+  const applyExpFormToExpenses = (list) => {
+    const name = (expForm.name || '').trim();
+    const amount = parseFloat(expForm.amt) || 0;
+    const kubun = expKubun || guessCostKubun(name);
+    return applyFormToRows(list, {
+      editingIdx: editingExpIdx, form: {...expForm, kubun: expKubun}, loaded: expFormLoadedRef.current,
+      isValid: !!name,
+      makeRow: (prev) => (prev ? {...prev, name, amount, kubun} : {name, amount, kubun}),
+    });
   };
   // ※ envForm / extForm の入力UIは未実装のため、addEnv / addExt は削除しました
   //   （未定義変数 envForm, extForm, ENV_PRICES, EXT_PRICES, setEnvForm, setExtForm を参照しており、
@@ -4794,7 +4866,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               amount={`¥${formatCurrency(w.amount)}`}
               onEdit={()=>loadWorkerForEdit(i)}
               isEditing={editingWIdx===i}
-              onDel={()=>{ if(editingWIdx===i){setEditingWIdx(null); setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});} setWorkDetails({...workDetails,inHouseWorkers:workDetails.inHouseWorkers.filter((_,j)=>j!==i)})}} />
+              onDel={()=>{ if(editingWIdx===i){setEditingWIdx(null); setWForm({name:'',start:'',end:'',shift:'daytime',dept:currentDept});} else if(editingWIdx!==null && i<editingWIdx){setEditingWIdx(editingWIdx-1);} /* 上の行を消したら、タップ中の行の番号を1つ詰める（ほかの行を上書きしないように） */ setWorkDetails({...workDetails,inHouseWorkers:workDetails.inHouseWorkers.filter((_,j)=>j!==i)})}} />
           ))}
           <div style={inputCard}>
             {/* ★ 課タブ（人数なし）*/}
@@ -4946,7 +5018,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               amount={`¥${formatCurrency(m.unitPrice)}`}
               onEdit={()=>loadMachineryForEdit(i)}
               isEditing={editingMIdx===i}
-              onDel={()=>{ if(editingMIdx===i){setEditingMIdx(null); setMForm({type:'',price:''});} setWorkDetails({...workDetails,machinery:workDetails.machinery.filter((_,j)=>j!==i)})}} />
+              onDel={()=>{ if(editingMIdx===i){setEditingMIdx(null); setMForm({type:'',price:''});} else if(editingMIdx!==null && i<editingMIdx){setEditingMIdx(editingMIdx-1);} /* 上の行を消したら、タップ中の行の番号を1つ詰める */ setWorkDetails({...workDetails,machinery:workDetails.machinery.filter((_,j)=>j!==i)})}} />
           ))}
           <div style={inputCardAmber}>
             <div style={grid2}>
@@ -4967,7 +5039,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           {workDetails.machinery.length>0 && <SubTotal label="重機" value={workDetails.machinery.reduce((s,m)=>s+m.unitPrice,0)} />}
 
           {/* 経費 */}
-          <SectionLabel ja="経費" en="Expenses" pending={!!(workDetails._expName||'').trim()} />
+          <SectionLabel ja="経費" en="Expenses" pending={!!(expForm.name||'').trim()} />
           {(workDetails.dailyExpenses||[]).map((e,i)=>{
             const isEditing = editingExpIdx===i;
             return (
@@ -4978,11 +5050,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               boxShadow: isEditing ? 'none' : '0 2px 8px rgba(96,165,250,0.15)',
               padding:'10px 12px', display:'flex', alignItems:'center', gap:8,
               cursor: 'pointer'
-            }} onClick={()=>{
-              setWorkDetails({...workDetails, _expName: e.name, _expAmt: String(e.amount||'')});
-              setExpKubun(COST_KUBUN.includes(e.kubun) ? e.kubun : ''); // 区分の無い今までの行は、名前から自動で見せる
-              setEditingExpIdx(i);
-            }}>
+            }} onClick={()=>loadExpenseForEdit(i)}>
               <div style={{width:34,height:34,borderRadius:9,background:'#2563EB',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900,flexShrink:0}}>{(e.name||'').charAt(0)}</div>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:'#1E40AF'}}>{e.name}</div>
@@ -4994,7 +5062,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
               </div>
               {isEditing && <span style={{ fontSize:9, background:'rgba(245,158,11,0.2)', color:'#B45309', border:'1px solid rgba(245,158,11,0.4)', borderRadius:4, padding:'2px 7px', fontWeight:700 }}>編集中</span>}
               {!isEditing && <span style={{ fontSize:11, color:'#94A3B8' }}>✏️</span>}
-              <button onClick={(ev)=>{ev.stopPropagation(); if(isEditing){setEditingExpIdx(null); setExpKubun(''); setWorkDetails({...workDetails, _expName:'', _expAmt:'', dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});} else { setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});}}}
+              <button onClick={(ev)=>{ev.stopPropagation(); if(isEditing){setEditingExpIdx(null); setExpKubun(''); setExpForm({name:'', amt:''});} else if(editingExpIdx!==null && i<editingExpIdx){setEditingExpIdx(editingExpIdx-1);} /* 上の行を消したら、タップ中の行の番号を1つ詰める */ setWorkDetails({...workDetails,dailyExpenses:(workDetails.dailyExpenses||[]).filter((_,j)=>j!==i)});}}
                 style={{width:28,height:28,borderRadius:7,border:'1px solid rgba(239,68,68,0.25)',cursor:'pointer',background:'rgba(239,68,68,0.08)',color:'#f87171',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontWeight:700}}>✕</button>
             </div>
             );
@@ -5002,37 +5070,38 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
           <div style={inputCard}>
             <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
               {['パーキング代','高速代','交通費','経費','道具代','アスベスト分析費'].map(n=>(
-                <button key={n} onClick={()=>setWorkDetails({...workDetails,_expName:n})}
-                  style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${workDetails._expName===n?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.1)'}`,background:workDetails._expName===n?'rgba(59,130,246,0.3)':'rgba(255,255,255,0.08)',color:workDetails._expName===n?'#93C5FD':'rgba(255,255,255,0.5)',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
+                <button key={n} onClick={()=>setExpForm({...expForm,name:n})}
+                  style={{padding:'4px 9px',borderRadius:7,border:`1px solid ${expForm.name===n?'rgba(59,130,246,0.5)':'rgba(255,255,255,0.1)'}`,background:expForm.name===n?'rgba(59,130,246,0.3)':'rgba(255,255,255,0.08)',color:expForm.name===n?'#93C5FD':'rgba(255,255,255,0.5)',fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>{n}</button>
               ))}
             </div>
             <div style={{...grid2,marginBottom:8}}>
               <div>
                 <label style={inpLbl}>項目名</label>
-                <input type="text" value={workDetails._expName||''} onChange={e=>setWorkDetails({...workDetails,_expName:e.target.value})} placeholder="例）パーキング代" style={inpTxt} />
+                <input type="text" value={expForm.name} onChange={e=>setExpForm({...expForm,name:e.target.value})} placeholder="例）パーキング代" style={inpTxt} />
               </div>
               <div>
                 <label style={inpLbl}>金額</label>
-                <input type="number" value={workDetails._expAmt||''} onChange={e=>setWorkDetails({...workDetails,_expAmt:e.target.value})} placeholder="0" style={inpTxt} />
+                <input type="number" value={expForm.amt} onChange={e=>setExpForm({...expForm,amt:e.target.value})} placeholder="0" style={inpTxt} />
               </div>
             </div>
             {/* 区分（自社／外注／その他外注）。既定は名前から自動 */}
-            <CostKubunPicker id="exp-kubun" name={workDetails._expName} value={expKubun} onChange={setExpKubun} />
+            <CostKubunPicker id="exp-kubun" name={expForm.name} value={expKubun} onChange={setExpKubun} />
             <AddBtn onClick={()=>{
-              const name=(workDetails._expName||'').trim();
-              const amt=parseFloat(workDetails._expAmt)||0;
+              const name=(expForm.name||'').trim();
+              const amt=parseFloat(expForm.amt)||0;
               if(!name) return;
               const kubun = expKubun || guessCostKubun(name);
               if (editingExpIdx !== null) {
                 const list = [...(workDetails.dailyExpenses||[])];
                 list[editingExpIdx] = {...list[editingExpIdx], name, amount: amt, kubun};
-                setWorkDetails({...workDetails, dailyExpenses: list, _expName:'', _expAmt:''});
+                setWorkDetails({...workDetails, dailyExpenses: list});
                 setEditingExpIdx(null);
               } else {
-                setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt,kubun}],_expName:'',_expAmt:''});
+                setWorkDetails({...workDetails,dailyExpenses:[...(workDetails.dailyExpenses||[]),{name,amount:amt,kubun}]});
               }
+              setExpForm({name:'', amt:''});
               setExpKubun('');
-            }} disabled={!(workDetails._expName||'').trim()} pulse={!!(workDetails._expName||'').trim()} />
+            }} disabled={!(expForm.name||'').trim()} pulse={!!(expForm.name||'').trim()} />
           </div>
           {(workDetails.dailyExpenses||[]).length>0 && <SubTotal label="経費" value={(workDetails.dailyExpenses||[]).reduce((s,e)=>s+(e.amount||0),0)} />}
 

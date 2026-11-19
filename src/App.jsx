@@ -859,7 +859,7 @@ function LoginPage({ onLogin }) {
 // ========== ホームの「お知らせ」欄（文は src/notices.js にだけ書く） ==========
 const NOTICE_CATEGORIES = ['お知らせ', '新着', 'お願い'];
 const NOTICE_NEW_DAYS = 7;       // newFrom の日から何日間「NEW」を付けるか
-const NOTICE_SHOW_FIRST = 4;     // これより多いときは、この件数まで出して「もっと見る」
+const NOTICE_SHOW_FIRST = 5;     // これより多いときは、この件数まで出して「もっと見る」
 const NOTICE_LABEL_STYLES = {
   'お願い':   { background: '#FFC400', color: '#000' },
   '新着':     { background: '#22C55E', color: '#fff' },

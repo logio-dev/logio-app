@@ -3611,14 +3611,18 @@ const SubTotal = ({ label, value }) => value > 0 ? (
   </div>
 ) : <div style={{marginBottom:'14px'}} />;
 
-// ========== 処分費の自動計算（unit_prices。ワイエム・入間緑化開発） ==========
+// ========== 処分費の自動計算（unit_prices。単価表のある処分先） ==========
 const YM_VENDOR = 'ワイエム';
 const IRIMA_VENDOR = '入間緑化開発';
+const ISHIZAKA_SEKIHO_VENDOR = '石坂積保'; // 単価表の vendor はかっこ無し
+const MIDAC_VENDOR = 'ミダック';
 // 単価表（unit_prices）を使う業者と、処分先の名前がその業者に当たるかの決め方。業者を足すときはここに1行足す
 // ※入間緑化開発は処分先の名前で判定する（案件の請負区分 contract_type の「入間緑化」とは別物）
 const PRICE_MASTER_VENDORS = [
   { vendor: YM_VENDOR, matches: (name) => name === YM_VENDOR },             // 完全一致（今までどおり）
   { vendor: IRIMA_VENDOR, matches: (name) => name.includes('入間緑化') },   // 「入間緑化」「入間緑化開発」「入間緑化開発㈱」など
+  { vendor: ISHIZAKA_SEKIHO_VENDOR, matches: (name) => name.includes('石坂') && name.includes('積保') }, // 「石坂(積保)」「石坂（積保）」。石坂(直行)は当たらない
+  { vendor: MIDAC_VENDOR, matches: (name) => name.includes('ミダック') },
 ];
 const WASTE_TYPE_OTHER = '__other__'; // 種類プルダウンの「その他（直接入力）」
 const WASTE_UNIT_OPTIONS = ['㎥', 'kg', 't'];
@@ -3704,7 +3708,7 @@ const clearAutoPrice = (form) => ({
   priceSource: 'manual', priceOverride: false, unitPrice: 0,
 });
 
-// 処分先を変えたとき（指示書 3-2。ワイエム・入間緑化開発で共通）
+// 処分先を変えたとき（指示書 3-2。単価表のある処分先で共通）
 const changeWasteDisposal = (form, disposal, priceMaps) => {
   const next = { ...form, disposal };
   // 単価表が読めている業者だけを対象にする（読めていなければ今までどおり）
@@ -3832,7 +3836,7 @@ const applyFormToRows = (list, { editingIdx, form, loaded, isValid, makeRow }) =
 
 function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editReport, onUpdate, unitPricesByVendor = {} }) {
   const isEditMode = !!editReport;
-  // 業者ごとの単価表（ワイエム・入間緑化開発）。読めない・行がない業者は空 → 種類は自由入力・処分費は手入力のまま
+  // 業者ごとの単価表（ワイエム・入間緑化開発・石坂(積保)・ミダック）。読めない・行がない業者は空 → 種類は自由入力・処分費は手入力のまま
   const priceMaps = buildPriceMaps(unitPricesByVendor);
   const hasAnyPriceMaster = Object.values(priceMaps).some(map => map.size > 0);
   const [currentStep, setCurrentStep] = useState(1);
@@ -4597,7 +4601,7 @@ function ReportInputPage({ onSave, onNavigate, projectInfo, onReleaseLock, editR
   const grid3 = { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'8px', marginBottom:'10px' };
 
   // ★ 産廃フォームの 処分先 → 種類 / 数量・単位・処分費（自社運搬・環境課配車・ワイエム配車で共通）
-  //   処分先がワイエム・入間緑化開発で単価表が読めていれば、種類はその業者の品目のプルダウン、単位と処分費は自動
+  //   処分先が単価表のある業者で単価表が読めていれば、種類はその業者の品目のプルダウン、単位と処分費は自動
   const renderWasteMainFields = ({ isRev, accentDark, inputBorder }) => {
     const optStyle = { color:'#000', background:'#fff' };
     const masterMap = !isRev ? masterMapFor(wasteForm.disposal, priceMaps) : null;

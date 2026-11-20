@@ -1927,6 +1927,9 @@ const PROJECT_INFO_COLUMN_LABELS = {
   misc_items: '直接原価',
   manifest_entries: 'マニフェスト',
   manifest_discharger: 'マニフェスト排出事業者',
+  manifest_type: 'マニ伝種類',
+  manifest_issuer: '交付担当者',
+  manifest_remarks: 'マニフェスト備考欄',
   site_area_m2: '面積',
   site_tsubo: '坪数',
   site_use_type: '業態',
@@ -9557,6 +9560,7 @@ export default function LOGIOApp() {
     discharger: '', contractedDisposalSites: [], transferCost: '', leaseCost: '', materialsCost: '',
     siteTsubo: '', siteUseType: '', workCondition: '',
     outsourcingItems: [], sgaItems: [], manifestRows: [{disposal:'',transport:'',count:'1'}], manifestDischarger: '', miscItems: [],
+    manifestType: '', manifestIssuer: '', manifestRemarks: '', // マニ伝種類・交付担当者・マニフェストの備考欄
     paymentDueDate: '', paymentTerms: '', invoiceRecipient: '',
     subcontractAmount: '', subcontractor: '', subcontractTerms: '', subcontractInvoiceRecipient: '',
     documentsChecklist: {work:false,paperManifest:false,eManifest:false,treatmentContract:false,estimateContract:false,signboard:false,preInvoice:false,postInvoice:false,safetyDocs:false}
@@ -9835,6 +9839,9 @@ export default function LOGIOApp() {
           miscItems,
           manifestRows: Array.isArray(d.manifest_entries) && d.manifest_entries.length > 0 ? d.manifest_entries : [{disposal:'',transport:'',count:'1'}],
           manifestDischarger: d.manifest_discharger || d.discharger || '',
+          manifestType: d.manifest_type || '',       // マニ伝種類（紙マニフェスト／電子マニフェスト）
+          manifestIssuer: d.manifest_issuer || '',   // 交付担当者
+          manifestRemarks: d.manifest_remarks || '', // マニフェストの備考欄
           completionDate: d.completion_date || '',
           siteAreaM2: d.site_area_m2 != null ? String(d.site_area_m2) : '',
           siteTsubo: d.site_tsubo != null ? String(d.site_tsubo) : '',
@@ -9970,6 +9977,9 @@ export default function LOGIOApp() {
         misc_items: Array.isArray(projectInfo.miscItems) ? projectInfo.miscItems : [],
         manifest_entries: projectInfo.manifestRows || [],
         manifest_discharger: projectInfo.manifestDischarger || '',
+        manifest_type: projectInfo.manifestType || '',       // マニ伝種類（未選択は空の文字）
+        manifest_issuer: projectInfo.manifestIssuer || '',   // 交付担当者
+        manifest_remarks: projectInfo.manifestRemarks || '', // マニフェストの備考欄
         site_area_m2: projectInfo.siteAreaM2 ? parseFloat(projectInfo.siteAreaM2) : null,
         payment_due_date: projectInfo.paymentDueDate || '',
         payment_terms: projectInfo.paymentTerms || '',
